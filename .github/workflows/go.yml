@@ -25,10 +25,27 @@ jobs:
     - name: Get dependencies
       run: |
         go get -v -t -d ./...
-        if [ -f Gopkg.toml ]; then
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-        fi
+
+    - name: Build
+      run: make build
+
+  test:
+    name: Unit test
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.16
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
 
     - name: Fmt check
       run: make fmtcheck
@@ -36,8 +53,6 @@ jobs:
     - name: Unit tests
       run: make test
 
-    - name: Build
-      run: make build
   lint:
     name: "Run static analysis"
     runs-on: "ubuntu-latest"
