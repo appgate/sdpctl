@@ -14,11 +14,7 @@ func init() {
 }
 
 var rootCmd = &cobra.Command{
-	PreRun: func(cmd *cobra.Command, args []string) {
-		if debug {
-			log.SetLevel(log.DebugLevel)
-		}
-	},
+	PreRun: preRunFunc,
 	Use:   "appgatectl [COMMAND]",
 	Short: "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
 	Aliases: []string{
@@ -31,5 +27,11 @@ func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Error(err)
 		os.Exit(1)
+	}
+}
+
+func preRunFunc(cmd *cobra.Command, args []string) {
+	if debug {
+		log.SetLevel(log.DebugLevel)
 	}
 }
