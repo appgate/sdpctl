@@ -29,7 +29,7 @@ func init() {
 
 	f := log.TextFormatter{
 		FullTimestamp: true,
-		PadLevelText: true,
+		PadLevelText:  true,
 	}
 	log.SetFormatter(&f)
 }
