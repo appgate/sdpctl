@@ -15,8 +15,8 @@ func init() {
 
 var rootCmd = &cobra.Command{
 	PreRun: preRunFunc,
-	Use:   "appgatectl [COMMAND]",
-	Short: "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
+	Use:    "appgatectl [COMMAND]",
+	Short:  "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
 	Aliases: []string{
 		"agctl",
 		"ag",
