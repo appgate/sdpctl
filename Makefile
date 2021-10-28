@@ -3,7 +3,7 @@ GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 
 
 build:
-	go build -o $(BIN_NAME)
+	go build -o build/$(BIN_NAME)
 
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
