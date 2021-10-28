@@ -13,3 +13,7 @@ fmt:
 
 test:
 	go test ./...
+
+
+clean:
+	rm -rf build
