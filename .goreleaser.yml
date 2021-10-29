@@ -27,8 +27,8 @@ archives:
         format: zip
 checksum:
   name_template: 'checksums.txt'
-signs:
-  - artifacts: checksum
+# signs:
+#   - artifacts: checksum
 snapshot:
   name_template: "v{{ incpatch .Version }}"
 changelog:
