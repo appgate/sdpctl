@@ -11,12 +11,6 @@ jobs:
   test:
     name: Testing
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        targets:
-        - fmtcheck
-        - test
-        - build
     steps:
 
     - name: Set up Go 1.x
@@ -32,8 +26,14 @@ jobs:
       run: |
         go get -v -t -d ./...
 
-    - name: Test make ${{ matrix.targets }}
-      run: make ${{ matrix.targets }}
+    - name: Test formatting
+      run: make fmtcheck
+
+    - name: Unit tests
+      run: make test
+
+    - name: Test compiling
+      run: make build
 
   lint:
     name: "Run static analysis"
