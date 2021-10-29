@@ -59,14 +59,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [test, lint]
+    if: startsWith(github.ref, 'refs/heads/main')
     steps:
-    - name: Signing key setup
-      env:
-        GPG_SECRET_KEY: ${{ secrets.APPGATE_SIGNING_KEY }}
-      run: |
-        mkdir -p ~/.gnupg
-        printf "$GPG_SIGNING_KEY" | base64 --decode > ~/.gnupg/private.key
-        gpg --import ~/.gnupg/private.key
 
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
