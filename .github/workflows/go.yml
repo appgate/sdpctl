@@ -59,7 +59,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [test, lint]
-    if: startsWith(github.ref, "refs/heads/main")
+    if: startsWith(github.ref, 'refs/heads/main')
     steps:
 
     - name: Set up Go 1.x
