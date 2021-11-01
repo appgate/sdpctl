@@ -13,14 +13,12 @@ var (
 	commit        string
 	buildDate     string
 	debug         bool
-	versionOutput string
+	versionOutput string = fmt.Sprintf(`%s
+commit: %s
+build date: %s`, version, commit, buildDate)
 )
 
 func init() {
-	versionOutput = fmt.Sprintf(`%s
-commit: %s
-build date: %s`, version, commit, buildDate)
-
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging")
 }
 

@@ -1,11 +1,7 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
-before:
-  hooks:
-    # You may remove this if you don't use go modules.
-    - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
+env:
+ - RELEASE_VERSION={{ if index .Env "APPGATECTL_VERSION" }}{{ .Env.APPGATECTL_VERSION }}{{ else }}dev{{ end }}
 builds:
   - main: ./main.go
     env:
@@ -17,7 +13,7 @@ builds:
     goarch:
       - amd64
     ldflags:
-    - -s -w -X "github.com/appgate/appgatectl/cmd.version={{ .Version }}"
+    - -s -w -X "github.com/appgate/appgatectl/cmd.version={{ .Env.RELEASE_VERSION }}"
     - -X "github.com/appgate/appgatectl/cmd.commit={{ .Commit }}"
     - -X "github.com/appgate/appgatectl/cmd.buildDate={{ .Date }}"
 archives:
