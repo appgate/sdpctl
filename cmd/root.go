@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	version       string
+	version       string = "dev"
 	commit        string
 	buildDate     string
 	debug         bool
