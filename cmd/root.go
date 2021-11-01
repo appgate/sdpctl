@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	version string
+	version string = "unreleased"
 	debug   bool
 )
 
