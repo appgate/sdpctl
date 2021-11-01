@@ -8,8 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var AppVersion string
-
 func init() {
 	// Setup logging
 	logLevel := strings.ToLower(os.Getenv("APPGATECTL_LOG_LEVEL"))

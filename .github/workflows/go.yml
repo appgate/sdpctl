@@ -75,6 +75,5 @@ jobs:
       uses: goreleaser/goreleaser-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        APPGATECTL_VERSION: $($env:GITHUB_REF -replace "refs/tags/") Build ${{ github.run_id }}
       with:
         args: "release"
