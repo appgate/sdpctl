@@ -1,22 +1,32 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var debug bool
+var (
+	version       string = "dev"
+	commit        string
+	buildDate     string
+	debug         bool
+	versionOutput string = fmt.Sprintf(`%s
+commit: %s
+build date: %s`, version, commit, buildDate)
+)
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug logging")
 }
 
 var rootCmd = &cobra.Command{
-	PreRun: preRunFunc,
-	Use:    "appgatectl [COMMAND]",
-	Short:  "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
+	PreRun:  preRunFunc,
+	Use:     "appgatectl [COMMAND]",
+	Short:   "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
+	Version: versionOutput,
 	Aliases: []string{
 		"agctl",
 		"ag",
