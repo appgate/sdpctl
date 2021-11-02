@@ -76,15 +76,13 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 			Name: "username",
 			Prompt: &survey.Input{
 				Message: "username",
-				Default: "admin",
 			},
 			Validate: survey.Required,
 		},
 		{
 			Name: "password",
-			Prompt: &survey.Input{
+			Prompt: &survey.Password{
 				Message: "password",
-				Default: "admin",
 			},
 			Validate: survey.Required,
 		},
