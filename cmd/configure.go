@@ -36,7 +36,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		{
 			Name: "url",
 			Prompt: &survey.Input{
-				Message: "Enter the url for the controller (example https://appgate.controller.com)",
+				Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
 				Default: opts.Config.Url,
 			},
 			Validate: survey.Required,

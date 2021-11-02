@@ -42,8 +42,8 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 	}
 	loginCmd.PersistentFlags().BoolVar(&opts.debug, "debug", false, "Enable debug logging")
 	loginCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", "", "address to the controller to acccess the API")
-	loginCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", 16, "address to the controller to acccess the API")
+	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.Url, "appgate sdp controller API URL")
+	loginCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	loginCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 
 	return loginCmd
