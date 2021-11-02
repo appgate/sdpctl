@@ -71,13 +71,15 @@ func NewCmdRoot() *cobra.Command {
 	}
 
 	cobra.OnInitialize(initConfig)
+	cfg := &config.Config{}
+
 	viper.SetDefault("debug", false)
 	viper.SetDefault("provider", "local")
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file")
+	rootCmd.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	initConfig()
 
-	cfg := &config.Config{}
 	viper.Unmarshal(cfg)
 	f := factory.New(version, cfg)
 
@@ -89,6 +91,7 @@ func NewCmdRoot() *cobra.Command {
 
 	return rootCmd
 }
+
 func Execute() {
 	root := NewCmdRoot()
 	if err := root.Execute(); err != nil {
