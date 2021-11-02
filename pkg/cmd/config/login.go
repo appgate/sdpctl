@@ -104,6 +104,16 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 	loginResponse, _, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
 	if err != nil {
+		if err, ok := err.(openapi.GenericOpenAPIError); ok {
+			if err, ok := err.Model().(openapi.InlineResponse406); ok {
+				return fmt.Errorf(
+					"You are using the wrong apiversion (peer api version) for you appgate sdp collective, you are using %d; min: %d max: %d",
+					cfg.Version,
+					err.GetMinSupportedVersion(),
+					err.GetMaxSupportedVersion(),
+				)
+			}
+		}
 		return err
 	}
 
