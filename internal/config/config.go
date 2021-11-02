@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 const (
@@ -19,11 +20,8 @@ type Config struct {
 	Insecure    bool
 	Debug       bool   // http debug flag
 	Version     int    `mapstructure:"api_version"` // api peer interface version
-	BearerToken string `mapstructure:"bearer"`
-}
-
-func (c *Config) GetBearTokenHeaderValue() string {
-	return fmt.Sprintf("Bearer %s", c.BearerToken)
+	BearerToken string `mapstructure:"bearer"`      // current logged in user token
+	ExpiresAt   string `mapstructure:"expires_at"`
 }
 
 // ConfigDir path precedence
@@ -46,4 +44,25 @@ func ConfigDir() string {
 	}
 
 	return path
+}
+
+func (c *Config) Validate() error {
+	if c.BearerToken == "" || c.ExpiresAt == "" {
+		return fmt.Errorf("Invalid user session. Please use 'appgatectl configure login'")
+	}
+
+	layout := "2006-01-02 15:04:05.000000 +0000 UTC"
+	expDate, err := time.Parse(layout, c.ExpiresAt)
+	if err != nil {
+		return err
+	}
+
+	// Check expiration date
+	if time.Now().After(expDate) {
+		return fmt.Errorf("Session expired. Please use 'appgatectl configure login' to log in again")
+	}
+
+	// TODO: Validate token
+
+	return nil
 }
