@@ -1,9 +1,10 @@
-package config
+package appliance
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
@@ -14,6 +15,7 @@ import (
 
 type upgradeStatusOptions struct {
 	Config     *config.Config
+	Out        io.Writer
 	APIClient  func(Config *config.Config) (*openapi.APIClient, error)
 	Token      string
 	Timeout    int
@@ -32,6 +34,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 		APIClient: f.APIClient,
 		Timeout:   10,
 		debug:     f.Config.Debug,
+		Out:       f.IOOutWriter,
 	}
 	var upgradeStatusCmd = &cobra.Command{
 		Use:   "status",
@@ -57,6 +60,7 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 	if err != nil {
 		return err
 	}
+
 	ctx := context.Background()
 	token := cfg.GetBearTokenHeaderValue()
 	appliances, err := appliance.GetAllAppliances(ctx, client, token)
@@ -87,6 +91,7 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(jsonStatus))
+
+	fmt.Fprintf(opts.Out, "\n%s\n", string(jsonStatus))
 	return nil
 }

@@ -3,8 +3,10 @@ package factory
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/appgate/appgatectl/internal/config"
@@ -12,9 +14,10 @@ import (
 )
 
 type Factory struct {
-	HttpClient func() (*http.Client, error)
-	APIClient  func(c *config.Config) (*openapi.APIClient, error)
-	Config     *config.Config
+	HttpClient  func() (*http.Client, error)
+	APIClient   func(c *config.Config) (*openapi.APIClient, error)
+	Config      *config.Config
+	IOOutWriter io.Writer
 }
 
 func New(appVersion string, config *config.Config) *Factory {
@@ -22,7 +25,7 @@ func New(appVersion string, config *config.Config) *Factory {
 	f.Config = config
 	f.HttpClient = httpClientFunc(f)           // depends on config
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
-
+	f.IOOutWriter = os.Stdout
 	return f
 }
 
