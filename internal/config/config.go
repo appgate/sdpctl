@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -13,11 +14,16 @@ const (
 )
 
 type Config struct {
-	Url      string
-	Provider string
-	Insecure bool
-	Debug    bool // http debug flag
-	Version  int  `mapstructure:"api_version"` // api peer interface version
+	Url         string
+	Provider    string
+	Insecure    bool
+	Debug       bool   // http debug flag
+	Version     int    `mapstructure:"api_version"` // api peer interface version
+	BearerToken string `mapstructure:"bearer"`
+}
+
+func (c *Config) GetBearTokenHeaderValue() string {
+	return fmt.Sprintf("Bearer %s", c.BearerToken)
 }
 
 // ConfigDir path precedence

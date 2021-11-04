@@ -1,9 +1,12 @@
 package config
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/appgate/appgatectl/internal/config"
+	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/spf13/cobra"
@@ -12,6 +15,7 @@ import (
 type upgradeStatusOptions struct {
 	Config     *config.Config
 	APIClient  func(Config *config.Config) (*openapi.APIClient, error)
+	Token      string
 	Timeout    int
 	url        string
 	provider   string
@@ -48,6 +52,41 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 }
 
 func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOptions) error {
-	fmt.Println("upgrade status placeholder")
+	cfg := opts.Config
+	client, err := opts.APIClient(cfg)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	token := cfg.GetBearTokenHeaderValue()
+	appliances, err := appliance.GetAllAppliances(ctx, client, token)
+	if err != nil {
+		return err
+	}
+	type ApplianceStatus struct {
+		Id      string `json:"id"`
+		Name    string `json:"name"`
+		Status  string `json:"status,omitempty"`
+		Details string `json:"details,omitempty"`
+	}
+	statuses := make([]ApplianceStatus, 0, len(appliances))
+	for _, a := range appliances {
+		id := a.GetId()
+		status, err := appliance.GetApplianceUpgradeStatus(ctx, client, token, id)
+		if err != nil {
+			return err
+		}
+		statuses = append(statuses, ApplianceStatus{
+			Id:      id,
+			Name:    a.GetName(),
+			Status:  status.GetStatus(),
+			Details: status.GetDetails(),
+		})
+	}
+	jsonStatus, err := json.MarshalIndent(&statuses, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(jsonStatus))
 	return nil
 }
