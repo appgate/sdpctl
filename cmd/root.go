@@ -84,9 +84,7 @@ func NewCmdRoot() *cobra.Command {
 	f := factory.New(version, cfg)
 
 	configureCmd := NewCmdConfigure(f)
-	loginCmd := cfgcmd.NewLoginCmd(f)
-	configureCmd.AddCommand(loginCmd)
-
+	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
 	rootCmd.AddCommand(configureCmd)
 
 	return rootCmd
