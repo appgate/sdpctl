@@ -7,7 +7,7 @@ import (
 
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/cmd/backup"
-    log "github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -52,7 +52,7 @@ func NewCmdBackup(c *config.Config) *cobra.Command {
 
 func runBackup(c *config.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-        log.Debug(args)
+		log.Debug(args)
 		err := backup.Prepare(c, destinationFlag)
 		if err != nil {
 			return fmt.Errorf("Backup preperation failed: %s", err)

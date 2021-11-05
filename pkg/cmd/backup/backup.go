@@ -17,17 +17,17 @@ func Prepare(c *config.Config, d string) error {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
-    if _, err := os.Stat(d); os.IsNotExist(err) {
-        if err := os.MkdirAll(d, 0700); err != nil {
-            return fmt.Errorf("Failed to create destination directory:\n\t%s", err)
-        }
-    }
+	if _, err := os.Stat(d); os.IsNotExist(err) {
+		if err := os.MkdirAll(d, 0700); err != nil {
+			return fmt.Errorf("Failed to create destination directory:\n\t%s", err)
+		}
+	}
 
-    u, err := url.Parse(c.Url)
-    if err != nil {
-        return fmt.Errorf("Failed to parse controller url:\n\t%s", err)
-    }
-    log.Debug("Controller URL: ", u)
+	u, err := url.Parse(c.Url)
+	if err != nil {
+		return fmt.Errorf("Failed to parse controller url:\n\t%s", err)
+	}
+	log.Debug("Controller URL: ", u)
 
 	return nil
 }
