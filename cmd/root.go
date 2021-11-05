@@ -54,7 +54,7 @@ func initConfig() {
 			// Its OK if we cant the file, fallback to arguments and/or environment variables
 			// or configure it with appgatectl configure
 		} else {
-			fmt.Printf("cant find config; run appgatectl configure %s %s\n", dir, err)
+			fmt.Printf("can't find config; run appgatectl configure %s %s\n", dir, err)
 			os.Exit(1)
 		}
 	}
@@ -117,11 +117,11 @@ func NewCmdRoot() *cobra.Command {
 	configureCmd := NewCmdConfigure(f)
 	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
 	loginCmd := cfgcmd.NewLoginCmd(f)
-    backupCmd := NewCmdBackup(f)
+	backupCmd := NewCmdBackup(f.Config)
 	configureCmd.AddCommand(loginCmd)
 
 	rootCmd.AddCommand(configureCmd)
-    rootCmd.AddCommand(backupCmd)
+	rootCmd.AddCommand(backupCmd)
 
 	applianceCmd := NewApplianceCmd(f)
 	applianceUpgradeCommand := upgradecmd.NewUpgradeCmd(f)
