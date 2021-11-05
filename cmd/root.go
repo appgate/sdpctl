@@ -91,6 +91,7 @@ func NewCmdRoot() *cobra.Command {
 	applianceCmd := NewApplianceCmd(f)
 	applianceUpgradeCommand := appliancecmd.NewUpgradeCmd(f)
 	applianceUpgradeCommand.AddCommand(appliancecmd.NewUpgradeStatusCmd(f))
+	applianceUpgradeCommand.AddCommand(appliancecmd.NewPrepareUpgradeCmd(f))
 
 	applianceCmd.AddCommand(applianceUpgradeCommand)
 	rootCmd.AddCommand(applianceCmd)
