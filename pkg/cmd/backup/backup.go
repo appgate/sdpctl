@@ -13,7 +13,7 @@ import (
 func Prepare(c *config.Config, d string) error {
 	log.Info("Preparing backup...")
 
-	if !appliance.IsOnAppliance() {
+	if appliance.IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
