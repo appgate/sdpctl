@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"path/filepath"
-
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/cmd/backup"
 
@@ -25,23 +23,22 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 
 func NewCmdBackup(c *config.Config) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "backup [flags] CONTROLLER",
-		Short: "Perform backup of the Appgate SDP Collective",
-		Long:  longDescription,
+		Use:       "backup [flags] CONTROLLER",
+		Short:     "Perform backup of the Appgate SDP Collective",
+		Long:      longDescription,
+		ValidArgs: []string{"controller"},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return c.Validate()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return backup.Prepare(c, destinationFlag)
 		},
-		ValidArgs: []string{"controller"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return backup.Perform(c)
 		},
 	}
 
-	defaultBackupDir := filepath.FromSlash("$HOME/appgate/appgate_backup_yyyymmdd_hhMMss")
-	cmd.PersistentFlags().StringVarP(&destinationFlag, "destination", "d", defaultBackupDir, "backup destination")
+	cmd.PersistentFlags().StringVarP(&destinationFlag, "destination", "d", backup.DefaultDestination, "backup destination")
 	cmd.PersistentFlags().BoolVar(&allFlag, "all", false, "backup the entire Appgate SDP Collective")
 	cmd.PersistentFlags().BoolVar(&allControllersFlag, "controllers", false, "backup all controllers")
 
