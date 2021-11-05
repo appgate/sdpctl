@@ -24,6 +24,10 @@ type Config struct {
 	ExpiresAt   string `mapstructure:"expires_at"`
 }
 
+func (c *Config) GetBearTokenHeaderValue() string {
+	return fmt.Sprintf("Bearer %s", c.BearerToken)
+}
+
 // ConfigDir path precedence
 // 1. APPGATECTL_CONFIG_DIR
 // 2. XDG_CONFIG_HOME
