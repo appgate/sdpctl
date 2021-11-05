@@ -116,9 +116,7 @@ func NewCmdRoot() *cobra.Command {
 
 	configureCmd := NewCmdConfigure(f)
 	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
-	loginCmd := cfgcmd.NewLoginCmd(f)
 	backupCmd := NewCmdBackup(f.Config)
-	configureCmd.AddCommand(loginCmd)
 
 	rootCmd.AddCommand(configureCmd)
 	rootCmd.AddCommand(backupCmd)
