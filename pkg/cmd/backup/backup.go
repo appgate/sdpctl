@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/appgate/appgatectl/internal/config"
+	"github.com/appgate/appgatectl/pkg/appliance"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 )
 
 func Prepare(c *config.Config, d string) error {
@@ -31,12 +31,9 @@ func Prepare(c *config.Config, d string) error {
 
 	return nil
 }
-func Perform(c *config.Config, cmd *cobra.Command, args []string) error {
+
+func Perform(c *config.Config) error {
 	log.Infof("Performing backup of controller at url %s", c.Url)
 
-	return nil
-}
-func Cleanup(c *config.Config, cmd *cobra.Command, args []string) error {
-	log.Info("Performing post cleanup...")
 	return nil
 }
