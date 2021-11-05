@@ -25,7 +25,7 @@ type loginOptions struct {
 	apiversion int
 }
 
-// NewLoginCmd return a new Configure command
+// NewLoginCmd return a new login command
 func NewLoginCmd(f *factory.Factory) *cobra.Command {
 	opts := loginOptions{
 		Config:    f.Config,

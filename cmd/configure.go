@@ -68,6 +68,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	if err != nil {
 		return err
 	}
+	log.Debugf("Answers %+v", answers)
 
 	viper.Set("url", answers.Url)
 	i, _ := strconv.ParseBool(answers.Insecure)

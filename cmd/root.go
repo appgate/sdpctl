@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/appgate/appgatectl/internal/config"
+	appliancecmd "github.com/appgate/appgatectl/pkg/cmd/appliance"
 	cfgcmd "github.com/appgate/appgatectl/pkg/cmd/config"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	log "github.com/sirupsen/logrus"
@@ -84,11 +85,15 @@ func NewCmdRoot() *cobra.Command {
 	f := factory.New(version, cfg)
 
 	configureCmd := NewCmdConfigure(f)
-	loginCmd := cfgcmd.NewLoginCmd(f)
-	configureCmd.AddCommand(loginCmd)
-
+	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
 	rootCmd.AddCommand(configureCmd)
 
+	applianceCmd := NewApplianceCmd(f)
+	applianceUpgradeCommand := appliancecmd.NewUpgradeCmd(f)
+	applianceUpgradeCommand.AddCommand(appliancecmd.NewUpgradeStatusCmd(f))
+
+	applianceCmd.AddCommand(applianceUpgradeCommand)
+	rootCmd.AddCommand(applianceCmd)
 	return rootCmd
 }
 
