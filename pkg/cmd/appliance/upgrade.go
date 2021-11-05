@@ -39,7 +39,7 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	upgradeCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	upgradeCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.Url, "appgate sdp controller API URL")
+	upgradeCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	upgradeCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	upgradeCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")

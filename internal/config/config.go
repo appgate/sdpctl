@@ -14,7 +14,7 @@ const (
 )
 
 type Config struct {
-	Url         string
+	URL         string `mapstructure:"url"`
 	Provider    string
 	Insecure    bool
 	Debug       bool   // http debug flag

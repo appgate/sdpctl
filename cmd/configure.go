@@ -37,7 +37,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 			Name: "url",
 			Prompt: &survey.Input{
 				Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
-				Default: opts.Config.Url,
+				Default: opts.Config.URL,
 			},
 			Validate: survey.Required,
 		},
@@ -59,7 +59,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		},
 	}
 	answers := struct {
-		Url      string
+		URL      string
 		Insecure string
 		Version  string
 	}{}
@@ -70,7 +70,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 	log.Debugf("Answers %+v", answers)
 
-	viper.Set("url", answers.Url)
+	viper.Set("url", answers.URL)
 	i, _ := strconv.ParseBool(answers.Insecure)
 	viper.Set("insecure", i)
 	v, _ := strconv.Atoi(answers.Version)

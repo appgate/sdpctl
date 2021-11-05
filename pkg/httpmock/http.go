@@ -51,20 +51,20 @@ func NewRegistry() *Registry {
 }
 
 type Stub struct {
-	Url       string
+	URL       string
 	Responder http.HandlerFunc
 }
 
 func (r *Registry) Register(url string, resp http.HandlerFunc) {
 	r.stubs = append(r.stubs, &Stub{
-		Url:       url,
+		URL:       url,
 		Responder: resp,
 	})
 }
 
 func (r *Registry) Serve() {
 	for _, stub := range r.stubs {
-		r.Mux.HandleFunc(stub.Url, stub.Responder)
+		r.Mux.HandleFunc(stub.URL, stub.Responder)
 	}
 }
 
