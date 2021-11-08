@@ -43,7 +43,7 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	loginCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.Url, "appgate sdp controller API URL")
+	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	loginCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	loginCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 
@@ -53,7 +53,7 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	cfg := opts.Config
 	if opts.url != "" {
-		cfg.Url = opts.url
+		cfg.URL = opts.url
 	}
 	if opts.provider != "" {
 		cfg.Provider = opts.provider
@@ -64,7 +64,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if opts.insecure {
 		cfg.Insecure = true
 	}
-	if cfg.Url == "" {
+	if cfg.URL == "" {
 		return fmt.Errorf("no addr set.")
 	}
 
@@ -119,7 +119,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 
 	viper.Set("bearer", *openapi.PtrString(*loginResponse.Token))
 	viper.Set("expires_at", loginResponse.Expires.String())
-	viper.Set("url", cfg.Url)
+	viper.Set("url", cfg.URL)
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}

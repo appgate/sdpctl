@@ -14,7 +14,7 @@ import (
 )
 
 type Factory struct {
-	HttpClient  func() (*http.Client, error)
+	HTTPClient  func() (*http.Client, error)
 	APIClient   func(c *config.Config) (*openapi.APIClient, error)
 	Config      *config.Config
 	IOOutWriter io.Writer
@@ -23,7 +23,7 @@ type Factory struct {
 func New(appVersion string, config *config.Config) *Factory {
 	f := &Factory{}
 	f.Config = config
-	f.HttpClient = httpClientFunc(f)           // depends on config
+	f.HTTPClient = httpClientFunc(f)           // depends on config
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
 	f.IOOutWriter = os.Stdout
 	return f
@@ -54,7 +54,7 @@ func httpClientFunc(f *Factory) func() (*http.Client, error) {
 
 func apiClientFunc(f *Factory, appVersion string) func(c *config.Config) (*openapi.APIClient, error) {
 	return func(cfg *config.Config) (*openapi.APIClient, error) {
-		hc, err := f.HttpClient()
+		hc, err := f.HTTPClient()
 		if err != nil {
 			return nil, err
 		}
@@ -66,7 +66,7 @@ func apiClientFunc(f *Factory, appVersion string) func(c *config.Config) (*opena
 			UserAgent: "appgatectl/" + appVersion + "/go",
 			Servers: []openapi.ServerConfiguration{
 				{
-					URL: cfg.Url,
+					URL: cfg.URL,
 				},
 			},
 			HTTPClient: hc,

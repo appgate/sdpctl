@@ -72,7 +72,7 @@ func TestNew(t *testing.T) {
 					Insecure: true,
 					Version:  15,
 					Debug:    false,
-					Url:      "https://appgate.controller.com/admin",
+					URL:      "https://appgate.controller.com/admin",
 				},
 			},
 		},
@@ -86,8 +86,8 @@ func TestNew(t *testing.T) {
 				t.Fatalf("got err %s", err)
 			}
 			clientConfig := c.GetConfig()
-			if clientConfig.Servers[0].URL != inputCfg.Url {
-				t.Errorf("Got %s expected %s", clientConfig.Host, inputCfg.Url)
+			if clientConfig.Servers[0].URL != inputCfg.URL {
+				t.Errorf("Got %s expected %s", clientConfig.Host, inputCfg.URL)
 			}
 			if clientConfig.UserAgent != "appgatectl/1.1.1./go" {
 				t.Errorf("Got %s expected %s", clientConfig.UserAgent, "appgatectl/1.1.1./go")

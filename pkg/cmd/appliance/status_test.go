@@ -34,7 +34,7 @@ func TestUpgradeStatusCommand(t *testing.T) {
 	f := &factory.Factory{
 		Config: &config.Config{
 			Debug: false,
-			Url:   fmt.Sprintf("http://localhost:%d", registery.Port),
+			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
 		},
 		IOOutWriter: stdout,
 		APIClient: func(c *config.Config) (*openapi.APIClient, error) {
