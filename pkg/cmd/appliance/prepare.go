@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	util "github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
@@ -19,6 +20,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -118,7 +120,36 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	log.Infof("Primary controller is: %q", primaryController.Name)
-
+	var exponentialBackOff = backoff.ExponentialBackOff{
+		InitialInterval:     500 * time.Millisecond,
+		RandomizationFactor: 0.5,
+		Multiplier:          1.5,
+		MaxInterval:         30 * time.Second,
+		Stop:                backoff.Stop,
+		Clock:               backoff.SystemClock,
+	}
+	var status openapi.StatsAppliancesList
+	errBackoff := backoff.Retry(func() error {
+		statsList, response, err := appliance.GetApplianceStats(ctx, client, token)
+		if err != nil {
+			if response.StatusCode >= 500 {
+				return fmt.Errorf("Controller got %w", err)
+			}
+			return err
+		}
+		for _, stat := range statsList.GetData() {
+			controller := stat.GetController()
+			if v, ok := controller.GetDetailsOk(); ok && *v == "busy" {
+				return fmt.Errorf("Controller is %s", *v)
+			}
+		}
+		status = statsList
+		return nil
+	}, &exponentialBackOff)
+	if errBackoff != nil {
+		return errBackoff
+	}
+	log.Infof("Status is: %+v", status)
 	_, err = appliance.GetFileStatus(ctx, client, token, filename)
 	if err != nil {
 		// if we dont get 404, return err

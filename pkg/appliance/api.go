@@ -81,6 +81,14 @@ func GetApplianceUpgradeStatus(ctx context.Context, client *openapi.APIClient, t
 	return status, nil
 }
 
+func GetApplianceStats(ctx context.Context, client *openapi.APIClient, token string) (openapi.StatsAppliancesList, *http.Response, error) {
+	status, response, err := client.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(token).Execute()
+	if err != nil {
+		return status, response, err
+	}
+	return status, response, nil
+}
+
 var ErrFileNotFound = errors.New("File not found")
 
 // GetFileStatus Get the status of a File uploaded to the current Controller.

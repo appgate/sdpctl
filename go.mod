@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.2
 	github.com/appgate/sdp-api-client-go v1.0.6
+	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/google/go-cmp v0.5.6
 	github.com/google/uuid v1.3.0
 	github.com/sirupsen/logrus v1.8.1
