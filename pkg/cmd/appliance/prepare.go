@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -101,6 +104,21 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
+	u, err := url.Parse(opts.url)
+	if err != nil {
+		return err
+	}
+	host, _, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		return err
+	}
+
+	primaryController, err := appliance.FindPrimaryController(appliances, host)
+	if err != nil {
+		return err
+	}
+	log.Infof("Primary controller is: %q", primaryController.Name)
+
 	_, err = appliance.GetFileStatus(ctx, client, token, filename)
 	if err != nil {
 		// if we dont get 404, return err
