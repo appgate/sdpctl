@@ -1,16 +1,21 @@
 package appliance
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
+	util "github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/spf13/cobra"
 )
@@ -59,9 +64,15 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 }
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
-	fmt.Println("upgrade prepare placeholder")
+	if appliance.IsOnAppliance() {
+		return appliance.ErrExecutedOnAppliance
+	}
 	if opts.image == "" {
-		return fmt.Errorf("Image is mandatory")
+		return errors.New("Image is mandatory")
+	}
+
+	if ok, err := appliance.FileExists(opts.image); err != nil || !ok {
+		return fmt.Errorf("Image file not found %q", opts.image)
 	}
 	client, err := opts.APIClient(opts.Config)
 	if err != nil {
@@ -74,6 +85,22 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	ctx := context.Background()
 	token := opts.Config.GetBearTokenHeaderValue()
 	filename := filepath.Base(f.Name())
+
+	appliances, err := appliance.GetAllAppliances(ctx, client, token)
+	if err != nil {
+		return err
+	}
+	peerAppliances := appliancesWithAdminOnPeerInterface(appliances)
+	if len(peerAppliances) > 0 {
+		msg, err := showPeerInterfaceWarningMessage(peerAppliances)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(opts.Out, "\n%s\n", msg)
+		if err := prompt.AskConfirmation(); err != nil {
+			return err
+		}
+	}
 	_, err = appliance.GetFileStatus(ctx, client, token, filename)
 	if err != nil {
 		// if we dont get 404, return err
@@ -87,4 +114,96 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	fmt.Fprintf(opts.Out, "\n Ok continue \n")
 	return nil
+}
+
+// appliancesWithAdminOnPeerInterface List all appliances still using the peer interface for the admin API, this is now deprecated.
+func appliancesWithAdminOnPeerInterface(appliances []openapi.Appliance) []openapi.Appliance {
+	peer := make([]openapi.Appliance, 0)
+	for _, a := range appliances {
+		if _, ok := a.GetAdminInterfaceOk(); !ok {
+			peer = append(peer, a)
+		}
+	}
+	return peer
+}
+
+func appliancePeerPorts(appliances []openapi.Appliance) string {
+	ports := make([]int, 0)
+	for _, a := range appliances {
+		if v, ok := a.GetPeerInterfaceOk(); ok {
+			if v, ok := v.GetHttpsPortOk(); ok && *v > 0 {
+				ports = util.AppendIfMissing(ports, int(*v))
+			}
+		}
+	}
+	return strings.Trim(strings.Replace(fmt.Sprint(ports), " ", ",", -1), "[]")
+}
+
+func activeApplianceFunctions(appliances []openapi.Appliance) map[string]bool {
+	functions := make(map[string]bool, 0)
+	for _, a := range appliances {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			functions["controller"] = true
+		}
+		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() {
+			functions["gateway"] = true
+		}
+		if v, ok := a.GetPortalOk(); ok && v.GetEnabled() {
+			functions["portal"] = true
+		}
+		if v, ok := a.GetConnectorOk(); ok && v.GetEnabled() {
+			functions["connector"] = true
+		}
+		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
+			functions["log_server"] = true
+		}
+	}
+	return functions
+}
+
+func applianceGroupDescription(appliances []openapi.Appliance) string {
+	functions := activeApplianceFunctions(appliances)
+	var funcs []string
+	for k, value := range functions {
+		if _, ok := functions[k]; ok && value {
+			funcs = append(funcs, k)
+		}
+	}
+	return strings.Join(funcs, ", ")
+}
+
+const applianceUsingPeerWarning = `
+Version 5.4 and later are designed to operate with the admin port (default 8443)
+separate from the deprecated peer port (set to {{.CurrentPort}}).
+It is recommended to switch to port 8443 before continuing
+The following {{.Functions}} {{.Noun}} still configured without the Admin/API TLS Connection:
+{{range .Appliances}}
+  - {{.Name}}
+{{end}}
+`
+
+func showPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string, error) {
+	type stub struct {
+		CurrentPort string
+		Functions   string
+		Noun        string
+		Appliances  []openapi.Appliance
+	}
+	noun := "are"
+	if len(peerAppliances) == 1 {
+		noun = "is"
+	}
+	data := stub{
+		CurrentPort: appliancePeerPorts(peerAppliances),
+		Functions:   applianceGroupDescription(peerAppliances),
+		Noun:        noun,
+		Appliances:  peerAppliances,
+	}
+	t := template.Must(template.New("peer").Parse(applianceUsingPeerWarning))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
 }
