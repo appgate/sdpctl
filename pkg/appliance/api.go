@@ -109,6 +109,9 @@ func UploadFile(ctx context.Context, client *openapi.APIClient, token string, f 
 	// and provide the user with feedback of the upload.
 	r, err := client.ApplianceUpgradeApi.FilesPut(ctx).Authorization(token).File(f).Execute()
 	if err != nil {
+		if r == nil {
+			return fmt.Errorf("no response during upload %w", err)
+		}
 		if r.StatusCode == http.StatusConflict {
 			return fmt.Errorf("%q: already exists %w", f.Name(), err)
 		}
@@ -121,6 +124,23 @@ func UploadFile(ctx context.Context, client *openapi.APIClient, token string, f 
 func DeleteFile(ctx context.Context, client *openapi.APIClient, token, filename string) error {
 	_, err := client.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(token).Execute()
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func PrepareFileOn(ctx context.Context, client *openapi.APIClient, token, filename, id string) error {
+	u := openapi.ApplianceUpgrade{
+		ImageUrl: filename,
+	}
+	_, r, err := client.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(token).Execute()
+	if err != nil {
+		if r == nil {
+			return fmt.Errorf("No resposne during prepare %w", err)
+		}
+		if r.StatusCode == http.StatusConflict {
+			return fmt.Errorf("Upgrade in progress on %s %w", id, err)
+		}
 		return err
 	}
 	return nil

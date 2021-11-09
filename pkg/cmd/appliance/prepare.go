@@ -5,14 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"net"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
+	"text/template"
 
 	util "github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
@@ -20,7 +19,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/cenkalti/backoff/v4"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -90,7 +89,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	ctx := context.Background()
 	token := opts.Config.GetBearTokenHeaderValue()
 	filename := filepath.Base(f.Name())
-
+	targetVersion, err := appliance.GuessVersion(filename)
+	if err != nil {
+		log.Debugf("Could not guess target version based on the image file name %q", filename)
+	}
 	appliances, err := appliance.GetAllAppliances(ctx, client, token)
 	if err != nil {
 		return err
@@ -119,37 +121,24 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliance.BackupInstructions, primaryController.Name, appliance.HelpManualURL))
+	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
+		return err
+	}
 	log.Infof("Primary controller is: %q", primaryController.Name)
-	var exponentialBackOff = backoff.ExponentialBackOff{
-		InitialInterval:     500 * time.Millisecond,
-		RandomizationFactor: 0.5,
-		Multiplier:          1.5,
-		MaxInterval:         30 * time.Second,
-		Stop:                backoff.Stop,
-		Clock:               backoff.SystemClock,
+	if targetVersion != nil {
+		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
 	}
-	var status openapi.StatsAppliancesList
-	errBackoff := backoff.Retry(func() error {
-		statsList, response, err := appliance.GetApplianceStats(ctx, client, token)
-		if err != nil {
-			if response.StatusCode >= 500 {
-				return fmt.Errorf("Controller got %w", err)
-			}
-			return err
-		}
-		for _, stat := range statsList.GetData() {
-			controller := stat.GetController()
-			if v, ok := controller.GetDetailsOk(); ok && *v == "busy" {
-				return fmt.Errorf("Controller is %s", *v)
-			}
-		}
-		status = statsList
-		return nil
-	}, &exponentialBackOff)
-	if errBackoff != nil {
-		return errBackoff
+	msg, err := showPrepareUpgradeMessage(f.Name(), appliances)
+	if err != nil {
+		return err
 	}
-	log.Infof("Status is: %+v", status)
+	fmt.Fprintf(opts.Out, "\n%s\n", msg)
+	if err := prompt.AskConfirmation(); err != nil {
+		return err
+	}
+
+	// Step 1
 	_, err = appliance.GetFileStatus(ctx, client, token, filename)
 	if err != nil {
 		// if we dont get 404, return err
@@ -157,11 +146,31 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-
+	log.Infof("Uploading %q to controller", f.Name())
 	if err := appliance.UploadFile(ctx, client, token, f); err != nil {
 		return err
 	}
-	fmt.Fprintf(opts.Out, "\n Ok continue \n")
+	log.Infof("Uploaded %q to controller", f.Name())
+	remoteFile, err := appliance.GetFileStatus(ctx, client, token, filename)
+	if err != nil {
+		// if we dont get 404, return err
+		if !errors.Is(err, appliance.ErrFileNotFound) {
+			return err
+		}
+	}
+	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
+	// Step 2
+	remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)
+	for _, a := range appliances {
+		if err := appliance.PrepareFileOn(ctx, client, token, remoteFilePath, a.GetId()); err != nil {
+			log.Warnf("Failed to prepare %s %s", a.GetName(), err)
+		}
+	}
+	// Step 3
+	if err := appliance.DeleteFile(ctx, client, token, filename); err != nil {
+		log.Warnf("Failed to delete %s from controller %s", filename, err)
+	}
+	fmt.Fprintf(opts.Out, "\n Ok fin. \n")
 	return nil
 }
 
@@ -221,13 +230,41 @@ func applianceGroupDescription(appliances []openapi.Appliance) string {
 	return strings.Join(funcs, ", ")
 }
 
+const prepareUpgradeMessage = `
+1. Upload upgrade image {{.Filepath}} to Controller
+2. Prepare upgrade on the following appliances:
+{{range .Appliances }}
+  - {{.Name -}}
+{{end}}
+
+3. Delete upgrade image from Controller
+`
+
+func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance) (string, error) {
+	type stub struct {
+		Filepath   string
+		Appliances []openapi.Appliance
+	}
+	data := stub{
+		Filepath:   f,
+		Appliances: appliance,
+	}
+	t := template.Must(template.New("").Parse(prepareUpgradeMessage))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
+}
+
 const applianceUsingPeerWarning = `
 Version 5.4 and later are designed to operate with the admin port (default 8443)
 separate from the deprecated peer port (set to {{.CurrentPort}}).
 It is recommended to switch to port 8443 before continuing
 The following {{.Functions}} {{.Noun}} still configured without the Admin/API TLS Connection:
 {{range .Appliances}}
-  - {{.Name}}
+  - {{.Name -}}
 {{end}}
 `
 
