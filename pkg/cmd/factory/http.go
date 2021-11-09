@@ -32,7 +32,7 @@ func New(appVersion string, config *config.Config) *Factory {
 func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		cfg := f.Config
-		timeout := 10
+		timeout := 300
 		timeoutDuration := time.Duration(timeout)
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{
