@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"text/tabwriter"
 
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
@@ -25,6 +26,7 @@ type upgradeStatusOptions struct {
 	insecure   bool
 	apiversion int
 	cacert     string
+	json       bool
 }
 
 // NewUpgradeStatusCmd return a new upgrade status command
@@ -46,6 +48,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	upgradeStatusCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
+	upgradeStatusCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeStatusCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
@@ -87,11 +90,20 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 			Details: status.GetDetails(),
 		})
 	}
-	jsonStatus, err := json.MarshalIndent(&statuses, "", "  ")
-	if err != nil {
-		return err
+	if opts.json {
+		jsonStatus, err := json.MarshalIndent(&statuses, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(opts.Out, "\n%s\n", string(jsonStatus))
+		return nil
 	}
 
-	fmt.Fprintf(opts.Out, "\n%s\n", string(jsonStatus))
+	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
+	fmt.Fprintln(w, "ID\tName\tStatus\tDetails")
+	for _, s := range statuses {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.ID, s.Name, s.Status, s.Details)
+	}
+	w.Flush()
 	return nil
 }
