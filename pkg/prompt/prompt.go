@@ -1,6 +1,8 @@
 package prompt
 
 import (
+	"strings"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/appliance"
 )
@@ -10,10 +12,11 @@ var SurveyAsk = func(qs []*survey.Question, response interface{}, opts ...survey
 }
 
 // AskConfirmation make sure user confirm action, otherwise abort.
-func AskConfirmation() error {
+func AskConfirmation(m ...string) error {
+	m = append(m, "Do you want to continue?")
 	ok := false
 	prompt := &survey.Confirm{
-		Message: "Do you want to continue?",
+		Message: strings.Join(m, "\n\n"),
 	}
 	if err := survey.AskOne(prompt, &ok); err != nil || !ok {
 		return appliance.ErrExecutionCanceledByUser
