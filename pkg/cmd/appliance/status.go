@@ -99,10 +99,10 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return nil
 	}
 
-	w := tabwriter.NewWriter(opts.Out, 5, 0, 10, ' ', tabwriter.AlignRight)
-	fmt.Fprintln(w, "ID\tName\tStatus\tDetails\t")
+	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
+	fmt.Fprintln(w, "ID\tName\tStatus\tDetails")
 	for _, s := range statuses {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t\n", s.ID, s.Name, s.Status, s.Details)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.ID, s.Name, s.Status, s.Details)
 	}
 	w.Flush()
 	return nil

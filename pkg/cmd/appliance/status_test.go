@@ -111,12 +111,10 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-
-	want := `                                            ID            Name          Status                                                         Details
-          4c07bc67-57ea-42dd-b702-c2d6c45419fc          object            idle          a reboot is required for the Upgrade to go into effect
+	want := `ID                                          Name          Status        Details
+4c07bc67-57ea-42dd-b702-c2d6c45419fc        object        idle          a reboot is required for the Upgrade to go into effect
 `
-
 	if !cmp.Equal(want, gotStr) {
-		t.Fatalf("Got: \n %q \n\n Want: \n %q \n", gotStr, want)
+		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
 	}
 }
