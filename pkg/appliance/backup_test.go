@@ -7,6 +7,6 @@ import (
 )
 
 func TestBackupCmd(t *testing.T) {
-    registry := httpmock.NewRegistry()
-    registry.Register("/admin/backup/", httpmock.FileResponse("../../appliance/fixures/appliance_backup.json"))
+	registry := httpmock.NewRegistry()
+	registry.Register("/admin/backup/", httpmock.FileResponse("../../appliance/fixures/appliance_backup.json"))
 }
