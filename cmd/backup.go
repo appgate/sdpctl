@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/appgate/appgatectl/internal/config"
-	"github.com/appgate/appgatectl/pkg/cmd/backup"
+	"github.com/appgate/appgatectl/pkg/appliance"
 
 	"github.com/spf13/cobra"
 )
@@ -31,14 +31,14 @@ func NewCmdBackup(c *config.Config) *cobra.Command {
 			return c.Validate()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return backup.Prepare(c, destinationFlag)
+			return appliance.PrepareBackup(c, destinationFlag)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return backup.Perform(c)
+			return appliance.PerformBackup(c)
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&destinationFlag, "destination", "d", backup.DefaultDestination, "backup destination")
+	cmd.PersistentFlags().StringVarP(&destinationFlag, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
 	cmd.PersistentFlags().BoolVar(&allFlag, "all", false, "backup the entire Appgate SDP Collective")
 	cmd.PersistentFlags().BoolVar(&allControllersFlag, "controllers", false, "backup all controllers")
 

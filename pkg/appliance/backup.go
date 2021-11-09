@@ -1,4 +1,4 @@
-package backup
+package appliance
 
 import (
 	"fmt"
@@ -8,23 +8,22 @@ import (
 	"time"
 
 	"github.com/appgate/appgatectl/internal/config"
-	"github.com/appgate/appgatectl/pkg/appliance"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	DefaultDestination = "$HOME/appgate/appgate_backup_yyyymmdd_hhMMss"
+	DefaultBackupDestination = "$HOME/appgate/appgate_backup_yyyymmdd_hhMMss"
 )
 
-func Prepare(c *config.Config, destination string) error {
+func PrepareBackup(c *config.Config, destination string) error {
 	log.Info("Preparing backup...")
 	log.Debug(destination)
 
-	if appliance.IsOnAppliance() {
+	if IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
-	if destination == DefaultDestination {
+	if destination == DefaultBackupDestination {
 		homedir, err := os.UserHomeDir()
 		if err != nil {
 			return err
@@ -47,7 +46,7 @@ func Prepare(c *config.Config, destination string) error {
 	return nil
 }
 
-func Perform(c *config.Config) error {
+func PerformBackup(c *config.Config) error {
 	log.Infof("Performing backup of controller at url %s", c.Url)
 
 	return nil
