@@ -10,7 +10,7 @@ import (
 
 // ActiveFunctions returns a map of all active functions in the appliances.
 func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
-	functions := make(map[string]bool, 0)
+	functions := make(map[string]bool)
 	for _, a := range appliances {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
 			functions["controller"] = true
