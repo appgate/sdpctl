@@ -84,7 +84,7 @@ func PerformBackup(opts *BackupOpts) error {
 	for _, a := range appliances {
 		fmt.Printf("Starting backup on %s...\n", a.Name)
 		log.Debug(a.GetId())
-        client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
+		client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
 		run := client.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(token).InlineObject(iObj)
 		res, httpresponse, err := run.Execute()
 		if err != nil {
@@ -108,25 +108,25 @@ func PerformBackup(opts *BackupOpts) error {
 			time.Sleep(1 * time.Second)
 		}
 
-        client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+gpg")
+		client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+gpg")
 		file, inlineRes, err := client.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(token).Execute()
-        if err != nil {
-            log.Debug(err)
-            log.Debug(inlineRes)
-            return err
-        }
-        defer file.Close()
-        dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, backupID, time.Now().Format("20060102_150405")))
-        if err != nil {
-            return err
-        }
-        defer dst.Close()
+		if err != nil {
+			log.Debug(err)
+			log.Debug(inlineRes)
+			return err
+		}
+		defer file.Close()
+		dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, backupID, time.Now().Format("20060102_150405")))
+		if err != nil {
+			return err
+		}
+		defer dst.Close()
 
-        log.Debug("Downloading file...")
-        _ , err = io.Copy(dst, file)
-        if err != nil {
-            return err
-        }
+		log.Debug("Downloading file...")
+		_, err = io.Copy(dst, file)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
