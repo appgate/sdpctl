@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/cmd/factory"
 
 	"github.com/spf13/cobra"
 )
@@ -21,20 +21,28 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 `
 )
 
-func NewCmdBackup(c *config.Config) *cobra.Command {
+func NewCmdBackup(f *factory.Factory) *cobra.Command {
+	opts := appliance.BackupOpts{
+		Config:      f.Config,
+		Out:         f.IOOutWriter,
+		APIClient:   f.APIClient,
+		Destination: appliance.DefaultBackupDestination,
+		Audit:       true,
+		Logs:        true,
+	}
 	cmd := &cobra.Command{
 		Use:       "backup [flags] CONTROLLER",
 		Short:     "Perform backup of the Appgate SDP Collective",
 		Long:      longDescription,
 		ValidArgs: []string{"controller"},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return c.Validate()
+			return f.Config.Validate()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return appliance.PrepareBackup(c, destinationFlag)
+			return appliance.PrepareBackup(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return appliance.PerformBackup(c)
+			return appliance.PerformBackup(&opts)
 		},
 	}
 

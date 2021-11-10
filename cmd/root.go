@@ -116,10 +116,9 @@ func NewCmdRoot() *cobra.Command {
 
 	configureCmd := NewCmdConfigure(f)
 	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
-	backupCmd := NewCmdBackup(f.Config)
 
 	rootCmd.AddCommand(configureCmd)
-	rootCmd.AddCommand(backupCmd)
+	rootCmd.AddCommand(NewCmdBackup(f))
 
 	applianceCmd := NewApplianceCmd(f)
 	applianceUpgradeCommand := upgradecmd.NewUpgradeCmd(f)
