@@ -1,15 +1,18 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
+	"github.com/appgate/appgatectl/pkg/appliance"
 	upgradecmd "github.com/appgate/appgatectl/pkg/cmd/appliance/upgrade"
 	cfgcmd "github.com/appgate/appgatectl/pkg/cmd/config"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/cmdutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -127,13 +130,42 @@ func NewCmdRoot() *cobra.Command {
 
 	applianceCmd.AddCommand(applianceUpgradeCommand)
 	rootCmd.AddCommand(applianceCmd)
+
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		// require that the user is authenticated before running most commands
+		if cmdutil.IsAuthCheckEnabled(cmd) && !cmdutil.CheckAuth(*cfg) {
+			fmt.Fprintln(os.Stderr, "appgatectl err")
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure login`.")
+			return ErrExitAuth
+		}
+
+		return nil
+	}
 	return rootCmd
 }
 
-func Execute() {
+type exitCode int
+
+var ErrExitAuth = errors.New("no authentication")
+
+const (
+	exitOK     exitCode = 0
+	exitError  exitCode = 1
+	exitCancel exitCode = 2
+	exitAuth   exitCode = 4
+)
+
+func Execute() exitCode {
 	root := NewCmdRoot()
 	if err := root.Execute(); err != nil {
-		log.Error(err)
-		os.Exit(1)
+		if errors.Is(err, ErrExitAuth) {
+			return exitAuth
+		}
+		if errors.Is(err, appliance.ErrExecutionCanceledByUser) {
+			return exitCancel
+		}
+		return exitError
 	}
+	return exitOK
 }

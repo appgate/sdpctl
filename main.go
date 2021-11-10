@@ -1,9 +1,12 @@
 package main
 
 import (
+	"os"
+
 	"github.com/appgate/appgatectl/cmd"
 )
 
 func main() {
-	cmd.Execute()
+	code := cmd.Execute()
+	os.Exit(int(code))
 }
