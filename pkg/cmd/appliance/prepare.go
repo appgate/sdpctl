@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	util "github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
@@ -21,6 +22,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 type prepareUpgradeOptions struct {
@@ -86,7 +88,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
+	defer cancel()
 
 	filename := filepath.Base(f.Name())
 	targetVersion, err := appliance.GuessVersion(filename)
@@ -160,16 +163,39 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
 	// Step 2
-	remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)
-	for _, appliance := range appliances {
-		if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId()); err != nil {
-			log.Warnf("Failed to prepare %s %s", appliance.GetName(), err)
+	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) error {
+		remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)
+		g, ctx := errgroup.WithContext(ctx)
+		for _, appliance := range appliances {
+			i := appliance // https://golang.org/doc/faq#closures_and_goroutines
+			g.Go(func() error {
+				log.Infof("Preparing upgrade for %s", i.GetName())
+				if err := a.PrepareFileOn(ctx, remoteFilePath, i.GetId()); err != nil {
+					return fmt.Errorf("Failed to prepare %s %s", i.GetName(), err)
+				}
+				status, err := a.UpgradeStatus(ctx, i.GetId())
+				if err != nil {
+					return fmt.Errorf("Failed to get status after prepare %s %s", i.GetName(), err)
+				}
+				log.Infof("%s status is %s - %s", i.GetName(), status.GetStatus(), status.GetDetails())
+				return nil
+			})
 		}
+		if err := g.Wait(); err != nil {
+			return err
+		}
+		return nil
 	}
+	if err := prepare(ctx, *primaryController, appliances); err != nil {
+		return err
+	}
+
 	// Step 3
+	log.Infof("3. Delete upgrade image %s from Controller", filename)
 	if err := a.DeleteFile(ctx, filename); err != nil {
 		log.Warnf("Failed to delete %s from controller %s", filename, err)
 	}
+	log.Infof("File %s deleted from Controller", filename)
 
 	return nil
 }
