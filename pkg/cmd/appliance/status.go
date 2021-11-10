@@ -10,14 +10,13 @@ import (
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/spf13/cobra"
 )
 
 type upgradeStatusOptions struct {
 	Config     *config.Config
 	Out        io.Writer
-	APIClient  func(Config *config.Config) (*openapi.APIClient, error)
+	Appliance  func(c *config.Config) (*appliance.Appliance, error)
 	Token      string
 	Timeout    int
 	url        string
@@ -33,7 +32,7 @@ type upgradeStatusOptions struct {
 func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	opts := upgradeStatusOptions{
 		Config:    f.Config,
-		APIClient: f.APIClient,
+		Appliance: f.Appliance,
 		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
@@ -59,14 +58,12 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 
 func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOptions) error {
 	cfg := opts.Config
-	client, err := opts.APIClient(cfg)
+	a, err := opts.Appliance(cfg)
 	if err != nil {
 		return err
 	}
-
 	ctx := context.Background()
-	token := cfg.GetBearTokenHeaderValue()
-	appliances, err := appliance.GetAllAppliances(ctx, client, token)
+	appliances, err := a.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -77,15 +74,15 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		Details string `json:"details,omitempty"`
 	}
 	statuses := make([]ApplianceStatus, 0, len(appliances))
-	for _, a := range appliances {
-		id := a.GetId()
-		status, err := appliance.GetApplianceUpgradeStatus(ctx, client, token, id)
+	for _, appliance := range appliances {
+		id := appliance.GetId()
+		status, err := a.UpgradeStatus(ctx, id)
 		if err != nil {
 			return err
 		}
 		statuses = append(statuses, ApplianceStatus{
 			ID:      id,
-			Name:    a.GetName(),
+			Name:    appliance.GetName(),
 			Status:  status.GetStatus(),
 			Details: status.GetDetails(),
 		})

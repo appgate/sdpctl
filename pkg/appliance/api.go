@@ -12,9 +12,17 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 )
 
-// GetAllAppliances from the appgate sdp collective, without any filter.
-func GetAllAppliances(ctx context.Context, client *openapi.APIClient, token string) ([]openapi.Appliance, error) {
-	appliances, _, err := client.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(token).Execute()
+// Appliance is a wrapper aroudn the APIClient for common functions around the appliance API that
+// will be used within several commands.
+type Appliance struct {
+	APIClient  *openapi.APIClient
+	HTTPClient *http.Client
+	Token      string
+}
+
+// GetAll from the appgate sdp collective, without any filter.
+func (a *Appliance) GetAll(ctx context.Context) ([]openapi.Appliance, error) {
+	appliances, _, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +31,7 @@ func GetAllAppliances(ctx context.Context, client *openapi.APIClient, token stri
 
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
 // Hostnames should be compared in a case insensitive way.
-func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
+func (a *Appliance) FindPrimaryController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
 
 	controllers := make([]openapi.Appliance, 0)
 	type details struct {
@@ -73,16 +81,16 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 	)
 }
 
-func GetApplianceUpgradeStatus(ctx context.Context, client *openapi.APIClient, token, applianceID string) (openapi.InlineResponse2006, error) {
-	status, _, err := client.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(token).Execute()
+func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (openapi.InlineResponse2006, error) {
+	status, _, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, err
 	}
 	return status, nil
 }
 
-func GetApplianceStats(ctx context.Context, client *openapi.APIClient, token string) (openapi.StatsAppliancesList, *http.Response, error) {
-	status, response, err := client.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(token).Execute()
+func (a *Appliance) Stats(ctx context.Context) (openapi.StatsAppliancesList, *http.Response, error) {
+	status, response, err := a.APIClient.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, response, err
 	}
@@ -91,9 +99,9 @@ func GetApplianceStats(ctx context.Context, client *openapi.APIClient, token str
 
 var ErrFileNotFound = errors.New("File not found")
 
-// GetFileStatus Get the status of a File uploaded to the current Controller.
-func GetFileStatus(ctx context.Context, client *openapi.APIClient, token, filename string) (openapi.File, error) {
-	f, r, err := client.ApplianceUpgradeApi.FilesFilenameGet(ctx, filename).Authorization(token).Execute()
+// FileStatus Get the status of a File uploaded to the current Controller.
+func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.File, error) {
+	f, r, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameGet(ctx, filename).Authorization(a.Token).Execute()
 	if err != nil {
 		if r.StatusCode == http.StatusNotFound {
 			return f, fmt.Errorf("%q: %w", filename, ErrFileNotFound)
@@ -104,10 +112,10 @@ func GetFileStatus(ctx context.Context, client *openapi.APIClient, token, filena
 }
 
 // UploadFile directly to the current Controller. Note that the File is stored only on the current Controller, not synced between Controllers.
-func UploadFile(ctx context.Context, client *openapi.APIClient, token string, f *os.File) error {
+func (a *Appliance) UploadFile(ctx context.Context, f *os.File) error {
 	// TODO; replace with custom HTTP client and use application/octet-stream so we can keep track of the progress.
 	// and provide the user with feedback of the upload.
-	r, err := client.ApplianceUpgradeApi.FilesPut(ctx).Authorization(token).File(f).Execute()
+	r, err := a.APIClient.ApplianceUpgradeApi.FilesPut(ctx).Authorization(a.Token).File(f).Execute()
 	if err != nil {
 		if r == nil {
 			return fmt.Errorf("no response during upload %w", err)
@@ -121,19 +129,19 @@ func UploadFile(ctx context.Context, client *openapi.APIClient, token string, f 
 }
 
 // DeleteFile Delete a File from the current Controller.
-func DeleteFile(ctx context.Context, client *openapi.APIClient, token, filename string) error {
-	_, err := client.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(token).Execute()
+func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
+	_, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(a.Token).Execute()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func PrepareFileOn(ctx context.Context, client *openapi.APIClient, token, filename, id string) error {
+func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string) error {
 	u := openapi.ApplianceUpgrade{
 		ImageUrl: filename,
 	}
-	_, r, err := client.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(token).Execute()
+	_, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
 	if err != nil {
 		if r == nil {
 			return fmt.Errorf("No resposne during prepare %w", err)

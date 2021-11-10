@@ -19,7 +19,6 @@ import (
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -27,7 +26,7 @@ import (
 type prepareUpgradeOptions struct {
 	Config     *config.Config
 	Out        io.Writer
-	APIClient  func(Config *config.Config) (*openapi.APIClient, error)
+	Appliance  func(c *config.Config) (*appliance.Appliance, error)
 	Token      string
 	Timeout    int
 	url        string
@@ -43,7 +42,7 @@ type prepareUpgradeOptions struct {
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	opts := &prepareUpgradeOptions{
 		Config:    f.Config,
-		APIClient: f.APIClient,
+		Appliance: f.Appliance,
 		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
@@ -78,7 +77,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if ok, err := appliance.FileExists(opts.image); err != nil || !ok {
 		return fmt.Errorf("Image file not found %q", opts.image)
 	}
-	client, err := opts.APIClient(opts.Config)
+
+	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
 	}
@@ -87,13 +87,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	ctx := context.Background()
-	token := opts.Config.GetBearTokenHeaderValue()
+
 	filename := filepath.Base(f.Name())
 	targetVersion, err := appliance.GuessVersion(filename)
 	if err != nil {
 		log.Debugf("Could not guess target version based on the image file name %q", filename)
 	}
-	appliances, err := appliance.GetAllAppliances(ctx, client, token)
+	appliances, err := a.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	primaryController, err := appliance.FindPrimaryController(appliances, host)
+	primaryController, err := a.FindPrimaryController(appliances, host)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 1
-	_, err = appliance.GetFileStatus(ctx, client, token, filename)
+	_, err = a.FileStatus(ctx, filename)
 	if err != nil {
 		// if we dont get 404, return err
 		if !errors.Is(err, appliance.ErrFileNotFound) {
@@ -147,11 +147,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 	log.Infof("Uploading %q to controller", f.Name())
-	if err := appliance.UploadFile(ctx, client, token, f); err != nil {
+	if err := a.UploadFile(ctx, f); err != nil {
 		return err
 	}
 	log.Infof("Uploaded %q to controller", f.Name())
-	remoteFile, err := appliance.GetFileStatus(ctx, client, token, filename)
+	remoteFile, err := a.FileStatus(ctx, filename)
 	if err != nil {
 		// if we dont get 404, return err
 		if !errors.Is(err, appliance.ErrFileNotFound) {
@@ -161,16 +161,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
 	// Step 2
 	remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)
-	for _, a := range appliances {
-		if err := appliance.PrepareFileOn(ctx, client, token, remoteFilePath, a.GetId()); err != nil {
-			log.Warnf("Failed to prepare %s %s", a.GetName(), err)
+	for _, appliance := range appliances {
+		if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId()); err != nil {
+			log.Warnf("Failed to prepare %s %s", appliance.GetName(), err)
 		}
 	}
 	// Step 3
-	if err := appliance.DeleteFile(ctx, client, token, filename); err != nil {
+	if err := a.DeleteFile(ctx, filename); err != nil {
 		log.Warnf("Failed to delete %s from controller %s", filename, err)
 	}
-	fmt.Fprintf(opts.Out, "\n Ok fin. \n")
+
 	return nil
 }
 

@@ -10,12 +10,14 @@ import (
 	"time"
 
 	"github.com/appgate/appgatectl/internal/config"
+	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 )
 
 type Factory struct {
 	HTTPClient  func() (*http.Client, error)
 	APIClient   func(c *config.Config) (*openapi.APIClient, error)
+	Appliance   func(c *config.Config) (*appliance.Appliance, error)
 	Config      *config.Config
 	IOOutWriter io.Writer
 }
@@ -25,6 +27,7 @@ func New(appVersion string, config *config.Config) *Factory {
 	f.Config = config
 	f.HTTPClient = httpClientFunc(f)           // depends on config
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
+	f.Appliance = applianceFunc(f, appVersion) // depends on config
 	f.IOOutWriter = os.Stdout
 	return f
 }
@@ -73,5 +76,24 @@ func apiClientFunc(f *Factory, appVersion string) func(c *config.Config) (*opena
 		}
 
 		return openapi.NewAPIClient(clientCfg), nil
+	}
+}
+
+func applianceFunc(f *Factory, appVersion string) func(c *config.Config) (*appliance.Appliance, error) {
+	return func(cfg *config.Config) (*appliance.Appliance, error) {
+		hc, err := f.HTTPClient()
+		if err != nil {
+			return nil, err
+		}
+		c, err := f.APIClient(cfg)
+		if err != nil {
+			return nil, err
+		}
+		a := &appliance.Appliance{
+			APIClient:  c,
+			HTTPClient: hc,
+			Token:      cfg.GetBearTokenHeaderValue(),
+		}
+		return a, nil
 	}
 }
