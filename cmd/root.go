@@ -20,7 +20,6 @@ const DefaultAPIVersion = 16
 
 var (
 	version       string = "dev"
-	debug         bool
 	cfgFile       string
 	commit        string
 	buildDate     string
