@@ -120,7 +120,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	primaryController, err := a.FindPrimaryController(appliances, host)
+	primaryController, err := appliance.FindPrimaryController(appliances, host)
 	if err != nil {
 		return err
 	}
@@ -223,30 +223,8 @@ func appliancePeerPorts(appliances []openapi.Appliance) string {
 	return strings.Trim(strings.Replace(fmt.Sprint(ports), " ", ",", -1), "[]")
 }
 
-func activeApplianceFunctions(appliances []openapi.Appliance) map[string]bool {
-	functions := make(map[string]bool, 0)
-	for _, a := range appliances {
-		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
-			functions["controller"] = true
-		}
-		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() {
-			functions["gateway"] = true
-		}
-		if v, ok := a.GetPortalOk(); ok && v.GetEnabled() {
-			functions["portal"] = true
-		}
-		if v, ok := a.GetConnectorOk(); ok && v.GetEnabled() {
-			functions["connector"] = true
-		}
-		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
-			functions["log_server"] = true
-		}
-	}
-	return functions
-}
-
 func applianceGroupDescription(appliances []openapi.Appliance) string {
-	functions := activeApplianceFunctions(appliances)
+	functions := appliance.ActiveFunctions(appliances)
 	var funcs []string
 	for k, value := range functions {
 		if _, ok := functions[k]; ok && value {
