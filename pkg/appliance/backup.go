@@ -82,7 +82,7 @@ func PerformBackup(opts *BackupOpts) error {
 		return err
 	}
 	for _, a := range appliances {
-		fmt.Printf("Starting backup on %s...\n", a.Name)
+		log.Infof("Starting backup on %s...", a.Name)
 		log.Debug(a.GetId())
 		client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
 		run := client.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(token).InlineObject(iObj)
@@ -116,7 +116,7 @@ func PerformBackup(opts *BackupOpts) error {
 			return err
 		}
 		defer file.Close()
-		dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, backupID, time.Now().Format("20060102_150405")))
+		dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, a.Name, time.Now().Format("20060102_150405")))
 		if err != nil {
 			return err
 		}
