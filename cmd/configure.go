@@ -22,7 +22,10 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		Config: f.Config,
 	}
 	return &cobra.Command{
-		Use:   "configure",
+		Use: "configure",
+		Annotations: map[string]string{
+			"skipAuthCheck": "true",
+		},
 		Short: "Configure your appgate SDP collective",
 		Long:  `Setup a configuration file towards your appgate sdp collective to be able to interact with the collective.`,
 		RunE: func(c *cobra.Command, args []string) error {
