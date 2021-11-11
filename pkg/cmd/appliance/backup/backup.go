@@ -11,6 +11,7 @@ import (
 
 	"github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
+	appliancecmd "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,7 +22,7 @@ var (
 
 type BackupOpts struct {
 	Config             *config.Config
-	Appliance          func(*config.Config) (*Appliance, error)
+	Appliance          func(*config.Config) (*appliancecmd.Appliance, error)
 	Out                io.Writer
 	Destination        string
 	NotifyURL          string
@@ -39,7 +40,7 @@ func PrepareBackup(opts *BackupOpts) error {
 	log.Info("Preparing backup...")
 	log.Debug(opts.Destination)
 
-	if IsOnAppliance() {
+	if appliancecmd.IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
@@ -88,7 +89,7 @@ func PerformBackup(opts *BackupOpts) error {
 	if err != nil {
 		return err
 	}
-	primaryController, err := FindPrimaryController(appliances, host)
+	primaryController, err := appliancecmd.FindPrimaryController(appliances, host)
 	if err != nil {
 		log.Debug(err)
 		return fmt.Errorf("Failed to find primary controller")

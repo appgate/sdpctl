@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/cmd/appliance/backup"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 
 	"github.com/spf13/cobra"
 )
 
-var (
+const (
 	longDescription string = `Appgate backup script.
 
 © 2021 Appgate Cybersecurity, Inc.
