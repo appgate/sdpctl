@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -69,4 +70,28 @@ func (c *Config) Validate() error {
 	// TODO: Validate token
 
 	return nil
+}
+
+func (c *Config) GetHost() (string, error) {
+	url, err := url.Parse(c.URL)
+	if err != nil {
+		return "", err
+	}
+	return url.Hostname(), nil
+}
+
+func (c *Config) GetPort() (string, error) {
+	url, err := url.Parse(c.URL)
+	if err != nil {
+		return "", err
+	}
+	return url.Port(), nil
+}
+
+func (c *Config) GetScheme() (string, error) {
+	url, err := url.Parse(c.URL)
+	if err != nil {
+		return "", err
+	}
+	return url.Scheme, nil
 }

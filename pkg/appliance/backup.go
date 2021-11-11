@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
@@ -20,13 +20,14 @@ var (
 )
 
 type BackupOpts struct {
-	Config      *config.Config
-	Appliance   func(*config.Config) (*Appliance, error)
-	Out         io.Writer
-	Destination string
-	Audit       bool
-	Logs        bool
-	NotifyURL   string
+	Config             *config.Config
+	Appliance          func(*config.Config) (*Appliance, error)
+	Out                io.Writer
+	Destination        string
+	NotifyURL          string
+	Include            []string
+	AllFlag            bool
+	AllControllersFlag bool
 }
 
 type backupHTTPResponse struct {
@@ -54,33 +55,51 @@ func PrepareBackup(opts *BackupOpts) error {
 		return err
 	}
 
-	u, err := url.Parse(opts.Config.URL)
-	if err != nil {
-		return fmt.Errorf("Failed to parse controller url:\n\t%s", err)
-	}
-	log.Debug("Controller URL: ", u)
-
 	return nil
 }
 
 func PerformBackup(opts *BackupOpts) error {
 	ctx := context.Background()
+	aud := internal.InSlice("audit", opts.Include)
+	logs := internal.InSlice("logs", opts.Include)
+
 	iObj := *openapi.NewInlineObject()
-	iObj.Audit = &opts.Audit
-	iObj.Logs = &opts.Logs
+	iObj.Audit = &aud
+	iObj.Logs = &logs
+
 	if opts.Config.Version >= 16 {
 		// introduced in v16
 		iObj.NotifyUrl = &opts.NotifyURL
 	}
+
 	appliance, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
 	}
+
 	appliances, err := appliance.GetAll(ctx)
 	if err != nil {
 		return err
 	}
-	for _, a := range appliances {
+
+	var toUpgrade []openapi.Appliance
+
+	host, err := opts.Config.GetHost()
+	if err != nil {
+		return err
+	}
+	primaryController, err := FindPrimaryController(appliances, host)
+	if err != nil {
+		log.Debug(err)
+		return fmt.Errorf("Failed to find primary controller")
+	}
+	toUpgrade = append(toUpgrade, *primaryController)
+
+	if opts.AllFlag {
+		toUpgrade = appliances
+	}
+
+	for _, a := range toUpgrade {
 		log.Infof("Starting backup on %s...", a.Name)
 		log.Debug(a.GetId())
 		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
@@ -126,6 +145,8 @@ func PerformBackup(opts *BackupOpts) error {
 		if err != nil {
 			return err
 		}
+
+        log.Info("done")
 	}
 
 	return nil

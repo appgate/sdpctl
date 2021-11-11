@@ -8,10 +8,7 @@ import (
 )
 
 var (
-	destinationFlag    string
-	allFlag            bool
-	allControllersFlag bool
-	longDescription    string = `Appgate backup script.
+	longDescription string = `Appgate backup script.
 
 © 2021 Appgate Cybersecurity, Inc.
 All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
@@ -27,8 +24,6 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		Out:         f.IOOutWriter,
 		Appliance:   f.Appliance,
 		Destination: appliance.DefaultBackupDestination,
-		Audit:       true,
-		Logs:        true,
 	}
 	cmd := &cobra.Command{
 		Use:       "backup [flags] CONTROLLER",
@@ -46,9 +41,10 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&destinationFlag, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
-	cmd.PersistentFlags().BoolVar(&allFlag, "all", false, "backup the entire Appgate SDP Collective")
-	cmd.PersistentFlags().BoolVar(&allControllersFlag, "controllers", false, "backup all controllers")
+	cmd.PersistentFlags().StringVarP(&opts.Destination, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
+	cmd.PersistentFlags().BoolVar(&opts.AllFlag, "all", false, "backup the entire Appgate SDP Collective")
+	cmd.PersistentFlags().BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers")
+	cmd.PersistentFlags().StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
 
 	return cmd
 }
