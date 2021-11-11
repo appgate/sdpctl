@@ -146,7 +146,7 @@ func PerformBackup(opts *BackupOpts) error {
 			return err
 		}
 
-		log.Info("done")
+		log.Info(fmt.Sprintf("wrote backup file to '%s/%s'", opts.Destination, dst.Name()))
 	}
 
 	return nil
