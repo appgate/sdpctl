@@ -25,7 +25,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	opts := appliance.BackupOpts{
 		Config:      f.Config,
 		Out:         f.IOOutWriter,
-		APIClient:   f.APIClient,
+		Appliance:   f.Appliance,
 		Destination: appliance.DefaultBackupDestination,
 		Audit:       true,
 		Logs:        true,

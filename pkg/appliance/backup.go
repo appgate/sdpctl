@@ -21,7 +21,7 @@ var (
 
 type BackupOpts struct {
 	Config      *config.Config
-	APIClient   func(*config.Config) (*openapi.APIClient, error)
+	Appliance   func(*config.Config) (*Appliance, error)
 	Out         io.Writer
 	Destination string
 	Audit       bool
@@ -64,12 +64,7 @@ func PrepareBackup(opts *BackupOpts) error {
 }
 
 func PerformBackup(opts *BackupOpts) error {
-	client, err := opts.APIClient(opts.Config)
-	if err != nil {
-		return err
-	}
 	ctx := context.Background()
-	token := opts.Config.GetBearTokenHeaderValue()
 	iObj := *openapi.NewInlineObject()
 	iObj.Audit = &opts.Audit
 	iObj.Logs = &opts.Logs
@@ -77,15 +72,19 @@ func PerformBackup(opts *BackupOpts) error {
 		// introduced in v16
 		iObj.NotifyUrl = &opts.NotifyURL
 	}
-	appliances, err := GetAllAppliances(ctx, client, token)
+	appliance, err := opts.Appliance(opts.Config)
+	if err != nil {
+		return err
+	}
+	appliances, err := appliance.GetAll(ctx)
 	if err != nil {
 		return err
 	}
 	for _, a := range appliances {
 		log.Infof("Starting backup on %s...", a.Name)
 		log.Debug(a.GetId())
-		client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
-		run := client.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(token).InlineObject(iObj)
+		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
+		run := appliance.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(appliance.Token).InlineObject(iObj)
 		res, httpresponse, err := run.Execute()
 		if err != nil {
 			respBody := backupHTTPResponse{}
@@ -101,15 +100,15 @@ func PerformBackup(opts *BackupOpts) error {
 
 		var status string
 		for status != "done" {
-			status, err = getBackupState(ctx, client, token, a.Id, backupID)
+			status, err = getBackupState(ctx, appliance.APIClient, appliance.Token, a.Id, backupID)
 			if err != nil {
 				return err
 			}
 			time.Sleep(1 * time.Second)
 		}
 
-		client.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+gpg")
-		file, inlineRes, err := client.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(token).Execute()
+		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+gpg")
+		file, inlineRes, err := appliance.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(appliance.Token).Execute()
 		if err != nil {
 			log.Debug(err)
 			log.Debug(inlineRes)
