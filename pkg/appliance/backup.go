@@ -146,7 +146,7 @@ func PerformBackup(opts *BackupOpts) error {
 			return err
 		}
 
-        log.Info("done")
+		log.Info("done")
 	}
 
 	return nil
