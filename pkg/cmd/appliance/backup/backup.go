@@ -103,7 +103,7 @@ func PerformBackup(opts *BackupOpts) error {
 	for _, a := range toUpgrade {
 		log.Infof("Starting backup on %s...", a.Name)
 		log.Debug(a.GetId())
-		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+json")
+		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 		run := appliance.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(appliance.Token).InlineObject(iObj)
 		res, httpresponse, err := run.Execute()
 		if err != nil {
@@ -127,7 +127,7 @@ func PerformBackup(opts *BackupOpts) error {
 			time.Sleep(1 * time.Second)
 		}
 
-		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", "application/vnd.appgate.peer-v15+gpg")
+		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 		file, inlineRes, err := appliance.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(appliance.Token).Execute()
 		if err != nil {
 			log.Debug(err)
@@ -147,7 +147,7 @@ func PerformBackup(opts *BackupOpts) error {
 			return err
 		}
 
-		log.Info(fmt.Sprintf("wrote backup file to '%s/%s'", opts.Destination, dst.Name()))
+		log.Info(fmt.Sprintf("wrote backup file to '%s'", dst.Name()))
 	}
 
 	return nil
