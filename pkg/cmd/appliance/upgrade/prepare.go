@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net"
 	"net/url"
 	"os"
@@ -20,6 +21,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -68,6 +70,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	return prepareCmd
 }
 
+const (
+	fileInProgress = "InProgress"
+	fileReady      = "Ready"
+	fileFailed     = "Failed"
+)
+
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	if appliance.IsOnAppliance() {
 		return appliance.ErrExecutedOnAppliance
@@ -88,6 +96,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
 	defer cancel()
 
@@ -142,26 +151,69 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 1
-	_, err = a.FileStatus(ctx, filename)
+	shouldUpload := false
+	existingFile, err := a.FileStatus(ctx, filename)
 	if err != nil {
 		// if we dont get 404, return err
-		if !errors.Is(err, appliance.ErrFileNotFound) {
+		if errors.Is(err, appliance.ErrFileNotFound) {
+			shouldUpload = true
+		} else {
 			return err
 		}
 	}
-	log.Infof("Uploading %q to controller", f.Name())
-	if err := a.UploadFile(ctx, f); err != nil {
-		return err
+
+	if !shouldUpload && existingFile.GetStatus() != fileReady {
+		log.Warnf("Remote file %q already exist, but is in status %s, overridring it", filename, existingFile.GetStatus())
+		shouldUpload = true
 	}
-	log.Infof("Uploaded %q to controller", f.Name())
+	if shouldUpload {
+		fileStat, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		content, err := io.ReadAll(f)
+		if err != nil {
+			return err
+		}
+
+		fs := fileStat.Size()
+		body := new(bytes.Buffer)
+		writer := multipart.NewWriter(body)
+		part, err := writer.CreateFormFile("file", fileStat.Name())
+		if err != nil {
+			return err
+		}
+		part.Write(content)
+		if err = writer.Close(); err != nil {
+			return err
+		}
+		input := io.NopCloser(&ioprogress.Reader{
+			Reader: body,
+			Size:   fs,
+			DrawFunc: ioprogress.DrawTerminalf(opts.Out, func(p, t int64) string {
+				return fmt.Sprintf(
+					"Uploading %s: %s",
+					f.Name(),
+					ioprogress.DrawTextFormatBytes(p, t))
+			}),
+		})
+		headers := map[string]string{
+			"Content-Type":        writer.FormDataContentType(),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
+		}
+		if err := a.UploadFile(ctx, input, headers); err != nil {
+			return err
+		}
+	}
 	remoteFile, err := a.FileStatus(ctx, filename)
 	if err != nil {
-		// if we dont get 404, return err
-		if !errors.Is(err, appliance.ErrFileNotFound) {
-			return err
-		}
+		return err
+	}
+	if remoteFile.GetStatus() != fileReady {
+		return fmt.Errorf("remote file %q is uploaded, but is in status %s", filename, existingFile.GetStatus())
 	}
 	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
+
 	// Step 2
 	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) error {
 		remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)

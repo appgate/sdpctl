@@ -2,11 +2,13 @@ package appliance
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
-	"os"
 
+	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 )
 
@@ -58,19 +60,46 @@ func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.Fi
 }
 
 // UploadFile directly to the current Controller. Note that the File is stored only on the current Controller, not synced between Controllers.
-func (a *Appliance) UploadFile(ctx context.Context, f *os.File) error {
-	// TODO; replace with custom HTTP client and use application/octet-stream so we can keep track of the progress.
-	// and provide the user with feedback of the upload.
-	r, err := a.APIClient.ApplianceUpgradeApi.FilesPut(ctx).Authorization(a.Token).File(f).Execute()
+func (a *Appliance) UploadFile(ctx context.Context, r io.ReadCloser, headers map[string]string) error {
+	httpClient := a.HTTPClient
+	cfg := a.APIClient.GetConfig()
+	url, err := cfg.ServerURLWithContext(ctx, "ApplianceUpgradeApiService.FilesPut")
 	if err != nil {
-		if r == nil {
+		return err
+	}
+	req, err := http.NewRequest(http.MethodPut, url+"/files", r)
+	if err != nil {
+		return err
+	}
+	for k, v := range cfg.DefaultHeader {
+		req.Header.Add(k, v)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("Authorization", a.Token)
+	response, err := httpClient.Do(req)
+	if err != nil {
+		if response == nil {
 			return fmt.Errorf("no response during upload %w", err)
 		}
-		if r.StatusCode == http.StatusConflict {
-			return fmt.Errorf("%q: already exists %w", f.Name(), err)
+		if response.StatusCode == http.StatusConflict {
+			return fmt.Errorf("already exists %w", err)
+		}
+		if response.StatusCode > 400 {
+			responseBody, errRead := io.ReadAll(response.Body)
+			if errRead != nil {
+				return err
+			}
+			errBody := api.GenericErrorResponse{}
+			if err := json.Unmarshal(responseBody, &errBody); err != nil {
+				return err
+			}
+			return fmt.Errorf("%s %v", errBody.Message, errBody.Errors)
 		}
 		return err
 	}
+	response.Body.Close()
 	return nil
 }
 
