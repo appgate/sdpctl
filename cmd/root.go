@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
-	"github.com/appgate/appgatectl/cmd/backup"
 	cfgcmd "github.com/appgate/appgatectl/cmd/configure"
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -85,7 +84,6 @@ func NewCmdRoot() *cobra.Command {
 	f := factory.New(version, cfg)
 
 	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
-	rootCmd.AddCommand(backup.NewCmdBackup(f))
 	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
 
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/appgate/appgatectl/cmd/appliance/backup"
 	"github.com/appgate/appgatectl/cmd/appliance/upgrade"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
@@ -27,6 +28,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
+	cmd.AddCommand(backup.NewCmdBackup(f))
 
 	return cmd
 }

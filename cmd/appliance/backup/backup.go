@@ -26,7 +26,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		Destination: backup.DefaultBackupDestination,
 	}
 	cmd := &cobra.Command{
-		Use:       "backup [flags] CONTROLLER",
+		Use:       "backup [flags]",
 		Short:     "Perform backup of the Appgate SDP Collective",
 		Long:      longDescription,
 		ValidArgs: []string{"controller"},
