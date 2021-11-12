@@ -130,7 +130,7 @@ func Execute() exitCode {
 	return exitOK
 }
 
-func rootPersistentPreRunE(f *factory.Factory, cfg *config.Config) func(*cobra.Command, []string) error {
+func rootPersistentPreRunEFunc(f *factory.Factory, cfg *config.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		logLevel := strings.ToLower(internal.Getenv("APPGATECTL_LOG_LEVEL", "info"))
 
