@@ -3,8 +3,9 @@ package backup_test
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"net/http"
 	"testing"
-	"time"
 
 	"github.com/appgate/appgatectl/cmd/appliance/backup"
 	"github.com/appgate/appgatectl/pkg/appliance"
@@ -12,7 +13,6 @@ import (
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/httpmock"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/spf13/cobra"
 )
 
 func TestBackupCmd(t *testing.T) {
@@ -25,13 +25,22 @@ func TestBackupCmd(t *testing.T) {
 		"/appliances",
 		httpmock.FileResponse("./fixtures/appliance_list.json"),
 	)
-
-    // Initiate backup request
+	// Initiate backup request
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup", applianceUUID),
 		httpmock.FileResponse("./fixtures/appliance_backup_initiated.json"),
 	)
 
+	registry.Register(
+		fmt.Sprintf("/appliances/%s/backup/%s", applianceUUID, backupUUID), func(rw http.ResponseWriter, r *http.Request) {
+			rw.Header().Set("Content-Type", "application/json")
+			rw.WriteHeader(http.StatusOK)
+			// Dont know what response we want here...
+			fmt.Fprint(rw, string(`{
+                "id": "string",
+                "message": "string"
+              }`))
+		})
 	// Backup is processing
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
@@ -62,27 +71,22 @@ func TestBackupCmd(t *testing.T) {
 		return a, nil
 	}
 
-    cmd := backup.NewCmdBackup(f)
-    cmdout := make(chan *cobra.Command)
-    errors := make(chan error)
-    go func() {
-        outcmd, err := cmd.ExecuteC()
-        if err != nil {
-            errors <- err
-        }
-        cmdout <- outcmd
-    }()
-    time.Sleep(3 * time.Second)
-
+	cmd := backup.NewCmdBackup(f)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
 		httpmock.FileResponse("./fixtures/appliance_backup_status_done.json"),
 	)
 
-    select {
-    case e := <-errors:
-        t.Fatal(e)
-    case o := <-cmdout:
-        t.Log(o)
-    }
+	_, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("executeC %s", err)
+	}
+	got, err := io.ReadAll(stdout)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
+	}
+	// do assertion on stdout
+	t.Logf("got %+v", got)
 }
