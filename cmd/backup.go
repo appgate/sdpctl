@@ -30,9 +30,6 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		Short:     "Perform backup of the Appgate SDP Collective",
 		Long:      longDescription,
 		ValidArgs: []string{"controller"},
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			return f.Config.Validate()
-		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return appliance.PrepareBackup(&opts)
 		},

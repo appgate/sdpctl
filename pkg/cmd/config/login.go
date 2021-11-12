@@ -34,7 +34,10 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 	}
 	var loginCmd = &cobra.Command{
-		Use:   "login",
+		Use: "login",
+		Annotations: map[string]string{
+			"skipAuthCheck": "true",
+		},
 		Short: "login and authenticate to appgate SDP collective",
 		Long:  `Setup a configuration file towards your appgate sdp collective to be able to interact with the collective.`,
 		RunE: func(c *cobra.Command, args []string) error {

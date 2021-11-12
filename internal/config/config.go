@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -51,25 +53,36 @@ func ConfigDir() string {
 	return path
 }
 
-func (c *Config) Validate() error {
-	if c.BearerToken == "" || c.ExpiresAt == "" {
-		return fmt.Errorf("Invalid user session. Please use 'appgatectl configure login'")
+func IsAuthCheckEnabled(cmd *cobra.Command) bool {
+	switch cmd.Name() {
+	case "help", cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd:
+		return false
 	}
+	for c := cmd; c.Parent() != nil; c = c.Parent() {
+		if c.Annotations != nil && c.Annotations["skipAuthCheck"] == "true" {
+			return false
+		}
+	}
+	return true
+}
 
-	layout := "2006-01-02 15:04:05.000000 +0000 UTC"
-	expDate, err := time.Parse(layout, c.ExpiresAt)
+func (c *Config) CheckAuth() bool {
+	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
+	d, err := time.Parse(layout, c.ExpiresAt)
 	if err != nil {
-		return err
+		return false
 	}
-
-	// Check expiration date
-	if time.Now().After(expDate) {
-		return fmt.Errorf("Session expired. Please use 'appgatectl configure login' to log in again")
+	if len(c.BearerToken) < 1 {
+		return false
 	}
-
-	// TODO: Validate token
-
-	return nil
+	if len(c.URL) < 1 {
+		return false
+	}
+	if len(c.Provider) < 1 {
+		return false
+	}
+	t1 := time.Now()
+	return t1.Before(d)
 }
 
 func (c *Config) GetHost() (string, error) {

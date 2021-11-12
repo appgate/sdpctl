@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/appgate/appgatectl/internal"
 	"github.com/appgate/appgatectl/internal/config"
+	"github.com/appgate/appgatectl/pkg/appliance"
 	upgradecmd "github.com/appgate/appgatectl/pkg/cmd/appliance/upgrade"
 	cfgcmd "github.com/appgate/appgatectl/pkg/cmd/config"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
@@ -84,7 +86,52 @@ func NewCmdRoot() *cobra.Command {
 	viper.Unmarshal(cfg)
 	f := factory.New(version, cfg)
 
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	configureCmd := NewCmdConfigure(f)
+	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
+
+	rootCmd.AddCommand(configureCmd)
+	rootCmd.AddCommand(NewCmdBackup(f))
+
+	applianceCmd := NewApplianceCmd(f)
+	applianceUpgradeCommand := upgradecmd.NewUpgradeCmd(f)
+	applianceUpgradeCommand.AddCommand(upgradecmd.NewUpgradeStatusCmd(f))
+	applianceUpgradeCommand.AddCommand(upgradecmd.NewPrepareUpgradeCmd(f))
+
+	applianceCmd.AddCommand(applianceUpgradeCommand)
+	rootCmd.AddCommand(applianceCmd)
+
+	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
+
+	return rootCmd
+}
+
+type exitCode int
+
+var ErrExitAuth = errors.New("no authentication")
+
+const (
+	exitOK     exitCode = 0
+	exitError  exitCode = 1
+	exitCancel exitCode = 2
+	exitAuth   exitCode = 4
+)
+
+func Execute() exitCode {
+	root := NewCmdRoot()
+	if err := root.Execute(); err != nil {
+		if errors.Is(err, ErrExitAuth) {
+			return exitAuth
+		}
+		if errors.Is(err, appliance.ErrExecutionCanceledByUser) {
+			return exitCancel
+		}
+		return exitError
+	}
+	return exitOK
+}
+
+func rootPersistentPreRunEFunc(f *factory.Factory, cfg *config.Config) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
 		logLevel := strings.ToLower(internal.Getenv("APPGATECTL_LOG_LEVEL", "info"))
 
 		switch logLevel {
@@ -111,29 +158,14 @@ func NewCmdRoot() *cobra.Command {
 		})
 		log.SetOutput(f.IOOutWriter)
 
+		// require that the user is authenticated before running most commands
+		if config.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
+			fmt.Fprintln(os.Stderr, "appgatectl err")
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure login`.")
+			return ErrExitAuth
+		}
+
 		return nil
-	}
-
-	configureCmd := NewCmdConfigure(f)
-	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
-
-	rootCmd.AddCommand(configureCmd)
-	rootCmd.AddCommand(NewCmdBackup(f))
-
-	applianceCmd := NewApplianceCmd(f)
-	applianceUpgradeCommand := upgradecmd.NewUpgradeCmd(f)
-	applianceUpgradeCommand.AddCommand(upgradecmd.NewUpgradeStatusCmd(f))
-	applianceUpgradeCommand.AddCommand(upgradecmd.NewPrepareUpgradeCmd(f))
-
-	applianceCmd.AddCommand(applianceUpgradeCommand)
-	rootCmd.AddCommand(applianceCmd)
-	return rootCmd
-}
-
-func Execute() {
-	root := NewCmdRoot()
-	if err := root.Execute(); err != nil {
-		log.Error(err)
-		os.Exit(1)
 	}
 }
