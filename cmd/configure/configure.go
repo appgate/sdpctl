@@ -38,7 +38,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 
 	cmd.AddCommand(NewLoginCmd(f))
 
-    return cmd
+	return cmd
 }
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {

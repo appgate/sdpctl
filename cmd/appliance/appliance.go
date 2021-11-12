@@ -26,9 +26,9 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-    cmd.AddCommand(upgrade.NewUpgradeCmd(f))
+	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
 
-    return cmd
+	return cmd
 }
 
 func applianceRun(cmd *cobra.Command, args []string, opts *applianceOptions) error {

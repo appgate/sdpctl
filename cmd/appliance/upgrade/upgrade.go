@@ -44,8 +44,8 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 	upgradeCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	upgradeCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 
-    upgradeCmd.AddCommand(NewUpgradeStatusCmd(f))
-    upgradeCmd.AddCommand(NewPrepareUpgradeCmd(f))
+	upgradeCmd.AddCommand(NewUpgradeStatusCmd(f))
+	upgradeCmd.AddCommand(NewPrepareUpgradeCmd(f))
 
 	return upgradeCmd
 }
