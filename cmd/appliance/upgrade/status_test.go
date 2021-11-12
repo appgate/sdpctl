@@ -23,11 +23,11 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../appliance/fixtures/applianceList.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/applianceList.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-		httpmock.FileResponse("../../../appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
@@ -87,11 +87,11 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../appliance/fixtures/applianceList.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/applianceList.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-		httpmock.FileResponse("../../../appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
