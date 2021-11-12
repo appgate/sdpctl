@@ -12,7 +12,6 @@ import (
 	upgradecmd "github.com/appgate/appgatectl/pkg/cmd/appliance/upgrade"
 	cfgcmd "github.com/appgate/appgatectl/pkg/cmd/config"
 	"github.com/appgate/appgatectl/pkg/cmd/factory"
-	"github.com/appgate/appgatectl/pkg/cmdutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -87,36 +86,6 @@ func NewCmdRoot() *cobra.Command {
 	viper.Unmarshal(cfg)
 	f := factory.New(version, cfg)
 
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		logLevel := strings.ToLower(internal.Getenv("APPGATECTL_LOG_LEVEL", "info"))
-
-		switch logLevel {
-		case "panic":
-			log.SetLevel(log.PanicLevel)
-		case "fatal":
-			log.SetLevel(log.FatalLevel)
-		case "info":
-			log.SetLevel(log.InfoLevel)
-		case "debug":
-			log.SetLevel(log.DebugLevel)
-		case "trace":
-			log.SetLevel(log.TraceLevel)
-		default:
-			log.SetLevel(log.ErrorLevel)
-		}
-		if cfg.Debug {
-			log.SetLevel(log.DebugLevel)
-		}
-		log.SetFormatter(&log.TextFormatter{
-			FullTimestamp:   true,
-			TimestampFormat: "2006-01-02 15:04:05",
-			PadLevelText:    true,
-		})
-		log.SetOutput(f.IOOutWriter)
-
-		return nil
-	}
-
 	configureCmd := NewCmdConfigure(f)
 	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
 
@@ -131,17 +100,8 @@ func NewCmdRoot() *cobra.Command {
 	applianceCmd.AddCommand(applianceUpgradeCommand)
 	rootCmd.AddCommand(applianceCmd)
 
-	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		// require that the user is authenticated before running most commands
-		if cmdutil.IsAuthCheckEnabled(cmd) && !cmdutil.CheckAuth(*cfg) {
-			fmt.Fprintln(os.Stderr, "appgatectl err")
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure login`.")
-			return ErrExitAuth
-		}
+	rootCmd.PersistentPreRunE = rootPersistentPreRunE(f, cfg)
 
-		return nil
-	}
 	return rootCmd
 }
 
@@ -168,4 +128,44 @@ func Execute() exitCode {
 		return exitError
 	}
 	return exitOK
+}
+
+func rootPersistentPreRunE(f *factory.Factory, cfg *config.Config) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		logLevel := strings.ToLower(internal.Getenv("APPGATECTL_LOG_LEVEL", "info"))
+
+		switch logLevel {
+		case "panic":
+			log.SetLevel(log.PanicLevel)
+		case "fatal":
+			log.SetLevel(log.FatalLevel)
+		case "info":
+			log.SetLevel(log.InfoLevel)
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "trace":
+			log.SetLevel(log.TraceLevel)
+		default:
+			log.SetLevel(log.ErrorLevel)
+		}
+		if cfg.Debug {
+			log.SetLevel(log.DebugLevel)
+		}
+		log.SetFormatter(&log.TextFormatter{
+			FullTimestamp:   true,
+			TimestampFormat: "2006-01-02 15:04:05",
+			PadLevelText:    true,
+		})
+		log.SetOutput(f.IOOutWriter)
+
+		// require that the user is authenticated before running most commands
+		if config.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
+			fmt.Fprintln(os.Stderr, "appgatectl err")
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure login`.")
+			return ErrExitAuth
+		}
+
+		return nil
+	}
 }
