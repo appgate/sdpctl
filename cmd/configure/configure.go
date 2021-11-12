@@ -1,19 +1,22 @@
-package cmd
+package configure
 
 import (
 	"fmt"
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/appgatectl/internal/config"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
+// DefaultAPIVersion is based on the latest peer api version.
+const DefaultAPIVersion = 16
+
 type configureOptions struct {
-	Config *config.Config
+	Config *configuration.Config
 }
 
 // NewCmdConfigure return a new Configure command
@@ -21,7 +24,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 	opts := configureOptions{
 		Config: f.Config,
 	}
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use: "configure",
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
@@ -32,6 +35,10 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 			return configRun(c, args, &opts)
 		},
 	}
+
+	cmd.AddCommand(NewLoginCmd(f))
+
+    return cmd
 }
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {

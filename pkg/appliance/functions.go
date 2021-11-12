@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	util "github.com/appgate/appgatectl/internal"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 )
 

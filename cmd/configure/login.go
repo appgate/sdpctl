@@ -1,12 +1,12 @@
-package config
+package configure
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/appgatectl/internal/config"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -15,8 +15,8 @@ import (
 )
 
 type loginOptions struct {
-	Config     *config.Config
-	APIClient  func(Config *config.Config) (*openapi.APIClient, error)
+	Config     *configuration.Config
+	APIClient  func(Config *configuration.Config) (*openapi.APIClient, error)
 	Timeout    int
 	url        string
 	provider   string
