@@ -1,8 +1,8 @@
-package cmd
+package backup
 
 import (
-	"github.com/appgate/appgatectl/pkg/cmd/appliance/backup"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/backup"
+	"github.com/appgate/appgatectl/pkg/factory"
 
 	"github.com/spf13/cobra"
 )
@@ -19,26 +19,26 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 )
 
 func NewCmdBackup(f *factory.Factory) *cobra.Command {
-	opts := appliance.BackupOpts{
+	opts := backup.BackupOpts{
 		Config:      f.Config,
 		Out:         f.IOOutWriter,
 		Appliance:   f.Appliance,
-		Destination: appliance.DefaultBackupDestination,
+		Destination: backup.DefaultBackupDestination,
 	}
 	cmd := &cobra.Command{
-		Use:       "backup [flags] CONTROLLER",
+		Use:       "backup [flags]",
 		Short:     "Perform backup of the Appgate SDP Collective",
 		Long:      longDescription,
 		ValidArgs: []string{"controller"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return appliance.PrepareBackup(&opts)
+			return backup.PrepareBackup(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return appliance.PerformBackup(&opts)
+			return backup.PerformBackup(&opts)
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&opts.Destination, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
+	cmd.PersistentFlags().StringVarP(&opts.Destination, "destination", "d", backup.DefaultBackupDestination, "backup destination")
 	cmd.PersistentFlags().BoolVar(&opts.AllFlag, "all", false, "backup the entire Appgate SDP Collective")
 	cmd.PersistentFlags().BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers") // TODO: Implement logic for this flag
 	cmd.PersistentFlags().StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")

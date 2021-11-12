@@ -3,15 +3,15 @@ package upgrade
 import (
 	"fmt"
 
-	"github.com/appgate/appgatectl/internal/config"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/spf13/cobra"
 )
 
 type upgradeOptions struct {
-	Config     *config.Config
-	APIClient  func(Config *config.Config) (*openapi.APIClient, error)
+	Config     *configuration.Config
+	APIClient  func(Config *configuration.Config) (*openapi.APIClient, error)
 	Timeout    int
 	url        string
 	provider   string
@@ -43,6 +43,9 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 	upgradeCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	upgradeCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	upgradeCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
+
+	upgradeCmd.AddCommand(NewUpgradeStatusCmd(f))
+	upgradeCmd.AddCommand(NewPrepareUpgradeCmd(f))
 
 	return upgradeCmd
 }

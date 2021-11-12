@@ -7,16 +7,16 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 
 type upgradeStatusOptions struct {
-	Config     *config.Config
+	Config     *configuration.Config
 	Out        io.Writer
-	Appliance  func(c *config.Config) (*appliance.Appliance, error)
+	Appliance  func(c *configuration.Config) (*appliance.Appliance, error)
 	Token      string
 	Timeout    int
 	url        string

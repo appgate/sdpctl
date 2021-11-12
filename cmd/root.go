@@ -6,19 +6,16 @@ import (
 	"os"
 	"strings"
 
-	"github.com/appgate/appgatectl/internal"
-	"github.com/appgate/appgatectl/internal/config"
+	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
+	cfgcmd "github.com/appgate/appgatectl/cmd/configure"
 	"github.com/appgate/appgatectl/pkg/appliance"
-	upgradecmd "github.com/appgate/appgatectl/pkg/cmd/appliance/upgrade"
-	cfgcmd "github.com/appgate/appgatectl/pkg/cmd/config"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-// DefaultAPIVersion is based on the latest peer api version.
-const DefaultAPIVersion = 16
 
 var (
 	version       string = "dev"
@@ -31,7 +28,7 @@ build date: %s`, version, commit, buildDate)
 )
 
 func initConfig() {
-	dir := config.ConfigDir()
+	dir := configuration.ConfigDir()
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
@@ -74,7 +71,7 @@ func NewCmdRoot() *cobra.Command {
 	}
 
 	cobra.OnInitialize(initConfig)
-	cfg := &config.Config{}
+	cfg := &configuration.Config{}
 
 	viper.SetDefault("debug", false)
 	viper.SetDefault("provider", "local")
@@ -86,19 +83,8 @@ func NewCmdRoot() *cobra.Command {
 	viper.Unmarshal(cfg)
 	f := factory.New(version, cfg)
 
-	configureCmd := NewCmdConfigure(f)
-	configureCmd.AddCommand(cfgcmd.NewLoginCmd(f))
-
-	rootCmd.AddCommand(configureCmd)
-	rootCmd.AddCommand(NewCmdBackup(f))
-
-	applianceCmd := NewApplianceCmd(f)
-	applianceUpgradeCommand := upgradecmd.NewUpgradeCmd(f)
-	applianceUpgradeCommand.AddCommand(upgradecmd.NewUpgradeStatusCmd(f))
-	applianceUpgradeCommand.AddCommand(upgradecmd.NewPrepareUpgradeCmd(f))
-
-	applianceCmd.AddCommand(applianceUpgradeCommand)
-	rootCmd.AddCommand(applianceCmd)
+	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
+	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
 
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
@@ -130,9 +116,9 @@ func Execute() exitCode {
 	return exitOK
 }
 
-func rootPersistentPreRunEFunc(f *factory.Factory, cfg *config.Config) func(*cobra.Command, []string) error {
+func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		logLevel := strings.ToLower(internal.Getenv("APPGATECTL_LOG_LEVEL", "info"))
+		logLevel := strings.ToLower(util.Getenv("APPGATECTL_LOG_LEVEL", "info"))
 
 		switch logLevel {
 		case "panic":
@@ -159,7 +145,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *config.Config) func(*cob
 		log.SetOutput(f.IOOutWriter)
 
 		// require that the user is authenticated before running most commands
-		if config.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
+		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			fmt.Fprintln(os.Stderr, "appgatectl err")
 			fmt.Fprintln(os.Stderr)
 			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure login`.")

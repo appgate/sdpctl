@@ -1,4 +1,4 @@
-package appliance_test
+package backup_test
 
 import (
 	"testing"

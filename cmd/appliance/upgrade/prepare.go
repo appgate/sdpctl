@@ -15,11 +15,11 @@ import (
 	"text/template"
 	"time"
 
-	util "github.com/appgate/appgatectl/internal"
-	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
@@ -28,9 +28,9 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config     *config.Config
+	Config     *configuration.Config
 	Out        io.Writer
-	Appliance  func(c *config.Config) (*appliance.Appliance, error)
+	Appliance  func(c *configuration.Config) (*appliance.Appliance, error)
 	Token      string
 	Timeout    int
 	url        string

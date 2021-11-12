@@ -1,4 +1,4 @@
-package appliance
+package backup
 
 import (
 	"context"
@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/appgate/appgatectl/internal"
-	"github.com/appgate/appgatectl/internal/config"
-	appliancecmd "github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,8 +21,8 @@ var (
 )
 
 type BackupOpts struct {
-	Config             *config.Config
-	Appliance          func(*config.Config) (*appliancecmd.Appliance, error)
+	Config             *configuration.Config
+	Appliance          func(*configuration.Config) (*appliance.Appliance, error)
 	Out                io.Writer
 	Destination        string
 	NotifyURL          string
@@ -40,7 +40,7 @@ func PrepareBackup(opts *BackupOpts) error {
 	log.Info("Preparing backup...")
 	log.Debug(opts.Destination)
 
-	if appliancecmd.IsOnAppliance() {
+	if appliance.IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
@@ -61,8 +61,8 @@ func PrepareBackup(opts *BackupOpts) error {
 
 func PerformBackup(opts *BackupOpts) error {
 	ctx := context.Background()
-	aud := internal.InSlice("audit", opts.Include)
-	logs := internal.InSlice("logs", opts.Include)
+	aud := util.InSlice("audit", opts.Include)
+	logs := util.InSlice("logs", opts.Include)
 
 	iObj := *openapi.NewInlineObject()
 	iObj.Audit = &aud
@@ -73,12 +73,12 @@ func PerformBackup(opts *BackupOpts) error {
 		iObj.NotifyUrl = &opts.NotifyURL
 	}
 
-	appliance, err := opts.Appliance(opts.Config)
+	app, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
 	}
 
-	appliances, err := appliance.GetAll(ctx)
+	appliances, err := app.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func PerformBackup(opts *BackupOpts) error {
 	if err != nil {
 		return err
 	}
-	primaryController, err := appliancecmd.FindPrimaryController(appliances, host)
+	primaryController, err := appliance.FindPrimaryController(appliances, host)
 	if err != nil {
 		log.Debug(err)
 		return fmt.Errorf("Failed to find primary controller")
@@ -103,8 +103,8 @@ func PerformBackup(opts *BackupOpts) error {
 	for _, a := range toUpgrade {
 		log.Infof("Starting backup on %s...", a.Name)
 		log.Debug(a.GetId())
-		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
-		run := appliance.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(appliance.Token).InlineObject(iObj)
+		app.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
+		run := app.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(app.Token).InlineObject(iObj)
 		res, httpresponse, err := run.Execute()
 		if err != nil {
 			respBody := backupHTTPResponse{}
@@ -120,15 +120,15 @@ func PerformBackup(opts *BackupOpts) error {
 
 		var status string
 		for status != "done" {
-			status, err = getBackupState(ctx, appliance.APIClient, appliance.Token, a.Id, backupID)
+			status, err = getBackupState(ctx, app.APIClient, app.Token, a.Id, backupID)
 			if err != nil {
 				return err
 			}
 			time.Sleep(1 * time.Second)
 		}
 
-		appliance.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
-		file, inlineRes, err := appliance.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(appliance.Token).Execute()
+		app.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+		file, inlineRes, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(app.Token).Execute()
 		if err != nil {
 			log.Debug(err)
 			log.Debug(inlineRes)

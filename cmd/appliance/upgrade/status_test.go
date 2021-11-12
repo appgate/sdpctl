@@ -6,9 +6,9 @@ import (
 	"io"
 	"testing"
 
-	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/cmd/factory"
+	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/httpmock"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/go-cmp/cmp"
@@ -23,26 +23,26 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../appliance/fixtures/applianceList.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/applianceList.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-		httpmock.FileResponse("../../../appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
 	stdout := &bytes.Buffer{}
 	f := &factory.Factory{
-		Config: &config.Config{
+		Config: &configuration.Config{
 			Debug: false,
 			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
 		},
 		IOOutWriter: stdout,
 	}
-	f.APIClient = func(c *config.Config) (*openapi.APIClient, error) {
+	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registery.Client, nil
 	}
-	f.Appliance = func(c *config.Config) (*appliance.Appliance, error) {
+	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
 
 		a := &appliance.Appliance{
@@ -87,26 +87,26 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../appliance/fixtures/applianceList.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/applianceList.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-		httpmock.FileResponse("../../../appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
 	stdout := &bytes.Buffer{}
 	f := &factory.Factory{
-		Config: &config.Config{
+		Config: &configuration.Config{
 			Debug: false,
 			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
 		},
 		IOOutWriter: stdout,
 	}
-	f.APIClient = func(c *config.Config) (*openapi.APIClient, error) {
+	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registery.Client, nil
 	}
-	f.Appliance = func(c *config.Config) (*appliance.Appliance, error) {
+	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
 
 		a := &appliance.Appliance{

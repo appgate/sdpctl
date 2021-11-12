@@ -9,20 +9,20 @@ import (
 	"os"
 	"time"
 
-	"github.com/appgate/appgatectl/internal/config"
 	"github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 )
 
 type Factory struct {
 	HTTPClient  func() (*http.Client, error)
-	APIClient   func(c *config.Config) (*openapi.APIClient, error)
-	Appliance   func(c *config.Config) (*appliance.Appliance, error)
-	Config      *config.Config
+	APIClient   func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance   func(c *configuration.Config) (*appliance.Appliance, error)
+	Config      *configuration.Config
 	IOOutWriter io.Writer
 }
 
-func New(appVersion string, config *config.Config) *Factory {
+func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
 	f.Config = config
 	f.HTTPClient = httpClientFunc(f)           // depends on config
@@ -55,8 +55,8 @@ func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	}
 }
 
-func apiClientFunc(f *Factory, appVersion string) func(c *config.Config) (*openapi.APIClient, error) {
-	return func(cfg *config.Config) (*openapi.APIClient, error) {
+func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) (*openapi.APIClient, error) {
+	return func(cfg *configuration.Config) (*openapi.APIClient, error) {
 		hc, err := f.HTTPClient()
 		if err != nil {
 			return nil, err
@@ -79,8 +79,8 @@ func apiClientFunc(f *Factory, appVersion string) func(c *config.Config) (*opena
 	}
 }
 
-func applianceFunc(f *Factory, appVersion string) func(c *config.Config) (*appliance.Appliance, error) {
-	return func(cfg *config.Config) (*appliance.Appliance, error) {
+func applianceFunc(f *Factory, appVersion string) func(c *configuration.Config) (*appliance.Appliance, error) {
+	return func(cfg *configuration.Config) (*appliance.Appliance, error) {
 		hc, err := f.HTTPClient()
 		if err != nil {
 			return nil, err

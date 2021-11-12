@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/appgate/appgatectl/internal/config"
+	"github.com/appgate/appgatectl/pkg/configuration"
 )
 
 func TestHttpClientTransportTLSFromConfig(t *testing.T) {
@@ -20,7 +20,7 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 			name: "tls insecure transport",
 			args: args{
 				&Factory{
-					Config: &config.Config{
+					Config: &configuration.Config{
 						Insecure: true,
 					},
 				},
@@ -31,7 +31,7 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 			name: "tls secure transport",
 			args: args{
 				&Factory{
-					Config: &config.Config{
+					Config: &configuration.Config{
 						Insecure: false,
 					},
 				},
@@ -57,7 +57,7 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 func TestNew(t *testing.T) {
 	type args struct {
 		appVersion string
-		config     *config.Config
+		config     *configuration.Config
 	}
 	tests := []struct {
 		name string
@@ -68,7 +68,7 @@ func TestNew(t *testing.T) {
 			name: "test basic API client",
 			args: args{
 				appVersion: "1.1.1.",
-				config: &config.Config{
+				config: &configuration.Config{
 					Insecure: true,
 					Version:  15,
 					Debug:    false,
