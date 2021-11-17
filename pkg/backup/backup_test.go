@@ -82,6 +82,4 @@ func TestBackupCmd(t *testing.T) {
 	if res := reg.Find(got); res == nil {
 		t.Fatalf("result matching failed.")
 	}
-	// do assertion on stdout
-	t.Logf("want got %+v", got)
 }
