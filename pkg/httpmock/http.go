@@ -115,7 +115,7 @@ func FileResponse() http.HandlerFunc {
 				Data: []byte("testfile"),
 			},
 		}
-		f, err := fs.Open(filename)
+		f, _ := fs.Open(filename)
 		rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", f))
 		rw.Header().Set("Content-Type", "application/file")
 		rw.WriteHeader(http.StatusOK)
