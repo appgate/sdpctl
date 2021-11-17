@@ -26,7 +26,7 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	)
 	registery.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
@@ -100,7 +100,7 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	)
 	registery.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
