@@ -108,7 +108,7 @@ func JSONResponse(filename string) http.HandlerFunc {
 }
 
 func FileResponse() http.HandlerFunc {
-    filename := "test-file.txt"
+	filename := "test-file.txt"
 	return func(rw http.ResponseWriter, r *http.Request) {
 		fs := fstest.MapFS{
 			filename: {
