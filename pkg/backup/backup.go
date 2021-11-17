@@ -37,7 +37,7 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
-	log.Info("Preparing backup...")
+	fmt.Fprintln(opts.Out, "Preparing backup...")
 	log.Debug(opts.Destination)
 
 	if appliance.IsOnAppliance() {
@@ -101,7 +101,7 @@ func PerformBackup(opts *BackupOpts) error {
 	}
 
 	for _, a := range toUpgrade {
-		log.Infof("Starting backup on %s...", a.Name)
+		fmt.Fprintf(opts.Out, "Starting backup on %s...\n", a.Name)
 		log.Debug(a.GetId())
 		app.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 		run := app.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(app.Token).InlineObject(iObj)
@@ -141,13 +141,13 @@ func PerformBackup(opts *BackupOpts) error {
 		}
 		defer dst.Close()
 
-		log.Debug("Downloading file...")
+		fmt.Fprintln(opts.Out, "Downloading file...")
 		_, err = io.Copy(dst, file)
 		if err != nil {
 			return err
 		}
 
-		log.Info(fmt.Sprintf("wrote backup file to '%s'", dst.Name()))
+		fmt.Fprintf(opts.Out, "wrote backup file to '%s'", dst.Name())
 	}
 
 	return nil

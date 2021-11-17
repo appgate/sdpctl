@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"regexp"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/go-cmp/cmp"
@@ -88,7 +89,7 @@ func setup() (*openapi.APIClient, *openapi.Configuration, *http.ServeMux, *httpt
 	return c, clientCfg, mux, server, port, server.Close
 }
 
-func FileResponse(filename string) http.HandlerFunc {
+func JSONResponse(filename string) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		f, err := os.Open(filename)
 		if err != nil {
@@ -104,4 +105,25 @@ func FileResponse(filename string) http.HandlerFunc {
 		}
 		fmt.Fprint(rw, string(content))
 	}
+}
+
+func FileResponse(path string) http.HandlerFunc {
+    return func(rw http.ResponseWriter, r *http.Request) {
+		f, err := os.Open(path)
+        re := regexp.MustCompile("([^/]*$)")
+        filename := re.FindString(f.Name())
+		if err != nil {
+			panic(fmt.Sprintf("Internal testing error: could not open %q", path))
+		}
+		defer f.Close()
+		rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+		rw.Header().Set("Content-Type", "application/file")
+		rw.WriteHeader(http.StatusOK)
+		reader := bufio.NewReader(f)
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			panic(fmt.Sprintf("Internal testing error: could not read %q", path))
+		}
+		fmt.Fprint(rw, string(content))
+    }
 }

@@ -18,11 +18,11 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/applianceList.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registery.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
@@ -92,11 +92,11 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/applianceList.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registery.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",

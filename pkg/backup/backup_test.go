@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net/http"
+	"regexp"
 	"testing"
 
 	"github.com/appgate/appgatectl/cmd/appliance/backup"
@@ -23,39 +23,33 @@ func TestBackupCmd(t *testing.T) {
 	// Appliance list route
 	registry.Register(
 		"/appliances",
-		httpmock.FileResponse("./fixtures/appliance_list.json"),
+		httpmock.JSONResponse("./fixtures/appliance_list.json"),
 	)
 	// Initiate backup request
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup", applianceUUID),
-		httpmock.FileResponse("./fixtures/appliance_backup_initiated.json"),
+		httpmock.JSONResponse("./fixtures/appliance_backup_initiated.json"),
 	)
-
-	registry.Register(
-		fmt.Sprintf("/appliances/%s/backup/%s", applianceUUID, backupUUID), func(rw http.ResponseWriter, r *http.Request) {
-			rw.Header().Set("Content-Type", "application/json")
-			rw.WriteHeader(http.StatusOK)
-			// Dont know what response we want here...
-			fmt.Fprint(rw, string(`{
-                "id": "string",
-                "message": "string"
-              }`))
-		})
-	// Backup is processing
+	// Backup is done
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
-		httpmock.FileResponse("./fixtures/appliance_backup_status_processing.json"),
+		httpmock.JSONResponse("./fixtures/appliance_backup_status_done.json"),
+	)
+	// Download backup
+	registry.Register(
+		fmt.Sprintf("/appliances/%s/backup/%s", applianceUUID, backupUUID),
+		httpmock.FileResponse("./fixtures/appgate_backup_controller.bkp"),
 	)
 	defer registry.Teardown()
 	registry.Serve()
 
-	stdout := &bytes.Buffer{}
+	buf := new(bytes.Buffer)
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
 			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
 		},
-		IOOutWriter: stdout,
+		IOOutWriter: buf,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
@@ -72,21 +66,22 @@ func TestBackupCmd(t *testing.T) {
 	}
 
 	cmd := backup.NewCmdBackup(f)
-	cmd.SetOut(io.Discard)
+    cmd.SetArgs([]string{"--destination=/tmp/appgate-testing"})
+    cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
-	registry.Register(
-		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
-		httpmock.FileResponse("./fixtures/appliance_backup_status_done.json"),
-	)
 
 	_, err := cmd.ExecuteC()
 	if err != nil {
 		t.Fatalf("executeC %s", err)
 	}
-	got, err := io.ReadAll(stdout)
+	got, err := io.ReadAll(buf)
 	if err != nil {
 		t.Fatalf("unable to read stdout %s", err)
 	}
+    reg := regexp.MustCompile(`wrote backup file to '/tmp/appgate-testing/appgate_backup_.+.bkp`)
+    if res := reg.Find(got); res == nil {
+        t.Fatalf("result matching failed.")
+    }
 	// do assertion on stdout
-	t.Logf("got %+v", got)
+	t.Logf("want got %+v", got)
 }
