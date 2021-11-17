@@ -18,7 +18,7 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.JSONResponse("../../../pkg/appliance/fixtures/applianceList.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -92,7 +92,7 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.JSONResponse("../../../pkg/appliance/fixtures/applianceList.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
