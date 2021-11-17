@@ -38,7 +38,7 @@ func TestBackupCmd(t *testing.T) {
 	// Download backup
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup/%s", applianceUUID, backupUUID),
-		httpmock.FileResponse("./fixtures/appgate_backup_controller.bkp"),
+		httpmock.FileResponse(),
 	)
 	defer registry.Teardown()
 	registry.Serve()
@@ -66,8 +66,8 @@ func TestBackupCmd(t *testing.T) {
 	}
 
 	cmd := backup.NewCmdBackup(f)
-    cmd.SetArgs([]string{"--destination=/tmp/appgate-testing"})
-    cmd.SetOut(io.Discard)
+	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing"})
+	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
 	_, err := cmd.ExecuteC()
@@ -78,10 +78,10 @@ func TestBackupCmd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read stdout %s", err)
 	}
-    reg := regexp.MustCompile(`wrote backup file to '/tmp/appgate-testing/appgate_backup_.+.bkp`)
-    if res := reg.Find(got); res == nil {
-        t.Fatalf("result matching failed.")
-    }
+	reg := regexp.MustCompile(`wrote backup file to '/tmp/appgate-testing/appgate_backup_.+.bkp`)
+	if res := reg.Find(got); res == nil {
+		t.Fatalf("result matching failed.")
+	}
 	// do assertion on stdout
 	t.Logf("want got %+v", got)
 }

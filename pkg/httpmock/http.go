@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"regexp"
+	"testing/fstest"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/go-cmp/cmp"
@@ -107,23 +107,23 @@ func JSONResponse(filename string) http.HandlerFunc {
 	}
 }
 
-func FileResponse(path string) http.HandlerFunc {
-    return func(rw http.ResponseWriter, r *http.Request) {
-		f, err := os.Open(path)
-        re := regexp.MustCompile("([^/]*$)")
-        filename := re.FindString(f.Name())
-		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not open %q", path))
+func FileResponse() http.HandlerFunc {
+    filename := "test-file.txt"
+	return func(rw http.ResponseWriter, r *http.Request) {
+		fs := fstest.MapFS{
+			filename: {
+				Data: []byte("testfile"),
+			},
 		}
-		defer f.Close()
-		rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+		f, err := fs.Open(filename)
+		rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", f))
 		rw.Header().Set("Content-Type", "application/file")
 		rw.WriteHeader(http.StatusOK)
 		reader := bufio.NewReader(f)
 		content, err := io.ReadAll(reader)
 		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not read %q", path))
+			panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
 		}
 		fmt.Fprint(rw, string(content))
-    }
+	}
 }
