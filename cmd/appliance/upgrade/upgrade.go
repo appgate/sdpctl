@@ -46,6 +46,7 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 
 	upgradeCmd.AddCommand(NewUpgradeStatusCmd(f))
 	upgradeCmd.AddCommand(NewPrepareUpgradeCmd(f))
+	upgradeCmd.AddCommand(NewUpgradeCancelCmd(f))
 
 	return upgradeCmd
 }
