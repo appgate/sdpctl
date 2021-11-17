@@ -223,7 +223,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			g.Go(func() error {
 				log.Infof("Preparing upgrade for %s", i.GetName())
 				if err := a.PrepareFileOn(ctx, remoteFilePath, i.GetId()); err != nil {
-					return fmt.Errorf("Failed to prepare %s %s", i.GetName(), err)
+					return fmt.Errorf("Failed to prepare %q %s", i.GetName(), err)
 				}
 				status, err := a.UpgradeStatus(ctx, i.GetId())
 				if err != nil {
