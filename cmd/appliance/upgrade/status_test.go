@@ -14,19 +14,18 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-type CmdOut struct {
-	OutBuf *bytes.Buffer
-	ErrBuf *bytes.Buffer
-}
-
 func TestUpgradeStatusCommandJSON(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/applianceList.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+	)
+	registery.Register(
+		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	defer registery.Teardown()
@@ -72,7 +71,13 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	want := []byte(`[
 	    {
 	      "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-	      "name": "object",
+	      "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
+	      "status": "idle",
+	      "details": "a reboot is required for the Upgrade to go into effect"
+	    },
+	    {
+	      "id": "ee639d70-e075-4f01-596b-930d5f24f569",
+	      "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
 	      "status": "idle",
 	      "details": "a reboot is required for the Upgrade to go into effect"
 	    }
@@ -87,21 +92,30 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	registery := httpmock.NewRegistry()
 	registery.Register(
 		"/appliances",
-		httpmock.FileResponse("../../../pkg/appliance/fixtures/applianceList.json"),
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	registery.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
+	registery.Register(
+		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+		httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+	)
 	defer registery.Teardown()
 	registery.Serve()
 	stdout := &bytes.Buffer{}
+	stdin := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	in := io.NopCloser(stdin)
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
 			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
 		},
 		IOOutWriter: stdout,
+		Stdin:       in,
+		StdErr:      stderr,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registery.Client, nil
@@ -131,8 +145,9 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := `ID                                          Name          Status        Details
-4c07bc67-57ea-42dd-b702-c2d6c45419fc        object        idle          a reboot is required for the Upgrade to go into effect
+	want := `ID                                          Name                                                         Status        Details
+4c07bc67-57ea-42dd-b702-c2d6c45419fc        controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1        idle          a reboot is required for the Upgrade to go into effect
+ee639d70-e075-4f01-596b-930d5f24f569        gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1           idle          a reboot is required for the Upgrade to go into effect
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
