@@ -29,12 +29,43 @@ func (a *Appliance) GetAll(ctx context.Context) ([]openapi.Appliance, error) {
 	return appliances.GetData(), nil
 }
 
+const (
+	//lint:file-ignore U1000 All avaliable upgrade statuses
+	UpgradeStatusIdle        = "idle"
+	UpgradeStatusStarted     = "started"
+	UpgradeStatusDownloading = "downloading"
+	UpgradeStatusVerifying   = "verifying"
+	UpgradeStatusReady       = "ready"
+	UpgradeStatusInstalling  = "installing"
+	UpgradeStatusSuccess     = "success"
+	UpgradeStatusFailed      = "failed"
+)
+
 func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (openapi.InlineResponse2006, error) {
 	status, _, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, err
 	}
 	return status, nil
+}
+
+func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error {
+	response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Authorization(a.Token).Execute()
+	if err != nil {
+		if response != nil && response.StatusCode >= 400 {
+			responseBody, errRead := io.ReadAll(response.Body)
+			if errRead != nil {
+				return err
+			}
+			errBody := api.GenericErrorResponse{}
+			if err := json.Unmarshal(responseBody, &errBody); err != nil {
+				return err
+			}
+			return fmt.Errorf("%s %v", errBody.Message, errBody.Errors)
+		}
+		return err
+	}
+	return nil
 }
 
 func (a *Appliance) Stats(ctx context.Context) (openapi.StatsAppliancesList, *http.Response, error) {
