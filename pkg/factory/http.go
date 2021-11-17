@@ -20,6 +20,8 @@ type Factory struct {
 	Appliance   func(c *configuration.Config) (*appliance.Appliance, error)
 	Config      *configuration.Config
 	IOOutWriter io.Writer
+	Stdin       io.Reader
+	StdErr      io.Reader
 }
 
 func New(appVersion string, config *configuration.Config) *Factory {
@@ -29,6 +31,7 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
 	f.Appliance = applianceFunc(f, appVersion) // depends on config
 	f.IOOutWriter = os.Stdout
+	f.Stdin = os.Stdin
 	return f
 }
 
