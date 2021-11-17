@@ -1,4 +1,4 @@
-package backup_test
+package backup
 
 import (
 	"bytes"
@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/appgate/appgatectl/cmd/appliance/backup"
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
@@ -65,7 +64,7 @@ func TestBackupCmd(t *testing.T) {
 		return a, nil
 	}
 
-	cmd := backup.NewCmdBackup(f)
+	cmd := NewCmdBackup(f)
 	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)

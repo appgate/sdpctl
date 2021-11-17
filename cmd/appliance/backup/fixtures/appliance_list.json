@@ -315,6 +315,318 @@
           "appgatealias.company.com",
           "alias2.localhost"
         ]
+      },
+      {
+        "id": "89c59f82-8385-4e6d-89c9-ceb7dbc55299",
+        "name": "gateway",
+        "notes": "This object has been created for test purposes.",
+        "created": "2019-08-24T14:15:22Z",
+        "updated": "2019-08-24T14:15:22Z",
+        "tags": [
+          "developer",
+          "api-created"
+        ],
+        "activated": true,
+        "pendingCertificateRenewal": false,
+        "version": 9,
+        "hostname": "localhost",
+        "site": "89c59f82-8385-4e6d-89c9-ceb7dbc55299",
+        "siteName": "Default Site",
+        "customization": "89c59f82-8385-4e6d-89c9-ceb7dbc55299",
+        "connectToPeersUsingClientPortWithSpa": true,
+        "clientInterface": {
+          "proxyProtocol": false,
+          "hostname": "localhost",
+          "httpsPort": 443,
+          "dtlsPort": 443,
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ],
+          "overrideSpaMode": "Disabled"
+        },
+        "peerInterface": {
+          "hostname": "localhost",
+          "httpsPort": 444,
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ]
+        },
+        "adminInterface": {
+          "hostname": "localhost",
+          "httpsPort": 8443,
+          "httpsCiphers": [
+            "ECDHE-RSA-AES256-GCM-SHA384",
+            "ECDHE-RSA-AES128-GCM-SHA256"
+          ],
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ]
+        },
+        "networking": {
+          "hosts": [
+            {
+              "hostname": "internal.service.company.com",
+              "address": "10.10.10.10"
+            }
+          ],
+          "nics": [
+            {
+              "enabled": true,
+              "name": "eth0",
+              "ipv4": {
+                "dhcp": {
+                  "enabled": true,
+                  "dns": true,
+                  "routers": true,
+                  "ntp": true,
+                  "mtu": true
+                },
+                "static": [
+                  {
+                    "address": "10.10.10.1",
+                    "netmask": 24,
+                    "hostname": "localhost",
+                    "snat": true
+                  }
+                ],
+                "virtualIp": "10.10.10.24"
+              },
+              "ipv6": {
+                "dhcp": {
+                  "enabled": true,
+                  "dns": true,
+                  "ntp": true,
+                  "mtu": true
+                },
+                "static": [
+                  {
+                    "address": "2001:db8:0:0:0:ff00:42:8329",
+                    "netmask": 24,
+                    "hostname": "localhost",
+                    "snat": true
+                  }
+                ],
+                "virtualIp": "2001:db8:0:0:0:ff00:42:8400"
+              },
+              "mtu": 1500
+            }
+          ],
+          "dnsServers": [
+            "172.17.18.19",
+            "192.100.111.31"
+          ],
+          "dnsDomains": [
+            "internal.company.com"
+          ],
+          "routes": [
+            {
+              "address": "10.0.0.0",
+              "netmask": 24,
+              "gateway": "10.0.0.254",
+              "nic": "eth0"
+            }
+          ]
+        },
+        "ntp": {
+          "servers": [
+            {
+              "hostname": "0.ubuntu.pool.ntp.org",
+              "keyType": "MD5",
+              "key": "pa$$word"
+            }
+          ]
+        },
+        "sshServer": {
+          "enabled": false,
+          "port": 22,
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ],
+          "passwordAuthentication": true
+        },
+        "snmpServer": {
+          "enabled": false,
+          "tcpPort": 161,
+          "udpPort": 161,
+          "snmpd.conf": "string",
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ]
+        },
+        "healthcheckServer": {
+          "enabled": false,
+          "port": 5555,
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ]
+        },
+        "prometheusExporter": {
+          "enabled": false,
+          "port": 5556,
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ]
+        },
+        "ping": {
+          "allowSources": [
+            {
+              "address": [
+                "0.0.0.0",
+                "::"
+              ],
+              "netmask": 0,
+              "nic": "eth0"
+            }
+          ]
+        },
+        "logServer": {
+          "enabled": false,
+          "retentionDays": 30
+        },
+        "controller": {
+          "enabled": false
+        },
+        "gateway": {
+          "enabled": true,
+          "vpn": {
+            "weight": 100,
+            "allowDestinations": [
+              {
+                "address": "192.168.111.0",
+                "netmask": 24,
+                "nic": "eth1"
+              }
+            ]
+          }
+        },
+        "logForwarder": {
+          "enabled": false,
+          "elasticsearch": {
+            "awsId": "string",
+            "awsRegion": "eu-west-2",
+            "useInstanceCredentials": true,
+            "url": "https://aws.com/elasticsearch/instance/asdaxllkmda64",
+            "retentionDays": 30
+          },
+          "tcpClients": [
+            {
+              "name": "Company SIEM",
+              "host": "siem.company.com",
+              "port": 8888,
+              "format": "json",
+              "useTLS": true,
+              "filter": "event_type=='authentication_succeeded'"
+            }
+          ],
+          "awsKineses": [
+            {
+              "awsId": "string",
+              "awsRegion": "eu-west-2",
+              "useInstanceCredentials": true,
+              "type": "Stream",
+              "streamName": "Appgate_SDP_audit",
+              "batchSize": 400,
+              "numberOfPartitionKeys": 10,
+              "filter": "event_type=='authentication_succeeded'"
+            }
+          ],
+          "sites": [
+            "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+          ]
+        },
+        "connector": {
+          "enabled": false,
+          "expressClients": [
+            {
+              "name": "Printers",
+              "deviceId": "12699e27-b584-464a-81ee-5b4784b6d425",
+              "allowResources": [
+                {
+                  "address": "0.0.0.0",
+                  "netmask": 32
+                }
+              ],
+              "snatToResources": true
+            }
+          ],
+          "advancedClients": [
+            {
+              "name": "Printers",
+              "deviceId": "12699e27-b584-464a-81ee-5b4784b6d425",
+              "allowResources": [
+                {
+                  "address": [
+                    "0.0.0.0",
+                    "::"
+                  ],
+                  "netmask": 0,
+                  "nic": "eth0"
+                }
+              ],
+              "snatToTunnel": true
+            }
+          ]
+        },
+        "rsyslogDestinations": [
+          {
+            "selector": ":msg, contains, \"[AUDIT]\"",
+            "template": "%msg:9:$%\n",
+            "destination": "@@10.10.10.2"
+          }
+        ],
+        "hostnameAliases": [
+          "appgatealias.company.com",
+          "alias2.localhost"
+        ]
       }
     ]
   }
