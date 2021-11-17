@@ -11,11 +11,16 @@ import (
 func AskConfirmation(m ...string) error {
 	m = append(m, "Do you want to continue?")
 	ok := false
-	prompt := &survey.Confirm{
+	p := &survey.Confirm{
 		Message: strings.Join(m, "\n\n"),
 	}
-	if err := survey.AskOne(prompt, &ok); err != nil || !ok {
+	if err := SurveyAskOne(p, &ok); err != nil || !ok {
 		return appliance.ErrExecutionCanceledByUser
 	}
 	return nil
+}
+
+// SurveyAskOne helper method, mainly used within tests
+var SurveyAskOne = func(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
+	return survey.AskOne(p, response, opts...)
 }
