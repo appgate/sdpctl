@@ -61,9 +61,11 @@ func initConfig() {
 
 func NewCmdRoot() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use:     "appgatectl [COMMAND]",
-		Short:   "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
-		Version: versionOutput,
+		Use:           "appgatectl [COMMAND]",
+		Short:         "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
+		Version:       versionOutput,
+		SilenceErrors: true,
+		SilenceUsage:  true,
 		Aliases: []string{
 			"agctl",
 			"ag",
@@ -104,13 +106,23 @@ const (
 
 func Execute() exitCode {
 	root := NewCmdRoot()
-	if err := root.Execute(); err != nil {
+	cmd, err := root.ExecuteC()
+	if err != nil {
+		errorString := err.Error()
+		fmt.Fprintln(os.Stderr, errorString)
 		if errors.Is(err, ErrExitAuth) {
 			return exitAuth
 		}
 		if errors.Is(err, appliance.ErrExecutionCanceledByUser) {
 			return exitCancel
 		}
+		// only show usage prompt if we get invalid args / flags
+		if strings.Contains(errorString, "arg(s)") || strings.Contains(errorString, "flag") || strings.Contains(errorString, "command") {
+			fmt.Fprintln(os.Stderr)
+			fmt.Fprintln(os.Stderr, cmd.UsageString())
+			return exitError
+		}
+
 		return exitError
 	}
 	return exitOK
