@@ -44,23 +44,23 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 				},
 				{
 					URL:       "/files/img.zip",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
 					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
@@ -92,7 +92,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
 			wantErr:    true,
@@ -108,7 +108,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
 			wantErr: true,
@@ -124,7 +124,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
 			wantErr: true,
@@ -135,7 +135,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
-					Responder: httpmock.FileResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
 			wantErr:    true,
