@@ -10,6 +10,7 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -84,6 +85,9 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		return err
 	}
 	fmt.Fprintf(opts.Out, "\n%s\n", msg)
+	if err := prompt.AskConfirmation(); err != nil {
+		return err
+	}
 	g, ctx := errgroup.WithContext(ctx)
 	for _, appliance := range noneIdleAppliances {
 		i := appliance
