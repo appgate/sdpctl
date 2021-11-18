@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -160,10 +162,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-
 	if !shouldUpload && existingFile.GetStatus() != fileReady {
-		log.Warnf("Remote file %q already exist, but is in status %s, overridring it", filename, existingFile.GetStatus())
+		log.Infof("Remote file %q already exist, but is in status %s, overridring it", filename, existingFile.GetStatus())
 		shouldUpload = true
+	}
+	if existingFile.GetStatus() == fileReady {
+		log.Infof("File %s already exists, using it as is", existingFile.GetName())
 	}
 	if shouldUpload {
 		fileStat, err := f.Stat()
@@ -215,20 +219,18 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	// Step 2
 	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) error {
-		remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)
+		remoteFilePath := fmt.Sprintf("controller://%s:%s/%s", primaryController.GetHostname(), u.Port(), filename)
+		log.Infof("Remote file path for controller %s", remoteFilePath)
 		g, ctx := errgroup.WithContext(ctx)
 		for _, appliance := range appliances {
 			i := appliance // https://golang.org/doc/faq#closures_and_goroutines
 			g.Go(func() error {
-				log.Infof("Preparing upgrade for %s", i.GetName())
+				log.WithFields(log.Fields{
+					"appliance": i.GetName(),
+				}).Info("Preparing upgrade")
 				if err := a.PrepareFileOn(ctx, remoteFilePath, i.GetId()); err != nil {
 					return fmt.Errorf("Failed to prepare %q %s", i.GetName(), err)
 				}
-				status, err := a.UpgradeStatus(ctx, i.GetId())
-				if err != nil {
-					return fmt.Errorf("Failed to get status after prepare %s %s", i.GetName(), err)
-				}
-				log.Infof("%s status is %s - %s", i.GetName(), status.GetStatus(), status.GetDetails())
 				return nil
 			})
 		}
@@ -238,9 +240,45 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return nil
 	}
 	if err := prepare(ctx, *primaryController, appliances); err != nil {
-		return err
+		// TODO; automate cancel step here?
+		return fmt.Errorf("Preperation failed, run appgatectl appliance upgrade cancel")
 	}
-
+	var wg sync.WaitGroup
+	for _, appliance := range appliances {
+		wg.Add(1)
+		i := appliance
+		go func(i openapi.Appliance) {
+			defer wg.Done()
+			fields := log.Fields{"appliance": i.GetName()}
+			b := &backoff.ExponentialBackOff{
+				InitialInterval:     10 * time.Second,
+				RandomizationFactor: 0.7,
+				Multiplier:          2,
+				MaxInterval:         5 * time.Minute,
+				Stop:                backoff.Stop,
+				Clock:               backoff.SystemClock,
+			}
+			err := backoff.Retry(func() error {
+				status, err := a.UpgradeStatus(ctx, i.GetId())
+				if err != nil {
+					return err
+				}
+				var s string
+				if v, ok := status.GetStatusOk(); ok {
+					s = *v
+					log.WithFields(fields).Infof("upgrade status %q %s", s, status.GetDetails())
+				}
+				if s == "ready" {
+					return nil
+				}
+				return fmt.Errorf("%s is not ready, got %s", i.GetName(), s)
+			}, b)
+			if err != nil {
+				log.WithFields(fields).Infof("Permantly failed to reach desired state %s", err)
+			}
+		}(i)
+	}
+	wg.Wait()
 	// Step 3
 	log.Infof("3. Delete upgrade image %s from Controller", filename)
 	if err := a.DeleteFile(ctx, filename); err != nil {

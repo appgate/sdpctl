@@ -146,11 +146,14 @@ func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string) error {
 	u := openapi.ApplianceUpgrade{
 		ImageUrl: filename,
+		// TODO: update use user input args
+		// verify version >= 14 ?
+		DevKeyring: openapi.PtrBool(true),
 	}
 	_, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
 	if err != nil {
 		if r == nil {
-			return fmt.Errorf("No resposne during prepare %w", err)
+			return fmt.Errorf("No response during prepare %w", err)
 		}
 		if r.StatusCode == http.StatusConflict {
 			return fmt.Errorf("Upgrade in progress on %s %w", id, err)
