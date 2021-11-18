@@ -15,7 +15,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
+	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
@@ -30,7 +30,7 @@ import (
 type prepareUpgradeOptions struct {
 	Config     *configuration.Config
 	Out        io.Writer
-	Appliance  func(c *configuration.Config) (*appliance.Appliance, error)
+	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	Token      string
 	Timeout    int
 	url        string
@@ -77,14 +77,14 @@ const (
 )
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
-	if appliance.IsOnAppliance() {
-		return appliance.ErrExecutedOnAppliance
+	if appliancepkg.IsOnAppliance() {
+		return appliancepkg.ErrExecutedOnAppliance
 	}
 	if opts.image == "" {
 		return errors.New("Image is mandatory")
 	}
 
-	if ok, err := appliance.FileExists(opts.image); err != nil || !ok {
+	if ok, err := appliancepkg.FileExists(opts.image); err != nil || !ok {
 		return fmt.Errorf("Image file not found %q", opts.image)
 	}
 
@@ -101,7 +101,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	defer cancel()
 
 	filename := filepath.Base(f.Name())
-	targetVersion, err := appliance.GuessVersion(filename)
+	targetVersion, err := appliancepkg.GuessVersion(filename)
 	if err != nil {
 		log.Debugf("Could not guess target version based on the image file name %q", filename)
 	}
@@ -128,12 +128,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-
-	primaryController, err := appliance.FindPrimaryController(appliances, host)
+	primaryController, err := appliancepkg.FindPrimaryController(appliances, host)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliance.BackupInstructions, primaryController.Name, appliance.HelpManualURL))
+	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
 	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
 		return err
 	}
@@ -155,7 +154,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	existingFile, err := a.FileStatus(ctx, filename)
 	if err != nil {
 		// if we dont get 404, return err
-		if errors.Is(err, appliance.ErrFileNotFound) {
+		if errors.Is(err, appliancepkg.ErrFileNotFound) {
 			shouldUpload = true
 		} else {
 			return err
@@ -276,7 +275,7 @@ func appliancePeerPorts(appliances []openapi.Appliance) string {
 }
 
 func applianceGroupDescription(appliances []openapi.Appliance) string {
-	functions := appliance.ActiveFunctions(appliances)
+	functions := appliancepkg.ActiveFunctions(appliances)
 	var funcs []string
 	for k, value := range functions {
 		if _, ok := functions[k]; ok && value {
