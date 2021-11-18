@@ -55,12 +55,32 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
-					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+						}
+					},
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
+						}
+					},
 				},
 				{
 					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
