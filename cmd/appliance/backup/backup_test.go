@@ -22,17 +22,17 @@ func TestBackupCmd(t *testing.T) {
 	// Appliance list route
 	registry.Register(
 		"/appliances",
-		httpmock.JSONResponse("./fixtures/appliance_list.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	// Initiate backup request
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup", applianceUUID),
-		httpmock.JSONResponse("./fixtures/appliance_backup_initiated.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_initiated.json"),
 	)
 	// Backup is done
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
-		httpmock.JSONResponse("./fixtures/appliance_backup_status_done.json"),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_status_done.json"),
 	)
 	// Download backup
 	registry.Register(
