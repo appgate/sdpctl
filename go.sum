@@ -51,8 +51,6 @@ github.com/Netflix/go-expect v0.0.0-20180615182759-c93bf25de8e8 h1:xzYJEypr/85nB
 github.com/Netflix/go-expect v0.0.0-20180615182759-c93bf25de8e8/go.mod h1:oX5x61PbNXchhh0oikYAH+4Pcfw5LKv21+Jnpr6r6Pc=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/appgate/sdp-api-client-go v1.0.6 h1:rhOi6Ezo+BYVIvWM/hVbrtGsI9reY0DNgqa03mHj6Pw=
-github.com/appgate/sdp-api-client-go v1.0.6/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
 github.com/appgate/sdp-api-client-go v1.0.7-0.20211118131349-84a9e6b8a82e h1:Fetm8WZUhNdy3Ck//Eqm2hPVXRVAImirQ82N7OOMlcg=
 github.com/appgate/sdp-api-client-go v1.0.7-0.20211118131349-84a9e6b8a82e/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
