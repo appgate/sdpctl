@@ -12,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"text/template"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/cenkalti/backoff/v4"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -93,6 +91,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
+	}
+	if a.UpgradeStatusWorker == nil {
+		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
+			Appliance: a,
+		}
 	}
 	f, err := os.Open(opts.image)
 	if err != nil {
@@ -243,42 +246,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		// TODO; automate cancel step here?
 		return fmt.Errorf("Preperation failed, run appgatectl appliance upgrade cancel")
 	}
-	var wg sync.WaitGroup
-	for _, appliance := range appliances {
-		wg.Add(1)
-		i := appliance
-		go func(i openapi.Appliance) {
-			defer wg.Done()
-			fields := log.Fields{"appliance": i.GetName()}
-			b := &backoff.ExponentialBackOff{
-				InitialInterval:     10 * time.Second,
-				RandomizationFactor: 0.7,
-				Multiplier:          2,
-				MaxInterval:         5 * time.Minute,
-				Stop:                backoff.Stop,
-				Clock:               backoff.SystemClock,
-			}
-			err := backoff.Retry(func() error {
-				status, err := a.UpgradeStatus(ctx, i.GetId())
-				if err != nil {
-					return err
-				}
-				var s string
-				if v, ok := status.GetStatusOk(); ok {
-					s = *v
-					log.WithFields(fields).Infof("upgrade status %q %s", s, status.GetDetails())
-				}
-				if s == "ready" {
-					return nil
-				}
-				return fmt.Errorf("%s is not ready, got %s", i.GetName(), s)
-			}, b)
-			if err != nil {
-				log.WithFields(fields).Infof("Permantly failed to reach desired state %s", err)
-			}
-		}(i)
+
+	// Blocking function that checks all appliances upgrade status to verify that
+	// everyone reach desired state of ready.
+	if err := a.UpgradeStatusWorker.Wait(ctx, appliances); err != nil {
+		return err
 	}
-	wg.Wait()
+
 	// Step 3
 	log.Infof("3. Delete upgrade image %s from Controller", filename)
 	if err := a.DeleteFile(ctx, filename); err != nil {

@@ -15,9 +15,10 @@ import (
 // Appliance is a wrapper aroudn the APIClient for common functions around the appliance API that
 // will be used within several commands.
 type Appliance struct {
-	APIClient  *openapi.APIClient
-	HTTPClient *http.Client
-	Token      string
+	APIClient           *openapi.APIClient
+	HTTPClient          *http.Client
+	Token               string
+	UpgradeStatusWorker WaitForUpgradeStatus
 }
 
 // GetAll from the appgate sdp collective, without any filter.
