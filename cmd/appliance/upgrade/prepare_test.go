@@ -310,7 +310,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			if err != nil && tt.wantErrOut != nil {
 				if !tt.wantErrOut.MatchString(err.Error()) {
 					t.Logf("Stdout: %s", stdout)
-					t.Errorf("Expected output to match, got:\n%s\n expected: \n%s\n", tt.wantErrOut, err.Error())
+					t.Errorf("Expected output to match, got:\n%s\n expected: \n%s\n", err.Error(), tt.wantErrOut)
 				}
 			}
 		})
