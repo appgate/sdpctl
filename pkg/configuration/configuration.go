@@ -32,8 +32,8 @@ type Config struct {
 }
 
 type Credentials struct {
-	username string
-	password string
+	Username string
+	Password string
 }
 
 func (c *Config) GetBearTokenHeaderValue() string {
@@ -95,17 +95,21 @@ func (c *Config) CheckAuth() bool {
 }
 
 func (c *Config) GetCredentialsFromFile() (*Credentials, error) {
-    if len(c.CredentialsFile) <= 0 {
-        return nil, errors.New("no credentials file set")
-    }
-
 	creds := &Credentials{}
 
-	// Check file permissions
-	info, err := os.Stat(c.CredentialsFile)
-	if err != nil {
-		return nil, err
+	// No file is set so we return empty credentials
+	if len(c.CredentialsFile) <= 0 {
+		return creds, nil
 	}
+
+	// File is set in the config, but does not exists, so we return empty credentials
+	info, err := os.Stat(c.CredentialsFile)
+	if err != nil && os.IsNotExist(err) {
+		return creds, nil
+	}
+
+	// Check file permissions
+	// If file exists, it should only be readable by the executing user
 	mode := info.Mode()
 	if mode&(1<<2) != 0 {
 		return nil, errors.New("invalid permissions on credentials file")
@@ -122,31 +126,13 @@ func (c *Config) GetCredentialsFromFile() (*Credentials, error) {
 		data := strings.Split(scanner.Text(), "=")
 		switch data[0] {
 		case "username":
-			creds.username = data[1]
+			creds.Username = data[1]
 		case "password":
-			creds.password = data[1]
+			creds.Password = data[1]
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
-	}
-
-	// Check if all required fields are set
-	if len(creds.username) <= 0 || len(creds.password) <= 0 {
-		return nil, errors.New("invalid credentials")
-	}
-
-	return creds, nil
-}
-
-func (c *Config) GetCredentialsFromEnv(uEnv string, pEnv string) (*Credentials, error) {
-	creds := &Credentials{}
-
-	creds.username = os.Getenv(uEnv)
-	creds.password = os.Getenv(pEnv)
-
-	if len(creds.username) <= 0 || len(creds.password) <= 0 {
-		return nil, errors.New("invalid credentials")
 	}
 
 	return creds, nil
