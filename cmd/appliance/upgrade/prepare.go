@@ -244,7 +244,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	if err := prepare(ctx, *primaryController, appliances); err != nil {
 		// TODO; automate cancel step here?
-		return fmt.Errorf("Preperation failed, run appgatectl appliance upgrade cancel")
+		return fmt.Errorf("Preperation failed %s, run appgatectl appliance upgrade cancel", err)
 	}
 
 	// Blocking function that checks all appliances upgrade status to verify that
