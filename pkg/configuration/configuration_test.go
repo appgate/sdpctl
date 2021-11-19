@@ -71,22 +71,25 @@ func TestCredentialsFile(t *testing.T) {
 		fileContent string
 		fileMode    int
 		output      string
+		comparison  *Credentials
 		wantErr     bool
 	}{
 		{
-			name:        "Should fail on invalid credentials",
+			name:        "should fail on invalid credentials",
 			fileName:    "credentials",
 			fileContent: "username=\npassword=",
 			fileMode:    0600,
 			output:      "invalid credentials",
+			comparison:  &Credentials{},
 			wantErr:     true,
 		},
 		{
-			name:        "Should fail on invalid mode set",
+			name:        "should fail on invalid mode set",
 			fileName:    "credentials",
 			fileContent: "username=test\npassword=password",
 			fileMode:    0755,
 			output:      "invalid permissions on credentials file",
+			comparison:  &Credentials{},
 			wantErr:     true,
 		},
 		{
@@ -95,15 +98,31 @@ func TestCredentialsFile(t *testing.T) {
 			fileContent: "",
 			fileMode:    0700,
 			output:      "no credentials file set",
+			comparison:  &Credentials{},
 			wantErr:     true,
 		},
 		{
-			name:        "Should pass",
+			name:        "should pass",
 			fileName:    "credentials",
 			fileContent: "username=testuser\npassword=password",
 			fileMode:    0600,
 			output:      "",
-			wantErr:     false,
+			comparison: &Credentials{
+				Username: "testuser",
+				Password: "password",
+			},
+			wantErr: false,
+		},
+		{
+			name:        "should pass with only one of the credentials set",
+			fileName:    "credentials",
+			fileContent: "username=testuser",
+			fileMode:    0600,
+			output:      "",
+			comparison: &Credentials{
+				Username: "testuser",
+			},
+			wantErr: false,
 		},
 	}
 
@@ -125,81 +144,11 @@ func TestCredentialsFile(t *testing.T) {
 				}
 			}
 
-            if res != nil {
-                comp := &Credentials{
-                    username: "testuser",
-                    password: "password",
-                }
-
-                if res.password != comp.password || res.username != comp.username {
-                    t.Fatalf("EXPECTED: %+v,\nGOT: %+v", comp, res)
-                }
-            }
-		})
-	}
-}
-
-func TestEnvironmentCredentials(t *testing.T) {
-	tests := []struct {
-		name    string
-		env     map[string]string
-		wantErr bool
-		output  string
-	}{
-		{
-			name:    "should fail with no username or password",
-			wantErr: true,
-			output:  "invalid credentials",
-		},
-		{
-			name: "should fail with no username",
-			env: map[string]string{
-				"APPGATECTL_PASSWORD": "password",
-			},
-			wantErr: true,
-			output:  "invalid credentials",
-		},
-		{
-			name: "should fail with no password",
-			env: map[string]string{
-				"APPGATECTL_USERNAME": "testuser",
-			},
-			wantErr: true,
-			output:  "invalid credentials",
-		},
-		{
-			name: "should pass",
-			env: map[string]string{
-				"APPGATECTL_USERNAME": "testuser",
-				"APPGATECTL_PASSWORD": "password",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			for key, value := range tt.env {
-				if len(key) > 0 {
-					os.Setenv(key, value)
+			if res != nil {
+				if res.Password != tt.comparison.Password || res.Username != tt.comparison.Username {
+					t.Fatalf("EXPECTED: %+v,\nGOT: %+v", tt.comparison, res)
 				}
 			}
-
-			c := &Config{}
-			res, err := c.GetCredentialsFromEnv("APPGATECTL_USERNAME", "APPGATECTL_PASSWORD")
-			if tt.wantErr && err != nil {
-				if err.Error() != tt.output {
-					t.Fatalf("EXPECTED: %s\n, GOT: %s", tt.output, err.Error())
-				}
-			}
-            if res != nil {
-                comp := &Credentials{
-                    username: "testuser",
-                    password: "password",
-                }
-                if res.username != comp.username || res.password != comp.password {
-                    t.Fatalf("EXPECTED: %+v,\nGOT: %+v", comp, res)
-                }
-            }
 		})
 	}
 }
