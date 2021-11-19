@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -75,34 +74,24 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if err != nil {
 		return err
 	}
-	var qs = []*survey.Question{
-		{
-			Name: "username",
-			Prompt: &survey.Input{
-				Message: "username",
-			},
-			Validate: survey.Required,
-		},
-		{
-			Name: "password",
-			Prompt: &survey.Password{
-				Message: "password",
-			},
-			Validate: survey.Required,
-		},
-	}
-	answers := struct {
-		Username string
-		Password string
-	}{}
 
-	if err := survey.Ask(qs, &answers); err != nil {
+	// Get credentials from credentials file
+	// Overwrite credentials with values set through envirnoment variables
+	credentials, err := opts.Config.GetCredentialsFromFile()
+	if err != nil {
 		return err
 	}
+	if envUsername := viper.GetString("username"); len(envUsername) > 0 {
+		credentials.Username = envUsername
+	}
+	if envPassword := viper.GetString("password"); len(envPassword) > 0 {
+		credentials.Username = envPassword
+	}
+
 	loginOpts := openapi.LoginRequest{
 		ProviderName: cfg.Provider,
-		Username:     openapi.PtrString(answers.Username),
-		Password:     openapi.PtrString(answers.Password),
+		Username:     openapi.PtrString(credentials.Username),
+		Password:     openapi.PtrString(credentials.Password),
 		DeviceId:     uuid.New().String(),
 	}
 	loginResponse, _, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()

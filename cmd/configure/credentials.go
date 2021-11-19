@@ -97,7 +97,7 @@ func credentialsRun(opts *credentialOptions) error {
 	if err != nil {
 		return err
 	}
-    fmt.Fprintln(opts.Out, "Updated configuration with credentials file path")
+	fmt.Fprintln(opts.Out, "Updated configuration with credentials file path")
 
 	return nil
 }
