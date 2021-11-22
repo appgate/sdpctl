@@ -39,7 +39,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-    log.SetOutput(opts.Out)
+	log.SetOutput(opts.Out)
 	cmd.PersistentFlags().StringVarP(&opts.Destination, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
 	cmd.PersistentFlags().BoolVar(&opts.AllFlag, "all", false, "backup the entire Appgate SDP Collective")
 	cmd.PersistentFlags().BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers") // TODO: Implement logic for this flag

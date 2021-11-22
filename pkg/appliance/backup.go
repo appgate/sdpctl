@@ -103,7 +103,7 @@ func PerformBackup(opts *BackupOpts) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, a := range toUpgrade {
 		appliance := a
-        apiClient := app.APIClient
+		apiClient := app.APIClient
 		g.Go(func() error {
 			log.Infof("Starting backup on %s...\n", appliance.Name)
 			log.Debug(appliance.GetId())
@@ -124,7 +124,7 @@ func PerformBackup(opts *BackupOpts) error {
 
 			var status string
 			for status != "done" {
-                apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
+				apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 				status, err = getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
 				if err != nil {
 					return err
