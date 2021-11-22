@@ -85,7 +85,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		credentials.Username = envUsername
 	}
 	if envPassword := viper.GetString("password"); len(envPassword) > 0 {
-		credentials.Username = envPassword
+		credentials.Password = envPassword
 	}
 
 	loginOpts := openapi.LoginRequest{
