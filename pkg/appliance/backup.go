@@ -105,7 +105,8 @@ func PerformBackup(opts *BackupOpts) error {
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
-			log.Infof("Starting backup on %s...\n", appliance.Name)
+			fields := log.Fields{"appliance": appliance.Name}
+			log.WithFields(fields).Info("Starting backup")
 			log.Debug(appliance.GetId())
 			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
@@ -146,13 +147,13 @@ func PerformBackup(opts *BackupOpts) error {
 			}
 			defer dst.Close()
 
-			log.Info("Downloading file...")
 			_, err = io.Copy(dst, file)
 			if err != nil {
 				return err
 			}
 
-			log.Infof("wrote backup file to '%s'", dst.Name())
+			fields = log.Fields{"destination": dst.Name()}
+			log.WithFields(fields).Infof("Wrote backup file")
 
 			return nil
 		})
