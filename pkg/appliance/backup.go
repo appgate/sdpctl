@@ -3,6 +3,7 @@ package appliance
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -29,6 +30,7 @@ type BackupOpts struct {
 	Include            []string
 	AllFlag            bool
 	AllControllersFlag bool
+	Timeout            time.Duration
 }
 
 type backupHTTPResponse struct {
@@ -124,13 +126,19 @@ func PerformBackup(opts *BackupOpts) error {
 			backupID := res.GetId()
 
 			var status string
+			backoff := 1 * time.Second
 			for status != "done" {
 				apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 				status, err = getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
 				if err != nil {
 					return err
 				}
-				time.Sleep(1 * time.Second)
+				// Exponential backoff to not hammer API
+				if backoff > opts.Timeout {
+					return errors.New("Failed backup. Backup status exceeded timeout.")
+				}
+				time.Sleep(backoff)
+				backoff *= 2
 			}
 
 			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
