@@ -15,7 +15,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
+	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
@@ -30,7 +30,7 @@ import (
 type prepareUpgradeOptions struct {
 	Config     *configuration.Config
 	Out        io.Writer
-	Appliance  func(c *configuration.Config) (*appliance.Appliance, error)
+	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	Token      string
 	Timeout    int
 	url        string
@@ -77,20 +77,25 @@ const (
 )
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
-	if appliance.IsOnAppliance() {
-		return appliance.ErrExecutedOnAppliance
+	if appliancepkg.IsOnAppliance() {
+		return appliancepkg.ErrExecutedOnAppliance
 	}
 	if opts.image == "" {
 		return errors.New("Image is mandatory")
 	}
 
-	if ok, err := appliance.FileExists(opts.image); err != nil || !ok {
+	if ok, err := appliancepkg.FileExists(opts.image); err != nil || !ok {
 		return fmt.Errorf("Image file not found %q", opts.image)
 	}
 
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
+	}
+	if a.UpgradeStatusWorker == nil {
+		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
+			Appliance: a,
+		}
 	}
 	f, err := os.Open(opts.image)
 	if err != nil {
@@ -101,7 +106,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	defer cancel()
 
 	filename := filepath.Base(f.Name())
-	targetVersion, err := appliance.GuessVersion(filename)
+	targetVersion, err := appliancepkg.GuessVersion(filename)
 	if err != nil {
 		log.Debugf("Could not guess target version based on the image file name %q", filename)
 	}
@@ -128,12 +133,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-
-	primaryController, err := appliance.FindPrimaryController(appliances, host)
+	primaryController, err := appliancepkg.FindPrimaryController(appliances, host)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliance.BackupInstructions, primaryController.Name, appliance.HelpManualURL))
+	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
 	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
 		return err
 	}
@@ -155,16 +159,18 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	existingFile, err := a.FileStatus(ctx, filename)
 	if err != nil {
 		// if we dont get 404, return err
-		if errors.Is(err, appliance.ErrFileNotFound) {
+		if errors.Is(err, appliancepkg.ErrFileNotFound) {
 			shouldUpload = true
 		} else {
 			return err
 		}
 	}
-
 	if !shouldUpload && existingFile.GetStatus() != fileReady {
-		log.Warnf("Remote file %q already exist, but is in status %s, overridring it", filename, existingFile.GetStatus())
+		log.Infof("Remote file %q already exist, but is in status %s, overridring it", filename, existingFile.GetStatus())
 		shouldUpload = true
+	}
+	if existingFile.GetStatus() == fileReady {
+		log.Infof("File %s already exists, using it as is", existingFile.GetName())
 	}
 	if shouldUpload {
 		fileStat, err := f.Stat()
@@ -216,20 +222,18 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	// Step 2
 	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) error {
-		remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), 8443, filename)
+		remoteFilePath := fmt.Sprintf("controller://%s:%s/%s", primaryController.GetHostname(), u.Port(), filename)
+		log.Infof("Remote file path for controller %s", remoteFilePath)
 		g, ctx := errgroup.WithContext(ctx)
 		for _, appliance := range appliances {
 			i := appliance // https://golang.org/doc/faq#closures_and_goroutines
 			g.Go(func() error {
-				log.Infof("Preparing upgrade for %s", i.GetName())
+				log.WithFields(log.Fields{
+					"appliance": i.GetName(),
+				}).Info("Preparing upgrade")
 				if err := a.PrepareFileOn(ctx, remoteFilePath, i.GetId()); err != nil {
 					return fmt.Errorf("Failed to prepare %q %s", i.GetName(), err)
 				}
-				status, err := a.UpgradeStatus(ctx, i.GetId())
-				if err != nil {
-					return fmt.Errorf("Failed to get status after prepare %s %s", i.GetName(), err)
-				}
-				log.Infof("%s status is %s - %s", i.GetName(), status.GetStatus(), status.GetDetails())
 				return nil
 			})
 		}
@@ -239,6 +243,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return nil
 	}
 	if err := prepare(ctx, *primaryController, appliances); err != nil {
+		// TODO; automate cancel step here?
+		return fmt.Errorf("Preperation failed %s, run appgatectl appliance upgrade cancel", err)
+	}
+
+	// Blocking function that checks all appliances upgrade status to verify that
+	// everyone reach desired state of ready.
+	if err := a.UpgradeStatusWorker.Wait(ctx, appliances); err != nil {
 		return err
 	}
 
@@ -276,7 +287,7 @@ func appliancePeerPorts(appliances []openapi.Appliance) string {
 }
 
 func applianceGroupDescription(appliances []openapi.Appliance) string {
-	functions := appliance.ActiveFunctions(appliances)
+	functions := appliancepkg.ActiveFunctions(appliances)
 	var funcs []string
 	for k, value := range functions {
 		if _, ok := functions[k]; ok && value {

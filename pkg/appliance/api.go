@@ -15,9 +15,10 @@ import (
 // Appliance is a wrapper aroudn the APIClient for common functions around the appliance API that
 // will be used within several commands.
 type Appliance struct {
-	APIClient  *openapi.APIClient
-	HTTPClient *http.Client
-	Token      string
+	APIClient           *openapi.APIClient
+	HTTPClient          *http.Client
+	Token               string
+	UpgradeStatusWorker WaitForUpgradeStatus
 }
 
 // GetAll from the appgate sdp collective, without any filter.
@@ -146,11 +147,14 @@ func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string) error {
 	u := openapi.ApplianceUpgrade{
 		ImageUrl: filename,
+		// TODO: update use user input args
+		// verify version >= 14 ?
+		DevKeyring: openapi.PtrBool(true),
 	}
 	_, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
 	if err != nil {
 		if r == nil {
-			return fmt.Errorf("No resposne during prepare %w", err)
+			return fmt.Errorf("No response during prepare %w", err)
 		}
 		if r.StatusCode == http.StatusConflict {
 			return fmt.Errorf("Upgrade in progress on %s %w", id, err)
