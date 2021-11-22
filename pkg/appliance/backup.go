@@ -1,4 +1,4 @@
-package backup
+package appliance
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -22,7 +22,7 @@ var (
 
 type BackupOpts struct {
 	Config             *configuration.Config
-	Appliance          func(*configuration.Config) (*appliance.Appliance, error)
+	Appliance          func(*configuration.Config) (*Appliance, error)
 	Out                io.Writer
 	Destination        string
 	NotifyURL          string
@@ -37,10 +37,10 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
-	fmt.Fprintln(opts.Out, "Preparing backup...")
+	log.Info("Preparing backup...")
 	log.Debug(opts.Destination)
 
-	if appliance.IsOnAppliance() {
+	if IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
@@ -89,7 +89,7 @@ func PerformBackup(opts *BackupOpts) error {
 	if err != nil {
 		return err
 	}
-	primaryController, err := appliance.FindPrimaryController(appliances, host)
+	primaryController, err := FindPrimaryController(appliances, host)
 	if err != nil {
 		log.Debug(err)
 		return fmt.Errorf("Failed to find primary controller")
@@ -100,54 +100,66 @@ func PerformBackup(opts *BackupOpts) error {
 		toUpgrade = appliances
 	}
 
+	g, ctx := errgroup.WithContext(ctx)
 	for _, a := range toUpgrade {
-		fmt.Fprintf(opts.Out, "Starting backup on %s...\n", a.Name)
-		log.Debug(a.GetId())
-		app.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
-		run := app.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, a.Id).Authorization(app.Token).InlineObject(iObj)
-		res, httpresponse, err := run.Execute()
-		if err != nil {
-			respBody := backupHTTPResponse{}
-			decodeErr := json.NewDecoder(httpresponse.Body).Decode(&respBody)
-			if decodeErr != nil {
-				return decodeErr
+		appliance := a
+        apiClient := app.APIClient
+		g.Go(func() error {
+			log.Infof("Starting backup on %s...\n", appliance.Name)
+			log.Debug(appliance.GetId())
+			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
+			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
+			res, httpresponse, err := run.Execute()
+			if err != nil {
+				respBody := backupHTTPResponse{}
+				decodeErr := json.NewDecoder(httpresponse.Body).Decode(&respBody)
+				if decodeErr != nil {
+					return decodeErr
+				}
+				log.Debug(respBody.Message)
+				log.Debug(err)
+				return fmt.Errorf("%s\nMessage: %s", err, respBody.Message)
 			}
-			log.Debug(respBody.Message)
-			log.Debug(err)
-			return fmt.Errorf("%s\nMessage: %s", err, respBody.Message)
-		}
-		backupID := res.GetId()
+			backupID := res.GetId()
 
-		var status string
-		for status != "done" {
-			status, err = getBackupState(ctx, app.APIClient, app.Token, a.Id, backupID)
+			var status string
+			for status != "done" {
+                apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
+				status, err = getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
+				if err != nil {
+					return err
+				}
+				time.Sleep(1 * time.Second)
+			}
+
+			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, appliance.Id, backupID).Authorization(app.Token).Execute()
+			if err != nil {
+				log.Debug(err)
+				log.Debug(inlineRes)
+				return err
+			}
+			defer file.Close()
+			dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405")))
 			if err != nil {
 				return err
 			}
-			time.Sleep(1 * time.Second)
-		}
+			defer dst.Close()
 
-		app.APIClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
-		file, inlineRes, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, a.Id, backupID).Authorization(app.Token).Execute()
-		if err != nil {
-			log.Debug(err)
-			log.Debug(inlineRes)
-			return err
-		}
-		defer file.Close()
-		dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, a.Name, time.Now().Format("20060102_150405")))
-		if err != nil {
-			return err
-		}
-		defer dst.Close()
+			log.Info("Downloading file...")
+			_, err = io.Copy(dst, file)
+			if err != nil {
+				return err
+			}
 
-		fmt.Fprintln(opts.Out, "Downloading file...")
-		_, err = io.Copy(dst, file)
-		if err != nil {
-			return err
-		}
+			log.Infof("wrote backup file to '%s'", dst.Name())
 
-		fmt.Fprintf(opts.Out, "wrote backup file to '%s'", dst.Name())
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil
