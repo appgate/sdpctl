@@ -1,14 +1,19 @@
 package configuration
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -18,13 +23,19 @@ const (
 )
 
 type Config struct {
-	URL         string `mapstructure:"url"`
-	Provider    string
-	Insecure    bool
-	Debug       bool   // http debug flag
-	Version     int    `mapstructure:"api_version"` // api peer interface version
-	BearerToken string `mapstructure:"bearer"`      // current logged in user token
-	ExpiresAt   string `mapstructure:"expires_at"`
+	URL             string `mapstructure:"url"`
+	Provider        string
+	Insecure        bool
+	Debug           bool   // http debug flag
+	Version         int    `mapstructure:"api_version"` // api peer interface version
+	BearerToken     string `mapstructure:"bearer"`      // current logged in user token
+	ExpiresAt       string `mapstructure:"expires_at"`
+	CredentialsFile string `mapstructure:"credentials_file"`
+}
+
+type Credentials struct {
+	Username string
+	Password string
 }
 
 func (c *Config) GetBearTokenHeaderValue() string {
@@ -83,6 +94,79 @@ func (c *Config) CheckAuth() bool {
 	}
 	t1 := time.Now()
 	return t1.Before(d)
+}
+
+func (c *Config) LoadCredentials() (*Credentials, error) {
+	creds := &Credentials{}
+
+	// No file is set so we return empty credentials
+	if len(c.CredentialsFile) <= 0 {
+		return creds, nil
+	}
+
+	// File is set in the config, but does not exists, so we return empty credentials
+	info, err := os.Stat(c.CredentialsFile)
+	if err != nil && os.IsNotExist(err) {
+		return creds, nil
+	}
+
+	// Check file permissions
+	// If file exists, it should only be readable by the executing user
+	mode := info.Mode()
+	if mode&(1<<2) != 0 {
+		return nil, errors.New("invalid permissions on credentials file")
+	}
+
+	// Scan file for credentials
+	file, err := os.Open(c.CredentialsFile)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		data := strings.Split(scanner.Text(), "=")
+		switch data[0] {
+		case "username":
+			creds.Username = data[1]
+		case "password":
+			creds.Password = data[1]
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return creds, nil
+}
+
+func (c *Config) StoreCredentials(crd *Credentials) error {
+	joinStrings := []string{}
+	if len(crd.Username) > 0 {
+		joinStrings = append(joinStrings, fmt.Sprintf("username=%s", crd.Username))
+	}
+	if len(crd.Password) > 0 {
+		joinStrings = append(joinStrings, fmt.Sprintf("password=%s", crd.Password))
+	}
+	b := []byte(strings.Join(joinStrings, "\n"))
+
+	path := filepath.FromSlash(c.CredentialsFile)
+	err := os.MkdirAll(filepath.Dir(path), 0700)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(path, b, 0600)
+	if err != nil {
+		return err
+	}
+	log.WithField("path", c.CredentialsFile).Info("Stored credentials")
+	viper.Set("credentials_file", c.CredentialsFile)
+	err = viper.WriteConfig()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Config) GetHost() (string, error) {
