@@ -80,6 +80,14 @@ func PerformBackup(opts *BackupOpts) error {
 		return err
 	}
 
+	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue())
+	if err != nil {
+		return fmt.Errorf("Failed to determine backup option: %+v", err)
+	}
+	if !backupEnabled {
+		return fmt.Errorf("Backup failed. Backups seems to be disabled on the appliance.")
+	}
+
 	appliances, err := app.GetAll(ctx)
 	if err != nil {
 		return err
@@ -183,4 +191,13 @@ func getBackupState(ctx context.Context, client *openapi.APIClient, token string
 	log.Debug(*res.Status)
 
 	return *res.Status, nil
+}
+
+func backupEnabled(ctx context.Context, client *openapi.APIClient, token string) (bool, error) {
+	settings, _, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
+	if err != nil {
+		return false, err
+	}
+
+	return *settings.BackupApiEnabled, nil
 }
