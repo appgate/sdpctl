@@ -36,7 +36,6 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(NewCredentialsCmd(f))
 	cmd.AddCommand(NewLoginCmd(f))
 
 	return cmd

@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -94,7 +96,7 @@ func (c *Config) CheckAuth() bool {
 	return t1.Before(d)
 }
 
-func (c *Config) GetCredentialsFromFile() (*Credentials, error) {
+func (c *Config) LoadCredentials() (*Credentials, error) {
 	creds := &Credentials{}
 
 	// No file is set so we return empty credentials
@@ -136,6 +138,35 @@ func (c *Config) GetCredentialsFromFile() (*Credentials, error) {
 	}
 
 	return creds, nil
+}
+
+func (c *Config) StoreCredentials(crd *Credentials) error {
+	joinStrings := []string{}
+	if len(crd.Username) > 0 {
+		joinStrings = append(joinStrings, fmt.Sprintf("username=%s", crd.Username))
+	}
+	if len(crd.Password) > 0 {
+		joinStrings = append(joinStrings, fmt.Sprintf("password=%s", crd.Password))
+	}
+	b := []byte(strings.Join(joinStrings, "\n"))
+
+	path := filepath.FromSlash(c.CredentialsFile)
+	err := os.MkdirAll(filepath.Dir(path), 0700)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(path, b, 0600)
+	if err != nil {
+		return err
+	}
+	log.WithField("path", c.CredentialsFile).Info("Stored credentials")
+	viper.Set("credentials_file", c.CredentialsFile)
+	err = viper.WriteConfig()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *Config) GetHost() (string, error) {

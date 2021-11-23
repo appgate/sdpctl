@@ -62,7 +62,7 @@ func Test_ConfigDir(t *testing.T) {
 	}
 }
 
-func TestCredentialsFile(t *testing.T) {
+func TestLoadCredentialsFile(t *testing.T) {
 	tempDir := os.TempDir()
 
 	tests := []struct {
@@ -137,7 +137,7 @@ func TestCredentialsFile(t *testing.T) {
 				defer file.Close()
 			}
 
-			res, err := conf.GetCredentialsFromFile()
+			res, err := conf.LoadCredentials()
 			if err != nil && tt.wantErr {
 				if tt.output != err.Error() {
 					t.Fatalf("EXPECTED: %s\n, GOT: %+v", tt.output, err.Error())
