@@ -85,7 +85,7 @@ func PerformBackup(opts *BackupOpts) error {
 		return fmt.Errorf("Failed to determine backup option: %w", err)
 	}
 	if !backupEnabled {
-		return fmt.Errorf("Backup failed. Backups seems to be disabled on the appliance.")
+		return fmt.Errorf("Backup API is disabled in the collective.")
 	}
 
 	appliances, err := app.GetAll(ctx)
