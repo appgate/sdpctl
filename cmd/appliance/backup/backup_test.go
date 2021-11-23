@@ -24,6 +24,11 @@ func TestBackupCmd(t *testing.T) {
 		"/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
+	// Backup state
+	registry.Register(
+		"/global-settings",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_global_options.json"),
+	)
 	// Initiate backup request
 	registry.Register(
 		fmt.Sprintf("/appliances/%s/backup", applianceUUID),
@@ -77,7 +82,7 @@ func TestBackupCmd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read stdout %s", err)
 	}
-	reg := regexp.MustCompile(`wrote backup file to '/tmp/appgate-testing/appgate_backup_.+.bkp`)
+	reg := regexp.MustCompile(`Wrote backup file.+destination=/tmp/appgate-testing/appgate_backup_.+.bkp`)
 	if res := reg.Find(got); res == nil {
 		t.Fatalf("result matching failed.")
 	}
