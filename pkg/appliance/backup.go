@@ -82,7 +82,7 @@ func PerformBackup(opts *BackupOpts) error {
 
 	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue())
 	if err != nil {
-		return fmt.Errorf("Failed to determine backup option: %+v", err)
+		return fmt.Errorf("Failed to determine backup option: %w", err)
 	}
 	if !backupEnabled {
 		return fmt.Errorf("Backup failed. Backups seems to be disabled on the appliance.")
