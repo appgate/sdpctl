@@ -70,7 +70,7 @@ func PerformBackup(opts *BackupOpts) error {
 	iObj.Audit = &aud
 	iObj.Logs = &logs
 
-	if opts.Config.Version >= 16 {
+	if opts.Config.Version >= 16 && len(opts.NotifyURL) > 0 {
 		// introduced in v16
 		iObj.NotifyUrl = &opts.NotifyURL
 	}
@@ -127,9 +127,9 @@ func PerformBackup(opts *BackupOpts) error {
 				if decodeErr != nil {
 					return decodeErr
 				}
-				log.Debug(respBody.Message)
+				log.Debug(respBody)
 				log.Debug(err)
-				return fmt.Errorf("%s\nMessage: %s", err, respBody.Message)
+				return fmt.Errorf("%w", err)
 			}
 			backupID := res.GetId()
 
