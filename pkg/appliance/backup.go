@@ -129,7 +129,7 @@ func PerformBackup(opts *BackupOpts) error {
 				}
 				log.Debug(respBody)
 				log.Debug(err)
-				return fmt.Errorf("%w", err)
+				return err
 			}
 			backupID := res.GetId()
 
