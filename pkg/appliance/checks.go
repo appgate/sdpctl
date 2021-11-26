@@ -1,0 +1,110 @@
+package appliance
+
+import (
+	"bytes"
+	"fmt"
+	"strings"
+	"text/template"
+
+	"github.com/appgate/appgatectl/pkg/util"
+	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+)
+
+const showDiskSpaceWarning = `
+Some appliances have very little space available
+{{range .Stats}}
+  - {{ .Name }}  Disk usage: {{ .Disk -}}%
+{{end}}
+
+Upgrading requires the upload and decompression of big images.
+To avoid problems during the upgrade process it's recommended to
+increase the space on those appliances.
+`
+
+func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+	type stub struct {
+		Stats []openapi.StatsAppliancesListAllOfData
+	}
+	data := stub{
+		Stats: stats,
+	}
+	t := template.Must(template.New("").Parse(showDiskSpaceWarning))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
+}
+
+func HasLowDiskSpace(stats []openapi.StatsAppliancesListAllOfData) bool {
+	space := func(s openapi.StatsAppliancesListAllOfData) bool {
+		return s.GetDisk() >= 75
+	}
+	for _, s := range stats {
+		if space(s) {
+			return true
+		}
+	}
+	// TODO return false
+	return true
+}
+
+func applianceGroupDescription(appliances []openapi.Appliance) string {
+	functions := ActiveFunctions(appliances)
+	var funcs []string
+	for k, value := range functions {
+		if _, ok := functions[k]; ok && value {
+			funcs = append(funcs, k)
+		}
+	}
+	return strings.Join(funcs, ", ")
+}
+
+func appliancePeerPorts(appliances []openapi.Appliance) string {
+	ports := make([]int, 0)
+	for _, a := range appliances {
+		if v, ok := a.GetPeerInterfaceOk(); ok {
+			if v, ok := v.GetHttpsPortOk(); ok && *v > 0 {
+				ports = util.AppendIfMissing(ports, int(*v))
+			}
+		}
+	}
+	return strings.Trim(strings.Replace(fmt.Sprint(ports), " ", ",", -1), "[]")
+}
+
+const applianceUsingPeerWarning = `
+Version 5.4 and later are designed to operate with the admin port (default 8443)
+separate from the deprecated peer port (set to {{.CurrentPort}}).
+It is recommended to switch to port 8443 before continuing
+The following {{.Functions}} {{.Noun}} still configured without the Admin/API TLS Connection:
+{{range .Appliances}}
+  - {{.Name -}}
+{{end}}
+`
+
+func ShowPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string, error) {
+	type stub struct {
+		CurrentPort string
+		Functions   string
+		Noun        string
+		Appliances  []openapi.Appliance
+	}
+	noun := "are"
+	if len(peerAppliances) == 1 {
+		noun = "is"
+	}
+	data := stub{
+		CurrentPort: appliancePeerPorts(peerAppliances),
+		Functions:   applianceGroupDescription(peerAppliances),
+		Noun:        noun,
+		Appliances:  peerAppliances,
+	}
+	t := template.Must(template.New("peer").Parse(applianceUsingPeerWarning))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
+}

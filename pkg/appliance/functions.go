@@ -9,27 +9,76 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+const (
+	FunctionController   = "controller"
+	FunctionGateway      = "gateway"
+	FunctionPortal       = "portal"
+	FunctionConnector    = "connector"
+	FunctionLogServer    = "logserver"
+	FunctionLogForwarder = "logforwarder"
+)
+
+// GroupByFunctions group appliances by function
+func GroupByFunctions(appliances []openapi.Appliance) map[string][]openapi.Appliance {
+	r := make(map[string][]openapi.Appliance)
+	for _, a := range appliances {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			r[FunctionController] = append(r[FunctionController], a)
+		}
+		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() {
+			r[FunctionGateway] = append(r[FunctionGateway], a)
+		}
+		if v, ok := a.GetPortalOk(); ok && v.GetEnabled() {
+			r[FunctionPortal] = append(r[FunctionPortal], a)
+		}
+		if v, ok := a.GetConnectorOk(); ok && v.GetEnabled() {
+			r[FunctionConnector] = append(r[FunctionConnector], a)
+		}
+		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
+			r[FunctionLogServer] = append(r[FunctionLogServer], a)
+		}
+		if v, ok := a.GetLogForwarderOk(); ok && v.GetEnabled() {
+			r[FunctionLogForwarder] = append(r[FunctionLogForwarder], a)
+		}
+	}
+	return r
+}
+
 // ActiveFunctions returns a map of all active functions in the appliances.
 func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 	functions := make(map[string]bool)
 	for _, a := range appliances {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
-			functions["controller"] = true
+			functions[FunctionController] = true
 		}
 		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() {
-			functions["gateway"] = true
+			functions[FunctionGateway] = true
 		}
 		if v, ok := a.GetPortalOk(); ok && v.GetEnabled() {
-			functions["portal"] = true
+			functions[FunctionPortal] = true
 		}
 		if v, ok := a.GetConnectorOk(); ok && v.GetEnabled() {
-			functions["connector"] = true
+			functions[FunctionConnector] = true
 		}
 		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
-			functions["log_server"] = true
+			functions[FunctionLogServer] = true
+		}
+		if v, ok := a.GetLogForwarderOk(); ok && v.GetEnabled() {
+			functions[FunctionLogForwarder] = true
 		}
 	}
 	return functions
+}
+
+// WithAdminOnPeerInterface List all appliances still using the peer interface for the admin API, this is now deprecated.
+func WithAdminOnPeerInterface(appliances []openapi.Appliance) []openapi.Appliance {
+	peer := make([]openapi.Appliance, 0)
+	for _, a := range appliances {
+		if _, ok := a.GetAdminInterfaceOk(); !ok {
+			peer = append(peer, a)
+		}
+	}
+	return peer
 }
 
 // FilterAvailable return lists of online, offline, errors that will be used during upgrade
