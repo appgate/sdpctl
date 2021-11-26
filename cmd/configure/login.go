@@ -9,7 +9,6 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -115,7 +114,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		ProviderName: cfg.Provider,
 		Username:     openapi.PtrString(credentials.Username),
 		Password:     openapi.PtrString(credentials.Password),
-		DeviceId:     uuid.New().String(),
+		DeviceId:     cfg.DeviceID,
 	}
 	loginResponse, _, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
 	if err != nil {

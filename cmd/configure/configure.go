@@ -7,6 +7,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -85,6 +86,8 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	viper.Set("insecure", i)
 	v, _ := strconv.Atoi(answers.Version)
 	viper.Set("api_version", v)
+	dID := uuid.New()
+	viper.Set("device_id", dID)
 
 	if err := viper.WriteConfig(); err != nil {
 		return err
