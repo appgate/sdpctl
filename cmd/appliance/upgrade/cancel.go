@@ -27,6 +27,7 @@ type upgradeCancelOptions struct {
 	debug     bool
 	insecure  bool
 	cacert    string
+	delete    bool
 }
 
 // NewUpgradeCancelCmd return a new upgrade status command
@@ -49,6 +50,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
+	upgradeCancelCmd.PersistentFlags().BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the controller")
 
 	return upgradeCancelCmd
 }
@@ -64,6 +66,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	if err != nil {
 		return err
 	}
+
 	noneIdleAppliances := make([]openapi.Appliance, 0)
 	for _, app := range appliances {
 		s, err := a.UpgradeStatus(ctx, app.Id)
@@ -98,6 +101,18 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		return err
 	}
 	log.Infof("Upgrade cancelled on %d appliances", len(noneIdleAppliances))
+	if opts.delete {
+		files, err := a.ListFiles(ctx)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			if err := a.DeleteFile(ctx, f.GetName()); err != nil {
+				log.Warningf("Unable to delete file %q %s", f.GetName(), err)
+			}
+		}
+		return nil
+	}
 	return nil
 }
 

@@ -135,6 +135,14 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.ReadCloser, headers map
 	return nil
 }
 
+func (a *Appliance) ListFiles(ctx context.Context) ([]openapi.File, error) {
+	list, _, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Authorization(a.Token).Execute()
+	if err != nil {
+		return nil, err
+	}
+	return list.GetData(), nil
+}
+
 // DeleteFile Delete a File from the current Controller.
 func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 	_, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(a.Token).Execute()
