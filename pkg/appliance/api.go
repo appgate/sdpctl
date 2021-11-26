@@ -10,6 +10,7 @@ import (
 
 	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"golang.org/x/sync/errgroup"
 )
 
 // Appliance is a wrapper aroudn the APIClient for common functions around the appliance API that
@@ -19,6 +20,7 @@ type Appliance struct {
 	HTTPClient          *http.Client
 	Token               string
 	UpgradeStatusWorker WaitForUpgradeStatus
+	ApplianceStats      WaitForApplianceStatus
 }
 
 // GetAll from the appgate sdp collective, without any filter.
@@ -48,6 +50,49 @@ func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (open
 		return status, err
 	}
 	return status, nil
+}
+
+type UpgradeStatusResult struct {
+	Status, Name string
+}
+
+// UpgradeStatusMap return a map with appliance.id, UpgradeStatusResult
+func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.Appliance) (map[string]UpgradeStatusResult, error) {
+	type result struct {
+		id, status, name string
+	}
+	g, ctx := errgroup.WithContext(ctx)
+	c := make(chan result)
+	for _, appliance := range appliances {
+		i := appliance
+		g.Go(func() error {
+			status, err := a.UpgradeStatus(ctx, i.GetId())
+			if err != nil {
+				return fmt.Errorf("Could not read status of %s %w", i.GetId(), err)
+			}
+			select {
+			case c <- result{i.GetId(), status.GetStatus(), i.GetName()}:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			return nil
+		})
+	}
+	go func() {
+		g.Wait()
+		close(c)
+	}()
+	m := make(map[string]UpgradeStatusResult)
+	for r := range c {
+		m[r.id] = UpgradeStatusResult{
+			Status: r.status,
+			Name:   r.name,
+		}
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error {
@@ -166,6 +211,70 @@ func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string) erro
 		}
 		if r.StatusCode == http.StatusConflict {
 			return fmt.Errorf("Upgrade in progress on %s %w", id, err)
+		}
+		return err
+	}
+	return nil
+}
+
+func (a *Appliance) UpdateAppliance(ctx context.Context, id string, appliance openapi.Appliance) error {
+	_, _, err := a.APIClient.AppliancesApi.AppliancesIdPut(ctx, id).Appliance(appliance).Authorization(a.Token).Execute()
+	if err != nil {
+		return fmt.Errorf("Could not update appliance %w", err)
+	}
+	return nil
+}
+
+func (a *Appliance) DisableController(ctx context.Context, id string, appliance openapi.Appliance) error {
+	appliance.Controller.Enabled = openapi.PtrBool(false)
+
+	return a.UpdateAppliance(ctx, id, appliance)
+}
+
+func (a *Appliance) EnableController(ctx context.Context, id string, appliance openapi.Appliance) error {
+	appliance.Controller.Enabled = openapi.PtrBool(true)
+
+	return a.UpdateAppliance(ctx, id, appliance)
+}
+
+func (a *Appliance) UpdateMaintenanceMode(ctx context.Context, id string, value bool) (string, error) {
+	o := openapi.InlineObject3{
+		Enabled: value,
+	}
+	m, _, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).InlineObject3(o).Authorization(a.Token).Execute()
+	if err != nil {
+		return "", err
+	}
+	return m.GetId(), nil
+}
+
+func (a *Appliance) EnableMaintenanceMode(ctx context.Context, id string) (string, error) {
+	return a.UpdateMaintenanceMode(ctx, id, true)
+}
+
+func (a *Appliance) DisableMaintenanceMode(ctx context.Context, id string) (string, error) {
+	return a.UpdateMaintenanceMode(ctx, id, false)
+}
+
+func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartition bool) error {
+	o := openapi.InlineObject5{
+		SwitchPartition: openapi.PtrBool(SwitchPartition),
+	}
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeCompletePost(ctx, id).InlineObject5(o).Authorization(a.Token).Execute()
+	if err != nil {
+		if httpErr := api.HTTPErrorResponse(response, err); httpErr != nil {
+			return httpErr
+		}
+		return err
+	}
+	return nil
+}
+
+func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error {
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeSwitchPartitionPost(ctx, id).Authorization(a.Token).Execute()
+	if err != nil {
+		if httpErr := api.HTTPErrorResponse(response, err); httpErr != nil {
+			return httpErr
 		}
 		return err
 	}

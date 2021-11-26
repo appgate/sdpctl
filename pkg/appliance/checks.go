@@ -38,16 +38,12 @@ func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (
 }
 
 func HasLowDiskSpace(stats []openapi.StatsAppliancesListAllOfData) bool {
-	space := func(s openapi.StatsAppliancesListAllOfData) bool {
-		return s.GetDisk() >= 75
-	}
 	for _, s := range stats {
-		if space(s) {
+		if s.GetDisk() >= 75 {
 			return true
 		}
 	}
-	// TODO return false
-	return true
+	return false
 }
 
 func applianceGroupDescription(appliances []openapi.Appliance) string {
