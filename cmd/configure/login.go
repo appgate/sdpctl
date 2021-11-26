@@ -80,7 +80,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 
 	// Get credentials from credentials file
-	// Overwrite credentials with values set through envirnoment variables
+	// Overwrite credentials with values set through environment variables
 	credentials, err := opts.Config.LoadCredentials()
 	if err != nil {
 		return err
