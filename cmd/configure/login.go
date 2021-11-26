@@ -16,15 +16,14 @@ import (
 )
 
 type loginOptions struct {
-	Config     *configuration.Config
-	APIClient  func(Config *configuration.Config) (*openapi.APIClient, error)
-	Timeout    int
-	url        string
-	provider   string
-	debug      bool
-	insecure   bool
-	apiversion int
-	remember   bool
+	Config    *configuration.Config
+	APIClient func(Config *configuration.Config) (*openapi.APIClient, error)
+	Timeout   int
+	url       string
+	provider  string
+	debug     bool
+	insecure  bool
+	remember  bool
 }
 
 // NewLoginCmd return a new login command
@@ -49,7 +48,6 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 
 	loginCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	loginCmd.PersistentFlags().IntVar(&opts.apiversion, "apiversion", f.Config.Version, "peer API version")
 	loginCmd.PersistentFlags().StringVar(&opts.provider, "provider", "local", "identity provider")
 	loginCmd.PersistentFlags().BoolVar(&opts.remember, "remember-me", false, "remember login credentials")
 
@@ -63,9 +61,6 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 	if opts.provider != "" {
 		cfg.Provider = opts.provider
-	}
-	if opts.apiversion != 0 {
-		cfg.Version = opts.apiversion
 	}
 	if opts.insecure {
 		cfg.Insecure = true

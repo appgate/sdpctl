@@ -48,7 +48,6 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	cmd.PersistentFlags().StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
 	cmd.PersistentFlags().DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "include extra data in backup (audit,logs)")
 	// TODO: Implement --device-id (maybe globally in config)
-	// TODO: Implement --api-version flag
 
 	return cmd
 }

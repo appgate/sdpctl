@@ -28,18 +28,17 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config     *configuration.Config
-	Out        io.Writer
-	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token      string
-	Timeout    int
-	url        string
-	provider   string
-	debug      bool
-	insecure   bool
-	apiversion int
-	cacert     string
-	image      string
+	Config    *configuration.Config
+	Out       io.Writer
+	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	Token     string
+	Timeout   int
+	url       string
+	provider  string
+	debug     bool
+	insecure  bool
+	cacert    string
+	image     string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -62,7 +61,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 
 	prepareCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	prepareCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	prepareCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	prepareCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	prepareCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 	prepareCmd.PersistentFlags().StringVarP(&opts.image, "image", "", "", "image path")
