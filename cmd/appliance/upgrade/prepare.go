@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"text/template"
 	"time"
 
@@ -235,35 +236,72 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
 
 	// Step 2
-	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) error {
+	// prepare the image on the appliances,
+	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
+	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		remoteFilePath := fmt.Sprintf("controller://%s:%s/%s", primaryController.GetHostname(), u.Port(), filename)
 		log.Infof("Remote file path for controller %s", remoteFilePath)
 		g, ctx := errgroup.WithContext(ctx)
-		for _, appliance := range appliances {
-			i := appliance // https://golang.org/doc/faq#closures_and_goroutines
+
+		applianceIds := make(chan openapi.Appliance)
+		// Produce, send all appliance Id to the Channel so we can consume them in a fixed rate.
+		g.Go(func() error {
+			for _, appliance := range appliances {
+				applianceIds <- appliance
+			}
+			close(applianceIds)
+			return nil
+		})
+
+		// consume Prepare with nWorkers
+		nWorkers := 2
+		workers := int32(nWorkers)
+		finished := make(chan openapi.Appliance)
+		for i := 0; i < nWorkers; i++ {
 			g.Go(func() error {
-				log.WithFields(log.Fields{
-					"appliance": i.GetName(),
-				}).Info("Preparing upgrade")
-				if err := a.PrepareFileOn(ctx, remoteFilePath, i.GetId()); err != nil {
-					return fmt.Errorf("Failed to prepare %q %s", i.GetName(), err)
+				defer func() {
+					// Last one out closes the channel
+					if atomic.AddInt32(&workers, -1) == 0 {
+						close(finished)
+					}
+				}()
+				for appliance := range applianceIds {
+					fields := log.Fields{"appliance": appliance.GetName()}
+					log.WithFields(fields).Info("Preparing upgrade")
+					if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId()); err != nil {
+						log.WithFields(fields).Errorf("Preparing upgrade err %s", err)
+						return err
+					}
+					if err := a.UpgradeStatusWorker.Wait(ctx, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
+						return err
+					}
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					case finished <- appliance:
+					}
 				}
 				return nil
 			})
 		}
-		if err := g.Wait(); err != nil {
-			return err
-		}
-		return nil
+		r := make([]openapi.Appliance, 0)
+		g.Go(func() error {
+			for appliance := range finished {
+				r = append(r, appliance)
+			}
+			return nil
+		})
+		return r, g.Wait()
 	}
-	if err := prepare(ctx, *primaryController, appliances); err != nil {
+	preparedAppliances, err := prepare(ctx, *primaryController, appliances)
+	if err != nil {
 		// TODO; automate cancel step here?
 		return fmt.Errorf("Preperation failed %s, run appgatectl appliance upgrade cancel", err)
 	}
 
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.
-	if err := a.UpgradeStatusWorker.Wait(ctx, appliances, appliancepkg.UpgradeStatusReady); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(ctx, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {
 		return err
 	}
 
