@@ -94,7 +94,7 @@ func ShowPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string
 		CurrentPort: appliancePeerPorts(peerAppliances),
 		Functions:   applianceGroupDescription(peerAppliances),
 		Noun:        noun,
-		Appliances:  peerAppliances,
+		Appliances:  unique(peerAppliances),
 	}
 	t := template.Must(template.New("peer").Parse(applianceUsingPeerWarning))
 	var tpl bytes.Buffer
@@ -103,4 +103,16 @@ func ShowPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string
 	}
 
 	return tpl.String(), nil
+}
+
+func unique(slice []openapi.Appliance) []openapi.Appliance {
+	keys := make(map[string]bool)
+	list := []openapi.Appliance{}
+	for _, entry := range slice {
+		if _, value := keys[entry.GetId()]; !value {
+			keys[entry.GetId()] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }
