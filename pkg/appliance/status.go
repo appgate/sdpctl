@@ -3,12 +3,13 @@ package appliance
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
 )
 
 type WaitForUpgradeStatus interface {
@@ -28,41 +29,52 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 	Clock:           backoff.SystemClock,
 }
 
+func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatus string) backoff.Operation {
+	fields := log.Fields{"appliance": appliance.GetName()}
+	return func() error {
+		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
+		if err != nil {
+			return err
+		}
+		var s string
+		if v, ok := status.GetStatusOk(); ok {
+			s = *v
+			if status.GetStatus() == UpgradeStatusFailed {
+				log.WithFields(fields).Errorf(status.GetDetails())
+				return backoff.Permanent(fmt.Errorf("Upgraded failed on %s - %s", appliance.GetName(), status.GetDetails()))
+			}
+		}
+		log.WithFields(fields).Infof("upgrade status %q %s waiting for %s", s, status.GetDetails(), desiredStatus)
+		if s == desiredStatus {
+			return nil
+		}
+		return fmt.Errorf(
+			"%s never reached %s, got %q %s",
+			appliance.GetName(),
+			desiredStatus,
+			s,
+			status.GetDetails(),
+		)
+	}
+}
+
 func (u *UpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
-	g, ctx := errgroup.WithContext(ctx)
+	var wg sync.WaitGroup
+	var err error
 	for _, appliance := range appliances {
 		i := appliance
-		g.Go(func() error {
-			fields := log.Fields{"appliance": i.GetName()}
-			return backoff.Retry(func() error {
-				status, err := u.Appliance.UpgradeStatus(ctx, i.GetId())
-				if err != nil {
-					return err
-				}
-				var s string
-				if v, ok := status.GetStatusOk(); ok {
-					s = *v
-					if status.GetStatus() == UpgradeStatusFailed {
-						log.WithFields(fields).Errorf(status.GetDetails())
-						return backoff.Permanent(fmt.Errorf("Upgraded failed on %s - %s", i.GetName(), status.GetDetails()))
-					}
-					log.WithFields(fields).Infof("upgrade status %q %s waiting for %s", s, status.GetDetails(), desiredStatus)
-				}
-
-				if s == desiredStatus {
-					return nil
-				}
-				return fmt.Errorf(
-					"%s never reached %s, got %q %s",
-					i.GetName(),
-					desiredStatus,
-					s,
-					status.GetDetails(),
-				)
-			}, defaultExponentialBackOff)
-		})
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := backoff.Retry(u.upgradeStatus(ctx, i, desiredStatus), defaultExponentialBackOff); err != nil {
+				log.WithField("appliance", i.GetName()).Warnf("never got %s %s", desiredStatus, err)
+				err = multierror.Append(err)
+			}
+		}()
 	}
-	return g.Wait()
+
+	wg.Wait()
+	return err
 }
 
 type WaitForApplianceStatus interface {
