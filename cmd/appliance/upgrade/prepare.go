@@ -148,7 +148,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	primaryController, err := appliancepkg.FindPrimaryController(appliances, host)
+	primaryController, err := appliancepkg.FindPrimaryController(groups[appliancepkg.FunctionController], host)
 	if err != nil {
 		return err
 	}
@@ -277,6 +277,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						return err
 					}
 					if err := a.UpgradeStatusWorker.Wait(ctx, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
+						log.WithFields(fields).Errorf("Never reached expected state %s", err)
 						return err
 					}
 					select {
@@ -299,10 +300,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	preparedAppliances, err := prepare(ctx, *primaryController, appliances)
 	if err != nil {
-		// TODO; automate cancel step here?
 		return fmt.Errorf("Preperation failed %s, run appgatectl appliance upgrade cancel", err)
 	}
-
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.
 	if err := a.UpgradeStatusWorker.Wait(ctx, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {

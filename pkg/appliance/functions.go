@@ -112,7 +112,7 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
 // Hostnames should be compared in a case insensitive way.
 func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
-
+	// TODO selects wrong controller
 	controllers := make([]openapi.Appliance, 0)
 	type details struct {
 		ID        string
@@ -131,6 +131,9 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 		if v, ok := controller.GetAdminInterfaceOk(); ok {
 			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
 		}
+		if v, ok := controller.GetPeerInterfaceOk(); ok {
+			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
+		}
 		data[controller.GetId()] = details{
 			ID:        controller.GetId(),
 			Hostnames: hostnames,
@@ -143,6 +146,7 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 		if util.InSlice(strings.ToLower(hostname), c.Hostnames) {
 			count++
 			candidate = &c.Appliance
+			break
 		}
 	}
 	if count > 1 {
