@@ -364,3 +364,77 @@ func TestGroupByFunctions(t *testing.T) {
 		})
 	}
 }
+
+func TestActiveFunctions(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]bool
+	}{
+		{
+			name: "one active controller",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+				},
+			},
+			want: map[string]bool{
+				FunctionController: true,
+			},
+		},
+		{
+			name: "one active controller and gateway",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+					{
+						Name: "gateway",
+						Id:   "two",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "portal",
+						Id:   "three",
+						Portal: &openapi.Portal{
+							Enabled: openapi.PtrBool(false),
+						},
+					},
+				},
+			},
+			want: map[string]bool{
+				FunctionController: true,
+				FunctionGateway:    true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ActiveFunctions(tt.args.appliances); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ActiveFunctions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
