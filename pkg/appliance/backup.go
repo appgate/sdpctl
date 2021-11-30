@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	DefaultBackupDestination = "$HOME/appgate/appgate_backup_yyyymmdd_hhMMss"
+	DefaultBackupDestination = "$HOME/Downloads/appgate/backup"
 )
 
 type BackupOpts struct {
@@ -39,8 +39,7 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
-	log.Info("Preparing backup...")
-	log.Debug(opts.Destination)
+	log.WithField("destination", opts.Destination).Info("Preparing backup...")
 
 	if IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
@@ -51,7 +50,7 @@ func PrepareBackup(opts *BackupOpts) error {
 		if err != nil {
 			return err
 		}
-		opts.Destination = filepath.FromSlash(fmt.Sprintf("%s/appgate/backup", homedir))
+		opts.Destination = filepath.FromSlash(fmt.Sprintf("%s/Downloads/appgate/backup", homedir))
 	}
 
 	if err := os.MkdirAll(opts.Destination, 0700); err != nil {

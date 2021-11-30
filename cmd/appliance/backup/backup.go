@@ -46,9 +46,8 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&opts.AllFlag, "all", false, "backup the entire Appgate SDP Collective")
 	cmd.PersistentFlags().BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers") // TODO: Implement logic for this flag
 	cmd.PersistentFlags().StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
-	cmd.PersistentFlags().DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "include extra data in backup (audit,logs)")
+	cmd.PersistentFlags().DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
 	// TODO: Implement --device-id (maybe globally in config)
-	// TODO: Implement --api-version flag
 
 	return cmd
 }

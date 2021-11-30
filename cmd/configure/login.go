@@ -9,22 +9,20 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type loginOptions struct {
-	Config     *configuration.Config
-	APIClient  func(Config *configuration.Config) (*openapi.APIClient, error)
-	Timeout    int
-	url        string
-	provider   string
-	debug      bool
-	insecure   bool
-	apiversion int
-	remember   bool
+	Config    *configuration.Config
+	APIClient func(Config *configuration.Config) (*openapi.APIClient, error)
+	Timeout   int
+	url       string
+	provider  string
+	debug     bool
+	insecure  bool
+	remember  bool
 }
 
 // NewLoginCmd return a new login command
@@ -49,7 +47,6 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 
 	loginCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	loginCmd.PersistentFlags().IntVar(&opts.apiversion, "apiversion", f.Config.Version, "peer API version")
 	loginCmd.PersistentFlags().StringVar(&opts.provider, "provider", "local", "identity provider")
 	loginCmd.PersistentFlags().BoolVar(&opts.remember, "remember-me", false, "remember login credentials")
 
@@ -64,9 +61,6 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if opts.provider != "" {
 		cfg.Provider = opts.provider
 	}
-	if opts.apiversion != 0 {
-		cfg.Version = opts.apiversion
-	}
 	if opts.insecure {
 		cfg.Insecure = true
 	}
@@ -80,7 +74,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 
 	// Get credentials from credentials file
-	// Overwrite credentials with values set through envirnoment variables
+	// Overwrite credentials with values set through environment variables
 	credentials, err := opts.Config.LoadCredentials()
 	if err != nil {
 		return err
@@ -120,7 +114,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		ProviderName: cfg.Provider,
 		Username:     openapi.PtrString(credentials.Username),
 		Password:     openapi.PtrString(credentials.Password),
-		DeviceId:     uuid.New().String(),
+		DeviceId:     cfg.DeviceID,
 	}
 	loginResponse, _, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
 	if err != nil {

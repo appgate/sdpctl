@@ -31,6 +31,7 @@ type Config struct {
 	BearerToken     string `mapstructure:"bearer"`      // current logged in user token
 	ExpiresAt       string `mapstructure:"expires_at"`
 	CredentialsFile string `mapstructure:"credentials_file"`
+	DeviceID        string `mapstructure:"device_id"`
 }
 
 type Credentials struct {

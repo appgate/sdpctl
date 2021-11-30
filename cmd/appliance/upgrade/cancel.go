@@ -18,16 +18,15 @@ import (
 )
 
 type upgradeCancelOptions struct {
-	Config     *configuration.Config
-	Out        io.Writer
-	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token      string
-	url        string
-	provider   string
-	debug      bool
-	insecure   bool
-	apiversion int
-	cacert     string
+	Config    *configuration.Config
+	Out       io.Writer
+	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	Token     string
+	url       string
+	provider  string
+	debug     bool
+	insecure  bool
+	cacert    string
 }
 
 // NewUpgradeCancelCmd return a new upgrade status command
@@ -48,7 +47,6 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 
 	upgradeCancelCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	upgradeCancelCmd.PersistentFlags().IntVarP(&opts.apiversion, "apiversion", "", f.Config.Version, "peer API version")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 
