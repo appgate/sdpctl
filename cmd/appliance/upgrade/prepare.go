@@ -236,10 +236,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
 
 	// Step 2
+	peerPort := 8443
+	if v, ok := primaryController.GetPeerInterfaceOk(); ok {
+		peerPort = int(v.GetHttpsPort())
+	}
 	// prepare the image on the appliances,
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
 	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
-		remoteFilePath := fmt.Sprintf("controller://%s:%s/%s", primaryController.GetHostname(), u.Port(), filename)
+		remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), peerPort, filename)
 		log.Infof("Remote file path for controller %s", remoteFilePath)
 		g, ctx := errgroup.WithContext(ctx)
 
