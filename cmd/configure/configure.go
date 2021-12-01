@@ -1,11 +1,13 @@
 package configure
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -67,7 +69,27 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	if err != nil {
 		return err
 	}
-	log.Debugf("Answers %+v", answers)
+
+	if answers.Insecure == "false" {
+		prompt := &survey.Input{
+			Message: "Path to PEM file",
+			Default: opts.Config.PemFilePath,
+		}
+		v := func(val interface{}) error {
+			if str, ok := val.(string); ok {
+				if ok, err := util.FileExists(str); err != nil || !ok {
+					return fmt.Errorf("File not found %s", str)
+				}
+			}
+			return nil
+		}
+		var p string
+		if err := survey.AskOne(prompt, &p, survey.WithValidator(v)); err != nil {
+			return err
+		}
+
+		viper.Set("pem_filepath", p)
+	}
 
 	viper.Set("url", answers.URL)
 	i, _ := strconv.ParseBool(answers.Insecure)
