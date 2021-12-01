@@ -32,6 +32,7 @@ type Config struct {
 	ExpiresAt       string `mapstructure:"expires_at"`
 	CredentialsFile string `mapstructure:"credentials_file"`
 	DeviceID        string `mapstructure:"device_id"`
+	PemFilePath     string `mapstructure:"pem_filepath"`
 }
 
 type Credentials struct {

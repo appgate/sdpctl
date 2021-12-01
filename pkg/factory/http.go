@@ -2,6 +2,7 @@ package factory
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 )
 
@@ -40,9 +42,24 @@ func httpClientFunc(f *Factory) func() (*http.Client, error) {
 		cfg := f.Config
 		timeout := 300
 		timeoutDuration := time.Duration(timeout)
+
+		rootCAs, _ := x509.SystemCertPool()
+		if rootCAs == nil {
+			rootCAs = x509.NewCertPool()
+		}
+		if ok, err := util.FileExists(cfg.PemFilePath); err == nil && ok {
+			certs, err := os.ReadFile(cfg.PemFilePath)
+			if err != nil {
+				return nil, err
+			}
+			if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+				return nil, fmt.Errorf("unable to append cert %s", cfg.PemFilePath)
+			}
+		}
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: cfg.Insecure,
+				RootCAs:            rootCAs,
 			},
 			Dial: (&net.Dialer{
 				Timeout: timeoutDuration * time.Second,
