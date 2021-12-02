@@ -7,6 +7,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-version"
 )
 
 const (
@@ -107,6 +108,15 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 		}
 	}
 	return result, offline, err
+}
+
+func GetPrimaryControllerVersion(primary openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
+	for _, s := range stats.GetData() {
+		if s.GetId() == primary.GetId() {
+			return version.NewVersion(s.GetVersion())
+		}
+	}
+	return nil, fmt.Errorf("could not determine appliance version of the primary controller %s", primary.GetName())
 }
 
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.

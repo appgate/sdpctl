@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
+	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -17,6 +18,7 @@ import (
 type loginOptions struct {
 	Config    *configuration.Config
 	APIClient func(Config *configuration.Config) (*openapi.APIClient, error)
+	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	Timeout   int
 	url       string
 	provider  string
@@ -30,6 +32,7 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 	opts := loginOptions{
 		Config:    f.Config,
 		APIClient: f.APIClient,
+		Appliance: f.Appliance,
 		Timeout:   10,
 		debug:     f.Config.Debug,
 	}
@@ -128,6 +131,33 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	viper.Set("bearer", *openapi.PtrString(*loginResponse.Token))
 	viper.Set("expires_at", loginResponse.Expires.String())
 	viper.Set("url", cfg.URL)
+
+	host, err := cfg.GetHost()
+	if err != nil {
+		return err
+	}
+	a, err := opts.Appliance(cfg)
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	allAppliances, err := a.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+	primaryController, err := appliancepkg.FindPrimaryController(allAppliances, host)
+	if err != nil {
+		return err
+	}
+	stats, _, err := a.Stats(ctx)
+	if err != nil {
+		return err
+	}
+	v, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, stats)
+	if err != nil {
+		return err
+	}
+	viper.Set("primary_controller_version", v.String())
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}

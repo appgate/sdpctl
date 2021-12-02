@@ -13,6 +13,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -111,7 +112,18 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	log.Infof("Primary controller is: %q", primaryController.Name)
+	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
+	if err != nil {
+		return err
+	}
+	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+	if err != nil {
+		return err
+	}
+	if !preV.Equal(currentPrimaryControllerVersion) {
+		return fmt.Errorf("version missmatch: run appgatectl configure login")
+	}
+	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	// We will exclude the primary controller from the others controllers
 	// since the primary controller is a special case during the upgrade process.
 	for i, appliance := range appliances {

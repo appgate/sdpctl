@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -150,11 +151,22 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
+	if err != nil {
+		return err
+	}
+	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+	if err != nil {
+		return err
+	}
+	if !preV.Equal(currentPrimaryControllerVersion) {
+		return errors.New("version missmatch: run appgatectl configure login")
+	}
 	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
 	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
 		return err
 	}
-	log.Infof("Primary controller is: %q", primaryController.Name)
+	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	if targetVersion != nil {
 		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
 	}
