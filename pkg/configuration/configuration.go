@@ -178,19 +178,3 @@ func (c *Config) GetHost() (string, error) {
 	}
 	return url.Hostname(), nil
 }
-
-func (c *Config) GetPort() (string, error) {
-	url, err := url.Parse(c.URL)
-	if err != nil {
-		return "", err
-	}
-	return url.Port(), nil
-}
-
-func (c *Config) GetScheme() (string, error) {
-	url, err := url.Parse(c.URL)
-	if err != nil {
-		return "", err
-	}
-	return url.Scheme, nil
-}
