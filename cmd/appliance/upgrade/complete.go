@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
-	"net/url"
 	"strings"
 	"time"
 
@@ -77,11 +75,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			Appliance: a,
 		}
 	}
-	u, err := url.Parse(opts.url)
-	if err != nil {
-		return err
-	}
-	host, _, err := net.SplitHostPort(u.Host)
+	host, err := opts.Config.GetHost()
 	if err != nil {
 		return err
 	}

@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -142,14 +140,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	u, err := url.Parse(opts.url)
+
+	host, err := opts.Config.GetHost()
 	if err != nil {
 		return err
 	}
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return err
-	}
+
 	primaryController, err := appliancepkg.FindPrimaryController(groups[appliancepkg.FunctionController], host)
 	if err != nil {
 		return err
