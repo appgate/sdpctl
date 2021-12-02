@@ -289,8 +289,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if id == appliance.GetId() {
 					additionalAppliances = append(additionalAppliances, appliance)
 				}
-			} else {
-				log.WithField("appliance", appliance.GetName()).Warnf("Wont be upgraded %s", result.Status)
 			}
 		}
 
