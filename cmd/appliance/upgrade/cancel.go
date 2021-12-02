@@ -39,8 +39,8 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var upgradeCancelCmd = &cobra.Command{
-		Use:  "cancel",
-		Long: `TODO`,
+		Use:   "cancel",
+		Short: `Cancel a prepared upgrade`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCancelRun(c, args, &opts)
 		},

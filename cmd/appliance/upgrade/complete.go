@@ -45,7 +45,9 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	var upgradeCompleteCmd = &cobra.Command{
 		Use:   "complete",
 		Short: "upgrade complete",
-		Long:  `TODO`,
+		Long: `Complete a prepared upgrade.
+Install a prepared upgrade on the secondary partition
+and perform a reboot to make the second partition the primary.`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCompleteRun(c, args, &opts)
 		},

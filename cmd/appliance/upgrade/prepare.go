@@ -52,7 +52,9 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	var prepareCmd = &cobra.Command{
 		Use:   "prepare",
 		Short: "prepare upgrade",
-		Long:  `TODO`,
+		Long: `Prepare an upgrade but do NOT install it.
+This means the upgrade file will be downloaded/uploaded to all the appliances,
+the signature verified as well as any other preconditions applicable at this point.`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return prepareRun(c, args, opts)
 		},
