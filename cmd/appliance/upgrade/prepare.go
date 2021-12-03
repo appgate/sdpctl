@@ -17,6 +17,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
@@ -82,7 +83,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return errors.New("Image is mandatory")
 	}
 
-	if ok, err := appliancepkg.FileExists(opts.image); err != nil || !ok {
+	if ok, err := util.FileExists(opts.image); err != nil || !ok {
 		return fmt.Errorf("Image file not found %q", opts.image)
 	}
 
