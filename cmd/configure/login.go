@@ -126,12 +126,16 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 	if mm != nil {
 		viper.Set("api_version", mm.max)
+		cfg.Version = int(mm.max)
 	}
+	token := *openapi.PtrString(*loginResponse.Token)
+	expiresAt := loginResponse.Expires.String()
+	cfg.BearerToken = token
+	cfg.ExpiresAt = expiresAt
 
-	viper.Set("bearer", *openapi.PtrString(*loginResponse.Token))
-	viper.Set("expires_at", loginResponse.Expires.String())
+	viper.Set("bearer", token)
+	viper.Set("expires_at", expiresAt)
 	viper.Set("url", cfg.URL)
-
 	host, err := cfg.GetHost()
 	if err != nil {
 		return err
