@@ -127,8 +127,28 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	// TODO Check autoscale gateways warning message
 
+	targetVersion, _ = version.NewVersion("5.5.5.2")
+	autoScalingWarning := false
+	if targetVersion != nil {
+		constraints, _ := version.NewConstraint(">= 5.5.0")
+		if constraints.Check(targetVersion) {
+			autoScalingWarning = true
+		}
+	} else if opts.Config.Version == 15 {
+		autoScalingWarning = true
+	}
+
+	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 {
+		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(opts.Out, "\n%s\n", msg)
+		if err := prompt.AskConfirmation("Have you disabled the health check on those auto-scaled gateways"); err != nil {
+			return err
+		}
+	}
 	groups := appliancepkg.GroupByFunctions(appliances)
 	targetPeers := append(groups[appliancepkg.FunctionController], groups[appliancepkg.FunctionLogServer]...)
 	peerAppliances := appliancepkg.WithAdminOnPeerInterface(targetPeers)

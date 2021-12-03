@@ -173,3 +173,20 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 		hostname,
 	)
 }
+
+// AutoscalingGateways return the template appliance and all gateways
+func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []openapi.Appliance) {
+	autoscalePrefix := "Autoscaling Instance"
+	var template *openapi.Appliance
+	r := make([]openapi.Appliance, 0)
+	for _, a := range appliances {
+		if util.InSlice("template", a.GetTags()) && !a.GetActivated() {
+			template = &a
+		}
+		// fmt.Printf("\n AutoscalingGateways: %s == %v \n", a.GetName(), strings.HasPrefix(a.GetName(), autoscalePrefix))
+		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() && strings.HasPrefix(a.GetName(), autoscalePrefix) {
+			r = append(r, a)
+		}
+	}
+	return template, r
+}
