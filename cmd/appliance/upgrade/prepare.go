@@ -26,16 +26,17 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config    *configuration.Config
-	Out       io.Writer
-	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token     string
-	Timeout   int
-	url       string
-	provider  string
-	debug     bool
-	insecure  bool
-	image     string
+	Config     *configuration.Config
+	Out        io.Writer
+	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	Token      string
+	Timeout    int
+	url        string
+	provider   string
+	debug      bool
+	insecure   bool
+	image      string
+	DevKeyring bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -62,6 +63,7 @@ the signature verified as well as any other preconditions applicable at this poi
 	prepareCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	prepareCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	prepareCmd.PersistentFlags().StringVarP(&opts.image, "image", "", "", "image path")
+	prepareCmd.PersistentFlags().BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
 	return prepareCmd
 }
@@ -280,7 +282,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				for appliance := range applianceIds {
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
-					if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId()); err != nil {
+					if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						log.WithFields(fields).Errorf("Preparing upgrade err %s", err)
 						return err
 					}
