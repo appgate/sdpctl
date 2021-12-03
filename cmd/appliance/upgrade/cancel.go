@@ -26,7 +26,6 @@ type upgradeCancelOptions struct {
 	provider  string
 	debug     bool
 	insecure  bool
-	cacert    string
 	delete    bool
 }
 
@@ -49,7 +48,6 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 	upgradeCancelCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 	upgradeCancelCmd.PersistentFlags().BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the controller")
 
 	return upgradeCancelCmd

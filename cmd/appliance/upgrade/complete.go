@@ -29,7 +29,6 @@ type upgradeCompleteOptions struct {
 	provider  string
 	debug     bool
 	insecure  bool
-	cacert    string
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -55,7 +54,6 @@ and perform a reboot to make the second partition the primary.`,
 	upgradeCompleteCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 
 	return upgradeCompleteCmd
 }
