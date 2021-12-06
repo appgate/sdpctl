@@ -158,7 +158,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	log.Info("verify the state for all controller")
 	// verify the state for all controller
-	// controllers := append(groups[appliancepkg.FunctionController], *primaryController)
 	controllers := []openapi.Appliance{*primaryController}
 	state := "controller_ready"
 	if cfg.Version < 15 {
