@@ -7,7 +7,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
+	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/spf13/cobra"
@@ -16,14 +16,13 @@ import (
 type upgradeStatusOptions struct {
 	Config    *configuration.Config
 	Out       io.Writer
-	Appliance func(c *configuration.Config) (*appliance.Appliance, error)
+	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	Token     string
 	Timeout   int
 	url       string
 	provider  string
 	debug     bool
 	insecure  bool
-	cacert    string
 	json      bool
 }
 
@@ -49,7 +48,6 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	upgradeStatusCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 
 	return upgradeStatusCmd
 }
@@ -61,29 +59,46 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return err
 	}
 	ctx := context.Background()
-	appliances, err := a.GetAll(ctx)
+	allAppliances, err := a.GetAll(ctx)
 	if err != nil {
 		return err
 	}
+	initialStats, _, err := a.Stats(ctx)
+	if err != nil {
+		return err
+	}
+	appliances, offline, _ := appliancepkg.FilterAvailable(allAppliances, initialStats.GetData())
 	type ApplianceStatus struct {
-		ID      string `json:"id"`
-		Name    string `json:"name"`
-		Status  string `json:"status,omitempty"`
-		Details string `json:"details,omitempty"`
+		ID            string `json:"id"`
+		Name          string `json:"name"`
+		Status        string `json:"status,omitempty"`
+		UpgradeStatus string `json:"upgrade_status,omitempty"`
+		Details       string `json:"details,omitempty"`
 	}
 	statuses := make([]ApplianceStatus, 0, len(appliances))
-	for _, appliance := range appliances {
+	for _, appliance := range allAppliances {
 		id := appliance.GetId()
-		status, err := a.UpgradeStatus(ctx, id)
-		if err != nil {
-			return err
+		mode := "online"
+		for _, o := range offline {
+			if o.GetId() == id {
+				mode = "offline"
+			}
 		}
-		statuses = append(statuses, ApplianceStatus{
-			ID:      id,
-			Name:    appliance.GetName(),
-			Status:  status.GetStatus(),
-			Details: status.GetDetails(),
-		})
+		row := ApplianceStatus{
+			ID:     id,
+			Name:   appliance.GetName(),
+			Status: mode,
+		}
+		if mode == "online" && appliance.GetActivated() {
+			status, err := a.UpgradeStatus(ctx, id)
+			if err != nil {
+				return err
+			}
+			row.UpgradeStatus = status.GetStatus()
+			row.Details = status.GetDetails()
+		}
+
+		statuses = append(statuses, row)
 	}
 	if opts.json {
 		jsonStatus, err := json.MarshalIndent(&statuses, "", "  ")
@@ -95,9 +110,9 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 	}
 
 	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
-	fmt.Fprintln(w, "ID\tName\tStatus\tDetails")
+	fmt.Fprintln(w, "ID\tName\tStatus\tUpgrade Status\tDetails")
 	for _, s := range statuses {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.ID, s.Name, s.Status, s.Details)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", s.ID, s.Name, s.Status, s.UpgradeStatus, s.Details)
 	}
 	w.Flush()
 	return nil

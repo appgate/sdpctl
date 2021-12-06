@@ -6,6 +6,7 @@ import (
 
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/hashicorp/go-multierror"
 )
 
 // ActiveFunctions returns a map of all active functions in the appliances.
@@ -29,6 +30,34 @@ func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 		}
 	}
 	return functions
+}
+
+// FilterAvailable return lists of online, offline, errors that will be used during upgrade
+func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) ([]openapi.Appliance, []openapi.Appliance, error) {
+	result := make([]openapi.Appliance, 0)
+	offline := make([]openapi.Appliance, 0)
+	var err error
+	// filter out offline appliances
+	for _, a := range appliances {
+		for _, stat := range stats {
+			if a.GetId() == stat.GetId() {
+				if stat.GetOnline() {
+					result = append(result, a)
+				} else {
+					offline = append(offline, a)
+				}
+			}
+		}
+	}
+	for _, a := range offline {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			err = multierror.Append(err, fmt.Errorf("cannot start the upgrade since a controller %q is offline.", a.GetName()))
+		}
+		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
+			err = multierror.Append(err, fmt.Errorf("cannot start the upgrade since a logserver %q is offline.", a.GetName()))
+		}
+	}
+	return result, offline, err
 }
 
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.

@@ -28,6 +28,10 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
+	registery.Register(
+		"/stats/appliances",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+	)
 	defer registery.Teardown()
 	registery.Serve()
 	stdout := &bytes.Buffer{}
@@ -72,13 +76,15 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	    {
 	      "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
 	      "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
-	      "status": "idle",
+	      "status": "online",
+	      "upgrade_status": "idle",
 	      "details": "a reboot is required for the Upgrade to go into effect"
 	    },
 	    {
 	      "id": "ee639d70-e075-4f01-596b-930d5f24f569",
 	      "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
-	      "status": "idle",
+          "status": "online",
+	      "upgrade_status": "idle",
 	      "details": "a reboot is required for the Upgrade to go into effect"
 	    }
 	]`)
@@ -101,6 +107,10 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	registery.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+	)
+	registery.Register(
+		"/stats/appliances",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registery.Teardown()
 	registery.Serve()
@@ -145,9 +155,9 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := `ID                                          Name                                                         Status        Details
-4c07bc67-57ea-42dd-b702-c2d6c45419fc        controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1        idle          a reboot is required for the Upgrade to go into effect
-ee639d70-e075-4f01-596b-930d5f24f569        gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1           idle          a reboot is required for the Upgrade to go into effect
+	want := `ID                                          Name                                                         Status        Upgrade Status        Details
+4c07bc67-57ea-42dd-b702-c2d6c45419fc        controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1        online        idle                  a reboot is required for the Upgrade to go into effect
+ee639d70-e075-4f01-596b-930d5f24f569        gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1           online        idle                  a reboot is required for the Upgrade to go into effect
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
