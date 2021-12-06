@@ -352,7 +352,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("failed during switch partition of additional appliances %w", err)
 	}
 	for _, a := range switchedAppliances {
-		log.Infof("Upgraded %q with switched switched partition", a.GetName())
+		log.Infof("Upgraded %q with switched partition", a.GetName())
 	}
 
 	if err := a.UpgradeStatusWorker.Wait(ctx, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
