@@ -116,19 +116,13 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		Password:     openapi.PtrString(credentials.Password),
 		DeviceId:     cfg.DeviceID,
 	}
-	loginResponse, _, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
+
+	loginResponse, mm, err := login(client, loginOpts)
 	if err != nil {
-		if err, ok := err.(openapi.GenericOpenAPIError); ok {
-			if err, ok := err.Model().(openapi.InlineResponse406); ok {
-				return fmt.Errorf(
-					"You are using the wrong apiversion (peer api version) for you appgate sdp collective, you are using %d; min: %d max: %d",
-					cfg.Version,
-					err.GetMinSupportedVersion(),
-					err.GetMaxSupportedVersion(),
-				)
-			}
-		}
 		return err
+	}
+	if mm != nil {
+		viper.Set("api_version", mm.max)
 	}
 
 	viper.Set("bearer", *openapi.PtrString(*loginResponse.Token))
@@ -139,6 +133,49 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 	log.WithField("config file", viper.ConfigFileUsed()).Info("Config updated")
 	return nil
+}
+
+type minMax struct {
+	min, max int32
+}
+
+func login(client *openapi.APIClient, loginOpts openapi.LoginRequest) (*openapi.LoginResponse, *minMax, error) {
+	c := client
+	// we will use a invalid accept header to trigger an error, and in the response body we can see that min-max values we can use
+	// for the current sdp collective.
+	c.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", 5))
+
+	login := func() (*openapi.LoginResponse, *minMax, error) {
+		loginResponse, _, err := c.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
+		if err != nil {
+			if err, ok := err.(openapi.GenericOpenAPIError); ok {
+				if model, ok := err.Model().(openapi.InlineResponse406); ok {
+					mm := &minMax{
+						min: model.GetMinSupportedVersion(),
+						max: model.GetMaxSupportedVersion(),
+					}
+					return &loginResponse, mm, err
+				}
+			}
+			return nil, nil, err
+		}
+		return &loginResponse, nil, err
+	}
+	// login first with invalid accept header
+	invalid, mm, err := login()
+	if err != nil {
+		if mm != nil {
+			// login with the highest available accept header
+			c.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", mm.max))
+			login, _, err := login()
+			if err != nil {
+				return nil, mm, err
+			}
+			return login, mm, err
+		}
+		return nil, mm, err
+	}
+	return invalid, mm, err
 }
 
 func rememberCredentials(cfg *configuration.Config, credentials *configuration.Credentials) error {

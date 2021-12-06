@@ -1,7 +1,6 @@
 package configure
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -60,19 +59,10 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 				Default: strconv.FormatBool(opts.Config.Insecure),
 			},
 		},
-		{
-			Name: "version",
-			Prompt: &survey.Select{
-				Message: "API Version",
-				Options: []string{"14", "15", "16"},
-				Default: fmt.Sprintf("%x", DefaultAPIVersion),
-			},
-		},
 	}
 	answers := struct {
 		URL      string
 		Insecure string
-		Version  string
 	}{}
 
 	err := survey.Ask(qs, &answers)
@@ -84,8 +74,6 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	viper.Set("url", answers.URL)
 	i, _ := strconv.ParseBool(answers.Insecure)
 	viper.Set("insecure", i)
-	v, _ := strconv.Atoi(answers.Version)
-	viper.Set("api_version", v)
 	dID := uuid.New()
 	viper.Set("device_id", dID)
 
