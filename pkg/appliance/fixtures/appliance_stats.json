@@ -1,0 +1,121 @@
+{
+    "name": "appliances",
+    "creationDate": "2021-12-06T14:39:01.735723Z",
+    "refreshInterval": 1,
+    "data": [
+        {
+            "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
+            "online": true,
+            "version": "5.5.1-26730-release",
+            "state": "controller_ready",
+            "volumeNumber": 1,
+            "status": "healthy",
+            "controller": {
+                "status": "healthy",
+                "details": "Database size is 13 MB"
+            },
+            "logServer": {
+                "status": "healthy",
+                "details": "100% of shards are active."
+            },
+            "logForwarder": {
+                "status": "n/a"
+            },
+            "gateway": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "connector": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "portal": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "appliance": {
+                "status": "healthy"
+            },
+            "cpu": 0.3,
+            "memory": 62.2,
+            "disk": 1.3,
+            "network": {
+                "busiestNic": "eth0",
+                "dropin": 7,
+                "dropout": 0,
+                "rxSpeed": "3.15 Kbps",
+                "txSpeed": "2.8 Kbps",
+                "ips": {
+                    "eth0": [
+                        "10.97.152.2"
+                    ]
+                }
+            },
+            "upgrade": {
+                "status": "idle"
+            }
+        },
+        {
+            "id": "ee639d70-e075-4f01-596b-930d5f24f569",
+            "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
+            "online": true,
+            "version": "5.5.1-26730-release",
+            "state": "appliance_ready",
+            "volumeNumber": 1,
+            "status": "healthy",
+            "controller": {
+                "status": "n/a"
+            },
+            "logServer": {
+                "status": "n/a"
+            },
+            "logForwarder": {
+                "status": "n/a"
+            },
+            "gateway": {
+                "status": "healthy",
+                "numberOfSessions": 0
+            },
+            "connector": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "portal": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "appliance": {
+                "status": "healthy"
+            },
+            "cpu": 0.8,
+            "memory": 12.0,
+            "disk": 0.7,
+            "network": {
+                "busiestNic": "eth0",
+                "dropin": 30,
+                "dropout": 0,
+                "rxSpeed": "48.9 bps",
+                "txSpeed": "44.0 bps",
+                "ips": {
+                    "eth0": [
+                        "10.97.152.4"
+                    ],
+                    "eth1": [
+                        "10.97.213.66"
+                    ]
+                }
+            },
+            "upgrade": {
+                "status": "idle"
+            }
+        }
+    ],
+    "controllerCount": 1,
+    "gatewayCount": 1,
+    "applianceCount": 2,
+    "logServerCount": 0,
+    "logForwarderCount": 0,
+    "connectorCount": 0,
+    "portalCount": 0
+}
