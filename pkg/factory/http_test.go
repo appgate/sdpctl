@@ -12,9 +12,10 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 		f *Factory
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name         string
+		args         args
+		wantErr      bool
+		wantInsecure bool
 	}{
 		{
 			name: "tls insecure transport",
@@ -25,7 +26,8 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			wantErr:      false,
+			wantInsecure: true,
 		},
 		{
 			name: "tls secure transport",
@@ -36,19 +38,47 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			wantErr:      false,
+			wantInsecure: false,
+		},
+		{
+			name: "test with invalid pem file",
+			args: args{
+				&Factory{
+					Config: &configuration.Config{
+						Insecure:    false,
+						PemFilePath: "testdata/invalid_cert.pem",
+					},
+				},
+			},
+			wantErr:      true,
+			wantInsecure: false,
+		},
+		{
+			name: "test with valid pem file",
+			args: args{
+				&Factory{
+					Config: &configuration.Config{
+						Insecure:    false,
+						PemFilePath: "testdata/cert.pem",
+					},
+				},
+			},
+			wantErr:      false,
+			wantInsecure: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := httpClientFunc(tt.args.f)()
-			if err != nil {
-				t.Errorf("got error %v", err)
-				return
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("got error %v", err)
 			}
-			tr := c.Transport.(*http.Transport)
-			if tr.TLSClientConfig.InsecureSkipVerify != tt.want {
-				t.Fatalf("got %v expected %v", tr.TLSClientConfig.InsecureSkipVerify, tt.want)
+			if c != nil {
+				tr := c.Transport.(*http.Transport)
+				if tr.TLSClientConfig.InsecureSkipVerify != tt.wantInsecure {
+					t.Fatalf("got %v expected %v", tr.TLSClientConfig.InsecureSkipVerify, tt.wantInsecure)
+				}
 			}
 		})
 	}

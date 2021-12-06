@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"os"
 	"sort"
 )
@@ -31,4 +32,16 @@ func InSlice(needle string, haystack []string) bool {
 		return true
 	}
 	return false
+}
+
+func FileExists(name string) (bool, error) {
+	// TODO; move appliance.FileExists
+	_, err := os.Stat(name)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	return false, err
 }
