@@ -110,6 +110,22 @@ func PerformBackup(opts *BackupOpts) (map[string]string, error) {
 		toBackup = appliances
 	}
 
+	// Filter offline appliances
+	initialStats, _, err := app.Stats(ctx)
+	if err != nil {
+		return backupIDs, err
+	}
+	toBackup, offline, err := FilterAvailable(toBackup, initialStats.GetData())
+	if err != nil {
+		return backupIDs, err
+	}
+
+	if len(offline) <= 0 {
+		for _, v := range offline {
+			log.WithField("appliance", v.GetId()).Info("Skipping appliance. Appliance is offline.")
+		}
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
 	for _, a := range toBackup {
 		appliance := a
@@ -197,8 +213,8 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		g.Go(func() error {
 			entry := log.WithField("applianceID", ID).WithField("backupID", backupID)
 			entry.Info("Cleaning up backup")
-            client := app.APIClient
-            client.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+			client := app.APIClient
+			client.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(opts.Config.GetBearTokenHeaderValue()).Execute()
 			if err != nil {
 				return err
