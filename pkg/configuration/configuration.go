@@ -23,16 +23,17 @@ const (
 )
 
 type Config struct {
-	URL             string `mapstructure:"url"`
-	Provider        string
-	Insecure        bool
-	Debug           bool   // http debug flag
-	Version         int    `mapstructure:"api_version"` // api peer interface version
-	BearerToken     string `mapstructure:"bearer"`      // current logged in user token
-	ExpiresAt       string `mapstructure:"expires_at"`
-	CredentialsFile string `mapstructure:"credentials_file"`
-	DeviceID        string `mapstructure:"device_id"`
-	PemFilePath     string `mapstructure:"pem_filepath"`
+	URL                      string `mapstructure:"url"`
+	Provider                 string
+	Insecure                 bool
+	Debug                    bool   // http debug flag
+	Version                  int    `mapstructure:"api_version"` // api peer interface version
+	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
+	ExpiresAt                string `mapstructure:"expires_at"`
+	CredentialsFile          string `mapstructure:"credentials_file"`
+	DeviceID                 string `mapstructure:"device_id"`
+	PemFilePath              string `mapstructure:"pem_filepath"`
+	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
 }
 
 type Credentials struct {
@@ -177,20 +178,4 @@ func (c *Config) GetHost() (string, error) {
 		return "", err
 	}
 	return url.Hostname(), nil
-}
-
-func (c *Config) GetPort() (string, error) {
-	url, err := url.Parse(c.URL)
-	if err != nil {
-		return "", err
-	}
-	return url.Port(), nil
-}
-
-func (c *Config) GetScheme() (string, error) {
-	url, err := url.Parse(c.URL)
-	if err != nil {
-		return "", err
-	}
-	return url.Scheme, nil
 }

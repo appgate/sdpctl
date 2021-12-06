@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
-	"net/url"
 	"strings"
 	"time"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -30,7 +29,6 @@ type upgradeCompleteOptions struct {
 	provider  string
 	debug     bool
 	insecure  bool
-	cacert    string
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -45,7 +43,9 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	var upgradeCompleteCmd = &cobra.Command{
 		Use:   "complete",
 		Short: "upgrade complete",
-		Long:  `TODO`,
+		Long: `Complete a prepared upgrade.
+Install a prepared upgrade on the secondary partition
+and perform a reboot to make the second partition the primary.`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCompleteRun(c, args, &opts)
 		},
@@ -54,7 +54,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	upgradeCompleteCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 
 	return upgradeCompleteCmd
 }
@@ -75,11 +74,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			Appliance: a,
 		}
 	}
-	u, err := url.Parse(opts.url)
-	if err != nil {
-		return err
-	}
-	host, _, err := net.SplitHostPort(u.Host)
+	host, err := opts.Config.GetHost()
 	if err != nil {
 		return err
 	}
@@ -115,7 +110,18 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	log.Infof("Primary controller is: %q", primaryController.Name)
+	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
+	if err != nil {
+		return err
+	}
+	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+	if err != nil {
+		return err
+	}
+	if !preV.Equal(currentPrimaryControllerVersion) {
+		return fmt.Errorf("version missmatch: run appgatectl configure login")
+	}
+	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	// We will exclude the primary controller from the others controllers
 	// since the primary controller is a special case during the upgrade process.
 	for i, appliance := range appliances {
@@ -289,8 +295,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if id == appliance.GetId() {
 					additionalAppliances = append(additionalAppliances, appliance)
 				}
-			} else {
-				log.WithField("appliance", appliance.GetName()).Warnf("Wont be upgraded %s", result.Status)
 			}
 		}
 

@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sync/atomic"
@@ -19,7 +17,9 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -27,17 +27,17 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config    *configuration.Config
-	Out       io.Writer
-	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token     string
-	Timeout   int
-	url       string
-	provider  string
-	debug     bool
-	insecure  bool
-	cacert    string
-	image     string
+	Config     *configuration.Config
+	Out        io.Writer
+	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	Token      string
+	Timeout    int
+	url        string
+	provider   string
+	debug      bool
+	insecure   bool
+	image      string
+	DevKeyring bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -52,7 +52,9 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	var prepareCmd = &cobra.Command{
 		Use:   "prepare",
 		Short: "prepare upgrade",
-		Long:  `TODO`,
+		Long: `Prepare an upgrade but do NOT install it.
+This means the upgrade file will be downloaded/uploaded to all the appliances,
+the signature verified as well as any other preconditions applicable at this point.`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return prepareRun(c, args, opts)
 		},
@@ -61,8 +63,8 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	prepareCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	prepareCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	prepareCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	prepareCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 	prepareCmd.PersistentFlags().StringVarP(&opts.image, "image", "", "", "image path")
+	prepareCmd.PersistentFlags().BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
 	return prepareCmd
 }
@@ -81,7 +83,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return errors.New("Image is mandatory")
 	}
 
-	if ok, err := appliancepkg.FileExists(opts.image); err != nil || !ok {
+	if ok, err := util.FileExists(opts.image); err != nil || !ok {
 		return fmt.Errorf("Image file not found %q", opts.image)
 	}
 
@@ -125,8 +127,27 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	// TODO Check autoscale gateways warning message
 
+	autoScalingWarning := false
+	if targetVersion != nil {
+		constraints, _ := version.NewConstraint(">= 5.5.0")
+		if constraints.Check(targetVersion) {
+			autoScalingWarning = true
+		}
+	} else if opts.Config.Version == 15 {
+		autoScalingWarning = true
+	}
+
+	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 {
+		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(opts.Out, "\n%s\n", msg)
+		if err := prompt.AskConfirmation("Have you disabled the health check on those auto-scaled gateways"); err != nil {
+			return err
+		}
+	}
 	groups := appliancepkg.GroupByFunctions(appliances)
 	targetPeers := append(groups[appliancepkg.FunctionController], groups[appliancepkg.FunctionLogServer]...)
 	peerAppliances := appliancepkg.WithAdminOnPeerInterface(targetPeers)
@@ -140,23 +161,32 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	u, err := url.Parse(opts.url)
+
+	host, err := opts.Config.GetHost()
 	if err != nil {
 		return err
 	}
-	host, _, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		return err
-	}
+
 	primaryController, err := appliancepkg.FindPrimaryController(groups[appliancepkg.FunctionController], host)
 	if err != nil {
 		return err
+	}
+	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
+	if err != nil {
+		return err
+	}
+	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+	if err != nil {
+		return err
+	}
+	if !preV.Equal(currentPrimaryControllerVersion) {
+		return errors.New("version missmatch: run appgatectl configure login")
 	}
 	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
 	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
 		return err
 	}
-	log.Infof("Primary controller is: %q", primaryController.Name)
+	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	if targetVersion != nil {
 		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
 	}
@@ -272,7 +302,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				for appliance := range applianceIds {
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
-					if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId()); err != nil {
+					if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						log.WithFields(fields).Errorf("Preparing upgrade err %s", err)
 						return err
 					}

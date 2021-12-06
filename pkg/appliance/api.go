@@ -197,12 +197,10 @@ func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 	return nil
 }
 
-func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string) error {
+func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devKeyring bool) error {
 	u := openapi.ApplianceUpgrade{
-		ImageUrl: filename,
-		// TODO: update use user input args
-		// verify version >= 14 ?
-		DevKeyring: openapi.PtrBool(true),
+		ImageUrl:   filename,
+		DevKeyring: openapi.PtrBool(devKeyring),
 	}
 	_, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
 	if err != nil {

@@ -35,7 +35,6 @@ func InSlice(needle string, haystack []string) bool {
 }
 
 func FileExists(name string) (bool, error) {
-	// TODO; move appliance.FileExists
 	_, err := os.Stat(name)
 	if err == nil {
 		return true, nil

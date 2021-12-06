@@ -7,6 +7,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-version"
 )
 
 const (
@@ -109,6 +110,15 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	return result, offline, err
 }
 
+func GetPrimaryControllerVersion(primary openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
+	for _, s := range stats.GetData() {
+		if s.GetId() == primary.GetId() {
+			return version.NewVersion(s.GetVersion())
+		}
+	}
+	return nil, fmt.Errorf("could not determine appliance version of the primary controller %s", primary.GetName())
+}
+
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
 // Hostnames should be compared in a case insensitive way.
 func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
@@ -162,4 +172,21 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 		"Unable to match the given Controller hostname %q with the actual Controller admin (or peer) hostname",
 		hostname,
 	)
+}
+
+// AutoscalingGateways return the template appliance and all gateways
+func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []openapi.Appliance) {
+	autoscalePrefix := "Autoscaling Instance"
+	var template *openapi.Appliance
+	r := make([]openapi.Appliance, 0)
+	for _, a := range appliances {
+		if util.InSlice("template", a.GetTags()) && !a.GetActivated() {
+			template = &a
+		}
+		// fmt.Printf("\n AutoscalingGateways: %s == %v \n", a.GetName(), strings.HasPrefix(a.GetName(), autoscalePrefix))
+		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() && strings.HasPrefix(a.GetName(), autoscalePrefix) {
+			r = append(r, a)
+		}
+	}
+	return template, r
 }

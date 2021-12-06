@@ -116,3 +116,39 @@ func unique(slice []openapi.Appliance) []openapi.Appliance {
 	}
 	return list
 }
+
+const autoScalingWarning = `
+{{ if .Template }}
+There is an auto-scale template configured: {{ .Template.Name }}
+{{end}}
+
+Found {{ .Count }} auto-scaled gateway running version < 16:
+{{range .Appliances}}
+  - {{.Name -}}
+{{end}}
+
+Make sure that the health check for those auto-scaled gateways is disabled.
+Not disabling the health checks in those auto-scaled gateways could cause them to be deleted, breaking all the connections established with them.
+
+`
+
+func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateways []openapi.Appliance) (string, error) {
+	type stub struct {
+		Template   *openapi.Appliance
+		Appliances []openapi.Appliance
+		Count      int
+	}
+
+	data := stub{
+		Template:   templateAppliance,
+		Appliances: unique(gateways),
+		Count:      len(gateways),
+	}
+	t := template.Must(template.New("").Parse(autoScalingWarning))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
+}

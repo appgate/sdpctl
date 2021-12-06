@@ -38,7 +38,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	var upgradeStatusCmd = &cobra.Command{
 		Use:   "status",
 		Short: "upgrade status",
-		Long:  `TODO`,
+		Long:  `Display the upgrade status`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeStatusRun(c, args, &opts)
 		},

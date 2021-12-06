@@ -1,46 +1,25 @@
 package upgrade
 
 import (
-	"fmt"
-
-	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/spf13/cobra"
 )
 
-type upgradeOptions struct {
-	Config    *configuration.Config
-	APIClient func(Config *configuration.Config) (*openapi.APIClient, error)
-	Timeout   int
-	url       string
-	provider  string
-	debug     bool
-	insecure  bool
-	cacert    string
-}
-
 // NewUpgradeCmd return a new upgrade command
 func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
-	opts := upgradeOptions{
-		Config:    f.Config,
-		APIClient: f.APIClient,
-		Timeout:   10,
-		debug:     f.Config.Debug,
-	}
+
 	var upgradeCmd = &cobra.Command{
 		Use:   "upgrade",
-		Short: "Upgrade an appliance",
-		Long:  `TODO`,
-		RunE: func(c *cobra.Command, args []string) error {
-			return upgradeRun(c, args, &opts)
-		},
-	}
+		Short: "Perform appliance upgrade on the Appgate SDP Collective",
+		Long: `Appgate SDP upgrade script.
+© 2021 Cyxtera Cybersecurity, Inc. d/b/a Appgate
+All rights reserved. Appgate is a trademark of Cyxtera Cybersecurity, Inc. d/b/a Appgate
 
-	upgradeCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	upgradeCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	upgradeCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
+https://www.appgate.com
+
+For more documentation on the upgrade process, go to:
+    https://sdphelp.appgate.com/adminguide/v5.5/upgrading-appliances.html?anchor=collective-upgrade`,
+	}
 
 	upgradeCmd.AddCommand(NewUpgradeStatusCmd(f))
 	upgradeCmd.AddCommand(NewPrepareUpgradeCmd(f))
@@ -48,9 +27,4 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 	upgradeCmd.AddCommand(NewUpgradeCompleteCmd(f))
 
 	return upgradeCmd
-}
-
-func upgradeRun(cmd *cobra.Command, args []string, opts *upgradeOptions) error {
-	fmt.Println("upgrade placeholder")
-	return nil
 }

@@ -51,6 +51,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "with existing file",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // backup confirmation
@@ -121,6 +122,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			upgradeStatusWorker: &errorUpgradeStatus{},
 			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // backup confirmation
@@ -196,6 +198,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "disagree with peer warning",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(true)  // disk usage
 				s.StubOne(false) // peer_warning message
 			},
@@ -216,6 +219,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "no backup confirmation",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(true)  // disk usage
 				s.StubOne(true)  // peer_warning message
 				s.StubOne(false) // backup confirmation
@@ -236,6 +240,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "no prepare confirmation",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(true)  // disk usage
 				s.StubOne(true)  // peer_warning message
 				s.StubOne(true)  // backup confirmation
@@ -286,8 +291,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			in := io.NopCloser(stdin)
 			f := &factory.Factory{
 				Config: &configuration.Config{
-					Debug: false,
-					URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
+					Debug:                    false,
+					URL:                      fmt.Sprintf("http://localhost:%d", registery.Port),
+					PrimaryControllerVersion: "5.3.4-24950",
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,
@@ -334,6 +340,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			}
 			_, err = cmd.ExecuteC()
 			if (err != nil) != tt.wantErr {
+				t.Logf("Stdout: %s", stdout)
 				t.Fatalf("TestUpgradePrepareCommand() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil && tt.wantErrOut != nil {
