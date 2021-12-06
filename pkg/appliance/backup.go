@@ -115,10 +115,7 @@ func PerformBackup(opts *BackupOpts) (map[string]string, error) {
 	if err != nil {
 		return backupIDs, err
 	}
-	toBackup, offline, err := FilterAvailable(toBackup, initialStats.GetData())
-	if err != nil {
-		return backupIDs, err
-	}
+	toBackup, offline, _ := FilterAvailable(toBackup, initialStats.GetData())
 
 	if len(offline) <= 0 {
 		for _, v := range offline {
