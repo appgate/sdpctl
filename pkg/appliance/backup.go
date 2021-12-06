@@ -222,10 +222,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		})
 	}
 
-	err = g.Wait()
-	if err != nil {
-		return err
-	}
+	return g.Wait()
 
 	return nil
 }
