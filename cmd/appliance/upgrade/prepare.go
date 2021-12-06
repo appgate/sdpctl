@@ -128,7 +128,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	targetVersion, _ = version.NewVersion("5.5.5.2")
 	autoScalingWarning := false
 	if targetVersion != nil {
 		constraints, _ := version.NewConstraint(">= 5.5.0")
