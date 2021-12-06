@@ -24,6 +24,11 @@ func TestBackupCmd(t *testing.T) {
 		"/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
+	// Appliance stats route
+	registry.Register(
+		"/stats/appliances",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_stats.json"),
+	)
 	// Backup state
 	registry.Register(
 		"/global-settings",

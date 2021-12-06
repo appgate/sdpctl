@@ -223,8 +223,6 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	}
 
 	return g.Wait()
-
-	return nil
 }
 
 func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
