@@ -23,7 +23,6 @@ type upgradeStatusOptions struct {
 	provider  string
 	debug     bool
 	insecure  bool
-	cacert    string
 	json      bool
 }
 
@@ -49,7 +48,6 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	upgradeStatusCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.cacert, "cacert", "", "", "Path to the controller's CA cert file in PEM or DER format")
 
 	return upgradeStatusCmd
 }
