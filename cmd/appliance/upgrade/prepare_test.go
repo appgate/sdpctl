@@ -26,14 +26,14 @@ func init() {
 
 type mockUpgradeStatus struct{}
 
-func (u *mockUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance) error {
+func (u *mockUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
 	return nil
 }
 
 type errorUpgradeStatus struct{}
 
-func (u *errorUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance) error {
-	return fmt.Errorf("gateway never reached ready, got failed")
+func (u *errorUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
+	return fmt.Errorf("gateway never reached %s, got failed", desiredStatus)
 }
 
 func TestUpgradePrepareCommand(t *testing.T) {
@@ -51,6 +51,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "with existing file",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true) // disk usage
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // backup confirmation
 				s.StubOne(true) // upgrade_confirm
@@ -59,6 +60,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				{
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -116,6 +121,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			upgradeStatusWorker: &errorUpgradeStatus{},
 			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true) // disk usage
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // backup confirmation
 				s.StubOne(true) // upgrade_confirm
@@ -124,6 +130,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				{
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -186,12 +196,17 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "disagree with peer warning",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true)  // disk usage
 				s.StubOne(false) // peer_warning message
 			},
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 			},
 			wantErr:    true,
@@ -201,6 +216,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "no backup confirmation",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true)  // disk usage
 				s.StubOne(true)  // peer_warning message
 				s.StubOne(false) // backup confirmation
 			},
@@ -209,6 +225,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
 			},
 			wantErr: true,
 		},
@@ -216,6 +236,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "no prepare confirmation",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true)  // disk usage
 				s.StubOne(true)  // peer_warning message
 				s.StubOne(true)  // backup confirmation
 				s.StubOne(false) // upgrade_confirm
@@ -224,6 +245,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				{
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 			},
 			wantErr: true,
@@ -235,6 +260,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				{
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 			},
 			wantErr:    true,

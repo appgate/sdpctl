@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestFilterAvailable(t *testing.T) {
@@ -138,6 +139,301 @@ func TestFilterAvailable(t *testing.T) {
 			}
 			if !reflect.DeepEqual(offline, tt.wantOffline) {
 				t.Errorf("FilterAvailable() got offline = %v, want %v", offline, tt.wantOffline)
+			}
+		})
+	}
+}
+
+func TestFindPrimaryController(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+		hostname   string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *openapi.Appliance
+		wantErr bool
+	}{
+		{
+			name: "simple",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+					{
+						Name: "secondary controller with log server",
+						Id:   "two",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foobar.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogServer: &openapi.ApplianceAllOfLogServer{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+				hostname: "foo.devops",
+			},
+			want: &openapi.Appliance{
+				Name: "primary controller",
+				Id:   "one",
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(true),
+				},
+				AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+					Hostname: "foo.devops",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "no hit",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+					{
+						Name: "secondary controller with log server",
+						Id:   "two",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+							Hostname: "foo.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogServer: &openapi.ApplianceAllOfLogServer{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+				hostname: "controller.devops",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := FindPrimaryController(tt.args.appliances, tt.args.hostname)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FindPrimaryController() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("FindPrimaryController() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGroupByFunctions(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string][]openapi.Appliance
+	}{
+		{
+			name: "two controllers log server gateway",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+					{
+						Name: "secondary controller with log server",
+						Id:   "two",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+							Hostname: "foo.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogServer: &openapi.ApplianceAllOfLogServer{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "gateway",
+						Id:   "two",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+			},
+			want: map[string][]openapi.Appliance{
+				FunctionController: {
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+					{
+						Name: "secondary controller with log server",
+						Id:   "two",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+							Hostname: "foo.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogServer: &openapi.ApplianceAllOfLogServer{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+				FunctionGateway: {
+					{
+						Name: "gateway",
+						Id:   "two",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+				FunctionLogServer: {
+					{
+						Name: "secondary controller with log server",
+						Id:   "two",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+							Hostname: "foo.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogServer: &openapi.ApplianceAllOfLogServer{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GroupByFunctions(tt.args.appliances)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf(cmp.Diff(got, tt.want))
+			}
+		})
+	}
+}
+
+func TestActiveFunctions(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]bool
+	}{
+		{
+			name: "one active controller",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+				},
+			},
+			want: map[string]bool{
+				FunctionController: true,
+			},
+		},
+		{
+			name: "one active controller and gateway",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   "one",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "foo.devops",
+						},
+					},
+					{
+						Name: "gateway",
+						Id:   "two",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "portal",
+						Id:   "three",
+						Portal: &openapi.Portal{
+							Enabled: openapi.PtrBool(false),
+						},
+					},
+				},
+			},
+			want: map[string]bool{
+				FunctionController: true,
+				FunctionGateway:    true,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ActiveFunctions(tt.args.appliances); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ActiveFunctions() = %v, want %v", got, tt.want)
 			}
 		})
 	}

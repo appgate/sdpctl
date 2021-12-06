@@ -68,6 +68,7 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return err
 	}
 	appliances, offline, _ := appliancepkg.FilterAvailable(allAppliances, initialStats.GetData())
+
 	type ApplianceStatus struct {
 		ID            string `json:"id"`
 		Name          string `json:"name"`
