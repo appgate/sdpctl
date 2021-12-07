@@ -128,6 +128,6 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi
 			log.Infof("reached desired %q on %d appliances", expectedState, len(appliances))
 			return nil
 		}
-		return fmt.Errorf("never reached expected state %q", expectedState)
+		return fmt.Errorf("never reached expected state %s", expectedState)
 	}, b)
 }
