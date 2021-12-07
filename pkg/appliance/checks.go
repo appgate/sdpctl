@@ -90,11 +90,12 @@ func ShowPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string
 	if len(peerAppliances) == 1 {
 		noun = "is"
 	}
+	u := unique(peerAppliances)
 	data := stub{
-		CurrentPort: appliancePeerPorts(peerAppliances),
-		Functions:   applianceGroupDescription(peerAppliances),
+		CurrentPort: appliancePeerPorts(u),
+		Functions:   applianceGroupDescription(u),
 		Noun:        noun,
-		Appliances:  unique(peerAppliances),
+		Appliances:  u,
 	}
 	t := template.Must(template.New("peer").Parse(applianceUsingPeerWarning))
 	var tpl bytes.Buffer

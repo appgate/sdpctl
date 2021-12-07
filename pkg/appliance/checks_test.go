@@ -148,3 +148,52 @@ func TestApplianceGroupDescription(t *testing.T) {
 		})
 	}
 }
+
+func TestShowPeerInterfaceWarningMessage(t *testing.T) {
+	type args struct {
+		peerAppliances []openapi.Appliance
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "prepare example",
+			args: args{
+				peerAppliances: []openapi.Appliance{
+					{
+						Name: "controller",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+							HttpsPort: openapi.PtrInt32(443),
+						},
+					},
+				},
+			},
+			want: `
+Version 5.4 and later are designed to operate with the admin port (default 8443)
+separate from the deprecated peer port (set to 443).
+It is recommended to switch to port 8443 before continuing
+The following controller is still configured without the Admin/API TLS Connection:
+
+  - controller
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ShowPeerInterfaceWarningMessage(tt.args.peerAppliances)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ShowPeerInterfaceWarningMessage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !cmp.Equal(got, tt.want) {
+				t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", got, tt.want)
+			}
+		})
+	}
+}
