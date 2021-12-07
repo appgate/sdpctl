@@ -103,3 +103,48 @@ func TestHasLowDiskSpace(t *testing.T) {
 		})
 	}
 }
+
+func TestApplianceGroupDescription(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "controller and gateway and connector",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "controller",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "gateway",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "connector",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+			},
+			want: "controller, gateway, connector",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := applianceGroupDescription(tt.args.appliances); got != tt.want {
+				t.Errorf("applianceGroupDescription() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
