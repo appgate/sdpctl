@@ -90,7 +90,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	appliances, offline, err := appliancepkg.FilterAvailable(allAppliances, initialStats.GetData())
 	if err != nil {
-		return err
+		return fmt.Errorf("Could not complete upgrade operation %s", err)
 	}
 	for _, o := range offline {
 		log.Warnf("%q is offline and will be excluded from upgrade.", o.GetName())
@@ -150,34 +150,28 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// so that we can leave the collective gracefully.
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
-		log.WithFields(log.Fields{
-			"controller": controller.GetName(),
-		}).Info("Disabling controller function")
+		f := log.Fields{"controller": controller.GetName()}
+		log.WithFields(f).Info("Disabling controller function")
 		if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
-			// TODO
+			log.WithFields(f).Error("Unable to disable controller")
 			return err
 		}
 		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{controller}, "appliance_ready"); err != nil {
-			// TODO
+			log.WithFields(f).Error("never reached desired state")
 			return err
 		}
 	}
-	log.Info("verify the state for all controller")
 	// verify the state for all controller
-	controllers := []openapi.Appliance{*primaryController}
 	state := "controller_ready"
 	if cfg.Version < 15 {
 		state = "single_controller_ready"
 	}
-
-	if err := a.ApplianceStats.WaitForState(ctx, controllers, state); err != nil {
-		// TODO
-		return err
+	if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
+		return fmt.Errorf("primary controller %s", err)
 	}
 	log.Info("all controllers are in correct state")
 
 	if cfg.Version >= 15 && len(addtitionalControllers) > 0 {
-		log.Info("Enabling maintenance mode on Controller")
 		for _, controller := range addtitionalControllers {
 			f := log.Fields{"controller": controller.GetName()}
 			log.WithFields(f).Info("enabling maintenance mode")
@@ -217,7 +211,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		log.Infof("Wating for primary controller to come back online in state %s", state)
-		if err := a.ApplianceStats.WaitForState(ctx, controllers, state); err != nil {
+		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
 			return err
 		}
 		log.Infof("Primary controller updated")
