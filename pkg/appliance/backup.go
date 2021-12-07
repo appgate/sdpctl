@@ -117,7 +117,7 @@ func PerformBackup(opts *BackupOpts) (map[string]string, error) {
 	}
 	toBackup, offline, _ := FilterAvailable(toBackup, initialStats.GetData())
 
-	if len(offline) <= 0 {
+	if len(offline) > 0 {
 		for _, v := range offline {
 			log.WithField("appliance", v.GetId()).Info("Skipping appliance. Appliance is offline.")
 		}
