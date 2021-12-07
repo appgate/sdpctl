@@ -239,3 +239,47 @@ func TestConfigCheckAuth(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigGetHost(t *testing.T) {
+	type fields struct {
+		URL string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "valid URL",
+			fields: fields{
+				URL: "http://controller.com/admin",
+			},
+			want:    "controller.com",
+			wantErr: false,
+		},
+		{
+			name: "ipv6 addr",
+			fields: fields{
+				URL: "http://[fd00:ffff:a:93:172:17:93:35]:666/admin",
+			},
+			want:    "fd00:ffff:a:93:172:17:93:35",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Config{
+				URL: tt.fields.URL,
+			}
+			got, err := c.GetHost()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Config.GetHost() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Config.GetHost() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
