@@ -101,10 +101,10 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	}
 	for _, a := range offline {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
-			err = multierror.Append(err, fmt.Errorf("cannot start the upgrade since a controller %q is offline.", a.GetName()))
+			err = multierror.Append(err, fmt.Errorf("cannot start the operation since a controller %q is offline.", a.GetName()))
 		}
 		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
-			err = multierror.Append(err, fmt.Errorf("cannot start the upgrade since a logserver %q is offline.", a.GetName()))
+			err = multierror.Append(err, fmt.Errorf("cannot start the operation since a logserver %q is offline.", a.GetName()))
 		}
 	}
 	return result, offline, err
@@ -183,7 +183,6 @@ func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []
 		if util.InSlice("template", a.GetTags()) && !a.GetActivated() {
 			template = &a
 		}
-		// fmt.Printf("\n AutoscalingGateways: %s == %v \n", a.GetName(), strings.HasPrefix(a.GetName(), autoscalePrefix))
 		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() && strings.HasPrefix(a.GetName(), autoscalePrefix) {
 			r = append(r, a)
 		}
