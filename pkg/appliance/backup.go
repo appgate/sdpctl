@@ -119,7 +119,7 @@ func PerformBackup(opts *BackupOpts) (map[string]string, error) {
 
 	if len(offline) > 0 {
 		for _, v := range offline {
-			log.WithField("appliance", v.GetId()).Info("Skipping appliance. Appliance is offline.")
+			log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
 		}
 	}
 
