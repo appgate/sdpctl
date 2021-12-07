@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"regexp"
 	"testing/fstest"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -110,20 +111,32 @@ func JSONResponse(filename string) http.HandlerFunc {
 func FileResponse() http.HandlerFunc {
 	filename := "test-file.txt"
 	return func(rw http.ResponseWriter, r *http.Request) {
-		fs := fstest.MapFS{
-			filename: {
-				Data: []byte("testfile"),
-			},
+		if r.Method == http.MethodDelete {
+			rg := regexp.MustCompile("gpg$")
+			accHeader := r.Header.Get("Accept")
+			if !rg.MatchString(accHeader) {
+				rw.WriteHeader(http.StatusNotAcceptable)
+			}
+
+			rw.WriteHeader(http.StatusNoContent)
 		}
-		f, _ := fs.Open(filename)
-		rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", f))
-		rw.Header().Set("Content-Type", "application/file")
-		rw.WriteHeader(http.StatusOK)
-		reader := bufio.NewReader(f)
-		content, err := io.ReadAll(reader)
-		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
+
+		if r.Method == http.MethodGet {
+			fs := fstest.MapFS{
+				filename: {
+					Data: []byte("testfile"),
+				},
+			}
+			f, _ := fs.Open(filename)
+			rw.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", f))
+			rw.Header().Set("Content-Type", "application/file")
+			rw.WriteHeader(http.StatusOK)
+			reader := bufio.NewReader(f)
+			content, err := io.ReadAll(reader)
+			if err != nil {
+				panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
+			}
+			fmt.Fprint(rw, string(content))
 		}
-		fmt.Fprint(rw, string(content))
 	}
 }

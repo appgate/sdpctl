@@ -22,6 +22,7 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 )
 
 func NewCmdBackup(f *factory.Factory) *cobra.Command {
+	var backupIDs map[string]string
 	opts := appliance.BackupOpts{
 		Config:      f.Config,
 		Out:         f.IOOutWriter,
@@ -37,7 +38,15 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 			return appliance.PrepareBackup(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return appliance.PerformBackup(&opts)
+			var err error
+			backupIDs, err = appliance.PerformBackup(&opts)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return appliance.CleanupBackup(&opts, backupIDs)
 		},
 	}
 
@@ -47,7 +56,6 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers") // TODO: Implement logic for this flag
 	cmd.PersistentFlags().StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
 	cmd.PersistentFlags().DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
-	// TODO: Implement --device-id (maybe globally in config)
 
 	return cmd
 }

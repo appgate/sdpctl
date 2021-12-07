@@ -60,7 +60,8 @@ func PrepareBackup(opts *BackupOpts) error {
 	return nil
 }
 
-func PerformBackup(opts *BackupOpts) error {
+func PerformBackup(opts *BackupOpts) (map[string]string, error) {
+	backupIDs := make(map[string]string)
 	ctx := context.Background()
 	aud := util.InSlice("audit", opts.Include)
 	logs := util.InSlice("logs", opts.Include)
@@ -76,41 +77,54 @@ func PerformBackup(opts *BackupOpts) error {
 
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
-		return err
+		return backupIDs, err
 	}
 
 	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue())
 	if err != nil {
-		return fmt.Errorf("Failed to determine backup option: %w", err)
+		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}
 	if !backupEnabled {
-		return fmt.Errorf("Backup API is disabled in the collective.")
+		return backupIDs, fmt.Errorf("Backup API is disabled in the collective.")
 	}
 
 	appliances, err := app.GetAll(ctx)
 	if err != nil {
-		return err
+		return backupIDs, err
 	}
 
-	var toUpgrade []openapi.Appliance
+	var toBackup []openapi.Appliance
 
 	host, err := opts.Config.GetHost()
 	if err != nil {
-		return err
+		return backupIDs, err
 	}
 	primaryController, err := FindPrimaryController(appliances, host)
 	if err != nil {
 		log.Debug(err)
-		return fmt.Errorf("Failed to find primary controller")
+		return backupIDs, fmt.Errorf("Failed to find primary controller")
 	}
-	toUpgrade = append(toUpgrade, *primaryController)
+	toBackup = append(toBackup, *primaryController)
 
 	if opts.AllFlag {
-		toUpgrade = appliances
+		toBackup = appliances
+	}
+
+	// Filter offline appliances
+	initialStats, _, err := app.Stats(ctx)
+	if err != nil {
+		return backupIDs, err
+	}
+	toBackup, offline, _ := FilterAvailable(toBackup, initialStats.GetData())
+
+	if len(offline) > 0 {
+		for _, v := range offline {
+			log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
+		}
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
-	for _, a := range toUpgrade {
+	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
@@ -131,6 +145,7 @@ func PerformBackup(opts *BackupOpts) error {
 				return err
 			}
 			backupID := res.GetId()
+			backupIDs[appliance.GetId()] = backupID
 
 			var status string
 			backoff := 1 * time.Second
@@ -175,10 +190,39 @@ func PerformBackup(opts *BackupOpts) error {
 	}
 
 	if err := g.Wait(); err != nil {
+		return backupIDs, err
+	}
+
+	return backupIDs, nil
+}
+
+func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
+	app, err := opts.Appliance(opts.Config)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	ctx := context.Background()
+	g, ctx := errgroup.WithContext(ctx)
+	for appID, bckID := range IDs {
+		ID := appID
+		backupID := bckID
+		g.Go(func() error {
+			entry := log.WithField("applianceID", ID).WithField("backupID", backupID)
+			entry.Info("Cleaning up backup")
+			client := app.APIClient
+			client.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(opts.Config.GetBearTokenHeaderValue()).Execute()
+			if err != nil {
+				return err
+			}
+			entry.Debug(res)
+			entry.Info("Done")
+			return nil
+		})
+	}
+
+	return g.Wait()
 }
 
 func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
