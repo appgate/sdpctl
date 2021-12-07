@@ -140,23 +140,3 @@ func FileResponse() http.HandlerFunc {
 		}
 	}
 }
-
-func EmptyResponseWithHeaderCheck(statusCode int, headers map[string]string) http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		// Check Method
-		if r.Method != http.MethodDelete {
-			rw.WriteHeader(http.StatusMethodNotAllowed)
-		}
-
-		// Check Headers
-		for header, value := range headers {
-			rg := regexp.MustCompile(value)
-			accHeader := r.Header.Get(header)
-			if !rg.MatchString(accHeader) {
-				rw.WriteHeader(http.StatusNotAcceptable)
-			}
-		}
-
-		rw.WriteHeader(statusCode)
-	}
-}
