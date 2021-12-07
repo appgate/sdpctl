@@ -152,3 +152,90 @@ func TestLoadCredentialsFile(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigCheckAuth(t *testing.T) {
+	type fields struct {
+		URL                      string
+		Provider                 string
+		Insecure                 bool
+		Debug                    bool
+		Version                  int
+		BearerToken              string
+		ExpiresAt                string
+		CredentialsFile          string
+		DeviceID                 string
+		PemFilePath              string
+		PrimaryControllerVersion string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "valid",
+			fields: fields{
+				ExpiresAt:   "2031-12-08 08:15:39.137584 +0000 UTC",
+				BearerToken: "abc123456789",
+				URL:         "https://controller.appgate.com",
+				Provider:    "local",
+			},
+			want: true,
+		},
+		{
+			name: "invalid expire date",
+			fields: fields{
+				ExpiresAt:   "2001-01-01 08:15:39.137584 +0000 UTC",
+				BearerToken: "abc123456789",
+				URL:         "https://controller.appgate.com",
+				Provider:    "local",
+			},
+			want: false,
+		},
+		{
+			name: "no token",
+			fields: fields{
+				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
+			},
+			want: false,
+		},
+		{
+			name: "no url",
+			fields: fields{
+				ExpiresAt:   "2001-01-01 08:15:39.137584 +0000 UTC",
+				BearerToken: "abc123456789",
+				Provider:    "local",
+			},
+			want: false,
+		},
+		{
+			name: "no provider",
+			fields: fields{
+				ExpiresAt:   "2001-01-01 08:15:39.137584 +0000 UTC",
+				BearerToken: "abc123456789",
+				URL:         "https://controller.appgate.com",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Config{
+				URL:                      tt.fields.URL,
+				Provider:                 tt.fields.Provider,
+				Insecure:                 tt.fields.Insecure,
+				Debug:                    tt.fields.Debug,
+				Version:                  tt.fields.Version,
+				BearerToken:              tt.fields.BearerToken,
+				ExpiresAt:                tt.fields.ExpiresAt,
+				CredentialsFile:          tt.fields.CredentialsFile,
+				DeviceID:                 tt.fields.DeviceID,
+				PemFilePath:              tt.fields.PemFilePath,
+				PrimaryControllerVersion: tt.fields.PrimaryControllerVersion,
+			}
+			if got := c.CheckAuth(); got != tt.want {
+				t.Errorf("Config.CheckAuth() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
