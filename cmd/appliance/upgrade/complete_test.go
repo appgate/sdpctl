@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
@@ -155,10 +154,10 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 				return registery.Client, nil
 			}
-			f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
+			f.Appliance = func(c *configuration.Config) (*appliancepkg.Appliance, error) {
 				api, _ := f.APIClient(c)
 
-				a := &appliance.Appliance{
+				a := &appliancepkg.Appliance{
 					APIClient:  api,
 					HTTPClient: api.GetConfig().HTTPClient,
 					Token:      "",
