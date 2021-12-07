@@ -11,8 +11,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"testing/fstest"
 
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/go-cmp/cmp"
 )
@@ -76,7 +78,10 @@ func setup() (*openapi.APIClient, *openapi.Configuration, *http.ServeMux, *httpt
 	clientCfg := openapi.NewConfiguration()
 
 	// toggle this if you want to see response body in test
-	// clientCfg.Debug = true
+	if v, err := strconv.ParseBool(util.Getenv("DEBUG", "false")); v && err == nil {
+		clientCfg.Debug = v
+	}
+
 	u, _ := url.Parse(server.URL)
 	clientCfg.Servers = []openapi.ServerConfiguration{
 		{
