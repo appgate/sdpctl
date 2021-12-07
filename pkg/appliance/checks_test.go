@@ -52,3 +52,54 @@ increase the space on those appliances.
 		})
 	}
 }
+
+func TestHasLowDiskSpace(t *testing.T) {
+	type args struct {
+		stats []openapi.StatsAppliancesListAllOfData
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "with low disk space",
+			args: args{
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Name: openapi.PtrString("controller"),
+						Disk: openapi.PtrFloat32(75),
+					},
+					{
+						Name: openapi.PtrString("gateway"),
+						Disk: openapi.PtrFloat32(1),
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "no low disk space",
+			args: args{
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Name: openapi.PtrString("controller"),
+						Disk: openapi.PtrFloat32(2),
+					},
+					{
+						Name: openapi.PtrString("gateway"),
+						Disk: openapi.PtrFloat32(1),
+					},
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := HasLowDiskSpace(tt.args.stats); got != tt.want {
+				t.Errorf("HasLowDiskSpace() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
