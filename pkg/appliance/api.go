@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Appliance is a wrapper aroudn the APIClient for common functions around the appliance API that
+// Appliance is a wrapper around the APIClient for common functions around the appliance API that
 // will be used within several commands.
 type Appliance struct {
 	APIClient           *openapi.APIClient
@@ -98,16 +98,8 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error {
 	response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
-		if response != nil && response.StatusCode >= 400 {
-			responseBody, errRead := io.ReadAll(response.Body)
-			if errRead != nil {
-				return err
-			}
-			errBody := api.GenericErrorResponse{}
-			if err := json.Unmarshal(responseBody, &errBody); err != nil {
-				return err
-			}
-			return fmt.Errorf("%s %v", errBody.Message, errBody.Errors)
+		if httpErr := api.HTTPErrorResponse(response, err); httpErr != nil {
+			return httpErr
 		}
 		return err
 	}

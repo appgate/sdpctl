@@ -90,11 +90,12 @@ func ShowPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string
 	if len(peerAppliances) == 1 {
 		noun = "is"
 	}
+	u := unique(peerAppliances)
 	data := stub{
-		CurrentPort: appliancePeerPorts(peerAppliances),
-		Functions:   applianceGroupDescription(peerAppliances),
+		CurrentPort: appliancePeerPorts(u),
+		Functions:   applianceGroupDescription(u),
 		Noun:        noun,
-		Appliances:  unique(peerAppliances),
+		Appliances:  u,
 	}
 	t := template.Must(template.New("peer").Parse(applianceUsingPeerWarning))
 	var tpl bytes.Buffer
@@ -129,7 +130,6 @@ Found {{ .Count }} auto-scaled gateway running version < 16:
 
 Make sure that the health check for those auto-scaled gateways is disabled.
 Not disabling the health checks in those auto-scaled gateways could cause them to be deleted, breaking all the connections established with them.
-
 `
 
 func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateways []openapi.Appliance) (string, error) {
