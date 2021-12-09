@@ -30,8 +30,9 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var listCmd = &cobra.Command{
-		Use:   "list",
-		Short: `list all appliances`,
+		Use:     "list",
+		Short:   `list all appliances`,
+		Aliases: []string{"ls"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, &opts)
 		},
