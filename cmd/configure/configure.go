@@ -122,7 +122,7 @@ func defaultDeviceID() string {
 		}
 		return uid.String(), nil
 	}
-	// if we cant get a valid UUID based on the machine ID, we will fallback to a random UUID value.
+	// if we can't get a valid UUID based on the machine ID, we will fallback to a random UUID value.
 	v, err := readAndParseUUID()
 	if err != nil {
 		return uuid.New().String()

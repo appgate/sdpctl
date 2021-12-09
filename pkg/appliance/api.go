@@ -33,7 +33,7 @@ func (a *Appliance) GetAll(ctx context.Context) ([]openapi.Appliance, error) {
 }
 
 const (
-	//lint:file-ignore U1000 All avaliable upgrade statuses
+	//lint:file-ignore U1000 All available upgrade statuses
 	UpgradeStatusIdle        = "idle"
 	UpgradeStatusStarted     = "started"
 	UpgradeStatusDownloading = "downloading"

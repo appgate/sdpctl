@@ -119,7 +119,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 	if !preV.Equal(currentPrimaryControllerVersion) {
-		return fmt.Errorf("version missmatch: run appgatectl configure login")
+		return fmt.Errorf("version mismatch: run appgatectl configure login")
 	}
 	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	// We will exclude the primary controller from the others controllers
@@ -146,7 +146,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	groups := appliancepkg.GroupByFunctions(appliances)
 
 	// 1. Disable Controller function on the following appliance
-	// we will run this sequencelly, since this is a sensitve operation
+	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
@@ -210,7 +210,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		if err := a.UpgradeComplete(ctx, primaryController.GetId(), true); err != nil {
 			return err
 		}
-		log.Infof("Wating for primary controller to come back online in state %s", state)
+		log.Infof("Waiting for primary controller to come back online in state %s", state)
 		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
 			return err
 		}
@@ -226,7 +226,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
 				}
-				log.WithField("appliance", i.GetName()).Info("Preformed UpgradeComplete")
+				log.WithField("appliance", i.GetName()).Info("Performed UpgradeComplete")
 				select {
 				case upgradeChan <- i:
 				case <-ctx.Done():
