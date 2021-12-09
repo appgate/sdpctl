@@ -278,13 +278,13 @@ func TestUpgradePrepareCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			registery := httpmock.NewRegistry()
+			registry := httpmock.NewRegistry()
 			for _, v := range tt.httpStubs {
-				registery.Register(v.URL, v.Responder)
+				registry.Register(v.URL, v.Responder)
 			}
 
-			defer registery.Teardown()
-			registery.Serve()
+			defer registry.Teardown()
+			registry.Serve()
 			stdout := &bytes.Buffer{}
 			stdin := &bytes.Buffer{}
 			stderr := &bytes.Buffer{}
@@ -292,7 +292,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug:                    false,
-					URL:                      fmt.Sprintf("http://localhost:%d", registery.Port),
+					URL:                      fmt.Sprintf("http://localhost:%d", registry.Port),
 					PrimaryControllerVersion: "5.3.4-24950",
 				},
 				IOOutWriter: stdout,
@@ -300,7 +300,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				StdErr:      stderr,
 			}
 			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-				return registery.Client, nil
+				return registry.Client, nil
 			}
 			f.Appliance = func(c *configuration.Config) (*appliancepkg.Appliance, error) {
 				api, _ := f.APIClient(c)

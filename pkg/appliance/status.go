@@ -95,7 +95,7 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi
 		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
 	}
-	// inital sleep period
+	// initial sleep period
 	time.Sleep(5 * time.Second)
 	return backoff.Retry(func() error {
 		stats, _, err := u.Appliance.Stats(ctx)

@@ -180,7 +180,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	if !preV.Equal(currentPrimaryControllerVersion) {
-		return errors.New("version missmatch: run appgatectl configure login")
+		return errors.New("version mismatch: run appgatectl configure login")
 	}
 	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
 	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
@@ -330,7 +330,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	preparedAppliances, err := prepare(ctx, *primaryController, appliances)
 	if err != nil {
-		return fmt.Errorf("Preperation failed %s, run appgatectl appliance upgrade cancel", err)
+		return fmt.Errorf("Preparation failed %s, run appgatectl appliance upgrade cancel", err)
 	}
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.

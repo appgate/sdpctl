@@ -15,35 +15,35 @@ import (
 )
 
 func TestUpgradeStatusCommandJSON(t *testing.T) {
-	registery := httpmock.NewRegistry()
-	registery.Register(
+	registry := httpmock.NewRegistry()
+	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
-	registery.Register(
+	registry.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
-	registery.Register(
+	registry.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
-	registery.Register(
+	registry.Register(
 		"/stats/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
-	defer registery.Teardown()
-	registery.Serve()
+	defer registry.Teardown()
+	registry.Serve()
 	stdout := &bytes.Buffer{}
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
+			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
 		},
 		IOOutWriter: stdout,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-		return registery.Client, nil
+		return registry.Client, nil
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
@@ -95,25 +95,25 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 }
 
 func TestUpgradeStatusCommandTable(t *testing.T) {
-	registery := httpmock.NewRegistry()
-	registery.Register(
+	registry := httpmock.NewRegistry()
+	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
-	registery.Register(
+	registry.Register(
 		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
-	registery.Register(
+	registry.Register(
 		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
-	registery.Register(
+	registry.Register(
 		"/stats/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
-	defer registery.Teardown()
-	registery.Serve()
+	defer registry.Teardown()
+	registry.Serve()
 	stdout := &bytes.Buffer{}
 	stdin := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -121,14 +121,14 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
+			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
 		StdErr:      stderr,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-		return registery.Client, nil
+		return registry.Client, nil
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)

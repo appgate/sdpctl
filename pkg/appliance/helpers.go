@@ -23,7 +23,7 @@ var (
 )
 
 // GuessVersion tries to determine appliance version based on the input filename,
-// It asumes the file is has the standard naming convention of
+// It assumes the file is has the standard naming convention of
 // appgate-5.4.4-26245-release.img.zip
 // where 5.4.4 is the semver of the appliance.
 func GuessVersion(input string) (*version.Version, error) {

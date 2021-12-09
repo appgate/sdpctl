@@ -50,7 +50,7 @@ func initConfig() {
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// Its OK if we cant the file, fallback to arguments and/or environment variables
+			// Its OK if we can't the file, fallback to arguments and/or environment variables
 			// or configure it with appgatectl configure
 		} else {
 			fmt.Printf("can't find config; run appgatectl configure %s %s\n", dir, err)
