@@ -17,8 +17,14 @@ All rights reserved. Appgate is a trademark of Cyxtera Cybersecurity, Inc. d/b/a
 
 https://www.appgate.com
 
-For more documentation on the upgrade process, go to:
-    https://sdphelp.appgate.com/adminguide/v5.5/upgrading-appliances.html?anchor=collective-upgrade`,
+The upgrade procedure is divided into two parts,
+  - prepare: Upload the image new appliance image to the appgate SDP collective.
+  - complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.
+
+Additional subcommands included are:
+ - status: view the current upgrade status on all appliances.
+ - cancel: Cancel a prepared upgrade.
+`,
 	}
 
 	upgradeCmd.AddCommand(NewUpgradeStatusCmd(f))
