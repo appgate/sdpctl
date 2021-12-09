@@ -88,6 +88,7 @@ func NewCmdRoot() *cobra.Command {
 
 	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
 	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
+	rootCmd.AddCommand(NewCmdCompletion())
 
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
