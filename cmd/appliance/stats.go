@@ -35,14 +35,14 @@ func NewStatsCmd(f *factory.Factory) *cobra.Command {
 		Use:   "stats",
 		Short: `show appliance stats`,
 		RunE: func(c *cobra.Command, args []string) error {
-			return statusRun(c, args, &opts)
+			return statsRun(c, args, &opts)
 		},
 	}
 	listCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	return listCmd
 }
 
-func statusRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
+func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
