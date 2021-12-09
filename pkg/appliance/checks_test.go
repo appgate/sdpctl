@@ -137,7 +137,7 @@ func TestApplianceGroupDescription(t *testing.T) {
 					},
 				},
 			},
-			want: "controller, gateway, connector",
+			want: "connector, controller, gateway",
 		},
 	}
 	for _, tt := range tests {
