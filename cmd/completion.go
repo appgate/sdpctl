@@ -33,8 +33,8 @@ Zsh:
 
   $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
-  # To load completions for each session, execute once:
-  $ appgatectl completion zsh > "${fpath[1]}/_appgatectl"
+  # To load completions for each session, execute once (you may need to execute as 'sudo' user):
+  $ appgatectl completion zsh > "/usr/share/zsh/vendor-completions/_appgatectl"
 
   # You will need to start a new shell for this setup to take effect.
 
