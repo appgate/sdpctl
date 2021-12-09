@@ -3,6 +3,7 @@ package appliance
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -54,6 +55,7 @@ func applianceGroupDescription(appliances []openapi.Appliance) string {
 			funcs = append(funcs, k)
 		}
 	}
+	sort.Strings(funcs)
 	return strings.Join(funcs, ", ")
 }
 

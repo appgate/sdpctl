@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"sort"
@@ -51,4 +52,9 @@ func InBetween(i, min, max int) bool {
 	} else {
 		return false
 	}
+}
+
+func IsJSON(str string) bool {
+	var js json.RawMessage
+	return json.Unmarshal([]byte(str), &js) == nil
 }
