@@ -23,21 +23,21 @@ All environment variables are Optional, for initial configuration of appgatectl,
 The environment variables will take precedence over the values in the config file,
 The default path to the config file is "$XDG_CONFIG_HOME/appgatectl" or "$HOME/.config/appgatectl on UNIX
 
-APPGATECTL_URL: (Optional) URL to the controller API endpoint, for example https://appgate.acme.com:8443/admin
+APPGATECTL_URL: URL to the controller API endpoint, for example https://appgate.acme.com:8443/admin
 
-APPGATECTL_PROVIDER: (Optional) Display name of the Identity Provider name. Used during login (default to local)
+APPGATECTL_PROVIDER: Display name of the Identity Provider name. Used during login (default to local)
 
-APPGATECTL_INSECURE: (Optional) Whether server should be accessed without verifying the TLS certificate.
+APPGATECTL_INSECURE: Whether server should be accessed without verifying the TLS certificate.
 
-APPGATECTL_PEM_FILEPATH: (Optional) If appgatectl is configured insecure:false, you need to append this configuration and point to a valid PEM
+APPGATECTL_PEM_FILEPATH: If appgatectl is configured insecure:false, you need to append this configuration and point to a valid PEM
 file used by the controller.
 
-APPGATECTL_VERSION: (Optional) Client peer version used to communicate with the controller API,
+APPGATECTL_VERSION: Client peer version used to communicate with the controller API,
 default value will be computed based on the primary controller appliance version.
 
-APPGATECTL_BEARER: (Optional) The Bearer authentication, computed from 'appgatectl configure login'
+APPGATECTL_BEARER: The Bearer authentication, computed from 'appgatectl configure login'
 
-APPGATECTL_DEVICE_ID: (Optional) UUID to distinguish the Client device making the request. It is supposed to be same for every login request from the same server.
+APPGATECTL_DEVICE_ID: UUID to distinguish the Client device making the request. It is supposed to be same for every login request from the same server.
 
     Defaults to:
         /etc/machine-id on Linux
@@ -45,9 +45,9 @@ APPGATECTL_DEVICE_ID: (Optional) UUID to distinguish the Client device making th
         ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformUUID on OSX
         reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography /v MachineGuid on Windows
 
-APPGATECTL_CREDENTIALS_FILE: (Optional) The filepath to optional credentials file, generated from 'appgatectl configure login --remember-me'
+APPGATECTL_CREDENTIALS_FILE: The filepath to optional credentials file, generated from 'appgatectl configure login --remember-me'
 
-APPGATECTL_CONFIG_DIR: (Optional) the directory where appgatectl will store configuration files. Default:
+APPGATECTL_CONFIG_DIR: the directory where appgatectl will store configuration files. Default:
 "$XDG_CONFIG_HOME/appgatectl" or "$HOME/.config/appgatectl on UNIX".
 
 APPGATECTL_LOG_LEVEL: application log level, default to INFO
