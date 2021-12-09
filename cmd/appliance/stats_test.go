@@ -15,11 +15,11 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestApplianceListCommandJSON(t *testing.T) {
+func TestApplianceStatsCommandJSON(t *testing.T) {
 	registry := httpmock.NewRegistry()
 	registry.Register(
-		"/appliances",
-		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
+		"/stats/appliances",
+		httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()
 	registry.Serve()
@@ -49,7 +49,7 @@ func TestApplianceListCommandJSON(t *testing.T) {
 		}
 		return a, nil
 	}
-	cmd := NewListCmd(f)
+	cmd := NewStatsCmd(f)
 	cmd.SetArgs([]string{"--json"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -66,11 +66,12 @@ func TestApplianceListCommandJSON(t *testing.T) {
 		t.Fatalf("Expected JSON output - got stdout\n%s\n", string(got))
 	}
 }
-func TestApplianceListCommandTable(t *testing.T) {
+
+func TestApplianceStatsCommandTable(t *testing.T) {
 	registry := httpmock.NewRegistry()
 	registry.Register(
-		"/appliances",
-		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
+		"/stats/appliances",
+		httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()
 	registry.Serve()
@@ -100,7 +101,7 @@ func TestApplianceListCommandTable(t *testing.T) {
 		}
 		return a, nil
 	}
-	cmd := NewListCmd(f)
+	cmd := NewStatsCmd(f)
 
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -115,9 +116,9 @@ func TestApplianceListCommandTable(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := `Name                                                         Hostname                 Site                Activated
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1        controller.devops        Default Site        true
-gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1           gateway.devops           Default Site        true
+	want := `Name                                                         Status         Function                      CPU         Memory        Network out/in               Disk        Version
+controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1        healthy        log server, controller        0.8%        48.8%         0.26 Kbps / 0.26 Kbps        1.2%        5.3.4-24950
+gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1           healthy        gateway                       0.7%        7.8%          76.8 bps / 96.0 bps          4.9%        5.3.4-24950
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
