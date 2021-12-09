@@ -16,13 +16,13 @@ import (
 )
 
 func TestApplianceListCommandJSON(t *testing.T) {
-	registery := httpmock.NewRegistry()
-	registery.Register(
+	registry := httpmock.NewRegistry()
+	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 	)
-	defer registery.Teardown()
-	registery.Serve()
+	defer registry.Teardown()
+	registry.Serve()
 	stdout := &bytes.Buffer{}
 	stdin := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -30,14 +30,14 @@ func TestApplianceListCommandJSON(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
+			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
 		StdErr:      stderr,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-		return registery.Client, nil
+		return registry.Client, nil
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
@@ -67,13 +67,13 @@ func TestApplianceListCommandJSON(t *testing.T) {
 	}
 }
 func TestApplianceListCommandTable(t *testing.T) {
-	registery := httpmock.NewRegistry()
-	registery.Register(
+	registry := httpmock.NewRegistry()
+	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 	)
-	defer registery.Teardown()
-	registery.Serve()
+	defer registry.Teardown()
+	registry.Serve()
 	stdout := &bytes.Buffer{}
 	stdin := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -81,14 +81,14 @@ func TestApplianceListCommandTable(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registery.Port),
+			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
 		StdErr:      stderr,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-		return registery.Client, nil
+		return registry.Client, nil
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
