@@ -1,4 +1,4 @@
-package cmd
+package appliance
 
 import (
 	"github.com/appgate/appgatectl/cmd/appliance/backup"
