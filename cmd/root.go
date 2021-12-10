@@ -81,6 +81,7 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file")
 	rootCmd.PersistentFlags().BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	rootCmd.PersistentFlags().IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
+	rootCmd.PersistentFlags().BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
 	initConfig()
 
 	viper.Unmarshal(cfg)
