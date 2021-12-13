@@ -30,7 +30,6 @@ type upgradeCompleteOptions struct {
 	url               string
 	provider          string
 	debug             bool
-	insecure          bool
 	backup            bool
 	backupDestination string
 }
@@ -55,7 +54,6 @@ and perform a reboot to make the second partition the primary.`,
 		},
 	}
 
-	upgradeCompleteCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	upgradeCompleteCmd.PersistentFlags().BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
