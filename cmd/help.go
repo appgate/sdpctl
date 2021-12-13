@@ -52,6 +52,9 @@ APPGATECTL_CONFIG_DIR: the directory where appgatectl will store configuration f
 
 APPGATECTL_LOG_LEVEL: application log level, default to INFO
 
+HTTP_PROXY: HTTP Proxy for the client
+    Example:  HTTP_PROXY="http://proxyIp:proxyPort"
+
 `
 
 func NewHelpCmd(f *factory.Factory) *cobra.Command {
