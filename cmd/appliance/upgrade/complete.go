@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
@@ -20,15 +22,17 @@ import (
 )
 
 type upgradeCompleteOptions struct {
-	Config    *configuration.Config
-	Out       io.Writer
-	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token     string
-	Timeout   int
-	url       string
-	provider  string
-	debug     bool
-	insecure  bool
+	Config            *configuration.Config
+	Out               io.Writer
+	Appliance         func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	Token             string
+	Timeout           int
+	url               string
+	provider          string
+	debug             bool
+	backup            bool
+	backupDestination string
+	backupAll         string
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -51,9 +55,10 @@ and perform a reboot to make the second partition the primary.`,
 		},
 	}
 
-	upgradeCompleteCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
+	upgradeCompleteCmd.PersistentFlags().BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
+	upgradeCompleteCmd.PersistentFlags().StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 
 	return upgradeCompleteCmd
 }
@@ -64,6 +69,63 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
+
+	// if backup is default value (false) and user hasn't explicitly stated the flag, ask if user wants to backup
+	flagIsChanged := cmd.Flags().Changed("backup")
+	if !opts.backup && !flagIsChanged {
+		performBackup := &survey.Confirm{
+			Message: "Do you want to backup before proceeding?",
+			Default: false,
+		}
+
+		if err := survey.AskOne(performBackup, &opts.backup); err != nil {
+			return err
+		}
+
+		// if answer is yes, ask where to save the backup
+		if opts.backup {
+			destPrompt := &survey.Input{
+				Message: "Path to where backup should be saved",
+				Default: os.ExpandEnv(opts.backupDestination),
+			}
+			allPrompt := &survey.Select{
+				Message: "What do you want to backup?",
+				Options: []string{"primary controller", "all"},
+				Default: "primary controller",
+			}
+
+			if err := survey.AskOne(destPrompt, &opts.backupDestination, nil); err != nil {
+				return err
+			}
+			if err := survey.AskOne(allPrompt, &opts.backupAll, nil); err != nil {
+				return err
+			}
+		}
+	}
+
+	if opts.backup {
+		bOpts := appliancepkg.BackupOpts{
+			Config:      opts.Config,
+			Appliance:   opts.Appliance,
+			Destination: opts.backupDestination,
+			AllFlag:     false,
+			Timeout:     5 * time.Minute,
+		}
+		if opts.backupAll == "all" {
+			bOpts.AllFlag = true
+		}
+		if err := appliancepkg.PrepareBackup(&bOpts); err != nil {
+			return err
+		}
+		backupMap, err := appliancepkg.PerformBackup(&bOpts)
+		if err != nil {
+			return err
+		}
+		if err := appliancepkg.CleanupBackup(&bOpts, backupMap); err != nil {
+			return err
+		}
+	}
+
 	if a.ApplianceStats == nil {
 		a.ApplianceStats = &appliancepkg.ApplianceStatus{
 			Appliance: a,

@@ -14,11 +14,13 @@ fmt:
 	gofmt -w $(GOFMT_FILES)
 
 test:
-	go test ./...
+	go test ./... -race -covermode=atomic -coverprofile=cover.out
 
+cover: test
+	go tool cover -func cover.out
 
 clean:
-	rm -rf build
+	rm -rf build dist cover.out
 
 
 .PHONY: install
