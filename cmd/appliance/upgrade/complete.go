@@ -89,7 +89,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				Default: os.ExpandEnv(opts.backupDestination),
 			}
 			allPrompt := &survey.Select{
-				Message: "What do you want to backup",
+				Message: "What do you want to backup?",
 				Options: []string{"primary controller", "all"},
 				Default: "primary controller",
 			}
