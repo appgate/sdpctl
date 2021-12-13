@@ -42,7 +42,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 	}{
 		{
 			name: "test complete multiple appliances",
-            cli: "--backup=false",
+			cli:  "--backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -65,7 +65,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "first controller failed",
-            cli: "--backup=false",
+			cli:  "--backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -90,7 +90,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "gateway failure",
-            cli: "--backup=false",
+			cli:  "--backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -115,7 +115,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "one offline controller",
-            cli: "--backup=false",
+			cli:  "--backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",

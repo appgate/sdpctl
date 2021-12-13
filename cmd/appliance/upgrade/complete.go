@@ -72,7 +72,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// if backup is default value (false) and user hasn't explicitly stated the flag, ask if user wants to backup
-    flagIsChanged := cmd.Flags().Changed("backup")
+	flagIsChanged := cmd.Flags().Changed("backup")
 	if !opts.backup && !flagIsChanged {
 		performBackup := &survey.Confirm{
 			Message: "Do you want to backup the main controller before proceeding",
