@@ -32,6 +32,7 @@ type upgradeCompleteOptions struct {
 	debug             bool
 	backup            bool
 	backupDestination string
+	backupAll         string
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -73,7 +74,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	flagIsChanged := cmd.Flags().Changed("backup")
 	if !opts.backup && !flagIsChanged {
 		performBackup := &survey.Confirm{
-			Message: "Do you want to backup the main controller before proceeding",
+			Message: "Do you want to backup before proceeding?",
 			Default: false,
 		}
 
@@ -87,7 +88,16 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				Message: "Path to where backup should be saved",
 				Default: os.ExpandEnv(opts.backupDestination),
 			}
+			allPrompt := &survey.Select{
+				Message: "What do you want to backup",
+				Options: []string{"primary controller", "all"},
+				Default: "primary controller",
+			}
+
 			if err := survey.AskOne(destPrompt, &opts.backupDestination, nil); err != nil {
+				return err
+			}
+			if err := survey.AskOne(allPrompt, &opts.backupAll, nil); err != nil {
 				return err
 			}
 		}
@@ -100,6 +110,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			Destination: opts.backupDestination,
 			AllFlag:     false,
 			Timeout:     5 * time.Minute,
+		}
+		if opts.backupAll == "all" {
+			bOpts.AllFlag = true
 		}
 		if err := appliancepkg.PrepareBackup(&bOpts); err != nil {
 			return err
