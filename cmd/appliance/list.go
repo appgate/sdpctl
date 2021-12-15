@@ -49,7 +49,7 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	filter, _ := util.ParseFilterFlag(cmd)
+	filter, _ := util.ParseFilteringFlags(cmd)
 	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

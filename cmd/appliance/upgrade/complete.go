@@ -143,7 +143,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
 	defer cancel()
-	filter, _ := util.ParseFilterFlag(cmd)
+	filter, _ := util.ParseFilteringFlags(cmd)
 	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

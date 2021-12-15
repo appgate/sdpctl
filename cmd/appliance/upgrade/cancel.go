@@ -62,7 +62,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		return err
 	}
 	ctx := context.Background()
-	filter, _ := util.ParseFilterFlag(cmd)
+	filter, _ := util.ParseFilteringFlags(cmd)
 	appliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

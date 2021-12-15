@@ -67,8 +67,11 @@ func IsJSON(str string) bool {
 	return json.Unmarshal([]byte(str), &js) == nil
 }
 
-func ParseFilterFlag(cmd *cobra.Command) (map[string]string, error) {
-	result := map[string]string{}
+func ParseFilteringFlags(cmd *cobra.Command) (map[string]map[string]string, error) {
+	result := map[string]map[string]string{
+		"filter":  {},
+		"exclude": {},
+	}
 	if cmd.InheritedFlags().Lookup("filter") != nil {
 		f, err := cmd.InheritedFlags().GetStringSlice("filter")
 		if err != nil {
@@ -76,18 +79,51 @@ func ParseFilterFlag(cmd *cobra.Command) (map[string]string, error) {
 		}
 		for _, v := range f {
 			val := strings.Split(v, "=")
-			result[val[0]] = val[1]
+			result["filter"][val[0]] = val[1]
+		}
+	}
+	if cmd.InheritedFlags().Lookup("exclude") != nil {
+		f, err := cmd.InheritedFlags().GetStringSlice("exclude")
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range f {
+			val := strings.Split(v, "=")
+			result["exclude"][val[0]] = val[1]
 		}
 	}
 	return result, nil
 }
 
-func FilterAppliances(unfiltered []openapi.Appliance, filter map[string]string) []openapi.Appliance {
-	if len(filter) <= 0 {
-		return unfiltered
+func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
+	// apply normal filter
+	if len(filter["filter"]) > 0 {
+		appliances = applyFilter(appliances, filter["filter"])
 	}
+
+	if len(filter["exclude"]) <= 0 {
+		return appliances
+	}
+
+	// apply exclusion filter
+	filtered := []openapi.Appliance{}
+	toExclude := applyFilter(appliances, filter["exclude"])
+	for _, appliance := range appliances {
+		aID := appliance.GetId()
+		for _, exa := range toExclude {
+			eID := exa.GetId()
+			if aID != eID {
+				filtered = append(filtered, appliance)
+			}
+		}
+	}
+
+	return filtered
+}
+
+func applyFilter(appliances []openapi.Appliance, filter map[string]string) []openapi.Appliance {
 	var filteredAppliances []openapi.Appliance
-	for _, a := range unfiltered {
+	for _, a := range appliances {
 		for k, s := range filter {
 			switch k {
 			case "name":

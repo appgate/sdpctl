@@ -89,7 +89,7 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		return backupIDs, fmt.Errorf("Backup API is disabled in the collective.")
 	}
 
-	filter, _ := util.ParseFilterFlag(cmd)
+	filter, _ := util.ParseFilteringFlags(cmd)
 	appliances, err := app.List(ctx, filter)
 	if err != nil {
 		return backupIDs, err

@@ -18,6 +18,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewListCmd(f))
 	cmd.AddCommand(NewStatsCmd(f))
 	cmd.PersistentFlags().StringSliceP("filter", "f", []string{}, "Filter appliances")
+	cmd.PersistentFlags().StringSliceP("exclude", "e", []string{}, "Exclude appliances")
 
 	return cmd
 }

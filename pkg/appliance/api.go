@@ -26,7 +26,7 @@ type Appliance struct {
 
 // List from the appgate sdp collective
 // Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
-func (a *Appliance) List(ctx context.Context, filter map[string]string) ([]openapi.Appliance, error) {
+func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string) ([]openapi.Appliance, error) {
 	appliances, _, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, err
