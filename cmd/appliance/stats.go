@@ -38,7 +38,7 @@ func NewStatsCmd(f *factory.Factory) *cobra.Command {
 			return statsRun(c, args, &opts)
 		},
 	}
-	listCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	listCmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	return listCmd
 }
 

@@ -11,6 +11,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -45,10 +46,11 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	upgradeCancelCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	upgradeCancelCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeCancelCmd.PersistentFlags().BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the controller")
+	flags := upgradeCancelCmd.Flags()
+	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
+	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
+	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
+	flags.BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the controller")
 
 	return upgradeCancelCmd
 }
@@ -60,7 +62,8 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		return err
 	}
 	ctx := context.Background()
-	appliances, err := a.GetAll(ctx)
+	filter, _ := util.ParseFilterFlag(cmd)
+	appliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err
 	}

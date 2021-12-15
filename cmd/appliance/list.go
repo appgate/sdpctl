@@ -10,6 +10,7 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +38,7 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 			return listRun(c, args, &opts)
 		},
 	}
-	listCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	listCmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	return listCmd
 }
 
@@ -48,7 +49,8 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	allAppliances, err := a.GetAll(ctx)
+	filter, _ := util.ParseFilterFlag(cmd)
+	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err
 	}

@@ -123,3 +123,62 @@ gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1           gateway.devops     
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
 	}
 }
+
+func TestApplianceFiltering(t *testing.T) {
+	registry := httpmock.NewRegistry()
+	registry.Register(
+		"/appliances",
+		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
+	)
+	defer registry.Teardown()
+	registry.Serve()
+	stdout := &bytes.Buffer{}
+	stdin := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	in := io.NopCloser(stdin)
+	f := &factory.Factory{
+		Config: &configuration.Config{
+			Debug: false,
+			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+		},
+		IOOutWriter: stdout,
+		Stdin:       in,
+		StdErr:      stderr,
+	}
+	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
+		return registry.Client, nil
+	}
+	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
+		api, _ := f.APIClient(c)
+
+		a := &appliance.Appliance{
+			APIClient:  api,
+			HTTPClient: api.GetConfig().HTTPClient,
+			Token:      "",
+		}
+		return a, nil
+	}
+
+	// Need to call parent command since list command inherits the filter flag from it
+	cmd := NewApplianceCmd(f)
+	cmd.SetArgs([]string{"list", "--filter=name=controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1"})
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	_, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("executeC %s", err)
+	}
+
+	got, err := io.ReadAll(stdout)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
+	}
+	gotStr := string(got)
+	want := `Name                                                         Hostname                 Site                Activated
+controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1        controller.devops        Default Site        true
+`
+	if !cmp.Equal(want, gotStr) {
+		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
+	}
+}

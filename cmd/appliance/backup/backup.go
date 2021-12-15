@@ -39,7 +39,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
-			backupIDs, err = appliance.PerformBackup(&opts)
+			backupIDs, err = appliance.PerformBackup(cmd, &opts)
 			if err != nil {
 				return err
 			}
@@ -51,11 +51,12 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	}
 
 	log.SetOutput(opts.Out)
-	cmd.PersistentFlags().StringVarP(&opts.Destination, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
-	cmd.PersistentFlags().BoolVar(&opts.AllFlag, "all", false, "backup the entire Appgate SDP Collective")
-	cmd.PersistentFlags().BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers") // TODO: Implement logic for this flag
-	cmd.PersistentFlags().StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
-	cmd.PersistentFlags().DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
+	flags := cmd.Flags()
+	flags.StringVarP(&opts.Destination, "destination", "d", appliance.DefaultBackupDestination, "backup destination")
+	flags.BoolVar(&opts.AllFlag, "all", false, "backup the entire Appgate SDP Collective")
+	flags.BoolVar(&opts.AllControllersFlag, "controllers", false, "backup all controllers") // TODO: Implement logic for this flag
+	flags.StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
+	flags.DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
 
 	return cmd
 }

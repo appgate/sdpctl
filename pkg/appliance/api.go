@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/appgate/appgatectl/pkg/api"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"golang.org/x/sync/errgroup"
 )
@@ -23,13 +24,14 @@ type Appliance struct {
 	ApplianceStats      WaitForApplianceStatus
 }
 
-// GetAll from the appgate sdp collective, without any filter.
-func (a *Appliance) GetAll(ctx context.Context) ([]openapi.Appliance, error) {
+// List from the appgate sdp collective
+// Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
+func (a *Appliance) List(ctx context.Context, filter map[string]string) ([]openapi.Appliance, error) {
 	appliances, _, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, err
 	}
-	return appliances.GetData(), nil
+	return util.FilterAppliances(appliances.GetData(), filter), nil
 }
 
 const (

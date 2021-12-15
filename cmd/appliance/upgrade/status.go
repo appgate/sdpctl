@@ -10,6 +10,7 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -44,10 +45,11 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	upgradeStatusCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	upgradeStatusCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
-	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	upgradeStatusCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
+	flags := upgradeStatusCmd.Flags()
+	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
+	flags.BoolVar(&opts.json, "json", false, "Display in JSON format")
+	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
+	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 
 	return upgradeStatusCmd
 }
@@ -59,7 +61,8 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return err
 	}
 	ctx := context.Background()
-	allAppliances, err := a.GetAll(ctx)
+	filter, _ := util.ParseFilterFlag(cmd)
+	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err
 	}
