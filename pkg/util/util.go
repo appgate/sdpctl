@@ -156,6 +156,11 @@ func applyFilter(appliances []openapi.Appliance, filter map[string]string) []ope
 				if a.GetActivated() == b {
 					filteredAppliances = append(filteredAppliances, a)
 				}
+            case "site", "site-id":
+                regex := regexp.MustCompile(s)
+                if regex.MatchString(a.GetSite()) {
+                    filteredAppliances = append(filteredAppliances, a)
+                }
 			}
 		}
 	}
