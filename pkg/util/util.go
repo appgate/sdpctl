@@ -73,15 +73,15 @@ func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
 		"exclude": {},
 	}
 
-    for v := range result {
-        arg, err := flags.GetStringToString(v)
-        if err != nil {
-            logrus.Warnf("Failed to parse %s flag: %s", v, err)
-        }
-        result[v] = arg
-    }
+	for v := range result {
+		arg, err := flags.GetStringToString(v)
+		if err != nil {
+			logrus.Warnf("Failed to parse %s flag: %s", v, err)
+		}
+		result[v] = arg
+	}
 
-    return result
+	return result
 }
 
 func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
@@ -156,11 +156,11 @@ func applyFilter(appliances []openapi.Appliance, filter map[string]string) []ope
 				if a.GetActivated() == b {
 					filteredAppliances = append(filteredAppliances, a)
 				}
-            case "site", "site-id":
-                regex := regexp.MustCompile(s)
-                if regex.MatchString(a.GetSite()) {
-                    filteredAppliances = append(filteredAppliances, a)
-                }
+			case "site", "site-id":
+				regex := regexp.MustCompile(s)
+				if regex.MatchString(a.GetSite()) {
+					filteredAppliances = append(filteredAppliances, a)
+				}
 			}
 		}
 	}
