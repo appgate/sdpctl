@@ -2,16 +2,12 @@ package appliance
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"text/tabwriter"
-
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 type listOptions struct {
@@ -55,18 +51,15 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 		return err
 	}
 	if opts.json {
-		j, err := json.MarshalIndent(&allAppliances, "", "  ")
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(opts.Out, "\n%s\n", string(j))
-		return nil
+		return util.PrintJson(opts.Out, allAppliances)
 	}
-	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
-	fmt.Fprintln(w, "Name\tHostname\tSite\tActivated")
+
+	p := util.NewPrinter(opts.Out)
+	p.AddHeader("Name", "Hostname", "Site", "Activated")
 	for _, a := range allAppliances {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%t\n", a.GetName(), a.GetHostname(), a.GetSiteName(), a.GetActivated())
+		p.AddLine(a.GetName(), a.GetHostname(), a.GetSiteName(), a.GetActivated())
 	}
-	w.Flush()
+	p.Print()
+
 	return nil
 }
