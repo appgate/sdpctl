@@ -300,7 +300,6 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				if functions := GetActiveFunctions(a); util.InSlice(s, functions) {
 					filteredAppliances = append(filteredAppliances, a)
 				}
-
 			}
 		}
 	}
