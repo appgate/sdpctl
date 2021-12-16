@@ -7,6 +7,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+    filterHelp string = `Filter appliances using a comma seperated list of key-value pairs. Example: '--filter name=controller,site=<site-id> etc.'.
+Available keywords to filter on are:
+name,
+id,
+tags|tag,
+version,
+hostname|host,
+active|activated,
+site|site-id,
+function|roles|role`
+)
+
 // NewApplianceCmd return a new appliance command
 func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -15,8 +28,8 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 		TraverseChildren: true,
 	}
 	pFlags := cmd.PersistentFlags()
-	pFlags.StringToStringP("filter", "f", map[string]string{}, "Filter appliances")
-	pFlags.StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances")
+	pFlags.StringToStringP("filter", "f", map[string]string{}, filterHelp)
+	pFlags.StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances. Adheres to the same syntax and key-value pairs as '--filter'")
 
 	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
 	cmd.AddCommand(backup.NewCmdBackup(f))
