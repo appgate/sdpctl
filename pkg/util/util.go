@@ -12,7 +12,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // Getenv returns environment variable value, if it does not exist, return fallback
@@ -67,32 +67,21 @@ func IsJSON(str string) bool {
 	return json.Unmarshal([]byte(str), &js) == nil
 }
 
-func ParseFilteringFlags(cmd *cobra.Command) (map[string]map[string]string, error) {
+func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
 	result := map[string]map[string]string{
 		"filter":  {},
 		"exclude": {},
 	}
-	if cmd.InheritedFlags().Lookup("filter") != nil {
-		f, err := cmd.InheritedFlags().GetStringSlice("filter")
-		if err != nil {
-			return nil, err
-		}
-		for _, v := range f {
-			val := strings.Split(v, "=")
-			result["filter"][val[0]] = val[1]
-		}
-	}
-	if cmd.InheritedFlags().Lookup("exclude") != nil {
-		f, err := cmd.InheritedFlags().GetStringSlice("exclude")
-		if err != nil {
-			return nil, err
-		}
-		for _, v := range f {
-			val := strings.Split(v, "=")
-			result["exclude"][val[0]] = val[1]
-		}
-	}
-	return result, nil
+
+    for v := range result {
+        arg, err := flags.GetStringToString(v)
+        if err != nil {
+            logrus.Warnf("Failed to parse %s flag: %s", v, err)
+        }
+        result[v] = arg
+    }
+
+    return result
 }
 
 func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {

@@ -110,7 +110,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		log.Debugf("Could not guess target version based on the image file name %q", filename)
 	}
-	filter, _ := util.ParseFilteringFlags(cmd)
+	filter := util.ParseFilteringFlags(cmd.Flags())
 	appliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

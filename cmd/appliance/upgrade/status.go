@@ -61,7 +61,7 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return err
 	}
 	ctx := context.Background()
-	filter, _ := util.ParseFilteringFlags(cmd)
+	filter := util.ParseFilteringFlags(cmd.Flags())
 	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

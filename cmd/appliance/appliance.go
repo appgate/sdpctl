@@ -12,13 +12,16 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "appliance",
 		Short: "interact with appliances",
+        TraverseChildren: true,
 	}
-	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
+    pFlags := cmd.PersistentFlags()
+	pFlags.StringToStringP("filter", "f", map[string]string{}, "Filter appliances")
+	pFlags.StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances")
+
+    cmd.AddCommand(upgrade.NewUpgradeCmd(f))
 	cmd.AddCommand(backup.NewCmdBackup(f))
 	cmd.AddCommand(NewListCmd(f))
 	cmd.AddCommand(NewStatsCmd(f))
-	cmd.PersistentFlags().StringSliceP("filter", "f", []string{}, "Filter appliances")
-	cmd.PersistentFlags().StringSliceP("exclude", "e", []string{}, "Exclude appliances")
 
 	return cmd
 }
