@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/appgate/appgatectl/pkg/api"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"golang.org/x/sync/errgroup"
 )
@@ -31,7 +30,7 @@ func (a *Appliance) List(ctx context.Context, filter map[string]map[string]strin
 	if err != nil {
 		return nil, err
 	}
-	return util.FilterAppliances(appliances.GetData(), filter), nil
+	return FilterAppliances(appliances.GetData(), filter), nil
 }
 
 const (
