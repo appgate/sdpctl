@@ -5,6 +5,9 @@ import (
 	"errors"
 	"os"
 	"sort"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 )
 
 // Getenv returns environment variable value, if it does not exist, return fallback
@@ -57,4 +60,21 @@ func InBetween(i, min, max int) bool {
 func IsJSON(str string) bool {
 	var js json.RawMessage
 	return json.Unmarshal([]byte(str), &js) == nil
+}
+
+func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
+	result := map[string]map[string]string{
+		"filter":  {},
+		"exclude": {},
+	}
+
+	for v := range result {
+		arg, err := flags.GetStringToString(v)
+		if err != nil {
+			logrus.Warnf("Failed to parse %s flag: %s", v, err)
+		}
+		result[v] = arg
+	}
+
+	return result
 }

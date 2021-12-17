@@ -2,12 +2,15 @@ package appliance
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -49,25 +52,51 @@ func GroupByFunctions(appliances []openapi.Appliance) map[string][]openapi.Appli
 func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 	functions := make(map[string]bool)
 	for _, a := range appliances {
-		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+		res := GetActiveFunctions(a)
+		if util.InSlice(FunctionController, res) {
 			functions[FunctionController] = true
 		}
-		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() {
+		if util.InSlice(FunctionGateway, res) {
 			functions[FunctionGateway] = true
 		}
-		if v, ok := a.GetPortalOk(); ok && v.GetEnabled() {
+		if util.InSlice(FunctionPortal, res) {
 			functions[FunctionPortal] = true
 		}
-		if v, ok := a.GetConnectorOk(); ok && v.GetEnabled() {
+		if util.InSlice(FunctionConnector, res) {
 			functions[FunctionConnector] = true
 		}
-		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
+		if util.InSlice(FunctionLogServer, res) {
 			functions[FunctionLogServer] = true
 		}
-		if v, ok := a.GetLogForwarderOk(); ok && v.GetEnabled() {
+		if util.InSlice(FunctionLogForwarder, res) {
 			functions[FunctionLogForwarder] = true
 		}
 	}
+	return functions
+}
+
+func GetActiveFunctions(appliance openapi.Appliance) []string {
+	functions := []string{}
+
+	if v, ok := appliance.GetControllerOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionController)
+	}
+	if v, ok := appliance.GetGatewayOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionGateway)
+	}
+	if v, ok := appliance.GetPortalOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionPortal)
+	}
+	if v, ok := appliance.GetConnectorOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionConnector)
+	}
+	if v, ok := appliance.GetLogServerOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionLogServer)
+	}
+	if v, ok := appliance.GetLogForwarderOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionLogForwarder)
+	}
+
 	return functions
 }
 
@@ -188,4 +217,113 @@ func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []
 		}
 	}
 	return template, r
+}
+
+func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
+	// apply normal filter
+	if len(filter["filter"]) > 0 {
+		appliances = applyApplianceFilter(appliances, filter["filter"])
+	}
+
+	// apply exclusion filter
+	toExclude := applyApplianceFilter(appliances, filter["exclude"])
+	for _, exa := range toExclude {
+		eID := exa.GetId()
+		for i, a := range appliances {
+			if eID == a.GetId() {
+				appliances = append(appliances[:i], appliances[i+1:]...)
+			}
+		}
+	}
+
+	return appliances
+}
+
+func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) []openapi.Appliance {
+	var filteredAppliances []openapi.Appliance
+	var warnings []string
+
+	appendUnique := func(app openapi.Appliance) {
+		appID := app.GetId()
+		inFiltered := []string{}
+		for _, a := range filteredAppliances {
+			inFiltered = append(inFiltered, a.GetId())
+		}
+		if !util.InSlice(appID, inFiltered) {
+			filteredAppliances = append(filteredAppliances, app)
+		}
+	}
+
+	for _, a := range appliances {
+		for k, s := range filter {
+			switch k {
+			case "name":
+				regex := regexp.MustCompile(s)
+				if regex.MatchString(a.GetName()) {
+					appendUnique(a)
+				}
+			case "id":
+				regex := regexp.MustCompile(s)
+				if regex.MatchString(a.GetId()) {
+					appendUnique(a)
+				}
+			case "tags", "tag":
+				tagSlice := strings.Split(s, ",")
+				appTags := a.GetTags()
+				for _, t := range tagSlice {
+					regex := regexp.MustCompile(t)
+					for _, at := range appTags {
+						if regex.MatchString(at) {
+							appendUnique(a)
+						}
+					}
+				}
+			case "version":
+				regex := regexp.MustCompile(s)
+				version := a.GetVersion()
+				versionString := fmt.Sprintf("%d", version)
+				if regex.MatchString(versionString) {
+					appendUnique(a)
+				}
+			case "hostname", "host":
+				regex := regexp.MustCompile(s)
+				if regex.MatchString(a.GetHostname()) {
+					appendUnique(a)
+				}
+			case "active", "activated":
+				b, err := strconv.ParseBool(s)
+				if err != nil {
+					message := fmt.Sprintf("Failed to parse boolean filter value: %x", err)
+					if !util.InSlice(message, warnings) {
+						warnings = append(warnings, message)
+					}
+				}
+				if a.GetActivated() == b {
+					appendUnique(a)
+				}
+			case "site", "site-id":
+				regex := regexp.MustCompile(s)
+				if regex.MatchString(a.GetSite()) {
+					appendUnique(a)
+				}
+			case "function", "roles", "role":
+				if functions := GetActiveFunctions(a); util.InSlice(s, functions) {
+					appendUnique(a)
+				}
+			default:
+				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring.", k)
+				if !util.InSlice(message, warnings) {
+					warnings = append(warnings, message)
+				}
+			}
+		}
+	}
+
+	if len(warnings) > 0 {
+		for _, warn := range warnings {
+			logrus.Warnf(warn)
+		}
+	}
+
+	return filteredAppliances
 }

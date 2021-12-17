@@ -55,10 +55,11 @@ and perform a reboot to make the second partition the primary.`,
 		},
 	}
 
-	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	upgradeCompleteCmd.PersistentFlags().StringVarP(&opts.provider, "provider", "", "local", "identity provider")
-	upgradeCompleteCmd.PersistentFlags().BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
-	upgradeCompleteCmd.PersistentFlags().StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
+	flags := upgradeCompleteCmd.Flags()
+	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
+	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
+	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
+	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 
 	return upgradeCompleteCmd
 }
@@ -117,7 +118,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		if err := appliancepkg.PrepareBackup(&bOpts); err != nil {
 			return err
 		}
-		backupMap, err := appliancepkg.PerformBackup(&bOpts)
+		backupMap, err := appliancepkg.PerformBackup(cmd, &bOpts)
 		if err != nil {
 			return err
 		}
@@ -142,7 +143,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
 	defer cancel()
-	allAppliances, err := a.GetAll(ctx)
+	filter := util.ParseFilteringFlags(cmd.Flags())
+	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err
 	}

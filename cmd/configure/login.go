@@ -48,10 +48,11 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	loginCmd.PersistentFlags().BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	loginCmd.PersistentFlags().StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	loginCmd.PersistentFlags().StringVar(&opts.provider, "provider", "local", "identity provider")
-	loginCmd.PersistentFlags().BoolVar(&opts.remember, "remember-me", false, "remember login credentials")
+	flags := loginCmd.Flags()
+	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
+	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
+	flags.StringVar(&opts.provider, "provider", "local", "identity provider")
+	flags.BoolVar(&opts.remember, "remember-me", false, "remember login credentials")
 
 	return loginCmd
 }
@@ -145,7 +146,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	allAppliances, err := a.GetAll(ctx)
+	allAppliances, err := a.List(ctx, nil)
 	if err != nil {
 		return err
 	}

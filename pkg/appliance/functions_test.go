@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -434,6 +435,138 @@ func TestActiveFunctions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ActiveFunctions(tt.args.appliances); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ActiveFunctions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFilterAndExclude(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+		filter     map[string]map[string]string
+	}
+	mockControllers := map[string]openapi.Appliance{
+		"primaryController": {
+			Name: "primary controller",
+			Id:   "f1bef0c4-e0b6-42ac-9c40-3f6214c34869",
+			Controller: &openapi.ApplianceAllOfController{
+				Enabled: openapi.PtrBool(true),
+			},
+			LogServer: &openapi.ApplianceAllOfLogServer{
+				Enabled: openapi.PtrBool(true),
+			},
+			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+				Hostname: "foo.devops",
+			},
+			Hostname:  openapi.PtrString("foo.devops"),
+			Site:      openapi.PtrString("640039ab-8b13-494a-af9e-20a48846674a"),
+			Activated: openapi.PtrBool(true),
+			Tags: &[]string{
+				"primary",
+				"Jebediah Kerman",
+			},
+			Version: openapi.PtrInt32(16),
+		},
+		"slaveController": {
+			Name: "slave controller",
+			Id:   "6090fd66-6e21-4ef5-87d0-36c7a1b04a80",
+			Controller: &openapi.ApplianceAllOfController{
+				Enabled: openapi.PtrBool(true),
+			},
+			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+				Hostname: "bar.purple",
+			},
+			Site:      openapi.PtrString("3976e914-ccf4-4704-80e1-18b7de87ff07"),
+			Activated: openapi.PtrBool(false),
+			Tags: &[]string{
+				"slave",
+				"crap",
+			},
+			Version: openapi.PtrInt32(15),
+		},
+		"gateway": {
+			Name: "gateway",
+			Id:   "85fac76b-c526-486d-844a-520a023e76e2",
+			Gateway: &openapi.ApplianceAllOfGateway{
+				Enabled: openapi.PtrBool(true),
+			},
+			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+				Hostname: "tinker.purple",
+			},
+			Activated: openapi.PtrBool(false),
+			Site:      openapi.PtrString("15dd5630-aaf5-4d74-8c75-205e438db9a3"),
+			Tags: &[]string{
+				"stargate",
+			},
+			Version: openapi.PtrInt32(15),
+		},
+	}
+	keywords := map[string]string{
+		"name":      "primary",
+		"id":        "f1bef0c4-e0b6-42ac-9c40-3f6214c34869",
+		"tags":      "Jeb",
+		"tag":       "Jeb",
+		"version":   "16",
+		"hostname":  "foo.devops",
+		"host":      "foo.devops",
+		"active":    "true",
+		"activated": "true",
+		"site":      "640039ab-8b13-494a-af9e-20a48846674a",
+		"site-id":   "640039ab-8b13-494a-af9e-20a48846674a",
+		"function":  "logserver",
+		"role":      "logserver",
+		"roles":     "logserver",
+	}
+	type testStruct struct {
+		name string
+		args args
+		want []openapi.Appliance
+	}
+	tests := []testStruct{}
+	for word, value := range keywords {
+		tests = append(tests, testStruct{
+			name: fmt.Sprintf("filter by %s", word),
+			args: args{
+				appliances: []openapi.Appliance{
+					mockControllers["primaryController"],
+					mockControllers["slaveController"],
+					mockControllers["gateway"],
+				},
+				filter: map[string]map[string]string{
+					"filter": {
+						word: value,
+					},
+				},
+			},
+			want: []openapi.Appliance{
+				mockControllers["primaryController"],
+			},
+		})
+		tests = append(tests, testStruct{
+			name: fmt.Sprintf("filter by %s", word),
+			args: args{
+				appliances: []openapi.Appliance{
+					mockControllers["primaryController"],
+					mockControllers["slaveController"],
+					mockControllers["gateway"],
+				},
+				filter: map[string]map[string]string{
+					"exclude": {
+						word: value,
+					},
+				},
+			},
+			want: []openapi.Appliance{
+				mockControllers["slaveController"],
+				mockControllers["gateway"],
+			},
+		})
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FilterAppliances(tt.args.appliances, tt.args.filter); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FilterAppliances() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -60,7 +61,7 @@ func PrepareBackup(opts *BackupOpts) error {
 	return nil
 }
 
-func PerformBackup(opts *BackupOpts) (map[string]string, error) {
+func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, error) {
 	backupIDs := make(map[string]string)
 	ctx := context.Background()
 	aud := util.InSlice("audit", opts.Include)
@@ -88,7 +89,8 @@ func PerformBackup(opts *BackupOpts) (map[string]string, error) {
 		return backupIDs, fmt.Errorf("Backup API is disabled in the collective.")
 	}
 
-	appliances, err := app.GetAll(ctx)
+	filter := util.ParseFilteringFlags(cmd.Flags())
+	appliances, err := app.List(ctx, filter)
 	if err != nil {
 		return backupIDs, err
 	}
