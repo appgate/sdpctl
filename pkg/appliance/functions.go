@@ -219,14 +219,14 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 
 	// apply exclusion filter
 	toExclude := applyApplianceFilter(appliances, filter["exclude"])
-    for _, exa := range toExclude {
-        eID := exa.GetId()
-        for i, a := range appliances {
-            if eID == a.GetId() {
-                appliances = append(appliances[:i], appliances[i+1:]...)
-            }
-        }
-    }
+	for _, exa := range toExclude {
+		eID := exa.GetId()
+		for i, a := range appliances {
+			if eID == a.GetId() {
+				appliances = append(appliances[:i], appliances[i+1:]...)
+			}
+		}
+	}
 
 	return appliances
 }
