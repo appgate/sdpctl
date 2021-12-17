@@ -53,24 +53,12 @@ func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 	functions := make(map[string]bool)
 	for _, a := range appliances {
 		res := GetActiveFunctions(a)
-		if util.InSlice(FunctionController, res) {
-			functions[FunctionController] = true
-		}
-		if util.InSlice(FunctionGateway, res) {
-			functions[FunctionGateway] = true
-		}
-		if util.InSlice(FunctionPortal, res) {
-			functions[FunctionPortal] = true
-		}
-		if util.InSlice(FunctionConnector, res) {
-			functions[FunctionConnector] = true
-		}
-		if util.InSlice(FunctionLogServer, res) {
-			functions[FunctionLogServer] = true
-		}
-		if util.InSlice(FunctionLogForwarder, res) {
-			functions[FunctionLogForwarder] = true
-		}
+		functions[FunctionController] = util.InSlice(FunctionController, res)
+		functions[FunctionGateway] = util.InSlice(FunctionGateway, res)
+		functions[FunctionPortal] = util.InSlice(FunctionPortal, res)
+		functions[FunctionConnector] = util.InSlice(FunctionConnector, res)
+		functions[FunctionLogServer] = util.InSlice(FunctionLogServer, res)
+		functions[FunctionLogForwarder] = util.InSlice(FunctionLogForwarder, res)
 	}
 	return functions
 }
@@ -247,18 +235,31 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 
 func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) []openapi.Appliance {
 	var filteredAppliances []openapi.Appliance
+	var warnings []string
+
+	appendUnique := func(app openapi.Appliance) {
+		appID := app.GetId()
+		inFiltered := []string{}
+		for _, a := range filteredAppliances {
+			inFiltered = append(inFiltered, a.GetId())
+		}
+		if !util.InSlice(appID, inFiltered) {
+			filteredAppliances = append(filteredAppliances, app)
+		}
+	}
+
 	for _, a := range appliances {
 		for k, s := range filter {
 			switch k {
 			case "name":
 				regex := regexp.MustCompile(s)
 				if regex.MatchString(a.GetName()) {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
 				}
 			case "id":
 				regex := regexp.MustCompile(s)
 				if regex.MatchString(a.GetId()) {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
 				}
 			case "tags", "tag":
 				tagSlice := strings.Split(s, ",")
@@ -267,7 +268,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					regex := regexp.MustCompile(t)
 					for _, at := range appTags {
 						if regex.MatchString(at) {
-							filteredAppliances = append(filteredAppliances, a)
+							appendUnique(a)
 						}
 					}
 				}
@@ -276,32 +277,47 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				version := a.GetVersion()
 				versionString := fmt.Sprintf("%d", version)
 				if regex.MatchString(versionString) {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
 				}
 			case "hostname", "host":
 				regex := regexp.MustCompile(s)
 				if regex.MatchString(a.GetHostname()) {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
 				}
 			case "active", "activated":
 				b, err := strconv.ParseBool(s)
 				if err != nil {
-					logrus.Warnf("Failed to parse boolean filter value: %x", err)
+					message := fmt.Sprintf("Failed to parse boolean filter value: %x", err)
+					if !util.InSlice(message, warnings) {
+						warnings = append(warnings, message)
+					}
 				}
 				if a.GetActivated() == b {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
 				}
 			case "site", "site-id":
 				regex := regexp.MustCompile(s)
 				if regex.MatchString(a.GetSite()) {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
 				}
 			case "function", "roles", "role":
 				if functions := GetActiveFunctions(a); util.InSlice(s, functions) {
-					filteredAppliances = append(filteredAppliances, a)
+					appendUnique(a)
+				}
+			default:
+				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring.", k)
+				if !util.InSlice(message, warnings) {
+					warnings = append(warnings, message)
 				}
 			}
 		}
 	}
+
+	if len(warnings) > 0 {
+		for _, warn := range warnings {
+			logrus.Warnf(warn)
+		}
+	}
+
 	return filteredAppliances
 }
