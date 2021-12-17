@@ -90,6 +90,9 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 	}
 
 	filter := util.ParseFilteringFlags(cmd.Flags())
+	if opts.AllControllersFlag {
+		filter["filter"]["function"] = "controller"
+	}
 	appliances, err := app.List(ctx, filter)
 	if err != nil {
 		return backupIDs, err

@@ -14,7 +14,7 @@ fmt:
 	gofmt -w $(GOFMT_FILES)
 
 test:
-	go test ./... -race -covermode=atomic -coverprofile=cover.out
+	go test ./... -race -coverpkg=./cmd/appliance/...,./cmd/configure/... -covermode=atomic -coverprofile=cover.out
 
 cover: test
 	go tool cover -func cover.out
