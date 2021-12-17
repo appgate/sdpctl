@@ -53,12 +53,24 @@ func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 	functions := make(map[string]bool)
 	for _, a := range appliances {
 		res := GetActiveFunctions(a)
-		functions[FunctionController] = util.InSlice(FunctionController, res)
-		functions[FunctionGateway] = util.InSlice(FunctionGateway, res)
-		functions[FunctionPortal] = util.InSlice(FunctionPortal, res)
-		functions[FunctionConnector] = util.InSlice(FunctionConnector, res)
-		functions[FunctionLogServer] = util.InSlice(FunctionLogServer, res)
-		functions[FunctionLogForwarder] = util.InSlice(FunctionLogForwarder, res)
+		if util.InSlice(FunctionController, res) {
+			functions[FunctionController] = true
+		}
+		if util.InSlice(FunctionGateway, res) {
+			functions[FunctionGateway] = true
+		}
+		if util.InSlice(FunctionPortal, res) {
+			functions[FunctionPortal] = true
+		}
+		if util.InSlice(FunctionConnector, res) {
+			functions[FunctionConnector] = true
+		}
+		if util.InSlice(FunctionLogServer, res) {
+			functions[FunctionLogServer] = true
+		}
+		if util.InSlice(FunctionLogForwarder, res) {
+			functions[FunctionLogForwarder] = true
+		}
 	}
 	return functions
 }
