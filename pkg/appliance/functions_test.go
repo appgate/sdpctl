@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -457,14 +458,14 @@ func TestFilterAndExclude(t *testing.T) {
 			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 				Hostname: "foo.devops",
 			},
-            Hostname: openapi.PtrString("foo.devops"),
-            Site: openapi.PtrString("640039ab-8b13-494a-af9e-20a48846674a"),
-            Activated: openapi.PtrBool(true),
-            Tags: &[]string{
-                "primary",
-                "Jebediah Kerman",
-            },
-            Version: openapi.PtrInt32(16),
+			Hostname:  openapi.PtrString("foo.devops"),
+			Site:      openapi.PtrString("640039ab-8b13-494a-af9e-20a48846674a"),
+			Activated: openapi.PtrBool(true),
+			Tags: &[]string{
+				"primary",
+				"Jebediah Kerman",
+			},
+			Version: openapi.PtrInt32(16),
 		},
 		"slaveController": openapi.Appliance{
 			Name: "slave controller",
@@ -472,16 +473,16 @@ func TestFilterAndExclude(t *testing.T) {
 			Controller: &openapi.ApplianceAllOfController{
 				Enabled: openapi.PtrBool(true),
 			},
-            AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-                Hostname: "bar.purple",
-            },
-            Site: openapi.PtrString("3976e914-ccf4-4704-80e1-18b7de87ff07"),
-            Activated: openapi.PtrBool(false),
-            Tags: &[]string{
-                "slave",
-                "crap",
-            },
-            Version: openapi.PtrInt32(15),
+			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+				Hostname: "bar.purple",
+			},
+			Site:      openapi.PtrString("3976e914-ccf4-4704-80e1-18b7de87ff07"),
+			Activated: openapi.PtrBool(false),
+			Tags: &[]string{
+				"slave",
+				"crap",
+			},
+			Version: openapi.PtrInt32(15),
 		},
 		"gateway": openapi.Appliance{
 			Name: "gateway",
@@ -489,304 +490,81 @@ func TestFilterAndExclude(t *testing.T) {
 			Gateway: &openapi.ApplianceAllOfGateway{
 				Enabled: openapi.PtrBool(true),
 			},
-            AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-                Hostname: "tinker.purple",
-            },
-            Activated: openapi.PtrBool(true),
-            Site: openapi.PtrString("15dd5630-aaf5-4d74-8c75-205e438db9a3"),
-            Tags: &[]string{
-                "stargate",
-            },
-            Version: openapi.PtrInt32(15),
+			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+				Hostname: "tinker.purple",
+			},
+			Activated: openapi.PtrBool(false),
+			Site:      openapi.PtrString("15dd5630-aaf5-4d74-8c75-205e438db9a3"),
+			Tags: &[]string{
+				"stargate",
+			},
+			Version: openapi.PtrInt32(15),
 		},
 	}
-	tests := map[string]struct {
+	keywords := map[string]string{
+		"name":      "primary",
+		"id":        "f1bef0c4-e0b6-42ac-9c40-3f6214c34869",
+		"tags":      "Jeb",
+		"tag":       "Jeb",
+		"version":   "16",
+		"hostname":  "foo.devops",
+		"host":      "foo.devops",
+		"active":    "true",
+		"activated": "true",
+		"site":      "640039ab-8b13-494a-af9e-20a48846674a",
+		"site-id":   "640039ab-8b13-494a-af9e-20a48846674a",
+		"function":  "logserver",
+		"role":      "logserver",
+		"roles":     "logserver",
+	}
+	type testStruct struct {
+		name string
 		args args
 		want []openapi.Appliance
-	}{
-		"test filter by name": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"name": "controller",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-				mockControllers["slaveController"],
-			},
-		},
-		"test exclude by name": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"name": "controller",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["gateway"],
-			},
-		},
-		"test filter by function": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"function": "logserver",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-			},
-		},
-		"test exclude by function": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"function": "logserver",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-                mockControllers["gateway"],
-			},
-		},
-		"test filter by id": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"id": mockControllers["primaryController"].Id,
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-			},
-		},
-		"test exclude by id": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"id": mockControllers["primaryController"].Id,
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-                mockControllers["gateway"],
-			},
-		},
-		"test filter by tags": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"tags": "Jeb",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-			},
-		},
-		"test exclude by tags": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"tags": "Jeb",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-                mockControllers["gateway"],
-			},
-		},
-		"test filter by version": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"version": "16",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-			},
-		},
-		"test exclude by version": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"version": "16",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-                mockControllers["gateway"],
-			},
-		},
-		"test filter by hostname": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"hostname": "foo.devops",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-			},
-		},
-		"test exclude by hostname": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"hostname": "foo.devops",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-                mockControllers["gateway"],
-			},
-		},
-		"test filter by active": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"active": "true",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-				mockControllers["gateway"],
-			},
-		},
-		"test exclude by active": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"active": "true",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-			},
-		},
-		"test filter by site": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"filter": {
-						"site": "640039ab-8b13-494a-af9e-20a48846674a",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["primaryController"],
-			},
-		},
-		"test exclude by site": {
-			args: args{
-				appliances: []openapi.Appliance{
-					mockControllers["primaryController"],
-					mockControllers["slaveController"],
-					mockControllers["gateway"],
-				},
-				filter: map[string]map[string]string{
-					"exclude": {
-						"site": "640039ab-8b13-494a-af9e-20a48846674a",
-					},
-				},
-			},
-			want: []openapi.Appliance{
-				mockControllers["slaveController"],
-				mockControllers["gateway"],
-			},
-		},
 	}
-	for testName, tt := range tests {
-		t.Run(testName, func(t *testing.T) {
+	tests := []testStruct{}
+	for word, value := range keywords {
+		tests = append(tests, testStruct{
+			name: fmt.Sprintf("filter by %s", word),
+			args: args{
+				appliances: []openapi.Appliance{
+					mockControllers["primaryController"],
+					mockControllers["slaveController"],
+					mockControllers["gateway"],
+				},
+				filter: map[string]map[string]string{
+					"filter": {
+						word: value,
+					},
+				},
+			},
+			want: []openapi.Appliance{
+				mockControllers["primaryController"],
+			},
+		})
+		tests = append(tests, testStruct{
+			name: fmt.Sprintf("filter by %s", word),
+			args: args{
+				appliances: []openapi.Appliance{
+					mockControllers["primaryController"],
+					mockControllers["slaveController"],
+					mockControllers["gateway"],
+				},
+				filter: map[string]map[string]string{
+					"exclude": {
+						word: value,
+					},
+				},
+			},
+			want: []openapi.Appliance{
+				mockControllers["slaveController"],
+				mockControllers["gateway"],
+			},
+		})
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			if got := FilterAppliances(tt.args.appliances, tt.args.filter); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FilterAppliances() = %v, want %v", got, tt.want)
 			}
