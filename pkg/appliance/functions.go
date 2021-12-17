@@ -213,10 +213,6 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 		appliances = applyApplianceFilter(appliances, filter["filter"])
 	}
 
-	if len(filter["exclude"]) <= 0 {
-		return appliances
-	}
-
 	// apply exclusion filter
 	toExclude := applyApplianceFilter(appliances, filter["exclude"])
 	for _, exa := range toExclude {
