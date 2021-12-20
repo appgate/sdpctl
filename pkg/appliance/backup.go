@@ -64,7 +64,7 @@ func PrepareBackup(opts *BackupOpts) error {
 	return nil
 }
 
-func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, error) {
+func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	backupIDs := make(map[string]string)
 	ctx := context.Background()
 	aud := util.InSlice("audit", opts.Include)
@@ -98,6 +98,17 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		return backupIDs, err
 	}
 
+	includeIDs := []string{}
+	if len(args) > 0 {
+		for _, arg := range args {
+			for _, a := range appliances {
+				if a.GetName() == arg {
+					includeIDs = append(includeIDs, a.GetId())
+				}
+			}
+		}
+	}
+
 	host, err := opts.Config.GetHost()
 	if err != nil {
 		return backupIDs, err
@@ -113,12 +124,15 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		log.Warn("Failed to find current controller")
 	}
 
-	includeIDs := []string{}
 	if opts.PrimaryFlag {
-		includeIDs = append(includeIDs, primaryController.GetId())
+		if !util.InSlice(primaryController.GetId(), includeIDs) {
+			includeIDs = append(includeIDs, primaryController.GetId())
+		}
 	}
 	if opts.CurrentFlag {
-		includeIDs = append(includeIDs, currentController.GetId())
+		if !util.InSlice(primaryController.GetId(), includeIDs) {
+			includeIDs = append(includeIDs, currentController.GetId())
+		}
 	}
 	var toBackup []openapi.Appliance
 	for _, id := range includeIDs {
