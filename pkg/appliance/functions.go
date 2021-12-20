@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -203,6 +204,15 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 	)
 }
 
+func FindCurrentController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
+	for _, a := range appliances {
+		if a.GetHostname() == hostname {
+			return &a, nil
+		}
+	}
+	return nil, errors.New("No host controller found")
+}
+
 // AutoscalingGateways return the template appliance and all gateways
 func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []openapi.Appliance) {
 	autoscalePrefix := "Autoscaling Instance"
@@ -268,7 +278,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					appendUnique(a)
 				}
 			case "tags", "tag":
-				tagSlice := strings.Split(s, ",")
+				tagSlice := strings.Split(s, ":")
 				appTags := a.GetTags()
 				for _, t := range tagSlice {
 					regex := regexp.MustCompile(t)

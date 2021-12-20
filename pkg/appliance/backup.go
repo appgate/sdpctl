@@ -8,8 +8,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -23,15 +25,16 @@ var (
 )
 
 type BackupOpts struct {
-	Config             *configuration.Config
-	Appliance          func(*configuration.Config) (*Appliance, error)
-	Out                io.Writer
-	Destination        string
-	NotifyURL          string
-	Include            []string
-	AllFlag            bool
-	AllControllersFlag bool
-	Timeout            time.Duration
+	Config      *configuration.Config
+	Appliance   func(*configuration.Config) (*Appliance, error)
+	Out         io.Writer
+	Destination string
+	NotifyURL   string
+	Include     []string
+	AllFlag     bool
+	PrimaryFlag bool
+	CurrentFlag bool
+	Timeout     time.Duration
 }
 
 type backupHTTPResponse struct {
@@ -95,8 +98,6 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		return backupIDs, err
 	}
 
-	var toBackup []openapi.Appliance
-
 	host, err := opts.Config.GetHost()
 	if err != nil {
 		return backupIDs, err
@@ -104,12 +105,34 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 	primaryController, err := FindPrimaryController(appliances, host)
 	if err != nil {
 		log.Debug(err)
-		return backupIDs, fmt.Errorf("Failed to find primary controller")
+		log.Warn("Failed to find primary controller")
 	}
-	toBackup = append(toBackup, *primaryController)
+	currentController, err := FindCurrentController(appliances, host)
+	if err != nil {
+		log.Debug(err)
+		log.Warn("Failed to find current controller")
+	}
 
+	includeIDs := []string{}
+	if opts.PrimaryFlag {
+		includeIDs = append(includeIDs, primaryController.GetId())
+	}
+	if opts.CurrentFlag {
+		includeIDs = append(includeIDs, currentController.GetId())
+	}
+	var toBackup []openapi.Appliance
+	for _, id := range includeIDs {
+		for _, a := range appliances {
+			if a.GetId() == id {
+				toBackup = append(toBackup, a)
+			}
+		}
+	}
 	if opts.AllFlag {
 		toBackup = appliances
+	}
+	if len(toBackup) <= 0 {
+		toBackup = backupPrompt(appliances, primaryController.GetId(), currentController.GetId())
 	}
 
 	// Filter offline appliances
@@ -222,13 +245,51 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	return g.Wait()
 }
 
+func backupPrompt(appliances []openapi.Appliance, primaryID string, currentID string) []openapi.Appliance {
+	names := []string{}
+
+	for _, a := range appliances {
+		aID := a.GetId()
+		name := a.GetName()
+
+		if aID == primaryID {
+			name = name + " (PRIMARY)"
+		}
+		if aID == currentID {
+			name = name + " (CURRENT)"
+		}
+		names = append(names, name)
+	}
+
+	qs := &survey.MultiSelect{
+		PageSize: len(appliances),
+		Message:  "select appliances to backup:",
+		Options:  names,
+	}
+	var selected []string
+	survey.AskOne(qs, &selected)
+	log.WithField("appliances", selected)
+
+	var result []openapi.Appliance
+	for _, sel := range selected {
+		for _, a := range appliances {
+			regex := regexp.MustCompile(a.GetName())
+			if regex.MatchString(sel) {
+				result = append(result, a)
+			}
+		}
+	}
+
+	return result
+}
+
 func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
 	res, _, err := client.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, aID, bID).Authorization(token).Execute()
 	if err != nil {
 		log.Debug(err)
 		return "", err
 	}
-	log.Debug(*res.Status)
+	log.WithField("appliance", aID).WithField("current state", *res.Status).Debug("Waiting for backup to reach done state")
 
 	return *res.Status, nil
 }
