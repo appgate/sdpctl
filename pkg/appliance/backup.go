@@ -104,12 +104,12 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 	}
 	primaryController, err := FindPrimaryController(appliances, host)
 	if err != nil {
-		log.Debug(err)
+		log.WithField("error", err).Debug(err)
 		log.Warn("Failed to find primary controller")
 	}
 	currentController, err := FindCurrentController(appliances, host)
 	if err != nil {
-		log.Debug(err)
+		log.WithField("error", err).Debug(err)
 		log.Warn("Failed to find current controller")
 	}
 
@@ -152,9 +152,10 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
-			fields := log.Fields{"appliance": appliance.Name}
+			fields := log.Fields{"appliance": appliance.Name, "id": appliance.Id}
 			log.WithFields(fields).Info("Starting backup")
 			log.Debug(appliance.GetId())
+			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
@@ -163,7 +164,6 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 				if decodeErr != nil {
 					return decodeErr
 				}
-				log.Debug(respBody)
 				log.Debug(err)
 				return err
 			}
@@ -188,8 +188,7 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
-				log.Debug(err)
-				log.Debug(inlineRes)
+				log.WithField("error", err).WithField("response", inlineRes).Debug(err)
 				return err
 			}
 			defer file.Close()
