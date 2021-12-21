@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func setupTokenRevokeTest() (*httpmock.Registry, *RevokeOptions, *bytes.Buffer) {
+func setupTokenRevokeTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
 	registry := httpmock.NewRegistry()
 	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
 	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
@@ -47,14 +47,12 @@ func setupTokenRevokeTest() (*httpmock.Registry, *RevokeOptions, *bytes.Buffer) 
 		return token, nil
 	}
 
-	opts := &RevokeOptions{
-        TokenOptions: &TokenOptions{
-            Config: f.Config,
-            Out:    f.IOOutWriter,
-            Token:  f.Token,
-            Debug:  f.Config.Debug,
-        },
-    }
+	opts := &TokenOptions{
+		Config: f.Config,
+		Out:    f.IOOutWriter,
+		Token:  f.Token,
+		Debug:  f.Config.Debug,
+	}
 
 	return registry, opts, stdout
 }
@@ -63,10 +61,10 @@ func TestTokenRevokeByTokenType(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
 
-	cmd := NewTokenRevokeByTokenTypeCmd(opts)
+	cmd := NewTokenRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
-	cmd.SetArgs([]string{"administration"})
+	cmd.SetArgs([]string{"--by-token-type", "administration"})
 
 	_, err := cmd.ExecuteC()
 	if err != nil {
@@ -86,18 +84,18 @@ b7dfa30a-885c-4ac6-ba4e-e9cca36709a9  Entitlement  CN=877b2d887c2048e4b2e8daae6b
 e433ec11-cb89-4a59-a0e3-f89848783b04  Entitlement  CN=b37de2ed4b4c4d21952f718e2dd6e34b,CN=bob,OU=local  2021-12-20 19:29:04.809781 +0000 UTC  2021-12-21 19:29:04.587301 +0000 UTC  true     46507910-c5a2-4d83-b405-56e25d323770  simple_setup Site  2021-12-21 00:29:29.824619 +0000 UTC  b37de2ed-4b4c-4d21-952f-718e2dd6e34b  bob       local          envy-10-97-146-2.devops
 381d72ad-3910-48d8-9fef-84c7b94d1982  Entitlement  CN=f7e1d6fec2344b49b1d65a107025e795,CN=bob,OU=local  2021-12-20 19:28:56.367895 +0000 UTC  2021-12-21 19:28:55.665852 +0000 UTC  true     46507910-c5a2-4d83-b405-56e25d323770  simple_setup Site  2021-12-21 00:29:29.824619 +0000 UTC  f7e1d6fe-c234-4b49-b1d6-5a107025e795  bob       local          envy-10-97-146-2.devops
 `
-	assert.Equal(t, string(actual), expected)
+	assert.Equal(t, expected, string(actual))
 }
 
 func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
 
-	opts.TokenOptions.useJSON = true
-	cmd := NewTokenRevokeByTokenTypeCmd(opts)
+	opts.useJSON = true
+	cmd := NewTokenRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
-	cmd.SetArgs([]string{"administration"})
+	cmd.SetArgs([]string{"--by-token-type", "administration"})
 
 	_, err := cmd.ExecuteC()
 	if err != nil {
@@ -116,7 +114,7 @@ func TestTokenRevokeByDistinguishedName(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
 
-	cmd := NewTokenRevokeByDistinguishedNameCmd(opts)
+	cmd := NewTokenRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local"})
@@ -136,15 +134,15 @@ d7559914-a77e-411e-af71-60498d5ccddd  Administration  CN=70e076801c4b5bdc87b4afc
 c3eeb87b-e406-42ee-a1a9-0dadb4752023  AdminClaims     CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local  2021-12-21 00:27:00.186924 +0000 UTC  2021-12-22 00:27:00.18685 +0000 UTC   true                         2021-12-21 00:32:20.933517 +0000 UTC  70e07680-1c4b-5bdc-87b4-afc71540e720  admin     local          envy-10-97-146-2.devops
 43c9c2bb-3e31-4ce3-a779-8d33427f91ae  AdminClaims     CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local  2021-12-21 00:24:01.465525 +0000 UTC  2021-12-22 00:24:01.465446 +0000 UTC  true                         2021-12-21 00:32:20.933517 +0000 UTC  70e07680-1c4b-5bdc-87b4-afc71540e720  admin     local          envy-10-97-146-2.devops
 `
-	assert.Equal(t, string(actual), expected)
+	assert.Equal(t, expected, string(actual))
 }
 
 func TestTokenRevokeByDistinguishedNameJOSN(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
 
-	opts.TokenOptions.useJSON = true
-	cmd := NewTokenRevokeByDistinguishedNameCmd(opts)
+	opts.useJSON = true
+	cmd := NewTokenRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local"})
@@ -160,4 +158,37 @@ func TestTokenRevokeByDistinguishedNameJOSN(t *testing.T) {
 	}
 
 	assert.True(t, util.IsJSON(string(actual)))
+}
+
+func TestInvalidArgumentsAndOptions(t *testing.T) {
+	registry, opts, _ := setupTokenRevokeTest()
+	defer registry.Teardown()
+
+	cmd1 := NewTokenRevokeCmd(opts)
+	cmd1.SetOut(io.Discard)
+	cmd1.SetErr(io.Discard)
+	cmd1.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", "--by-token-type", "administration"})
+	_, err1 := cmd1.ExecuteC()
+	assert.Equal(t, "cannot set both <distinguished-name> and --by-token-type", err1.Error())
+
+	cmd2 := NewTokenRevokeCmd(opts)
+	cmd2.SetOut(io.Discard)
+	cmd2.SetErr(io.Discard)
+	cmd2.SetArgs([]string{})
+	_, err2 := cmd2.ExecuteC()
+	assert.Equal(t, "must set either <distinghuished-name> or --by-token-type <type>", err2.Error())
+
+	cmd3 := NewTokenRevokeCmd(opts)
+	cmd3.SetOut(io.Discard)
+	cmd3.SetErr(io.Discard)
+	cmd3.SetArgs([]string{"--by-token-type", "foo"})
+	_, err3 := cmd3.ExecuteC()
+	assert.Equal(t, "unknown token type foo. valid types are { administration, adminclaims, entitlements, claims }", err3.Error())
+
+	cmd4 := NewTokenRevokeCmd(opts)
+	cmd4.SetOut(io.Discard)
+	cmd4.SetErr(io.Discard)
+	cmd4.SetArgs([]string{"--by-token-type", "foo", "--token-type", "foo"})
+	_, err4 := cmd4.ExecuteC()
+	assert.Equal(t, "cannot set --token-type when using --by-token-type <type>", err4.Error())
 }

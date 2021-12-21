@@ -1,76 +1,120 @@
 package token
 
 import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "github.com/appgate/appgatectl/pkg/util"
-    "github.com/appgate/sdp-api-client-go/api/v16/openapi"
-    "github.com/spf13/cobra"
-    "io"
-    "io/ioutil"
-    "net/http"
-    "time"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/appgate/appgatectl/pkg/util"
+	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/spf13/cobra"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"strings"
+	"time"
 )
 
+type TokenType int
+
+const (
+	Administration TokenType = iota
+	AdminClaims
+	Entitlement
+	Claims
+	Unknown
+)
+
+func (t TokenType) String() string {
+	switch t {
+	case Administration:
+		return "administration"
+	case AdminClaims:
+		return "adminclaims"
+	case Entitlement:
+		return "entitlement"
+	case Claims:
+		return "claims"
+	}
+	return "unknown"
+}
+
+func tokenType(t string) TokenType {
+	switch strings.ToLower(t) {
+	case "administration":
+		return Administration
+	case "adminclaims":
+		return AdminClaims
+	case "entitlement":
+		return Entitlement
+	case "claims":
+		return Claims
+	}
+	return Unknown
+}
+
 type RevokeOptions struct {
-    TokenOptions *TokenOptions
+	TokenOptions               *TokenOptions
 	SiteID                     string
 	RevocationReason           string
 	DelayMinutes               int32
 	TokensPerSecond            float32
 	SpecificDistinguishedNames []string
+	ByTokenType                string
+	TokenType                  string
 }
 
 func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 	opts := &RevokeOptions{
-        TokenOptions: parentOpts,
+		TokenOptions: parentOpts,
 	}
 
 	var revokeCmd = &cobra.Command{
-		Use:   "revoke [by-distinguished-name | by-token-type]",
+		Use:   "revoke [<distinguished-name> | --by-token-type <type>]",
 		Short: "revoke entitlement tokens by distinguished name or token-type",
+
+		Args: func(cmd *cobra.Command, args []string) error {
+			if (len(args) != 0 && len(args) != 1) || (len(args) == 0 && opts.ByTokenType == "") {
+				return errors.New("must set either <distinghuished-name> or --by-token-type <type>")
+			}
+
+			if len(args) > 0 && opts.ByTokenType != "" {
+				return errors.New("cannot set both <distinguished-name> and --by-token-type")
+			}
+
+			if opts.ByTokenType != "" && opts.TokenType != "" {
+				return errors.New("cannot set --token-type when using --by-token-type <type>")
+			}
+
+			if len(args) == 0 && tokenType(opts.ByTokenType) == Unknown {
+				return fmt.Errorf("unknown token type %s. valid types are { administration, adminclaims, entitlements, claims }", opts.ByTokenType)
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if opts.ByTokenType != "" {
+				return revokeByTokenTypeRun(args, opts)
+			}
+
+			return revokeByDistinguishedNameRun(args, opts)
+		},
 	}
 
-	revokeCmd.PersistentFlags().StringVar(&opts.SiteID, "site-id", "", "revoke only tokens for the given site ID")
-	revokeCmd.PersistentFlags().StringVar(&opts.RevocationReason, "reason", "", "reason for revocation")
-	revokeCmd.PersistentFlags().Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
-	revokeCmd.PersistentFlags().Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
-	revokeCmd.PersistentFlags().StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
-
-	revokeCmd.AddCommand(NewTokenRevokeByTokenTypeCmd(opts))
-	revokeCmd.AddCommand(NewTokenRevokeByDistinguishedNameCmd(opts))
+	revokeCmd.Flags().StringVar(&opts.ByTokenType, "by-token-type", "", "revoke all tokens of this type. { administration, adminclaims, entitlements, claims }")
+	revokeCmd.Flags().StringVar(&opts.SiteID, "site-id", "", "revoke only tokens for the given site ID")
+	revokeCmd.Flags().StringVar(&opts.RevocationReason, "reason", "", "reason for revocation")
+	revokeCmd.Flags().Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
+	revokeCmd.Flags().Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
+	revokeCmd.Flags().StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
+	revokeCmd.Flags().StringVar(&opts.TokenType, "token-type", "", "revoke only certain types of token when revoking by distinguished name")
 
 	return revokeCmd
 }
 
-type RevokeByDistinguishedNameOptions struct {
-	RevokeOptions *RevokeOptions
-	TokenType     string
-}
-
-func NewTokenRevokeByDistinguishedNameCmd(parentOpts *RevokeOptions) *cobra.Command {
-	opts := RevokeByDistinguishedNameOptions{
-		RevokeOptions: parentOpts,
-	}
-
-	var revokeByDistinguishedNameCmd = &cobra.Command{
-		Use:   "by-distinguished-name [distinguished-name]",
-		Short: "revoke entitlement tokens by distinguished name",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(c *cobra.Command, args []string) error {
-			return revokeByDistinguishedNameRun(args, &opts)
-		},
-	}
-
-	revokeByDistinguishedNameCmd.Flags().StringVar(&opts.TokenType, "type", "", "revoke only certain type of token")
-
-	return revokeByDistinguishedNameCmd
-}
-
-func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedNameOptions) error {
+func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	ctx := context.Background()
-	t, err := opts.RevokeOptions.TokenOptions.Token(opts.RevokeOptions.TokenOptions.Config)
+	t, err := opts.TokenOptions.Token(opts.TokenOptions.Config)
 	if err != nil {
 		return err
 	}
@@ -81,21 +125,21 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		request.TokenType(opts.TokenType)
 	}
 
-	if opts.RevokeOptions.SiteID != "" {
-		request.SiteId(opts.RevokeOptions.SiteID)
+	if opts.SiteID != "" {
+		request.SiteId(opts.SiteID)
 	}
 
 	body := openapi.TokenRevocationRequest{
-		TokensPerSecond: &opts.RevokeOptions.TokensPerSecond,
-		DelayMinutes:    &opts.RevokeOptions.DelayMinutes,
+		TokensPerSecond: &opts.TokensPerSecond,
+		DelayMinutes:    &opts.DelayMinutes,
 	}
 
-	if opts.RevokeOptions.RevocationReason != "" {
-		body.RevocationReason = &opts.RevokeOptions.RevocationReason
+	if opts.RevocationReason != "" {
+		body.RevocationReason = &opts.RevocationReason
 	}
 
-	if len(opts.RevokeOptions.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = &opts.RevokeOptions.SpecificDistinguishedNames
+	if len(opts.SpecificDistinguishedNames) > 0 {
+		body.SpecificDistinguishedNames = &opts.SpecificDistinguishedNames
 	}
 
 	response, err := t.RevokeByDistinguishedName(request, body)
@@ -103,25 +147,12 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.RevokeOptions.TokenOptions.Out, opts.RevokeOptions.TokenOptions.useJSON)
+	err = PrintRevokedTokens(response, opts.TokenOptions.Out, opts.TokenOptions.useJSON)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func NewTokenRevokeByTokenTypeCmd(opts *RevokeOptions) *cobra.Command {
-	var revokeByTokenCmd = &cobra.Command{
-		Use:   "by-token-type [token-type]",
-		Short: "revoke entitlement tokens by token type",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(c *cobra.Command, args []string) error {
-			return revokeByTokenTypeRun(args, opts)
-		},
-	}
-
-	return revokeByTokenCmd
 }
 
 func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
@@ -131,7 +162,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByTypeTokenTypePut(ctx, args[0])
+	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByTypeTokenTypePut(ctx, opts.ByTokenType)
 
 	if opts.SiteID != "" {
 		request.SiteId(opts.SiteID)
