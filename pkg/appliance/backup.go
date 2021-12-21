@@ -109,17 +109,17 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 		filter := util.ParseFilteringFlags(cmd.Flags())
 
-        if opts.PrimaryFlag {
+		if opts.PrimaryFlag {
 			pc, err := FindPrimaryController(appliances, hostname)
 			if err != nil {
 				log.Warn("failed to determine primary controller")
 			}
-            idFilter := []string{}
-            if len(filter["filter"]["id"]) > 0 {
-                idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
-            }
-            idFilter = append(idFilter, pc.GetId())
-            filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+			idFilter := []string{}
+			if len(filter["filter"]["id"]) > 0 {
+				idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+			}
+			idFilter = append(idFilter, pc.GetId())
+			filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 		}
 
 		if opts.CurrentFlag {
@@ -127,31 +127,31 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			if err != nil {
 				log.Warn("failed to determine current controller")
 			}
-            idFilter := []string{}
-            if len(filter["filter"]["id"]) > 0 {
-                idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
-            }
-            idFilter = append(idFilter, cc.GetId())
-            filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+			idFilter := []string{}
+			if len(filter["filter"]["id"]) > 0 {
+				idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+			}
+			idFilter = append(idFilter, cc.GetId())
+			filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 		}
 
 		if len(args) > 0 {
-            fInclude := []string{}
-            if len(filter["filter"]["name"]) > 0 {
-                fInclude = strings.Split(filter["filter"]["name"], FilterDelimiter)
-            }
+			fInclude := []string{}
+			if len(filter["filter"]["name"]) > 0 {
+				fInclude = strings.Split(filter["filter"]["name"], FilterDelimiter)
+			}
 			fInclude = append(fInclude, args...)
 			filter["filter"]["name"] = strings.Join(fInclude, FilterDelimiter)
 		}
 
-        if !reflect.DeepEqual(nullFilter, filter) {
-            toBackup = append(toBackup, FilterAppliances(appliances, filter)...)
-        }
+		if !reflect.DeepEqual(nullFilter, filter) {
+			toBackup = append(toBackup, FilterAppliances(appliances, filter)...)
+		}
 	}
 
 	if len(toBackup) <= 0 {
 		toBackup = backupPrompt(appliances)
-    }
+	}
 
 	// Filter offline appliances
 	initialStats, _, err := app.Stats(ctx)
