@@ -12,7 +12,7 @@ type TokenOptions struct {
 	Config  *configuration.Config
 	Out     io.Writer
 	Token   func(c *configuration.Config) (*token.Token, error)
-	debug   bool
+	Debug   bool
 	useJSON bool
 }
 
@@ -21,7 +21,7 @@ func NewTokenCmd(f *factory.Factory) *cobra.Command {
 		Config: f.Config,
 		Out:    f.IOOutWriter,
 		Token:  f.Token,
-		debug:  f.Config.Debug,
+		Debug:  f.Config.Debug,
 	}
 
 	var tokenCmd = &cobra.Command{
@@ -31,7 +31,7 @@ func NewTokenCmd(f *factory.Factory) *cobra.Command {
 
 	tokenCmd.PersistentFlags().BoolVar(&opts.useJSON, "json", false, "Display in JSON format")
 
-	tokenCmd.AddCommand(NewTokenRevokeCmd(f))
+	tokenCmd.AddCommand(NewTokenRevokeCmd(opts))
 	tokenCmd.AddCommand(NewTokenListCmd(opts))
 
 	return tokenCmd

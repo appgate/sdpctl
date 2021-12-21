@@ -1,40 +1,30 @@
 package token
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/token"
-	"github.com/appgate/appgatectl/pkg/util"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/spf13/cobra"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"time"
+    "context"
+    "encoding/json"
+    "fmt"
+    "github.com/appgate/appgatectl/pkg/util"
+    "github.com/appgate/sdp-api-client-go/api/v16/openapi"
+    "github.com/spf13/cobra"
+    "io"
+    "io/ioutil"
+    "net/http"
+    "time"
 )
 
 type RevokeOptions struct {
-	Config                     *configuration.Config
-	Out                        io.Writer
-	Token                      func(c *configuration.Config) (*token.Token, error)
-	Debug                      bool
+    TokenOptions *TokenOptions
 	SiteID                     string
 	RevocationReason           string
 	DelayMinutes               int32
 	TokensPerSecond            float32
 	SpecificDistinguishedNames []string
-	useJSON                    bool
 }
 
-func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
+func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 	opts := &RevokeOptions{
-		Config: f.Config,
-		Out:    f.IOOutWriter,
-		Token:  f.Token,
-		Debug:  f.Config.Debug,
+        TokenOptions: parentOpts,
 	}
 
 	var revokeCmd = &cobra.Command{
@@ -47,7 +37,6 @@ func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
 	revokeCmd.PersistentFlags().Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
 	revokeCmd.PersistentFlags().Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
 	revokeCmd.PersistentFlags().StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
-	revokeCmd.PersistentFlags().BoolVar(&opts.useJSON, "json", false, "output in json")
 
 	revokeCmd.AddCommand(NewTokenRevokeByTokenTypeCmd(opts))
 	revokeCmd.AddCommand(NewTokenRevokeByDistinguishedNameCmd(opts))
@@ -56,13 +45,13 @@ func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
 }
 
 type RevokeByDistinguishedNameOptions struct {
-	ParentOptions *RevokeOptions
+	RevokeOptions *RevokeOptions
 	TokenType     string
 }
 
 func NewTokenRevokeByDistinguishedNameCmd(parentOpts *RevokeOptions) *cobra.Command {
 	opts := RevokeByDistinguishedNameOptions{
-		ParentOptions: parentOpts,
+		RevokeOptions: parentOpts,
 	}
 
 	var revokeByDistinguishedNameCmd = &cobra.Command{
@@ -81,7 +70,7 @@ func NewTokenRevokeByDistinguishedNameCmd(parentOpts *RevokeOptions) *cobra.Comm
 
 func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedNameOptions) error {
 	ctx := context.Background()
-	t, err := opts.ParentOptions.Token(opts.ParentOptions.Config)
+	t, err := opts.RevokeOptions.TokenOptions.Token(opts.RevokeOptions.TokenOptions.Config)
 	if err != nil {
 		return err
 	}
@@ -92,21 +81,21 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		request.TokenType(opts.TokenType)
 	}
 
-	if opts.ParentOptions.SiteID != "" {
-		request.SiteId(opts.ParentOptions.SiteID)
+	if opts.RevokeOptions.SiteID != "" {
+		request.SiteId(opts.RevokeOptions.SiteID)
 	}
 
 	body := openapi.TokenRevocationRequest{
-		TokensPerSecond: &opts.ParentOptions.TokensPerSecond,
-		DelayMinutes:    &opts.ParentOptions.DelayMinutes,
+		TokensPerSecond: &opts.RevokeOptions.TokensPerSecond,
+		DelayMinutes:    &opts.RevokeOptions.DelayMinutes,
 	}
 
-	if opts.ParentOptions.RevocationReason != "" {
-		body.RevocationReason = &opts.ParentOptions.RevocationReason
+	if opts.RevokeOptions.RevocationReason != "" {
+		body.RevocationReason = &opts.RevokeOptions.RevocationReason
 	}
 
-	if len(opts.ParentOptions.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = &opts.ParentOptions.SpecificDistinguishedNames
+	if len(opts.RevokeOptions.SpecificDistinguishedNames) > 0 {
+		body.SpecificDistinguishedNames = &opts.RevokeOptions.SpecificDistinguishedNames
 	}
 
 	response, err := t.RevokeByDistinguishedName(request, body)
@@ -114,7 +103,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.ParentOptions.Out, opts.ParentOptions.useJSON)
+	err = PrintRevokedTokens(response, opts.RevokeOptions.TokenOptions.Out, opts.RevokeOptions.TokenOptions.useJSON)
 	if err != nil {
 		return err
 	}
@@ -137,7 +126,7 @@ func NewTokenRevokeByTokenTypeCmd(opts *RevokeOptions) *cobra.Command {
 
 func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 	ctx := context.Background()
-	t, err := opts.Token(opts.Config)
+	t, err := opts.TokenOptions.Token(opts.TokenOptions.Config)
 	if err != nil {
 		return err
 	}
@@ -166,7 +155,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.Out, opts.useJSON)
+	err = PrintRevokedTokens(response, opts.TokenOptions.Out, opts.TokenOptions.useJSON)
 	if err != nil {
 		return err
 	}
@@ -186,7 +175,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 	}
 
 	if printJSON {
-		return util.PrintJSON(out, responseBody)
+		return util.PrintJSON(out, result)
 	}
 
 	if len(result.Data) > 0 {

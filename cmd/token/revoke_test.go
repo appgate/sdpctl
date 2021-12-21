@@ -48,11 +48,13 @@ func setupTokenRevokeTest() (*httpmock.Registry, *RevokeOptions, *bytes.Buffer) 
 	}
 
 	opts := &RevokeOptions{
-		Config: f.Config,
-		Out:    f.IOOutWriter,
-		Token:  f.Token,
-		Debug:  f.Config.Debug,
-	}
+        TokenOptions: &TokenOptions{
+            Config: f.Config,
+            Out:    f.IOOutWriter,
+            Token:  f.Token,
+            Debug:  f.Config.Debug,
+        },
+    }
 
 	return registry, opts, stdout
 }
@@ -91,7 +93,7 @@ func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
 
-	opts.useJSON = true
+	opts.TokenOptions.useJSON = true
 	cmd := NewTokenRevokeByTokenTypeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -141,7 +143,7 @@ func TestTokenRevokeByDistinguishedNameJOSN(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
 
-	opts.useJSON = true
+	opts.TokenOptions.useJSON = true
 	cmd := NewTokenRevokeByDistinguishedNameCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
