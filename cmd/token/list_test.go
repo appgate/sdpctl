@@ -7,16 +7,16 @@ import (
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/httpmock"
 	"github.com/appgate/appgatectl/pkg/token"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"testing"
 )
 
-func TestTokenList(t *testing.T) {
+func setupTokenListTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
 	registry := httpmock.NewRegistry()
 	registry.Register("/token-records/dn", httpmock.JSONResponse("../../pkg/token/fixtures/token_list.json"))
-	defer registry.Teardown()
 	registry.Serve()
 
 	stdout := &bytes.Buffer{}
@@ -46,7 +46,20 @@ func TestTokenList(t *testing.T) {
 		return token, nil
 	}
 
-	cmd := NewTokenListCmd(f)
+	opts := &TokenOptions{
+		Config: f.Config,
+		Out:    f.IOOutWriter,
+		Token:  f.Token,
+	}
+
+	return registry, opts, stdout
+}
+
+func TestTokenList(t *testing.T) {
+	registry, opts, out := setupTokenListTest()
+	defer registry.Teardown()
+
+	cmd := NewTokenListCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -54,7 +67,7 @@ func TestTokenList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("executeC %s", err)
 	}
-	actual, err := io.ReadAll(stdout)
+	actual, err := io.ReadAll(out)
 	if err != nil {
 		t.Fatalf("unable to read stdout %s", err)
 	}
@@ -77,4 +90,26 @@ CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local  70e07680-1c4b-5bdc-87b4-a
 CN=3332396333654131b235633864363134,CN=admin,OU=local  33323963-3365-4131-b235-633864363134  2021-12-20T18:37:46.634198Z  local          admin
 `
 	assert.Equal(t, string(actual), expected)
+}
+
+func TestTokenListJSON(t *testing.T) {
+	registry, opts, out := setupTokenListTest()
+	defer registry.Teardown()
+
+	opts.useJSON = true
+
+	cmd := NewTokenListCmd(opts)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	_, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("executeC %s", err)
+	}
+	actual, err := io.ReadAll(out)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
+	}
+
+	assert.True(t, util.IsJSON(string(actual)))
 }

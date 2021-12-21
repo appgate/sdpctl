@@ -2,43 +2,24 @@ package token
 
 import (
 	"context"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/token"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/spf13/cobra"
-	"io"
 )
 
-type tokenListOptions struct {
-	Config *configuration.Config
-	Out    io.Writer
-	Token  func(c *configuration.Config) (*token.Token, error)
-	debug  bool
-	json   bool
-}
-
-func NewTokenListCmd(f *factory.Factory) *cobra.Command {
-	opts := tokenListOptions{
-		Config: f.Config,
-		Out:    f.IOOutWriter,
-		Token:  f.Token,
-		debug:  f.Config.Debug,
-	}
-
+func NewTokenListCmd(opts *TokenOptions) *cobra.Command {
 	var listCmd = &cobra.Command{
-		Use:   "list",
-		Short: "list distinguished names of active devices",
+		Use:     "list",
+		Short:   "list distinguished names of active devices",
+		Aliases: []string{"ls"},
 		RunE: func(c *cobra.Command, args []string) error {
-			return tokenListRun(c, args, &opts)
+			return tokenListRun(opts)
 		},
 	}
-	listCmd.PersistentFlags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 
 	return listCmd
 }
 
-func tokenListRun(c *cobra.Command, args []string, opts *tokenListOptions) error {
+func tokenListRun(opts *TokenOptions) error {
 	ctx := context.Background()
 	t, err := opts.Token(opts.Config)
 	if err != nil {
@@ -50,11 +31,8 @@ func tokenListRun(c *cobra.Command, args []string, opts *tokenListOptions) error
 		return err
 	}
 
-	if opts.json {
-		err = util.PrintJSON(opts.Out, distinguishedNames)
-		if err != nil {
-			return err
-		}
+	if opts.useJSON {
+		return util.PrintJSON(opts.Out, distinguishedNames)
 	}
 
 	p := util.NewPrinter(opts.Out)
