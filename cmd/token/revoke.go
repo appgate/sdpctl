@@ -26,7 +26,7 @@ type RevokeOptions struct {
 	DelayMinutes               int32
 	TokensPerSecond            float32
 	SpecificDistinguishedNames []string
-	JSON                       bool
+	useJSON                    bool
 }
 
 func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
@@ -47,7 +47,7 @@ func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
 	revokeCmd.PersistentFlags().Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
 	revokeCmd.PersistentFlags().Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
 	revokeCmd.PersistentFlags().StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
-	revokeCmd.PersistentFlags().BoolVar(&opts.JSON, "json", false, "output in json")
+	revokeCmd.PersistentFlags().BoolVar(&opts.useJSON, "json", false, "output in json")
 
 	revokeCmd.AddCommand(NewTokenRevokeByTokenTypeCmd(opts))
 	revokeCmd.AddCommand(NewTokenRevokeByDistinguishedNameCmd(opts))
@@ -114,7 +114,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.ParentOptions.Out, opts.ParentOptions.JSON)
+	err = PrintRevokedTokens(response, opts.ParentOptions.Out, opts.ParentOptions.useJSON)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.Out, opts.JSON)
+	err = PrintRevokedTokens(response, opts.Out, opts.useJSON)
 	if err != nil {
 		return err
 	}
@@ -186,11 +186,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 	}
 
 	if printJSON {
-		_, err = fmt.Println(string(responseBody))
-		if err != nil {
-			return err
-		}
-		return nil
+		return util.PrintJSON(out, responseBody)
 	}
 
 	if len(result.Data) > 0 {

@@ -7,16 +7,17 @@ import (
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/httpmock"
 	"github.com/appgate/appgatectl/pkg/token"
+	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"testing"
 )
 
-func TestTokenRevokeByTokenType(t *testing.T) {
+func setupTokenRevokeTest() (*httpmock.Registry, *RevokeOptions, *bytes.Buffer) {
 	registry := httpmock.NewRegistry()
+	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
 	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
-	defer registry.Teardown()
 	registry.Serve()
 
 	stdout := &bytes.Buffer{}
@@ -52,6 +53,14 @@ func TestTokenRevokeByTokenType(t *testing.T) {
 		Token:  f.Token,
 		Debug:  f.Config.Debug,
 	}
+
+	return registry, opts, stdout
+}
+
+func TestTokenRevokeByTokenType(t *testing.T) {
+	registry, opts, stdout := setupTokenRevokeTest()
+	defer registry.Teardown()
+
 	cmd := NewTokenRevokeByTokenTypeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -78,45 +87,33 @@ e433ec11-cb89-4a59-a0e3-f89848783b04  Entitlement  CN=b37de2ed4b4c4d21952f718e2d
 	assert.Equal(t, string(actual), expected)
 }
 
-func TestTokenRevokeByDistinguishedName(t *testing.T) {
-	registry := httpmock.NewRegistry()
-	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
+	registry, opts, stdout := setupTokenRevokeTest()
 	defer registry.Teardown()
-	registry.Serve()
 
-	stdout := &bytes.Buffer{}
-	stdin := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-	in := io.NopCloser(stdin)
-	f := &factory.Factory{
-		Config: &configuration.Config{
-			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
-		},
-		IOOutWriter: stdout,
-		Stdin:       in,
-		StdErr:      stderr,
+	opts.useJSON = true
+	cmd := NewTokenRevokeByTokenTypeCmd(opts)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"administration"})
+
+	_, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("executeC %s", err)
 	}
 
-	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-		return registry.Client, nil
-	}
-	f.Token = func(c *configuration.Config) (*token.Token, error) {
-		api, _ := f.APIClient(c)
-		token := &token.Token{
-			APIClient:  api,
-			HTTPClient: api.GetConfig().HTTPClient,
-			Token:      "",
-		}
-		return token, nil
+	actual, err := io.ReadAll(stdout)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
 	}
 
-	opts := &RevokeOptions{
-		Config: f.Config,
-		Out:    f.IOOutWriter,
-		Token:  f.Token,
-		Debug:  f.Config.Debug,
-	}
+	assert.True(t, util.IsJSON(string(actual)))
+}
+
+func TestTokenRevokeByDistinguishedName(t *testing.T) {
+	registry, opts, stdout := setupTokenRevokeTest()
+	defer registry.Teardown()
+
 	cmd := NewTokenRevokeByDistinguishedNameCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -138,4 +135,27 @@ c3eeb87b-e406-42ee-a1a9-0dadb4752023  AdminClaims     CN=70e076801c4b5bdc87b4afc
 43c9c2bb-3e31-4ce3-a779-8d33427f91ae  AdminClaims     CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local  2021-12-21 00:24:01.465525 +0000 UTC  2021-12-22 00:24:01.465446 +0000 UTC  true                         2021-12-21 00:32:20.933517 +0000 UTC  70e07680-1c4b-5bdc-87b4-afc71540e720  admin     local          envy-10-97-146-2.devops
 `
 	assert.Equal(t, string(actual), expected)
+}
+
+func TestTokenRevokeByDistinguishedNameJOSN(t *testing.T) {
+	registry, opts, stdout := setupTokenRevokeTest()
+	defer registry.Teardown()
+
+	opts.useJSON = true
+	cmd := NewTokenRevokeByDistinguishedNameCmd(opts)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local"})
+
+	_, err := cmd.ExecuteC()
+	if err != nil {
+		t.Fatalf("executeC %s", err)
+	}
+
+	actual, err := io.ReadAll(stdout)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
+	}
+
+	assert.True(t, util.IsJSON(string(actual)))
 }
