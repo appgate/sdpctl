@@ -8,7 +8,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -92,62 +93,65 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, fmt.Errorf("Backup API is disabled in the collective.")
 	}
 
-	filter := util.ParseFilteringFlags(cmd.Flags())
-	appliances, err := app.List(ctx, filter)
+	appliances, err := app.List(ctx, nil)
 	if err != nil {
 		return backupIDs, err
 	}
 
-	includeIDs := []string{}
-	if len(args) > 0 {
-		for _, arg := range args {
-			for _, a := range appliances {
-				if a.GetName() == arg {
-					includeIDs = append(includeIDs, a.GetId())
-				}
-			}
-		}
-	}
-
-	host, err := opts.Config.GetHost()
-	if err != nil {
-		return backupIDs, err
-	}
-	primaryController, err := FindPrimaryController(appliances, host)
-	if err != nil {
-		log.WithField("error", err).Debug(err)
-		log.Warn("Failed to find primary controller")
-	}
-	currentController, err := FindCurrentController(appliances, host)
-	if err != nil {
-		log.WithField("error", err).Debug(err)
-		log.Warn("Failed to find current controller")
-	}
-
-	if opts.PrimaryFlag {
-		if !util.InSlice(primaryController.GetId(), includeIDs) {
-			includeIDs = append(includeIDs, primaryController.GetId())
-		}
-	}
-	if opts.CurrentFlag {
-		if !util.InSlice(primaryController.GetId(), includeIDs) {
-			includeIDs = append(includeIDs, currentController.GetId())
-		}
-	}
 	var toBackup []openapi.Appliance
-	for _, id := range includeIDs {
-		for _, a := range appliances {
-			if a.GetId() == id {
-				toBackup = append(toBackup, a)
-			}
-		}
-	}
 	if opts.AllFlag {
 		toBackup = appliances
+	} else {
+		hostname, _ := opts.Config.GetHost()
+		nullFilter := map[string]map[string]string{
+			"filter":  {},
+			"exclude": {},
+		}
+		filter := util.ParseFilteringFlags(cmd.Flags())
+
+        if opts.PrimaryFlag {
+			pc, err := FindPrimaryController(appliances, hostname)
+			if err != nil {
+				log.Warn("failed to determine primary controller")
+			}
+            idFilter := []string{}
+            if len(filter["filter"]["id"]) > 0 {
+                idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+            }
+            idFilter = append(idFilter, pc.GetId())
+            filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+		}
+
+		if opts.CurrentFlag {
+			cc, err := FindCurrentController(appliances, hostname)
+			if err != nil {
+				log.Warn("failed to determine current controller")
+			}
+            idFilter := []string{}
+            if len(filter["filter"]["id"]) > 0 {
+                idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+            }
+            idFilter = append(idFilter, cc.GetId())
+            filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+		}
+
+		if len(args) > 0 {
+            fInclude := []string{}
+            if len(filter["filter"]["name"]) > 0 {
+                fInclude = strings.Split(filter["filter"]["name"], FilterDelimiter)
+            }
+			fInclude = append(fInclude, args...)
+			filter["filter"]["name"] = strings.Join(fInclude, FilterDelimiter)
+		}
+
+        if !reflect.DeepEqual(nullFilter, filter) {
+            toBackup = append(toBackup, FilterAppliances(appliances, filter)...)
+        }
 	}
+
 	if len(toBackup) <= 0 {
-		toBackup = backupPrompt(appliances, primaryController.GetId(), currentController.GetId())
-	}
+		toBackup = backupPrompt(appliances)
+    }
 
 	// Filter offline appliances
 	initialStats, _, err := app.Stats(ctx)
@@ -257,20 +261,11 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	return g.Wait()
 }
 
-func backupPrompt(appliances []openapi.Appliance, primaryID string, currentID string) []openapi.Appliance {
+func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
 	names := []string{}
 
 	for _, a := range appliances {
-		aID := a.GetId()
-		name := a.GetName()
-
-		if aID == primaryID {
-			name = name + " (PRIMARY)"
-		}
-		if aID == currentID {
-			name = name + " (CURRENT)"
-		}
-		names = append(names, name)
+		names = append(names, a.GetName())
 	}
 
 	qs := &survey.MultiSelect{
@@ -282,15 +277,11 @@ func backupPrompt(appliances []openapi.Appliance, primaryID string, currentID st
 	survey.AskOne(qs, &selected)
 	log.WithField("appliances", selected)
 
-	var result []openapi.Appliance
-	for _, sel := range selected {
-		for _, a := range appliances {
-			regex := regexp.MustCompile(a.GetName())
-			if regex.MatchString(sel) {
-				result = append(result, a)
-			}
-		}
-	}
+	result := FilterAppliances(appliances, map[string]map[string]string{
+		"filter": {
+			"name": strings.Join(selected, FilterDelimiter),
+		},
+	})
 
 	return result
 }
