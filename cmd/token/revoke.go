@@ -21,12 +21,12 @@ type RevokeOptions struct {
 	Out                        io.Writer
 	Token                      func(c *configuration.Config) (*token.Token, error)
 	Debug                      bool
-	SiteId                     string
+	SiteID                     string
 	RevocationReason           string
 	DelayMinutes               int32
 	TokensPerSecond            float32
 	SpecificDistinguishedNames []string
-	Json                       bool
+	JSON                       bool
 }
 
 func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
@@ -42,12 +42,12 @@ func NewTokenRevokeCmd(f *factory.Factory) *cobra.Command {
 		Short: "revoke entitlement tokens by distinguished name or token-type",
 	}
 
-	revokeCmd.PersistentFlags().StringVar(&opts.SiteId, "site-id", "", "revoke only tokens for the given site ID")
+	revokeCmd.PersistentFlags().StringVar(&opts.SiteID, "site-id", "", "revoke only tokens for the given site ID")
 	revokeCmd.PersistentFlags().StringVar(&opts.RevocationReason, "reason", "", "reason for revocation")
 	revokeCmd.PersistentFlags().Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
 	revokeCmd.PersistentFlags().Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
 	revokeCmd.PersistentFlags().StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
-	revokeCmd.PersistentFlags().BoolVar(&opts.Json, "json", false, "output in json")
+	revokeCmd.PersistentFlags().BoolVar(&opts.JSON, "json", false, "output in json")
 
 	revokeCmd.AddCommand(NewTokenRevokeByTokenTypeCmd(opts))
 	revokeCmd.AddCommand(NewTokenRevokeByDistinguishedNameCmd(opts))
@@ -92,8 +92,8 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		request.TokenType(opts.TokenType)
 	}
 
-	if opts.ParentOptions.SiteId != "" {
-		request.SiteId(opts.ParentOptions.SiteId)
+	if opts.ParentOptions.SiteID != "" {
+		request.SiteId(opts.ParentOptions.SiteID)
 	}
 
 	body := openapi.TokenRevocationRequest{
@@ -114,7 +114,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeByDistinguishedName
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.ParentOptions.Out, opts.ParentOptions.Json)
+	err = PrintRevokedTokens(response, opts.ParentOptions.Out, opts.ParentOptions.JSON)
 	if err != nil {
 		return err
 	}
@@ -144,8 +144,8 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 
 	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByTypeTokenTypePut(ctx, args[0])
 
-	if opts.SiteId != "" {
-		request.SiteId(opts.SiteId)
+	if opts.SiteID != "" {
+		request.SiteId(opts.SiteID)
 	}
 
 	body := openapi.TokenRevocationRequest{
@@ -166,7 +166,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.Out, opts.Json)
+	err = PrintRevokedTokens(response, opts.Out, opts.JSON)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 	return nil
 }
 
-func PrintRevokedTokens(response *http.Response, out io.Writer, printJson bool) error {
+func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) error {
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return err
@@ -185,7 +185,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJson bool) 
 		return err
 	}
 
-	if printJson {
+	if printJSON {
 		_, err = fmt.Println(string(responseBody))
 		if err != nil {
 			return err
@@ -197,7 +197,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJson bool) 
 		p := util.NewPrinter(out)
 		p.AddHeader("ID", "Type", "Distinguished Name", "Issued", "Expires", "Revoked", "Site ID", "Site Name", "Revocation Time", "Device ID", "Username", "Provider Name", "Controller Hostname")
 		for _, t := range result.Data {
-			p.AddLine(t.TokenId, t.TokenType, t.DistinguishedName, t.Issued, t.Expires, t.Revoked, t.Site, t.SiteName, t.RevocationTime, t.DeviceId, t.Username, t.ProviderName, t.ControllerHostname)
+			p.AddLine(t.TokenID, t.TokenType, t.DistinguishedName, t.Issued, t.Expires, t.Revoked, t.Site, t.SiteName, t.RevocationTime, t.DeviceID, t.Username, t.ProviderName, t.ControllerHostname)
 		}
 		p.Print()
 	} else {
@@ -212,7 +212,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJson bool) 
 //TODO: Fix OpenAPI spec for /token-records/revoked/by-type and /token-records/revoked/by-dn
 
 type Token struct {
-	TokenId            string     `json:"tokenId,omitempty"`
+	TokenID            string     `json:"tokenId,omitempty"`
 	TokenType          string     `json:"tokenType,omitempty"`
 	DistinguishedName  string     `json:"distinguishedName,omitempty"`
 	Issued             *time.Time `json:"issued,omitempty"`
@@ -221,7 +221,7 @@ type Token struct {
 	Site               string     `json:"siteId,omitempty"`
 	SiteName           string     `json:"siteName,omitempty"`
 	RevocationTime     *time.Time `json:"revocationTime,omitempty"`
-	DeviceId           string     `json:"deviceId,omitempty"`
+	DeviceID           string     `json:"deviceId,omitempty"`
 	Username           string     `json:"username,omitempty"`
 	ProviderName       string     `json:"providerName,omitempty"`
 	ControllerHostname string     `json:"controllerHostname"`

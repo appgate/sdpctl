@@ -51,7 +51,7 @@ func tokenListRun(c *cobra.Command, args []string, opts *tokenListOptions) error
 	}
 
 	if opts.json {
-		err = util.PrintJson(opts.Out, distinguishedNames)
+		err = util.PrintJSON(opts.Out, distinguishedNames)
 		if err != nil {
 			return err
 		}

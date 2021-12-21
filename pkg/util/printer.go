@@ -20,7 +20,7 @@ func NewPrinter(output io.Writer) *tabby.Tabby {
 	return tabby.NewCustom(w)
 }
 
-func PrintJson(output io.Writer, v interface{}) error {
+func PrintJSON(output io.Writer, v interface{}) error {
 	j, err := json.MarshalIndent(&v, "", "  ")
 	if err != nil {
 		return err

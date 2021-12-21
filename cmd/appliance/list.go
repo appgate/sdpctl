@@ -51,7 +51,7 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 		return err
 	}
 	if opts.json {
-		return util.PrintJson(opts.Out, allAppliances)
+		return util.PrintJSON(opts.Out, allAppliances)
 	}
 
 	p := util.NewPrinter(opts.Out)
