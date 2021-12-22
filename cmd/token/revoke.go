@@ -206,7 +206,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 	}
 
 	if printJSON {
-		return util.PrintJSON(out, result)
+		return util.PrintJSON(out, result.Data)
 	}
 
 	if len(result.Data) > 0 {
