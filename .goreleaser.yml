@@ -18,11 +18,7 @@ builds:
     - -X "github.com/appgate/appgatectl/cmd.buildDate={{ .Date }}"
 archives:
   - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
       386: i386
-      amd64: x86_64
     format_overrides:
       - goos: windows
         format: zip
@@ -33,6 +29,13 @@ release:
   prerelease: auto
 # signs:
 #   - artifacts: checksum
+nfpms:
+  - homepage: https://www.appgate.com
+    maintainer: Appgate Cybersecurity, Inc <appgatesdp.support@appgate.com>
+    description: Command line tool for managing Appgate SDP collectives.
+    formats:
+      - deb
+      - rpm
 snapshot:
   name_template: "v{{ incpatch .Version }}"
 changelog:
