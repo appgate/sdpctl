@@ -1,0 +1,48 @@
+{
+    "data": [
+        {
+            "tokenId": "d7559914-a77e-411e-af71-60498d5ccddd",
+            "tokenType": "Administration",
+            "distinguishedName": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+            "issued": "2021-12-21T00:27:00.223996Z",
+            "expires": "2021-12-22T00:27:00.186850Z",
+            "revoked": true,
+            "revocationTime": "2021-12-21T00:32:20.933517Z",
+            "deviceId": "70e07680-1c4b-5bdc-87b4-afc71540e720",
+            "username": "admin",
+            "providerName": "local",
+            "controllerHostname": "envy-10-97-146-2.devops"
+        },
+        {
+            "tokenId": "c3eeb87b-e406-42ee-a1a9-0dadb4752023",
+            "tokenType": "AdminClaims",
+            "distinguishedName": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+            "issued": "2021-12-21T00:27:00.186924Z",
+            "expires": "2021-12-22T00:27:00.186850Z",
+            "revoked": true,
+            "revocationTime": "2021-12-21T00:32:20.933517Z",
+            "deviceId": "70e07680-1c4b-5bdc-87b4-afc71540e720",
+            "username": "admin",
+            "providerName": "local",
+            "controllerHostname": "envy-10-97-146-2.devops"
+        },
+        {
+            "tokenId": "43c9c2bb-3e31-4ce3-a779-8d33427f91ae",
+            "tokenType": "AdminClaims",
+            "distinguishedName": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+            "issued": "2021-12-21T00:24:01.465525Z",
+            "expires": "2021-12-22T00:24:01.465446Z",
+            "revoked": true,
+            "revocationTime": "2021-12-21T00:32:20.933517Z",
+            "deviceId": "70e07680-1c4b-5bdc-87b4-afc71540e720",
+            "username": "admin",
+            "providerName": "local",
+            "controllerHostname": "envy-10-97-146-2.devops"
+        }
+    ],
+    "query": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+    "range": "0-3/3",
+    "orderBy": "issued",
+    "descending": true,
+    "filterBy": []
+}

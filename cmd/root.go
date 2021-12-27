@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/appgate/appgatectl/cmd/token"
 	"os"
 	"strings"
 
@@ -90,6 +91,7 @@ func NewCmdRoot() *cobra.Command {
 
 	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
 	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
+	rootCmd.AddCommand(token.NewTokenCmd(f))
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.SetHelpTemplate(HelpTemplate())
