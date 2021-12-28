@@ -155,11 +155,21 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		return err
 	}
 	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
-	_, err = authenticator.Authorization(ctxWithAccept, loginOpts.GetPassword(), authToken)
+	_, err = authenticator.Authorization(ctxWithAccept, authToken)
 	if errors.Is(err, auth.ErrPreConditionFailed) {
 		otp, err := authenticator.InitializeOTP(ctxWithAccept, loginOpts.GetPassword(), authToken)
 		if err != nil {
 			return err
+		}
+		testOTP := func() (*openapi.LoginResponse, error) {
+			var answer string
+			optKey := &survey.Password{
+				Message: "Please enter your one-time password:",
+			}
+			if err := survey.AskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
+				return nil, err
+			}
+			return authenticator.PushOTP(ctxWithAccept, answer, authToken)
 		}
 		// TODO add support for RadiusChallenge, Push
 		switch otpType := otp.GetType(); otpType {
@@ -174,36 +184,30 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 				return err
 			}
 			defer os.Remove(barcodeFile.Name())
-			optKey := &survey.Input{
-				Message: "Please enter your one-time password:",
-			}
-			var answer string
-			if err := survey.AskOne(optKey, &answer); err != nil {
-				return err
-			}
-			newToken, err := authenticator.PushOTP(ctxWithAccept, answer, authToken)
-			if err != nil {
-				return err
-			}
-			authToken = fmt.Sprintf("Bearer %s", newToken.GetToken())
+			fallthrough
+
 		case "AlreadySeeded":
-			optKey := &survey.Input{
-				Message: "Please enter your one-time password:",
+			fallthrough
+		default:
+			// Give the user 3 attempts to enter the correct OTP key
+			for i := 0; i < 3; i++ {
+				newToken, err := testOTP()
+				if err != nil {
+					if errors.Is(err, auth.ErrInvalidOneTimePassword) {
+						fmt.Println(err)
+						continue
+					}
+				}
+				if newToken != nil {
+					authToken = fmt.Sprintf("Bearer %s", newToken.GetToken())
+					break
+				}
 			}
-			var answer string
-			if err := survey.AskOne(optKey, &answer); err != nil {
-				return err
-			}
-			newToken, err := authenticator.PushOTP(ctxWithAccept, answer, authToken)
-			if err != nil {
-				return err
-			}
-			authToken = fmt.Sprintf("Bearer %s", newToken.GetToken())
 		}
 	} else if err != nil {
 		return err
 	}
-	authorizationToken, err := authenticator.Authorization(ctxWithAccept, loginOpts.GetPassword(), authToken)
+	authorizationToken, err := authenticator.Authorization(ctxWithAccept, authToken)
 	if err != nil {
 		return err
 	}

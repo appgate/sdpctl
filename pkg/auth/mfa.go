@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -46,17 +45,6 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 	c := a.APIClient
 	loginResponse, response, err := c.LoginApi.AuthenticationPost(ctx).LoginRequest(opts).Execute()
 	if err != nil {
-		// TODO use this once we have updated the SDK
-		// if err, ok := err.(openapi.GenericOpenAPIError); ok {
-		// 	if model, ok := err.Model().(openapi.InlineResponse406); ok {
-		// 		fmt.Printf("\n\n err AAA22222 %v\n", err)
-		// 		mm := &MinMax{
-		// 			Min: model.GetMinSupportedVersion(),
-		// 			Max: model.GetMaxSupportedVersion(),
-		// 		}
-		// 		return &loginResponse, mm, err
-		// 	}
-		// }
 		if response != nil && response.StatusCode == http.StatusNotAcceptable {
 			responseBody, errRead := io.ReadAll(response.Body)
 			if errRead != nil {
@@ -72,9 +60,6 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 			}
 			return &loginResponse, mm, err
 		}
-		if response != nil && response.StatusCode == http.StatusPreconditionFailed {
-			return &loginResponse, nil, ErrPreConditionFailed
-		}
 		httpErr := api.HTTPErrorResponse(response, err)
 		if httpErr != nil {
 			return nil, nil, httpErr
@@ -84,7 +69,7 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 	return &loginResponse, nil, nil
 }
 
-func (a *Auth) Authorization(ctx context.Context, password, token string) (*openapi.LoginResponse, error) {
+func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginResponse, error) {
 	loginResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Authorization(token).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusPreconditionFailed {
@@ -112,17 +97,22 @@ func (a *Auth) InitializeOTP(ctx context.Context, password, token string) (opena
 	return r, nil
 }
 
+var ErrInvalidOneTimePassword = errors.New("Invalid one-time password.")
+
 func (a *Auth) PushOTP(ctx context.Context, answer, token string) (*openapi.LoginResponse, error) {
 	o := openapi.InlineObject6{
 		Otp: answer,
 	}
 	newToken, response, err := a.APIClient.LoginApi.AuthenticationOtpPost(ctx).InlineObject6(o).Authorization(token).Execute()
 	if err != nil {
+		if response != nil && response.StatusCode == http.StatusUnauthorized {
+			return &newToken, ErrInvalidOneTimePassword
+		}
 		httpErr := api.HTTPErrorResponse(response, err)
 		if httpErr != nil {
 			return nil, httpErr
 		}
-		return nil, fmt.Errorf("invalid OTP %w", err)
+		return nil, err
 	}
 	return &newToken, nil
 }
