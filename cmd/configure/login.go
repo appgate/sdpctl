@@ -161,10 +161,19 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		if err != nil {
 			return err
 		}
+		// TODO add support for RadiusChallenge, Push
 		switch otpType := otp.GetType(); otpType {
 		case "Secret":
-			fmt.Println("One-time password initialization is required!")
-			fmt.Printf("\nTo initialize the timed based OTP enter the following secret: %s\n", otp.GetSecret())
+			barcodeFile, err := auth.BarcodeHTMLfile(otp.GetBarcode(), otp.GetSecret())
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\nOpen %s to scan the barcode to your authenticator app\n", barcodeFile.Name())
+			fmt.Printf("\nIf you can’t use the code, enter %s in your authenticator app\n", otp.GetSecret())
+			if err := auth.Openbrowser(barcodeFile.Name()); err != nil {
+				return err
+			}
+			defer os.Remove(barcodeFile.Name())
 			optKey := &survey.Input{
 				Message: "Please enter your one-time password:",
 			}
