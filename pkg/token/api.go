@@ -2,9 +2,10 @@ package token
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"net/http"
 )
 
 type Token struct {
@@ -22,7 +23,7 @@ func (t *Token) ListDistinguishedNames(ctx context.Context) ([]openapi.Distingui
 }
 
 func (t *Token) RevokeByDistinguishedName(request openapi.ApiTokenRecordsRevokedByDnDistinguishedNamePutRequest, body openapi.TokenRevocationRequest) (*http.Response, error) {
-	response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
+	_, response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
 
 	if err != nil {
 		httpErr := api.HTTPErrorResponse(response, err)
@@ -35,7 +36,7 @@ func (t *Token) RevokeByDistinguishedName(request openapi.ApiTokenRecordsRevoked
 }
 
 func (t *Token) RevokeByTokenType(request openapi.ApiTokenRecordsRevokedByTypeTokenTypePutRequest, body openapi.TokenRevocationRequest) (*http.Response, error) {
-	response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
+	_, response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
 
 	if err != nil {
 		httpErr := api.HTTPErrorResponse(response, err)
