@@ -12,6 +12,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/cli/browser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -180,7 +181,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 			}
 			fmt.Printf("\nOpen %s to scan the barcode to your authenticator app\n", barcodeFile.Name())
 			fmt.Printf("\nIf you can’t use the barcode, enter %s in your authenticator app\n", otp.GetSecret())
-			if err := auth.Openbrowser(barcodeFile.Name()); err != nil {
+			if err := browser.OpenURL(barcodeFile.Name()); err != nil {
 				return err
 			}
 			defer os.Remove(barcodeFile.Name())
