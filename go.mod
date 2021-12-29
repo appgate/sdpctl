@@ -4,9 +4,10 @@ go 1.16
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.2
-	github.com/appgate/sdp-api-client-go v1.0.7-0.20211118131349-84a9e6b8a82e
+	github.com/appgate/sdp-api-client-go v1.0.7-0.20211229102702-55d570847963
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cheynewallace/tabby v1.1.1
+	github.com/cli/browser v1.1.0
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/google/go-cmp v0.5.6
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510

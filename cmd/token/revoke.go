@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/appgate/appgatectl/pkg/util"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
+
+	"github.com/appgate/appgatectl/pkg/util"
+	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/spf13/cobra"
 )
 
 type TokenType int
@@ -199,7 +199,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 	if err != nil {
 		return err
 	}
-	result := &RevokeTokenResponse{}
+	result := &openapi.TokenRevocationResponse{}
 	err = json.Unmarshal(responseBody, result)
 	if err != nil {
 		return err
@@ -209,46 +209,33 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 		return util.PrintJSON(out, result.Data)
 	}
 
-	if len(result.Data) > 0 {
+	if len(result.GetData()) > 0 {
 		p := util.NewPrinter(out)
 		p.AddHeader("ID", "Type", "Distinguished Name", "Issued", "Expires", "Revoked", "Site ID", "Site Name", "Revocation Time", "Device ID", "Username", "Provider Name", "Controller Hostname")
-		for _, t := range result.Data {
-			p.AddLine(t.TokenID, t.TokenType, t.DistinguishedName, t.Issued, t.Expires, t.Revoked, t.Site, t.SiteName, t.RevocationTime, t.DeviceID, t.Username, t.ProviderName, t.ControllerHostname)
+		for _, t := range result.GetData() {
+			p.AddLine(
+				t.GetTokenId(),
+				t.GetTokenType(),
+				t.GetDistinguishedName(),
+				t.GetIssued(),
+				t.GetExpires(),
+				t.GetRevoked(),
+				t.GetSiteId(),
+				t.GetSiteName(),
+				t.GetRevocationTime(),
+				t.GetDeviceId(),
+				t.GetUsername(),
+				t.GetProviderName(),
+				t.GetControllerHostname(),
+			)
 		}
 		p.Print()
-	} else {
-		_, err = fmt.Fprintln(out, "No tokens were revoked")
-		if err != nil {
-			return err
-		}
+		return nil
 	}
+	_, err = fmt.Fprintln(out, "No tokens were revoked")
+	if err != nil {
+		return err
+	}
+
 	return nil
-}
-
-//TODO: Fix OpenAPI spec for /token-records/revoked/by-type and /token-records/revoked/by-dn
-
-type Token struct {
-	TokenID            string     `json:"tokenId,omitempty"`
-	TokenType          string     `json:"tokenType,omitempty"`
-	DistinguishedName  string     `json:"distinguishedName,omitempty"`
-	Issued             *time.Time `json:"issued,omitempty"`
-	Expires            *time.Time `json:"expires,omitempty"`
-	Revoked            bool       `json:"revoked,omitempty"`
-	Site               string     `json:"siteId,omitempty"`
-	SiteName           string     `json:"siteName,omitempty"`
-	RevocationTime     *time.Time `json:"revocationTime,omitempty"`
-	DeviceID           string     `json:"deviceId,omitempty"`
-	Username           string     `json:"username,omitempty"`
-	ProviderName       string     `json:"providerName,omitempty"`
-	ControllerHostname string     `json:"controllerHostname"`
-}
-
-type RevokeTokenResponse struct {
-	Data       []Token  `json:"data,omitempty"`
-	Query      string   `json:"query,omitempty"`
-	Range      string   `json:"range,omitempty"`
-	OrderBy    string   `json:"orderBy,omitempty"`
-	Issued     bool     `json:"issued,omitempty"`
-	Descending bool     `json:"descending,omitempty"`
-	FilterBy   []string `json:"filterBy,omitempty"`
 }

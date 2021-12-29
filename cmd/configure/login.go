@@ -2,14 +2,17 @@ package configure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/auth"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/cli/browser"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -76,7 +79,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if err != nil {
 		return err
 	}
-
+	authenticator := auth.NewAuth(client)
 	// Get credentials from credentials file
 	// Overwrite credentials with values set through environment variables
 	credentials, err := opts.Config.LoadCredentials()
@@ -120,33 +123,112 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 		Password:     openapi.PtrString(credentials.Password),
 		DeviceId:     cfg.DeviceID,
 	}
+	ctx := context.Background()
+	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
+	// initial authtentication, this will fail, since we will use the login response
+	// to compute the correct peerVersion used in the selected appgate sdp collective.
+	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
+	if err != nil && minMax == nil {
+		return fmt.Errorf("invalid credentials %w", err)
+	}
+	if minMax != nil {
+		viper.Set("api_version", minMax.Max)
+		cfg.Version = int(minMax.Max)
 
-	loginResponse, mm, err := login(client, loginOpts)
+	}
+
+	acceptValue := fmt.Sprintf(acceptHeaderFormatString, minMax.Max)
+	ctxWithAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, acceptValue)
+	providers, err := authenticator.ProviderNames(ctxWithAccept)
 	if err != nil {
 		return err
 	}
-	if mm != nil {
-		viper.Set("api_version", mm.max)
-		cfg.Version = int(mm.max)
+	prompt := &survey.Select{
+		Message: "Choose a provider:",
+		Options: providers,
 	}
-	token := *openapi.PtrString(*loginResponse.Token)
-	expiresAt := loginResponse.Expires.String()
-	cfg.BearerToken = token
-	cfg.ExpiresAt = expiresAt
+	if err := survey.AskOne(prompt, &loginOpts.ProviderName); err != nil {
+		return err
+	}
 
-	viper.Set("bearer", token)
-	viper.Set("expires_at", expiresAt)
+	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
+	if err != nil {
+		return err
+	}
+	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
+	_, err = authenticator.Authorization(ctxWithAccept, authToken)
+	if errors.Is(err, auth.ErrPreConditionFailed) {
+		otp, err := authenticator.InitializeOTP(ctxWithAccept, loginOpts.GetPassword(), authToken)
+		if err != nil {
+			return err
+		}
+		testOTP := func() (*openapi.LoginResponse, error) {
+			var answer string
+			optKey := &survey.Password{
+				Message: "Please enter your one-time password:",
+			}
+			if err := survey.AskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
+				return nil, err
+			}
+			return authenticator.PushOTP(ctxWithAccept, answer, authToken)
+		}
+		// TODO add support for RadiusChallenge, Push
+		switch otpType := otp.GetType(); otpType {
+		case "Secret":
+			barcodeFile, err := auth.BarcodeHTMLfile(otp.GetBarcode(), otp.GetSecret())
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\nOpen %s to scan the barcode to your authenticator app\n", barcodeFile.Name())
+			fmt.Printf("\nIf you can’t use the barcode, enter %s in your authenticator app\n", otp.GetSecret())
+			if err := browser.OpenURL(barcodeFile.Name()); err != nil {
+				return err
+			}
+			defer os.Remove(barcodeFile.Name())
+			fallthrough
+
+		case "AlreadySeeded":
+			fallthrough
+		default:
+			// Give the user 3 attempts to enter the correct OTP key
+			for i := 0; i < 3; i++ {
+				newToken, err := testOTP()
+				if err != nil {
+					if errors.Is(err, auth.ErrInvalidOneTimePassword) {
+						fmt.Println(err)
+						continue
+					}
+				}
+				if newToken != nil {
+					authToken = fmt.Sprintf("Bearer %s", newToken.GetToken())
+					break
+				}
+			}
+		}
+	} else if err != nil {
+		return err
+	}
+	authorizationToken, err := authenticator.Authorization(ctxWithAccept, authToken)
+	if err != nil {
+		return err
+	}
+
+	cfg.BearerToken = authorizationToken.GetToken()
+	cfg.ExpiresAt = authorizationToken.Expires.String()
+
+	viper.Set("bearer", cfg.BearerToken)
+	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
 	host, err := cfg.GetHost()
 	if err != nil {
 		return err
 	}
+
 	a, err := opts.Appliance(cfg)
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
-	allAppliances, err := a.List(ctx, nil)
+	allAppliances, err := a.List(ctxWithAccept, nil)
 	if err != nil {
 		return err
 	}
@@ -154,7 +236,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if err != nil {
 		return err
 	}
-	stats, _, err := a.Stats(ctx)
+	stats, _, err := a.Stats(ctxWithAccept)
 	if err != nil {
 		return err
 	}
@@ -168,49 +250,6 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	}
 	log.WithField("config file", viper.ConfigFileUsed()).Info("Config updated")
 	return nil
-}
-
-type minMax struct {
-	min, max int32
-}
-
-func login(client *openapi.APIClient, loginOpts openapi.LoginRequest) (*openapi.LoginResponse, *minMax, error) {
-	c := client
-	// we will use a invalid accept header to trigger an error, and in the response body we can see that min-max values we can use
-	// for the current sdp collective.
-	c.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", 5))
-
-	login := func() (*openapi.LoginResponse, *minMax, error) {
-		loginResponse, _, err := c.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
-		if err != nil {
-			if err, ok := err.(openapi.GenericOpenAPIError); ok {
-				if model, ok := err.Model().(openapi.InlineResponse406); ok {
-					mm := &minMax{
-						min: model.GetMinSupportedVersion(),
-						max: model.GetMaxSupportedVersion(),
-					}
-					return &loginResponse, mm, err
-				}
-			}
-			return nil, nil, err
-		}
-		return &loginResponse, nil, err
-	}
-	// login first with invalid accept header
-	invalid, mm, err := login()
-	if err != nil {
-		if mm != nil {
-			// login with the highest available accept header
-			c.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", mm.max))
-			login, _, err := login()
-			if err != nil {
-				return nil, mm, err
-			}
-			return login, mm, err
-		}
-		return nil, mm, err
-	}
-	return invalid, mm, err
 }
 
 func rememberCredentials(cfg *configuration.Config, credentials *configuration.Credentials) error {
