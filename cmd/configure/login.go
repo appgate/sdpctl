@@ -179,7 +179,7 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 				return err
 			}
 			fmt.Printf("\nOpen %s to scan the barcode to your authenticator app\n", barcodeFile.Name())
-			fmt.Printf("\nIf you can’t use the code, enter %s in your authenticator app\n", otp.GetSecret())
+			fmt.Printf("\nIf you can’t use the barcode, enter %s in your authenticator app\n", otp.GetSecret())
 			if err := auth.Openbrowser(barcodeFile.Name()); err != nil {
 				return err
 			}
