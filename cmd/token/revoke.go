@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/appgate/appgatectl/pkg/util"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/appgate/appgatectl/pkg/util"
+	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/spf13/cobra"
 )
 
 type TokenType int
@@ -198,7 +199,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 	if err != nil {
 		return err
 	}
-    result := &openapi.TokenRevocationResponse{}
+	result := &openapi.TokenRevocationResponse{}
 	err = json.Unmarshal(responseBody, result)
 	if err != nil {
 		return err
@@ -212,14 +213,29 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 		p := util.NewPrinter(out)
 		p.AddHeader("ID", "Type", "Distinguished Name", "Issued", "Expires", "Revoked", "Site ID", "Site Name", "Revocation Time", "Device ID", "Username", "Provider Name", "Controller Hostname")
 		for _, t := range result.GetData() {
-			p.AddLine(t.TokenId, t.TokenType, t.DistinguishedName, t.Issued, t.Expires, t.Revoked, t.SiteId, t.SiteName, t.RevocationTime, t.DeviceId, t.Username, t.ProviderName, t.ControllerHostname)
+			p.AddLine(
+				t.GetTokenId(),
+				t.GetTokenType(),
+				t.GetDistinguishedName(),
+				t.GetIssued(),
+				t.GetExpires(),
+				t.GetRevoked(),
+				t.GetSiteId(),
+				t.GetSiteName(),
+				t.GetRevocationTime(),
+				t.GetDeviceId(),
+				t.GetUsername(),
+				t.GetProviderName(),
+				t.GetControllerHostname(),
+			)
 		}
 		p.Print()
-	} else {
-		_, err = fmt.Fprintln(out, "No tokens were revoked")
-		if err != nil {
-			return err
-		}
+		return nil
 	}
+	_, err = fmt.Fprintln(out, "No tokens were revoked")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
