@@ -54,7 +54,7 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 	flags := loginCmd.Flags()
 	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVar(&opts.provider, "provider", "local", "identity provider")
+	flags.StringVar(&opts.provider, "provider", "", "identity provider")
 	flags.BoolVar(&opts.remember, "remember-me", false, "remember login credentials")
 
 	return loginCmd
@@ -143,12 +143,14 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if err != nil {
 		return err
 	}
-	prompt := &survey.Select{
-		Message: "Choose a provider:",
-		Options: providers,
-	}
-	if err := survey.AskOne(prompt, &loginOpts.ProviderName); err != nil {
-		return err
+	if len(providers) > 1 {
+		prompt := &survey.Select{
+			Message: "Choose a provider:",
+			Options: providers,
+		}
+		if err := survey.AskOne(prompt, &loginOpts.ProviderName); err != nil {
+			return err
+		}
 	}
 
 	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
