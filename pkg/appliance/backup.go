@@ -124,7 +124,6 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 			log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
 		}
 	}
-
 	g, ctx := errgroup.WithContext(ctx)
 	for _, a := range toBackup {
 		appliance := a
@@ -133,7 +132,6 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 			fields := log.Fields{"appliance": appliance.Name}
 			log.WithFields(fields).Info("Starting backup")
 			log.Debug(appliance.GetId())
-			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
@@ -152,7 +150,6 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 			var status string
 			backoff := 1 * time.Second
 			for status != "done" {
-				apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 				status, err = getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
 				if err != nil {
 					return err
@@ -165,8 +162,8 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 				backoff *= 2
 			}
 
-			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
-			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctx, appliance.Id, backupID).Authorization(app.Token).Execute()
+			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
 				log.Debug(err)
 				log.Debug(inlineRes)
@@ -204,16 +201,14 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		return err
 	}
 
-	ctx := context.Background()
-	g, ctx := errgroup.WithContext(ctx)
+	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
 	for appID, bckID := range IDs {
 		ID := appID
 		backupID := bckID
 		g.Go(func() error {
 			entry := log.WithField("applianceID", ID).WithField("backupID", backupID)
 			entry.Info("Cleaning up backup")
-			client := app.APIClient
-			client.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(opts.Config.GetBearTokenHeaderValue()).Execute()
 			if err != nil {
 				return err
