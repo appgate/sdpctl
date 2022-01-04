@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/appgate/appgatectl/pkg/httpmock"
@@ -388,7 +389,7 @@ func TestAuthInitializeOTP(t *testing.T) {
 				t.Errorf("Auth.InitializeOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err != nil && tt.wantErr && err.Error() != "string name may not be null" {
+			if err != nil && tt.wantErr && !strings.Contains(err.Error(), "name may not be null") {
 				t.Fatalf("Invalid error message, got %s", err)
 			}
 			if got.GetType() != tt.typeMethod {

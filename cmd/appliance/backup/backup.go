@@ -58,5 +58,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	flags.StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
 
+	cmd.AddCommand(NewBackupAPICmd(f))
+
 	return cmd
 }
