@@ -22,7 +22,11 @@ func TestMetricCommand(t *testing.T) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/plain")
 				rw.WriteHeader(http.StatusOK)
-				fmt.Fprint(rw, string(``))
+				fmt.Fprint(rw, string(`
+# HELP audit_event Total audit event count
+# TYPE audit_event counter
+audit_event{collective_id="8dda5969-e9de-4d0f-b4e8-38954c7c0507", appliance_id="ecb7d7ed-ec6a-4d39-4271-6b8b785520d3", type="appliance_status_changed"} 3.0
+`))
 			}
 		},
 	)
@@ -62,6 +66,19 @@ func TestMetricCommand(t *testing.T) {
 	_, err := cmd.ExecuteC()
 	if err != nil {
 		t.Fatalf("executeC %s", err)
+	}
+	got, err := io.ReadAll(stdout)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
+	}
+	want := `
+# HELP audit_event Total audit event count
+# TYPE audit_event counter
+audit_event{collective_id="8dda5969-e9de-4d0f-b4e8-38954c7c0507", appliance_id="ecb7d7ed-ec6a-4d39-4271-6b8b785520d3", type="appliance_status_changed"} 3.0
+
+`
+	if string(got) != want {
+		t.Fatalf("want:\n%q\n\nGot:%q\n", want, string(got))
 	}
 }
 
