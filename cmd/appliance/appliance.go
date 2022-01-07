@@ -27,6 +27,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(backup.NewCmdBackup(f))
 	cmd.AddCommand(NewListCmd(f))
 	cmd.AddCommand(NewStatsCmd(f))
+	cmd.AddCommand(NewMetricCmd(f))
 
 	return cmd
 }
