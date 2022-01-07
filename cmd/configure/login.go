@@ -74,6 +74,9 @@ func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if cfg.URL == "" {
 		return fmt.Errorf("no addr set.")
 	}
+	if cfg.DeviceID == "" {
+		cfg.DeviceID = configuration.DefaultDeviceID()
+	}
 
 	client, err := opts.APIClient(cfg)
 	if err != nil {
