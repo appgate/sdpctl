@@ -37,6 +37,16 @@ default value will be computed based on the primary controller appliance version
 
 APPGATECTL_BEARER: The Bearer authentication, computed from 'appgatectl configure login'
 
+APPGATECTL_USERNAME: username for local identity provider, can be used instead of APPGATECTL_BEARER in combination with APPGATECTL_PASSWORD.
+APPGATECTL_PASSWORD: password for local identity provider, can be used instead of APPGATECTL_BEARER in combination with APPGATECTL_USERNAME.
+    Example usage:
+        APPGATECTL_USERNAME=admin \
+        APPGATECTL_PASSWORD=admin \
+        APPGATECTL_URL=https://controller.appgate.com/admin \
+        APPGATECTL_INSECURE=true \
+        APPGATECTL_API_VERSION=15 \
+        appgatectl appliance list
+
 APPGATECTL_DEVICE_ID: UUID to distinguish the Client device making the request. It is supposed to be same for every login request from the same server.
 
     Defaults to:
