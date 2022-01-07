@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/appgate/appgatectl/cmd/token"
 	"os"
+	"reflect"
 	"strings"
 
 	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
@@ -85,7 +86,7 @@ func NewCmdRoot() *cobra.Command {
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
 	initConfig()
-
+	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
 	f := factory.New(version, cfg)
 
@@ -98,6 +99,27 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
 	return rootCmd
+}
+
+// BindEnvs Consider env vars when unmarshalling
+// https://github.com/spf13/viper/issues/188#issuecomment-399884438
+func BindEnvs(iface interface{}, parts ...string) {
+	ifv := reflect.ValueOf(iface)
+	ift := reflect.TypeOf(iface)
+	for i := 0; i < ift.NumField(); i++ {
+		v := ifv.Field(i)
+		t := ift.Field(i)
+		tv, ok := t.Tag.Lookup("mapstructure")
+		if !ok {
+			continue
+		}
+		switch v.Kind() {
+		case reflect.Struct:
+			BindEnvs(v.Interface(), append(parts, tv)...)
+		default:
+			viper.BindEnv(strings.Join(append(parts, tv), "."))
+		}
+	}
 }
 
 type exitCode int
