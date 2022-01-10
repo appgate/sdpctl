@@ -39,6 +39,7 @@ type prepareUpgradeOptions struct {
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
+	f.Config.Timeout = 300
 	opts := &prepareUpgradeOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
