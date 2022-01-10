@@ -26,9 +26,9 @@ type Appliance struct {
 // List from the appgate sdp collective
 // Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
 func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string) ([]openapi.Appliance, error) {
-	appliances, _, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
+	appliances, response, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
 	if err != nil {
-		return nil, err
+		return nil, api.HTTPErrorResponse(response, err)
 	}
 	return FilterAppliances(appliances.GetData(), filter), nil
 }
@@ -46,9 +46,9 @@ const (
 )
 
 func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (openapi.InlineResponse2006, error) {
-	status, _, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(a.Token).Execute()
+	status, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
-		return status, err
+		return status, api.HTTPErrorResponse(response, err)
 	}
 	return status, nil
 }
@@ -99,10 +99,7 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error {
 	response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
-		if httpErr := api.HTTPErrorResponse(response, err); httpErr != nil {
-			return httpErr
-		}
-		return err
+		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
 }
@@ -110,7 +107,7 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 func (a *Appliance) Stats(ctx context.Context) (openapi.StatsAppliancesList, *http.Response, error) {
 	status, response, err := a.APIClient.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
-		return status, response, err
+		return status, response, api.HTTPErrorResponse(response, err)
 	}
 	return status, response, nil
 }
@@ -124,7 +121,7 @@ func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.Fi
 		if r.StatusCode == http.StatusNotFound {
 			return f, fmt.Errorf("%q: %w", filename, ErrFileNotFound)
 		}
-		return f, err
+		return f, api.HTTPErrorResponse(r, err)
 	}
 	return f, nil
 }
@@ -174,18 +171,18 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.ReadCloser, headers map
 }
 
 func (a *Appliance) ListFiles(ctx context.Context) ([]openapi.File, error) {
-	list, _, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Authorization(a.Token).Execute()
+	list, response, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
-		return nil, err
+		return nil, api.HTTPErrorResponse(response, err)
 	}
 	return list.GetData(), nil
 }
 
 // DeleteFile Delete a File from the current Controller.
 func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
-	_, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(a.Token).Execute()
+	response, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(a.Token).Execute()
 	if err != nil {
-		return err
+		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
 }
@@ -203,15 +200,15 @@ func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devK
 		if r.StatusCode == http.StatusConflict {
 			return fmt.Errorf("Upgrade in progress on %s %w", id, err)
 		}
-		return err
+		return api.HTTPErrorResponse(r, err)
 	}
 	return nil
 }
 
 func (a *Appliance) UpdateAppliance(ctx context.Context, id string, appliance openapi.Appliance) error {
-	_, _, err := a.APIClient.AppliancesApi.AppliancesIdPut(ctx, id).Appliance(appliance).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.AppliancesApi.AppliancesIdPut(ctx, id).Appliance(appliance).Authorization(a.Token).Execute()
 	if err != nil {
-		return fmt.Errorf("Could not update appliance %w", err)
+		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
 }
@@ -232,9 +229,9 @@ func (a *Appliance) UpdateMaintenanceMode(ctx context.Context, id string, value 
 	o := openapi.InlineObject3{
 		Enabled: value,
 	}
-	m, _, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).InlineObject3(o).Authorization(a.Token).Execute()
+	m, response, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).InlineObject3(o).Authorization(a.Token).Execute()
 	if err != nil {
-		return "", err
+		return "", api.HTTPErrorResponse(response, err)
 	}
 	return m.GetId(), nil
 }
@@ -253,10 +250,7 @@ func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartit
 	}
 	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeCompletePost(ctx, id).InlineObject5(o).Authorization(a.Token).Execute()
 	if err != nil {
-		if httpErr := api.HTTPErrorResponse(response, err); httpErr != nil {
-			return httpErr
-		}
-		return err
+		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
 }
@@ -264,10 +258,7 @@ func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartit
 func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error {
 	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeSwitchPartitionPost(ctx, id).Authorization(a.Token).Execute()
 	if err != nil {
-		if httpErr := api.HTTPErrorResponse(response, err); httpErr != nil {
-			return httpErr
-		}
-		return err
+		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
 }
