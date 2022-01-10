@@ -25,10 +25,6 @@ type upgradeCompleteOptions struct {
 	Config            *configuration.Config
 	Out               io.Writer
 	Appliance         func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token             string
-	Timeout           int
-	url               string
-	provider          string
 	debug             bool
 	backup            bool
 	backupDestination string
@@ -41,7 +37,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	opts := upgradeCompleteOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
-		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 	}
@@ -58,8 +53,6 @@ and perform a reboot to make the second partition the primary.`,
 
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
-	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 
