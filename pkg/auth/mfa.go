@@ -29,11 +29,7 @@ func (a *Auth) ProviderNames(ctx context.Context) ([]string, error) {
 	result := make([]string, 0)
 	list, response, err := a.APIClient.LoginApi.IdentityProvidersNamesGet(ctx).Execute()
 	if err != nil {
-		httpErr := api.HTTPErrorResponse(response, err)
-		if httpErr != nil {
-			return nil, httpErr
-		}
-		return nil, err
+		return nil, api.HTTPErrorResponse(response, err)
 	}
 	for _, i := range list.GetData() {
 		result = append(result, i.GetName())
@@ -60,11 +56,7 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 			}
 			return &loginResponse, mm, err
 		}
-		httpErr := api.HTTPErrorResponse(response, err)
-		if httpErr != nil {
-			return nil, nil, httpErr
-		}
-		return nil, nil, err
+		return nil, nil, api.HTTPErrorResponse(response, err)
 	}
 	return &loginResponse, nil, nil
 }
@@ -75,11 +67,7 @@ func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginR
 		if response != nil && response.StatusCode == http.StatusPreconditionFailed {
 			return &loginResponse, ErrPreConditionFailed
 		}
-		httpErr := api.HTTPErrorResponse(response, err)
-		if httpErr != nil {
-			return nil, httpErr
-		}
-		return &loginResponse, err
+		return &loginResponse, api.HTTPErrorResponse(response, err)
 	}
 	return &loginResponse, nil
 }
@@ -88,11 +76,7 @@ func (a *Auth) InitializeOTP(ctx context.Context, password, token string) (opena
 	o := openapi.InlineObject7{UserPassword: openapi.PtrString(password)}
 	r, response, err := a.APIClient.LoginApi.AuthenticationOtpInitializePost(ctx).Authorization(token).InlineObject7(o).Execute()
 	if err != nil {
-		httpErr := api.HTTPErrorResponse(response, err)
-		if httpErr != nil {
-			return r, httpErr
-		}
-		return r, err
+		return r, api.HTTPErrorResponse(response, err)
 	}
 	return r, nil
 }
@@ -108,11 +92,7 @@ func (a *Auth) PushOTP(ctx context.Context, answer, token string) (*openapi.Logi
 		if response != nil && response.StatusCode == http.StatusUnauthorized {
 			return &newToken, ErrInvalidOneTimePassword
 		}
-		httpErr := api.HTTPErrorResponse(response, err)
-		if httpErr != nil {
-			return nil, httpErr
-		}
-		return nil, err
+		return nil, api.HTTPErrorResponse(response, err)
 	}
 	return &newToken, nil
 }
