@@ -29,6 +29,10 @@ func Login(f *factory.Factory, remember bool) error {
 	if cfg.DeviceID == "" {
 		cfg.DeviceID = configuration.DefaultDeviceID()
 	}
+	host, err := cfg.GetHost()
+	if err != nil {
+		return err
+	}
 
 	authenticator := NewAuth(client)
 	// Get credentials from credentials file
@@ -172,10 +176,6 @@ func Login(f *factory.Factory, remember bool) error {
 	viper.Set("bearer", cfg.BearerToken)
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
-	host, err := cfg.GetHost()
-	if err != nil {
-		return err
-	}
 
 	a, err := f.Appliance(cfg)
 	if err != nil {

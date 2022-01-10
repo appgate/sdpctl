@@ -207,6 +207,9 @@ func (c *Config) StoreCredentials(crd *Credentials) error {
 }
 
 func (c *Config) GetHost() (string, error) {
+	if len(c.URL) == 0 {
+		return "", errors.New("no valid address set, run 'appgatectl configure' or set APPGATECTL_URL")
+	}
 	url, err := url.Parse(c.URL)
 	if err != nil {
 		return "", err
