@@ -36,6 +36,7 @@ type Config struct {
 	DeviceID                 string `mapstructure:"device_id"`
 	PemFilePath              string `mapstructure:"pem_filepath"`
 	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
+	Timeout                  int    // HTTP timeout, not supported in the config file.
 }
 
 type Credentials struct {

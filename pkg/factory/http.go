@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/appgate/appgatectl/pkg/token"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/appgate/appgatectl/pkg/token"
 
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -44,7 +45,11 @@ func New(appVersion string, config *configuration.Config) *Factory {
 func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		cfg := f.Config
-		timeout := 300
+		timeout := 5
+		if cfg.Timeout > timeout {
+			timeout = cfg.Timeout
+		}
+
 		timeoutDuration := time.Duration(timeout)
 
 		rootCAs, _ := x509.SystemCertPool()
