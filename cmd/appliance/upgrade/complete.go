@@ -33,6 +33,7 @@ type upgradeCompleteOptions struct {
 	backup            bool
 	backupDestination string
 	backupAll         string
+	NoInteractive     bool
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -56,6 +57,7 @@ and perform a reboot to make the second partition the primary.`,
 	}
 
 	flags := upgradeCompleteCmd.Flags()
+	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
 	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
 	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
@@ -73,7 +75,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	// if backup is default value (false) and user hasn't explicitly stated the flag, ask if user wants to backup
 	flagIsChanged := cmd.Flags().Changed("backup")
-	if !opts.backup && !flagIsChanged {
+	if !opts.backup && !flagIsChanged && !opts.NoInteractive {
 		performBackup := &survey.Confirm{
 			Message: "Do you want to backup before proceeding?",
 			Default: false,
@@ -166,10 +168,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		fmt.Fprintf(opts.Out, "\n%s\n", msg)
-		if err := prompt.AskConfirmation(); err != nil {
-			return err
+		if !opts.NoInteractive {
+			if err := prompt.AskConfirmation(); err != nil {
+				return err
+			}
 		}
 	}
+
 	primaryController, err := appliancepkg.FindPrimaryController(appliances, host)
 	if err != nil {
 		return err
