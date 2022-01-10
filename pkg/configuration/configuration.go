@@ -13,7 +13,6 @@ import (
 
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -112,11 +111,6 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 }
 
 func (c *Config) CheckAuth() bool {
-	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
-	d, err := time.Parse(layout, c.ExpiresAt)
-	if err != nil {
-		return false
-	}
 	if len(c.BearerToken) < 1 {
 		return false
 	}
@@ -124,6 +118,15 @@ func (c *Config) CheckAuth() bool {
 		return false
 	}
 	if len(c.Provider) < 1 {
+		return false
+	}
+	return c.ExpiredAtValid()
+}
+
+func (c *Config) ExpiredAtValid() bool {
+	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
+	d, err := time.Parse(layout, c.ExpiresAt)
+	if err != nil {
 		return false
 	}
 	t1 := time.Now()
@@ -193,7 +196,7 @@ func (c *Config) StoreCredentials(crd *Credentials) error {
 	if err != nil {
 		return err
 	}
-	log.WithField("path", c.CredentialsFile).Info("Stored credentials")
+
 	viper.Set("credentials_file", c.CredentialsFile)
 	err = viper.WriteConfig()
 	if err != nil {
