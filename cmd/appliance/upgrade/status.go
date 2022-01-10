@@ -18,12 +18,7 @@ type upgradeStatusOptions struct {
 	Config    *configuration.Config
 	Out       io.Writer
 	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token     string
-	Timeout   int
-	url       string
-	provider  string
 	debug     bool
-	insecure  bool
 	json      bool
 }
 
@@ -32,7 +27,6 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	opts := upgradeStatusOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
-		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 	}
@@ -46,10 +40,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	flags := upgradeStatusCmd.Flags()
-	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.BoolVar(&opts.json, "json", false, "Display in JSON format")
-	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 
 	return upgradeStatusCmd
 }
