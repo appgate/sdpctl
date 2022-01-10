@@ -7,6 +7,9 @@ bindir  := ${prefix}/bin
 build:
 	go build -o build/$(BIN_NAME)
 
+snapshot:
+	goreleaser release --snapshot --rm-dist
+
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
@@ -22,8 +25,8 @@ cover: test
 clean:
 	rm -rf build dist cover.out
 
-
 .PHONY: install
 install: build
 	install -d ${DESTDIR}${bindir}
 	install -m755 build/$(BIN_NAME) ${DESTDIR}${bindir}/
+
