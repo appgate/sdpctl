@@ -30,10 +30,6 @@ type prepareUpgradeOptions struct {
 	Config        *configuration.Config
 	Out           io.Writer
 	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token         string
-	Timeout       int
-	url           string
-	provider      string
 	debug         bool
 	insecure      bool
 	NoInteractive bool
@@ -46,7 +42,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	opts := &prepareUpgradeOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
-		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 	}
@@ -64,8 +59,6 @@ the signature verified as well as any other preconditions applicable at this poi
 	flags := prepareCmd.Flags()
 	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
-	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	flags.StringVarP(&opts.image, "image", "", "", "image path")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
