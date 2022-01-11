@@ -23,7 +23,6 @@ import (
 
 var (
 	version       string = "dev"
-	cfgFile       string
 	commit        string
 	buildDate     string
 	versionOutput string = fmt.Sprintf(`%s
@@ -33,25 +32,19 @@ build date: %s`, version, commit, buildDate)
 
 func initConfig() {
 	dir := configuration.ConfigDir()
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			err := os.Mkdir(dir, os.ModePerm)
-			if err != nil {
-				fmt.Printf("Can't create config dir: %s %s\n", dir, err)
-				os.Exit(1)
-			}
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			fmt.Printf("Can't create config dir: %s %s\n", dir, err)
+			os.Exit(1)
 		}
-		viper.AddConfigPath(dir)
-		viper.SetEnvPrefix("APPGATECTL")
-		viper.AutomaticEnv()
-		viper.SetConfigType("json")
-		viper.SafeWriteConfig()
-		viper.SetConfigName("config")
 	}
-
+	viper.AddConfigPath(dir)
+	viper.SafeWriteConfig()
+	viper.SetConfigName("config")
+	viper.SetEnvPrefix("APPGATECTL")
+	viper.AutomaticEnv()
+	viper.SetConfigType("json")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Its OK if we can't the file, fallback to arguments and/or environment variables
@@ -83,7 +76,6 @@ func NewCmdRoot() *cobra.Command {
 	viper.SetDefault("provider", "local")
 
 	pFlags := rootCmd.PersistentFlags()
-	pFlags.StringVarP(&cfgFile, "config", "c", "", "config file")
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
