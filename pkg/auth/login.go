@@ -20,7 +20,7 @@ import (
 // Login will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support APPGATECTL_USERNAME & APPGATECTL_PASSWORD environment variables.
 // Login supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Login(f *factory.Factory, remember bool) error {
+func Login(f *factory.Factory, remember, saveConfig bool) error {
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
@@ -198,8 +198,10 @@ func Login(f *factory.Factory, remember bool) error {
 		return err
 	}
 	viper.Set("primary_controller_version", v.String())
-	if err := viper.WriteConfig(); err != nil {
-		return err
+	if saveConfig {
+		if err := viper.WriteConfig(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

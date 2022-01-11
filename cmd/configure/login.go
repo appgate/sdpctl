@@ -38,7 +38,7 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 }
 
 func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
-	if err := auth.Login(opts.f, opts.remember); err != nil {
+	if err := auth.Login(opts.f, opts.remember, true); err != nil {
 		return err
 	}
 	log.WithField("config file", viper.ConfigFileUsed()).Info("Config updated")
