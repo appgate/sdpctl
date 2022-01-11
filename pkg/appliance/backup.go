@@ -172,7 +172,6 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		g.Go(func() error {
 			fields := log.Fields{"appliance": appliance.Name, "id": appliance.Id}
 			log.WithFields(fields).Info("Starting backup")
-			apiClient.GetConfig().AddDefaultHeader("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
