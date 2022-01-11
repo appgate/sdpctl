@@ -22,11 +22,7 @@ type upgradeCancelOptions struct {
 	Config        *configuration.Config
 	Out           io.Writer
 	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token         string
-	url           string
-	provider      string
 	debug         bool
-	insecure      bool
 	delete        bool
 	NoInteractive bool
 }
@@ -48,10 +44,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	flags := upgradeCancelCmd.Flags()
-	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
-	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
 	flags.BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the controller")
 
 	return upgradeCancelCmd
