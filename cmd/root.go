@@ -1,14 +1,19 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"github.com/appgate/appgatectl/cmd/token"
 	"os"
+	"reflect"
 	"strings"
+
+	"github.com/appgate/appgatectl/cmd/token"
+	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 
 	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
 	cfgcmd "github.com/appgate/appgatectl/cmd/configure"
+	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
@@ -85,7 +90,7 @@ func NewCmdRoot() *cobra.Command {
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
 	initConfig()
-
+	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
 	f := factory.New(version, cfg)
 
@@ -98,6 +103,27 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
 	return rootCmd
+}
+
+// BindEnvs Consider env vars when unmarshalling
+// https://github.com/spf13/viper/issues/188#issuecomment-399884438
+func BindEnvs(iface interface{}, parts ...string) {
+	ifv := reflect.ValueOf(iface)
+	ift := reflect.TypeOf(iface)
+	for i := 0; i < ift.NumField(); i++ {
+		v := ifv.Field(i)
+		t := ift.Field(i)
+		tv, ok := t.Tag.Lookup("mapstructure")
+		if !ok {
+			continue
+		}
+		switch v.Kind() {
+		case reflect.Struct:
+			BindEnvs(v.Interface(), append(parts, tv)...)
+		default:
+			viper.BindEnv(strings.Join(append(parts, tv), "."))
+		}
+	}
 }
 
 type exitCode int
@@ -163,6 +189,38 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		})
 		log.SetOutput(f.IOOutWriter)
 
+		// if username and pasword isset as enviornment, automatically try to login and get the token
+		username := util.Getenv("APPGATECTL_USERNAME", "")
+		password := util.Getenv("APPGATECTL_PASSWORD", "")
+		if len(username) > 0 && len(password) > 0 {
+			log.Debug("Detected environment variables APPGATECTL_USERNAME and APPGATECTL_PASSWORD, automatically login.")
+			client, err := f.APIClient(cfg)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "appgatectl authentication err")
+				fmt.Fprintln(os.Stderr)
+				fmt.Fprintln(os.Stderr, err)
+				return ErrExitAuth
+			}
+
+			loginOpts := openapi.LoginRequest{
+				ProviderName: cfg.Provider,
+				Username:     openapi.PtrString(username),
+				Password:     openapi.PtrString(password),
+				DeviceId:     configuration.DefaultDeviceID(),
+			}
+
+			loginResponse, response, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "appgatectl authentication err")
+				fmt.Fprintln(os.Stderr)
+				fmt.Fprintln(os.Stderr, api.HTTPErrorResponse(response, err))
+				return ErrExitAuth
+			}
+			cfg.BearerToken = loginResponse.GetToken()
+			cfg.ExpiresAt = loginResponse.Expires.String()
+			viper.Set("expires_at", cfg.ExpiresAt)
+			viper.Set("bearer", cfg.BearerToken)
+		}
 		// require that the user is authenticated before running most commands
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			fmt.Fprintln(os.Stderr, "appgatectl err")

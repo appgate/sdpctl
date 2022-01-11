@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/denisbrodbeck/machineid"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -24,9 +26,9 @@ const (
 
 type Config struct {
 	URL                      string `mapstructure:"url"`
-	Provider                 string
-	Insecure                 bool
-	Debug                    bool   // http debug flag
+	Provider                 string `mapstructure:"provider"`
+	Insecure                 bool   `mapstructure:"insecure"`
+	Debug                    bool   `mapstructure:"debug"`       // http debug flag
 	Version                  int    `mapstructure:"api_version"` // api peer interface version
 	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
 	ExpiresAt                string `mapstructure:"expires_at"`
@@ -65,6 +67,34 @@ func ConfigDir() string {
 	}
 
 	return path
+}
+
+// DefaultDeviceID return a unique ID in UUID format.
+// machine.ID() tries to read
+// /etc/machine-id on Linux
+// /etc/hostid on BSD
+// ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformUUID on OSX
+// reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography /v MachineGuid on Windows
+// and tries to parse the value as a UUID
+// https://github.com/denisbrodbeck/machineid
+// if we can't get a valid UUID based on the machine ID, we will fallback to a random UUID value.
+func DefaultDeviceID() string {
+	readAndParseUUID := func() (string, error) {
+		id, err := machineid.ID()
+		if err != nil {
+			return "", err
+		}
+		uid, err := uuid.Parse(id)
+		if err != nil {
+			return "", err
+		}
+		return uid.String(), nil
+	}
+	v, err := readAndParseUUID()
+	if err != nil {
+		return uuid.New().String()
+	}
+	return v
 }
 
 func IsAuthCheckEnabled(cmd *cobra.Command) bool {

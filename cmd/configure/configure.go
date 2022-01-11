@@ -8,8 +8,6 @@ import (
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/util"
-	"github.com/denisbrodbeck/machineid"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -94,38 +92,11 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	viper.Set("url", answers.URL)
 	i, _ := strconv.ParseBool(answers.Insecure)
 	viper.Set("insecure", i)
-	viper.Set("device_id", defaultDeviceID())
+	viper.Set("device_id", configuration.DefaultDeviceID())
 
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}
 	log.Infof("Config updated %s", viper.ConfigFileUsed())
 	return nil
-}
-
-func defaultDeviceID() string {
-	readAndParseUUID := func() (string, error) {
-		// machine.ID() tries to read
-		// /etc/machine-id on Linux
-		// /etc/hostid on BSD
-		// ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformUUID on OSX
-		// reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography /v MachineGuid on Windows
-		// and tries to parse the value as a UUID
-		// https://github.com/denisbrodbeck/machineid
-		id, err := machineid.ID()
-		if err != nil {
-			return "", err
-		}
-		uid, err := uuid.Parse(id)
-		if err != nil {
-			return "", err
-		}
-		return uid.String(), nil
-	}
-	// if we can't get a valid UUID based on the machine ID, we will fallback to a random UUID value.
-	v, err := readAndParseUUID()
-	if err != nil {
-		return uuid.New().String()
-	}
-	return v
 }
