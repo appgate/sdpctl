@@ -113,26 +113,28 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			pc, err := FindPrimaryController(appliances, hostname)
 			if err != nil {
 				log.Warn("failed to determine primary controller")
+			} else {
+				idFilter := []string{}
+				if len(filter["filter"]["id"]) > 0 {
+					idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+				}
+				idFilter = append(idFilter, pc.GetId())
+				filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 			}
-			idFilter := []string{}
-			if len(filter["filter"]["id"]) > 0 {
-				idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
-			}
-			idFilter = append(idFilter, pc.GetId())
-			filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 		}
 
 		if opts.CurrentFlag {
 			cc, err := FindCurrentController(appliances, hostname)
 			if err != nil {
 				log.Warn("failed to determine current controller")
+			} else {
+				idFilter := []string{}
+				if len(filter["filter"]["id"]) > 0 {
+					idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+				}
+				idFilter = append(idFilter, cc.GetId())
+				filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 			}
-			idFilter := []string{}
-			if len(filter["filter"]["id"]) > 0 {
-				idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
-			}
-			idFilter = append(idFilter, cc.GetId())
-			filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 		}
 
 		if len(args) > 0 {
