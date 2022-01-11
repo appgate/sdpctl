@@ -176,13 +176,18 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
-	if err != nil {
-		return err
+	// if we have an existing config with the primary controller version, check if we need to re-authetnicate
+	// before we continue with the upgrade to update the peer API version.
+	if len(opts.Config.PrimaryControllerVersion) > 0 {
+		preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+		if err != nil {
+			return err
+		}
+		if !preV.Equal(currentPrimaryControllerVersion) {
+			return fmt.Errorf("version mismatch: run appgatectl configure login")
+		}
 	}
-	if !preV.Equal(currentPrimaryControllerVersion) {
-		return fmt.Errorf("version mismatch: run appgatectl configure login")
-	}
+
 	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	// We will exclude the primary controller from the others controllers
 	// since the primary controller is a special case during the upgrade process.

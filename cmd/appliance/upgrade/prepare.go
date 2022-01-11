@@ -172,13 +172,18 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
-	if err != nil {
-		return fmt.Errorf("%s %w", ErrPrimaryControllerVersionErr, err)
+	// if we have an existing config with the primary controller version, check if we need to re-authetnicate
+	// before we continue with the upgrade to update the peer API version.
+	if len(opts.Config.PrimaryControllerVersion) > 0 {
+		preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+		if err != nil {
+			return fmt.Errorf("%s %w", ErrPrimaryControllerVersionErr, err)
+		}
+		if !preV.Equal(currentPrimaryControllerVersion) {
+			return ErrPrimaryControllerVersionErr
+		}
 	}
-	if !preV.Equal(currentPrimaryControllerVersion) {
-		return ErrPrimaryControllerVersionErr
-	}
+
 	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
 	if !opts.NoInteractive {
 		if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
