@@ -8,8 +8,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -23,15 +26,16 @@ var (
 )
 
 type BackupOpts struct {
-	Config             *configuration.Config
-	Appliance          func(*configuration.Config) (*Appliance, error)
-	Out                io.Writer
-	Destination        string
-	NotifyURL          string
-	Include            []string
-	AllFlag            bool
-	AllControllersFlag bool
-	Timeout            time.Duration
+	Config      *configuration.Config
+	Appliance   func(*configuration.Config) (*Appliance, error)
+	Out         io.Writer
+	Destination string
+	NotifyURL   string
+	Include     []string
+	AllFlag     bool
+	PrimaryFlag bool
+	CurrentFlag bool
+	Timeout     time.Duration
 }
 
 type backupHTTPResponse struct {
@@ -61,7 +65,7 @@ func PrepareBackup(opts *BackupOpts) error {
 	return nil
 }
 
-func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, error) {
+func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	backupIDs := make(map[string]string)
 	ctx := context.Background()
 	aud := util.InSlice("audit", opts.Include)
@@ -89,27 +93,66 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		return backupIDs, fmt.Errorf("Backup API is disabled in the collective.")
 	}
 
-	filter := util.ParseFilteringFlags(cmd.Flags())
-	appliances, err := app.List(ctx, filter)
+	appliances, err := app.List(ctx, nil)
 	if err != nil {
 		return backupIDs, err
 	}
 
 	var toBackup []openapi.Appliance
-
-	host, err := opts.Config.GetHost()
-	if err != nil {
-		return backupIDs, err
-	}
-	primaryController, err := FindPrimaryController(appliances, host)
-	if err != nil {
-		log.Debug(err)
-		return backupIDs, fmt.Errorf("Failed to find primary controller")
-	}
-	toBackup = append(toBackup, *primaryController)
-
 	if opts.AllFlag {
 		toBackup = appliances
+	} else {
+		hostname, _ := opts.Config.GetHost()
+		nullFilter := map[string]map[string]string{
+			"filter":  {},
+			"exclude": {},
+		}
+		filter := util.ParseFilteringFlags(cmd.Flags())
+
+		if opts.PrimaryFlag {
+			pc, err := FindPrimaryController(appliances, hostname)
+			if err != nil {
+				log.Warn("failed to determine primary controller")
+			} else {
+				idFilter := []string{}
+				if len(filter["filter"]["id"]) > 0 {
+					idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+				}
+				idFilter = append(idFilter, pc.GetId())
+				filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+			}
+		}
+
+		if opts.CurrentFlag {
+			cc, err := FindCurrentController(appliances, hostname)
+			if err != nil {
+				log.Warn("failed to determine current controller")
+			} else {
+				idFilter := []string{}
+				if len(filter["filter"]["id"]) > 0 {
+					idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+				}
+				idFilter = append(idFilter, cc.GetId())
+				filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+			}
+		}
+
+		if len(args) > 0 {
+			fInclude := []string{}
+			if len(filter["filter"]["name"]) > 0 {
+				fInclude = strings.Split(filter["filter"]["name"], FilterDelimiter)
+			}
+			fInclude = append(fInclude, args...)
+			filter["filter"]["name"] = strings.Join(fInclude, FilterDelimiter)
+		}
+
+		if !reflect.DeepEqual(nullFilter, filter) {
+			toBackup = append(toBackup, FilterAppliances(appliances, filter)...)
+		}
+	}
+
+	if len(toBackup) <= 0 {
+		toBackup = backupPrompt(appliances)
 	}
 
 	// Filter offline appliances
@@ -129,9 +172,8 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
-			fields := log.Fields{"appliance": appliance.Name}
+			fields := log.Fields{"appliance": appliance.Name, "id": appliance.Id}
 			log.WithFields(fields).Info("Starting backup")
-			log.Debug(appliance.GetId())
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
@@ -140,7 +182,6 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 				if decodeErr != nil {
 					return decodeErr
 				}
-				log.Debug(respBody)
 				log.Debug(err)
 				return err
 			}
@@ -165,8 +206,7 @@ func PerformBackup(cmd *cobra.Command, opts *BackupOpts) (map[string]string, err
 			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
-				log.Debug(err)
-				log.Debug(inlineRes)
+				log.WithField("error", err).WithField("response", inlineRes).Debug(err)
 				return err
 			}
 			defer file.Close()
@@ -222,13 +262,38 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	return g.Wait()
 }
 
+func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
+	names := []string{}
+
+	for _, a := range appliances {
+		names = append(names, a.GetName())
+	}
+
+	qs := &survey.MultiSelect{
+		PageSize: len(appliances),
+		Message:  "select appliances to backup:",
+		Options:  names,
+	}
+	var selected []string
+	survey.AskOne(qs, &selected)
+	log.WithField("appliances", selected)
+
+	result := FilterAppliances(appliances, map[string]map[string]string{
+		"filter": {
+			"name": strings.Join(selected, FilterDelimiter),
+		},
+	})
+
+	return result
+}
+
 func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
 	res, _, err := client.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, aID, bID).Authorization(token).Execute()
 	if err != nil {
 		log.Debug(err)
 		return "", err
 	}
-	log.Debug(*res.Status)
+	log.WithField("appliance", aID).WithField("current state", res.GetStatus()).Debug("Waiting for backup to reach done state")
 
 	return *res.Status, nil
 }

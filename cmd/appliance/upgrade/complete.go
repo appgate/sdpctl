@@ -118,7 +118,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		if err := appliancepkg.PrepareBackup(&bOpts); err != nil {
 			return err
 		}
-		backupMap, err := appliancepkg.PerformBackup(cmd, &bOpts)
+		backupMap, err := appliancepkg.PerformBackup(cmd, args, &bOpts)
 		if err != nil {
 			return err
 		}

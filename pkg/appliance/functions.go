@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -20,6 +21,7 @@ const (
 	FunctionConnector    = "connector"
 	FunctionLogServer    = "logserver"
 	FunctionLogForwarder = "logforwarder"
+	FilterDelimiter      = "&"
 )
 
 // GroupByFunctions group appliances by function
@@ -203,6 +205,15 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 	)
 }
 
+func FindCurrentController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
+	for _, a := range appliances {
+		if a.GetHostname() == hostname {
+			return &a, nil
+		}
+	}
+	return nil, errors.New("No host controller found")
+}
+
 // AutoscalingGateways return the template appliance and all gateways
 func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []openapi.Appliance) {
 	autoscalePrefix := "Autoscaling Instance"
@@ -258,17 +269,23 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 		for k, s := range filter {
 			switch k {
 			case "name":
-				regex := regexp.MustCompile(s)
-				if regex.MatchString(a.GetName()) {
-					appendUnique(a)
+				nameList := strings.Split(s, FilterDelimiter)
+				for _, name := range nameList {
+					regex := regexp.MustCompile(name)
+					if regex.MatchString(a.GetName()) {
+						appendUnique(a)
+					}
 				}
 			case "id":
-				regex := regexp.MustCompile(s)
-				if regex.MatchString(a.GetId()) {
-					appendUnique(a)
+				ids := strings.Split(s, FilterDelimiter)
+				for _, id := range ids {
+					regex := regexp.MustCompile(id)
+					if regex.MatchString(a.GetId()) {
+						appendUnique(a)
+					}
 				}
 			case "tags", "tag":
-				tagSlice := strings.Split(s, ",")
+				tagSlice := strings.Split(s, FilterDelimiter)
 				appTags := a.GetTags()
 				for _, t := range tagSlice {
 					regex := regexp.MustCompile(t)
@@ -279,16 +296,22 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					}
 				}
 			case "version":
-				regex := regexp.MustCompile(s)
-				version := a.GetVersion()
-				versionString := fmt.Sprintf("%d", version)
-				if regex.MatchString(versionString) {
-					appendUnique(a)
+				vList := strings.Split(s, FilterDelimiter)
+				for _, v := range vList {
+					regex := regexp.MustCompile(v)
+					version := a.GetVersion()
+					versionString := fmt.Sprintf("%d", version)
+					if regex.MatchString(versionString) {
+						appendUnique(a)
+					}
 				}
 			case "hostname", "host":
-				regex := regexp.MustCompile(s)
-				if regex.MatchString(a.GetHostname()) {
-					appendUnique(a)
+				hostList := strings.Split(s, FilterDelimiter)
+				for _, host := range hostList {
+					regex := regexp.MustCompile(host)
+					if regex.MatchString(a.GetHostname()) {
+						appendUnique(a)
+					}
 				}
 			case "active", "activated":
 				b, err := strconv.ParseBool(s)
@@ -302,13 +325,19 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					appendUnique(a)
 				}
 			case "site", "site-id":
-				regex := regexp.MustCompile(s)
-				if regex.MatchString(a.GetSite()) {
-					appendUnique(a)
+				siteList := strings.Split(s, FilterDelimiter)
+				for _, site := range siteList {
+					regex := regexp.MustCompile(site)
+					if regex.MatchString(a.GetSite()) {
+						appendUnique(a)
+					}
 				}
 			case "function", "roles", "role":
-				if functions := GetActiveFunctions(a); util.InSlice(s, functions) {
-					appendUnique(a)
+				roleList := strings.Split(s, FilterDelimiter)
+				for _, role := range roleList {
+					if functions := GetActiveFunctions(a); util.InSlice(role, functions) {
+						appendUnique(a)
+					}
 				}
 			default:
 				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring.", k)
