@@ -291,7 +291,7 @@ func getBackupState(ctx context.Context, client *openapi.APIClient, token string
 		log.Debug(err)
 		return "", err
 	}
-	log.WithField("appliance", aID).WithField("current state", *res.Status).Debug("Waiting for backup to reach done state")
+	log.WithField("appliance", aID).WithField("current state", res.GetStatus()).Debug("Waiting for backup to reach done state")
 
 	return *res.Status, nil
 }
