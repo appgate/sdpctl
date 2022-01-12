@@ -5,6 +5,7 @@
 ---
 Appgatectl is a command line tool for managing your Appgate SDP collective.
 
+---
 ## Installation
 
 ### Linux
@@ -26,6 +27,7 @@ Ideally, you should install it somewhere in your PATH for easy use. /usr/local/b
 ### Windows
 
 
+---
 ## Usage
 
 ### Initial setup
@@ -58,3 +60,33 @@ On successful authentication, a token is retrieved and stored in the appgatectl 
 ```bash
 $ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login --remember-me
 ```
+
+Once
+
+### Backing up appliances
+For backing up appliances, you can use the `appgatectl appliance backup` command. Using the backup command will send a backup request to the selected appliances and result in a backup file being downloaded for each backed up appliance.
+
+Using the backup command requires the backup API on the appliance to be enabled. If the backup API is disabled, you can also enable it by running this command and set a password for the backup API:
+```bash
+$ appgatectl appliance backup api
+```
+
+Using the backup command without any arguments or flags will prompt for what appliances to backup.
+```bash
+$ appgatectl appliance backup
+? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
+> [ ]  controller2-site1
+  [ ]  controller-site1
+  [ ]  gateway-site1
+```
+
+You can also specify what to backup by using one or more appliance names as arguments to the backup command:
+```bash
+# Will backup controller-site1
+$ appgatectl appliance backup controller-site1
+
+# Will backup controller-site1 and gateway-site1
+$ appgatectl appliance backup controller-site1 gateway-site1
+```
+
+### Upgrading appliances
