@@ -14,7 +14,11 @@ Download the latest [debian package](https://github.com/appgate/appgatectl/relea
 
 **Red Hat/Fedora:**
 
+**Binary (Cross-platform)**
 
+Download the appropriate version for your platform from appgatectl [releases](https://github.com/appgate/appgatectl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
+
+Ideally, you should install it somewhere in your PATH for easy use. /usr/local/bin is the most probable location.
 **Others:**
 
 
