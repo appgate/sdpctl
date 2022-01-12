@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -9,12 +8,11 @@ import (
 	"strings"
 
 	"github.com/appgate/appgatectl/cmd/token"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 
 	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
 	cfgcmd "github.com/appgate/appgatectl/cmd/configure"
-	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/auth"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/util"
@@ -25,7 +23,6 @@ import (
 
 var (
 	version       string = "dev"
-	cfgFile       string
 	commit        string
 	buildDate     string
 	versionOutput string = fmt.Sprintf(`%s
@@ -35,25 +32,19 @@ build date: %s`, version, commit, buildDate)
 
 func initConfig() {
 	dir := configuration.ConfigDir()
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			err := os.Mkdir(dir, os.ModePerm)
-			if err != nil {
-				fmt.Printf("Can't create config dir: %s %s\n", dir, err)
-				os.Exit(1)
-			}
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			fmt.Printf("Can't create config dir: %s %s\n", dir, err)
+			os.Exit(1)
 		}
-		viper.AddConfigPath(dir)
-		viper.SetEnvPrefix("APPGATECTL")
-		viper.AutomaticEnv()
-		viper.SetConfigType("json")
-		viper.SafeWriteConfig()
-		viper.SetConfigName("config")
 	}
-
+	viper.AddConfigPath(dir)
+	viper.SafeWriteConfig()
+	viper.SetConfigName("config")
+	viper.SetEnvPrefix("APPGATECTL")
+	viper.AutomaticEnv()
+	viper.SetConfigType("json")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Its OK if we can't the file, fallback to arguments and/or environment variables
@@ -85,7 +76,6 @@ func NewCmdRoot() *cobra.Command {
 	viper.SetDefault("provider", "local")
 
 	pFlags := rootCmd.PersistentFlags()
-	pFlags.StringVarP(&cfgFile, "config", "c", "", "config file")
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
@@ -189,38 +179,15 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		})
 		log.SetOutput(f.IOOutWriter)
 
-		// if username and pasword isset as enviornment, automatically try to login and get the token
-		username := util.Getenv("APPGATECTL_USERNAME", "")
-		password := util.Getenv("APPGATECTL_PASSWORD", "")
-		if len(username) > 0 && len(password) > 0 {
-			log.Debug("Detected environment variables APPGATECTL_USERNAME and APPGATECTL_PASSWORD, automatically login.")
-			client, err := f.APIClient(cfg)
-			if err != nil {
+		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
+			if err := auth.Login(f, false, false); err != nil {
 				fmt.Fprintln(os.Stderr, "appgatectl authentication err")
 				fmt.Fprintln(os.Stderr)
 				fmt.Fprintln(os.Stderr, err)
 				return ErrExitAuth
 			}
-
-			loginOpts := openapi.LoginRequest{
-				ProviderName: cfg.Provider,
-				Username:     openapi.PtrString(username),
-				Password:     openapi.PtrString(password),
-				DeviceId:     configuration.DefaultDeviceID(),
-			}
-
-			loginResponse, response, err := client.LoginApi.LoginPost(context.Background()).LoginRequest(loginOpts).Execute()
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "appgatectl authentication err")
-				fmt.Fprintln(os.Stderr)
-				fmt.Fprintln(os.Stderr, api.HTTPErrorResponse(response, err))
-				return ErrExitAuth
-			}
-			cfg.BearerToken = loginResponse.GetToken()
-			cfg.ExpiresAt = loginResponse.Expires.String()
-			viper.Set("expires_at", cfg.ExpiresAt)
-			viper.Set("bearer", cfg.BearerToken)
 		}
+
 		// require that the user is authenticated before running most commands
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			fmt.Fprintln(os.Stderr, "appgatectl err")

@@ -27,25 +27,22 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config     *configuration.Config
-	Out        io.Writer
-	Appliance  func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token      string
-	Timeout    int
-	url        string
-	provider   string
-	debug      bool
-	insecure   bool
-	image      string
-	DevKeyring bool
+	Config        *configuration.Config
+	Out           io.Writer
+	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug         bool
+	insecure      bool
+	NoInteractive bool
+	image         string
+	DevKeyring    bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
+	f.Config.Timeout = 300
 	opts := &prepareUpgradeOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
-		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 	}
@@ -62,8 +59,7 @@ the signature verified as well as any other preconditions applicable at this poi
 
 	flags := prepareCmd.Flags()
 	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
-	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
+	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
 	flags.StringVarP(&opts.image, "image", "", "", "image path")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
@@ -75,6 +71,8 @@ const (
 	fileReady      = "Ready"
 	fileFailed     = "Failed"
 )
+
+var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure login")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	if appliancepkg.IsOnAppliance() {
@@ -119,7 +117,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	if appliancepkg.HasLowDiskSpace(initialStats.GetData()) {
+	if appliancepkg.HasLowDiskSpace(initialStats.GetData()) && !opts.NoInteractive {
 		msg, err := appliancepkg.ShowDiskSpaceWarningMessage(initialStats.GetData())
 		if err != nil {
 			return err
@@ -129,7 +127,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-
 	autoScalingWarning := false
 	if targetVersion != nil {
 		constraints, _ := version.NewConstraint(">= 5.5.0")
@@ -139,8 +136,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	} else if opts.Config.Version == 15 {
 		autoScalingWarning = true
 	}
-
-	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 {
+	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 && !opts.NoInteractive {
 		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
 		if err != nil {
 			return err
@@ -153,7 +149,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	groups := appliancepkg.GroupByFunctions(appliances)
 	targetPeers := append(groups[appliancepkg.FunctionController], groups[appliancepkg.FunctionLogServer]...)
 	peerAppliances := appliancepkg.WithAdminOnPeerInterface(targetPeers)
-	if len(peerAppliances) > 0 {
+	if len(peerAppliances) > 0 && !opts.NoInteractive {
 		msg, err := appliancepkg.ShowPeerInterfaceWarningMessage(peerAppliances)
 		if err != nil {
 			return err
@@ -163,7 +159,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-
 	host, err := opts.Config.GetHost()
 	if err != nil {
 		return err
@@ -177,17 +172,25 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
-	if err != nil {
-		return err
+	// if we have an existing config with the primary controller version, check if we need to re-authetnicate
+	// before we continue with the upgrade to update the peer API version.
+	if len(opts.Config.PrimaryControllerVersion) > 0 {
+		preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+		if err != nil {
+			return fmt.Errorf("%s %w", ErrPrimaryControllerVersionErr, err)
+		}
+		if !preV.Equal(currentPrimaryControllerVersion) {
+			return ErrPrimaryControllerVersionErr
+		}
 	}
-	if !preV.Equal(currentPrimaryControllerVersion) {
-		return errors.New("version mismatch: run appgatectl configure login")
-	}
+
 	fmt.Fprintf(opts.Out, "\n%s\n", fmt.Sprintf(appliancepkg.BackupInstructions, primaryController.Name, appliancepkg.HelpManualURL))
-	if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
-		return err
+	if !opts.NoInteractive {
+		if err := prompt.AskConfirmation("Have you completed the Controller backup or snapshot?"); err != nil {
+			return err
+		}
 	}
+
 	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	if targetVersion != nil {
 		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
@@ -197,8 +200,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	fmt.Fprintf(opts.Out, "\n%s\n", msg)
-	if err := prompt.AskConfirmation(); err != nil {
-		return err
+	if !opts.NoInteractive {
+		if err := prompt.AskConfirmation(); err != nil {
+			return err
+		}
 	}
 
 	// Step 1

@@ -25,14 +25,11 @@ type upgradeCompleteOptions struct {
 	Config            *configuration.Config
 	Out               io.Writer
 	Appliance         func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Token             string
-	Timeout           int
-	url               string
-	provider          string
 	debug             bool
 	backup            bool
 	backupDestination string
 	backupAll         string
+	NoInteractive     bool
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -40,7 +37,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	opts := upgradeCompleteOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
-		Timeout:   10,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 	}
@@ -56,8 +52,7 @@ and perform a reboot to make the second partition the primary.`,
 	}
 
 	flags := upgradeCompleteCmd.Flags()
-	flags.StringVarP(&opts.url, "url", "u", f.Config.URL, "appgate sdp controller API URL")
-	flags.StringVarP(&opts.provider, "provider", "", "local", "identity provider")
+	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 
@@ -73,7 +68,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	// if backup is default value (false) and user hasn't explicitly stated the flag, ask if user wants to backup
 	flagIsChanged := cmd.Flags().Changed("backup")
-	if !opts.backup && !flagIsChanged {
+	if !opts.backup && !flagIsChanged && !opts.NoInteractive {
 		performBackup := &survey.Confirm{
 			Message: "Do you want to backup before proceeding?",
 			Default: false,
@@ -166,10 +161,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		fmt.Fprintf(opts.Out, "\n%s\n", msg)
-		if err := prompt.AskConfirmation(); err != nil {
-			return err
+		if !opts.NoInteractive {
+			if err := prompt.AskConfirmation(); err != nil {
+				return err
+			}
 		}
 	}
+
 	primaryController, err := appliancepkg.FindPrimaryController(appliances, host)
 	if err != nil {
 		return err
@@ -178,13 +176,18 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
-	if err != nil {
-		return err
+	// if we have an existing config with the primary controller version, check if we need to re-authetnicate
+	// before we continue with the upgrade to update the peer API version.
+	if len(opts.Config.PrimaryControllerVersion) > 0 {
+		preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
+		if err != nil {
+			return err
+		}
+		if !preV.Equal(currentPrimaryControllerVersion) {
+			return fmt.Errorf("version mismatch: run appgatectl configure login")
+		}
 	}
-	if !preV.Equal(currentPrimaryControllerVersion) {
-		return fmt.Errorf("version mismatch: run appgatectl configure login")
-	}
+
 	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
 	// We will exclude the primary controller from the others controllers
 	// since the primary controller is a special case during the upgrade process.

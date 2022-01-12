@@ -13,7 +13,6 @@ import (
 
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -36,6 +35,7 @@ type Config struct {
 	DeviceID                 string `mapstructure:"device_id"`
 	PemFilePath              string `mapstructure:"pem_filepath"`
 	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
+	Timeout                  int    // HTTP timeout, not supported in the config file.
 }
 
 type Credentials struct {
@@ -111,11 +111,6 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 }
 
 func (c *Config) CheckAuth() bool {
-	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
-	d, err := time.Parse(layout, c.ExpiresAt)
-	if err != nil {
-		return false
-	}
 	if len(c.BearerToken) < 1 {
 		return false
 	}
@@ -123,6 +118,15 @@ func (c *Config) CheckAuth() bool {
 		return false
 	}
 	if len(c.Provider) < 1 {
+		return false
+	}
+	return c.ExpiredAtValid()
+}
+
+func (c *Config) ExpiredAtValid() bool {
+	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
+	d, err := time.Parse(layout, c.ExpiresAt)
+	if err != nil {
 		return false
 	}
 	t1 := time.Now()
@@ -192,7 +196,7 @@ func (c *Config) StoreCredentials(crd *Credentials) error {
 	if err != nil {
 		return err
 	}
-	log.WithField("path", c.CredentialsFile).Info("Stored credentials")
+
 	viper.Set("credentials_file", c.CredentialsFile)
 	err = viper.WriteConfig()
 	if err != nil {
@@ -203,6 +207,9 @@ func (c *Config) StoreCredentials(crd *Credentials) error {
 }
 
 func (c *Config) GetHost() (string, error) {
+	if len(c.URL) == 0 {
+		return "", errors.New("no valid address set, run 'appgatectl configure' or set APPGATECTL_URL")
+	}
 	url, err := url.Parse(c.URL)
 	if err != nil {
 		return "", err
