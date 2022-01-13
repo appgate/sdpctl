@@ -28,8 +28,8 @@ checksum:
 release:
   draft: true
   prerelease: auto
-# signs:
-#   - artifacts: checksum
+signs:
+  - artifacts: checksum
 nfpms:
   - homepage: https://www.appgate.com
     maintainer: Appgate Cybersecurity, Inc <appgatesdp.support@appgate.com>
@@ -40,6 +40,7 @@ nfpms:
 snapshot:
   name_template: "v{{ incpatch .Version }}"
 changelog:
+  use: github-native
   sort: asc
   filters:
     exclude:
