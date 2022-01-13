@@ -47,7 +47,7 @@ $ appgatectl configure login
 ? Username: <your username>
 ? Password: <your password>
 
-# alternatively you can skip the prompt by setting the username and password as environment varibles
+# alternatively you can skip the prompt by setting the username and password as environment variables
 $ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login
 
 # setting only one of the environment variables will make the login command prompt for the missing information. For example:
