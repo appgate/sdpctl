@@ -1,36 +1,33 @@
-# Appgatectl
-
 <img src="./appgate_sdp_logo.svg" width="400">
 
 ---
+# appgatectl documentation
 Appgatectl is a command line tool for managing your Appgate SDP collective.
 
 ---
-## Installation
+# Installation
 
-### Linux
+## Linux
 **Debian based distributions:**
-
 Download the latest [debian package](https://github.com/appgate/appgatectl/releases/latest) from the releases.
 
 **Red Hat/Fedora:**
 
-**Binary (Cross-platform)**
 
+**Binary (Cross-platform)**
 Download the appropriate version for your platform from appgatectl [releases](https://github.com/appgate/appgatectl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
 
 Ideally, you should install it somewhere in your PATH for easy use. /usr/local/bin is the most probable location.
-**Others:**
+
+## MacOS
 
 
-
-### Windows
+## Windows
 
 
 ---
-## Usage
-
-### Initial setup
+# Usage
+## Initial setup
 For using appgatectl, you first need to configure and authenticate to the Appgate SDP collective. You'll need the url for the controller you'd like to connect to, as well as a username and password (currently only local provider is supported). Configure appgatectl to connect to your Appgate SDP collective by running `appgatectl configure` and responding to the prompts:
 ```shell
 $ appgatectl configure
@@ -60,7 +57,16 @@ On successful authentication, a token is retrieved and stored in the appgatectl 
 ```bash
 $ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login --remember-me
 ```
+---
+## The `appliance` command
+The `appliance` command is the base command in `appgatectl` for managing appliance resource specific tasks, such as backing up appliances or upgrading them. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
 
+Available actions for the appliance command:
+- [list](#listing-appliances)
+- [backup](#backing-up-appliances)
+- [upgrade](#upgrading-appliances)
+
+---
 ### Listing appliances
 You can get a list of all appliances by using the `list` command.
 ```bash
@@ -72,6 +78,7 @@ controller-site1    controller.yoursite.com   Default Site  true
 gateway-site1       gateway.yoursite.com      Default Site  true
 ```
 
+---
 ### Backing up appliances
 For backing up appliances, you can use the `appgatectl appliance backup` command. Using the backup command will send a backup request to the selected appliances and result in a backup file being downloaded for each backed up appliance.
 
@@ -111,4 +118,13 @@ The backups will be downloaded to a provided destination on your filesystem. The
 $ appgatectl appliance backup --destination /your/custom/backup/destination
 ```
 
+---
 ### Upgrading appliances
+
+
+---
+## The `token` command
+
+
+---
+## Global flags
