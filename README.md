@@ -47,7 +47,7 @@ $ appgatectl configure login
 ? Username: <your username>
 ? Password: <your password>
 
-# alternatively you can skip the prompt by setting the username and password as environment variables
+# skip the prompting by setting the username and password as environment varibles. This is only supported when using local provider for authentication.
 $ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login
 
 # setting only one of the environment variables will make the login command prompt for the missing information. For example:
@@ -61,7 +61,16 @@ On successful authentication, a token is retrieved and stored in the appgatectl 
 $ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login --remember-me
 ```
 
-Once
+### Listing appliances
+You can get a list of all appliances by using the `list` command.
+```bash
+$ appgatectl appliance list
+Name                Hostname                  Site          Activated
+----                --------                  ----          ---------
+controller2-site1   controller2.yoursite.com  Default Site  true
+controller-site1    controller.yoursite.com   Default Site  true
+gateway-site1       gateway.yoursite.com      Default Site  true
+```
 
 ### Backing up appliances
 For backing up appliances, you can use the `appgatectl appliance backup` command. Using the backup command will send a backup request to the selected appliances and result in a backup file being downloaded for each backed up appliance.
@@ -87,6 +96,19 @@ $ appgatectl appliance backup controller-site1
 
 # Will backup controller-site1 and gateway-site1
 $ appgatectl appliance backup controller-site1 gateway-site1
+```
+
+There are also flags to help select what appliances to backup. The `--primary` flag will find the primary controller in the collective and perform a backup of that. Similarly, the `--current` flag performs a backup of the appliance which appgatectl is currently connected to. The `--all` flag will perform a backup of all appliances in the collective.
+
+You can also select appliances to backup using the global `--filter` flag and the backup will be performed only on the appliances that match the filter query. On the opposite, if you'd want to exclude some specific appliances from the backup, you can use the `--exclude` flag. The exclude flag uses the same syntax as the global filter flag. When both the `--filter` and `--exclude` flags are used combined, the exclusion will apply after the filtering. In other words, the exclusion will apply to the list of appliances that matches the filtering rules.
+```bash
+# given that our list of appliances is the same as provided in the list command example, this command will only backup the controller-site1 appliance
+$ appgatectl appliance backup --filter function=controller --exclude name=controller2
+```
+
+The backups will be downloaded to a provided destination on your filesystem. The default destination is in the `Download` folder of the user home directory, eg. `$HOME/Downloads/appgate/backups`. You can define a custom destination for downloading the backups by providing the `--destination` flag when running the backup command. The user executing the script will need permission to write to that folder.
+```bash
+$ appgatectl appliance backup --destination /your/custom/backup/destination
 ```
 
 ### Upgrading appliances
