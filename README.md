@@ -120,6 +120,13 @@ $ appgatectl appliance backup --destination /your/custom/backup/destination
 
 ---
 ### Upgrading appliances
+You can use `appgatectl` for upgrading your Appgate SDP appliances using the `upgrade` action command. Upgrading is a two step process where you first need to upload an image of the newer version which you want to upgrade to. You can find all supported Appgate SDP images available on [Appgate SDP support page](https://www.appgate.com/support/software-defined-perimeter-support).
+
+Once you have an image to upgrade your appliances with, you upload it using the `upgrade prepare` command. The `prepare` command has a mandatory `--image` flag where you will specify the path to the image you want to upload.
+```bash
+$ appgatectl appliance upgrade prepare --image /path/to/image.img.zip
+```
+
 
 
 ---
