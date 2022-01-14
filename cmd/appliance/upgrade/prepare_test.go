@@ -54,7 +54,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
 				s.StubOne(true) // peer_warning message
-				s.StubOne(true) // backup confirmation
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -125,7 +124,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
 				s.StubOne(true) // peer_warning message
-				s.StubOne(true) // backup confirmation
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -199,7 +197,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
-				s.StubOne(true)  // disk usage
 				s.StubOne(false) // peer_warning message
 			},
 			httpStubs: []httpmock.Stub{
@@ -216,34 +213,12 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Cancelled by user`),
 		},
 		{
-			name: "no backup confirmation",
-			cli:  "prepare --image './testdata/img.zip'",
-			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(true)  // auto-scaling warning
-				s.StubOne(true)  // disk usage
-				s.StubOne(true)  // peer_warning message
-				s.StubOne(false) // backup confirmation
-			},
-			httpStubs: []httpmock.Stub{
-				{
-					URL:       "/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
-				},
-				{
-					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
-				},
-			},
-			wantErr: true,
-		},
-		{
 			name: "no prepare confirmation",
 			cli:  "prepare --image './testdata/img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(true)  // disk usage
 				s.StubOne(true)  // peer_warning message
-				s.StubOne(true)  // backup confirmation
 				s.StubOne(false) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
