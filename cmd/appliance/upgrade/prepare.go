@@ -1,6 +1,7 @@
 package upgrade
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"errors"
@@ -87,9 +88,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return fmt.Errorf("Image file not found %q", opts.image)
 	}
 
-	if rg := regexp.MustCompile(`.img.zip$`); !rg.MatchString(opts.image) {
-		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive.")
+	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(opts.image) {
+		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
 	}
+	r, err := zip.OpenReader(opts.image)
+	if err != nil {
+		return errors.New("Image is not a valid zip file")
+	}
+	defer r.Close()
 
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {

@@ -49,7 +49,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 	}{
 		{
 			name: "with existing file",
-			cli:  "prepare --image './testdata/appgate.img.zip'",
+			cli:  "prepare --image './testdata/appgate-5.5.1.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
@@ -70,7 +70,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 				},
 				{
-					URL:       "/files/appgate.img.zip",
+					URL:       "/files/appgate-5.5.1.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
@@ -117,7 +117,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:                "error upgrade status",
-			cli:                 "prepare --image './testdata/appgate.img.zip'",
+			cli:                 "prepare --image './testdata/appgate-5.5.1.img.zip'",
 			upgradeStatusWorker: &errorUpgradeStatus{},
 			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
@@ -140,7 +140,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 				},
 				{
-					URL:       "/files/appgate.img.zip",
+					URL:       "/files/appgate-5.5.1.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
@@ -194,7 +194,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "disagree with peer warning",
-			cli:  "prepare --image './testdata/appgate.img.zip'",
+			cli:  "prepare --image './testdata/appgate-5.5.1.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(false) // peer_warning message
@@ -214,7 +214,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "no prepare confirmation",
-			cli:  "prepare --image './testdata/appgate.img.zip'",
+			cli:  "prepare --image './testdata/appgate-5.5.1.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(true)  // disk usage
