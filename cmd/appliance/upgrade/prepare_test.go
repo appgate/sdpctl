@@ -249,6 +249,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`Image file not found "abc123456"`),
 		},
+		{
+			name: "file mimetype error",
+			cli:  "prepare --image './testdata/appgate.img'",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`Invalid mimetype on image file. The format is expected to be a .img.zip archive.`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
