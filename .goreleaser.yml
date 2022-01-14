@@ -12,6 +12,7 @@ builds:
       - darwin
     goarch:
       - amd64
+    binary: '{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}'
     ldflags:
     - -s -w -X "github.com/appgate/appgatectl/cmd.version={{ .Env.RELEASE_VERSION }}"
     - -X "github.com/appgate/appgatectl/cmd.commit={{ .Commit }}"
