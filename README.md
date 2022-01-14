@@ -61,10 +61,16 @@ $ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl confi
 ## The `appliance` command
 The `appliance` command is the base command in `appgatectl` for managing appliance resource specific tasks, such as backing up appliances or upgrading them. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
 
-Available actions for the appliance command:
+#### Available actions:
 - [list](#listing-appliances)
 - [backup](#backing-up-appliances)
 - [upgrade](#upgrading-appliances)
+
+#### Flags:
+| Flag | Description | Syntax | Default |
+|---|---|---|---|
+| `--filter` | Filter appliances that should be included in the command | syntax description | null |
+| `--exclude` | The opposite of the filter flag, but uses the same syntax | syntax description | null |
 
 ---
 ### Listing appliances
@@ -127,7 +133,10 @@ Once you have an image to upgrade your appliances with, you upload it using the 
 $ appgatectl appliance upgrade prepare --image /path/to/image.img.zip
 ```
 
-
+Once the upload is done, you can complete the upgrade by running `upgrade complete`.
+```bash
+$ appgatectl appliance upgrade complete
+```
 
 ---
 ## The `token` command
