@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sync/atomic"
 	"text/template"
 	"time"
@@ -84,6 +85,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	if ok, err := util.FileExists(opts.image); err != nil || !ok {
 		return fmt.Errorf("Image file not found %q", opts.image)
+	}
+
+	if rg := regexp.MustCompile(`.img.zip$`); !rg.MatchString(opts.image) {
+		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive.")
 	}
 
 	a, err := opts.Appliance(opts.Config)
