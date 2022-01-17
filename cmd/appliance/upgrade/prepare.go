@@ -21,6 +21,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
@@ -60,29 +61,33 @@ the signature verified as well as any other preconditions applicable at this poi
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
 			}
-			// Check if its a valid filename
-			if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(opts.image) {
-				return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
-			}
 			opts.filename = path.Base(opts.image)
+			var errs error
+			// Check if its a valid filename
+			if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(opts.filename) {
+				errs = multierr.Append(errs, errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1"))
+			}
+
 			// allow remote addr for image, such as aws s3 bucket
 			if util.IsValidURL(opts.image) {
 				opts.remoteImage = true
-				return nil
+				return errs
 			}
-
 			// if the image is a local file, make sure its readable
-			if ok, err := util.FileExists(opts.image); err != nil || !ok {
-				return fmt.Errorf("Image file not found %q", opts.image)
-			}
-			// verify if its a zip file only if's a local file.
-			r, err := zip.OpenReader(opts.image)
+			ok, err := util.FileExists(opts.image)
 			if err != nil {
-				return err
+				errs = multierr.Append(errs, err)
 			}
-			defer r.Close()
-
-			return nil
+			if !ok {
+				errs = multierr.Append(errs, fmt.Errorf("Image file not found %q", opts.image))
+			}
+			if ok {
+				_, err := zip.OpenReader(opts.image)
+				if err != nil {
+					errs = multierr.Append(errs, err)
+				}
+			}
+			return errs
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return prepareRun(c, args, opts)
