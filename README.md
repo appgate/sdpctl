@@ -25,6 +25,8 @@ Ideally, you should install it somewhere in your PATH for easy use. /usr/local/b
 ## Windows
 
 
+## Shell completion
+TODO: description
 ---
 # Usage
 ## Initial setup
@@ -65,6 +67,8 @@ The `appliance` command is the base command in `appgatectl` for managing applian
 - [list](#listing-appliances)
 - [backup](#backing-up-appliances)
 - [upgrade](#upgrading-appliances)
+- [metric](#monitoring-appliances)
+- [stats](#monitoring-appliances)
 
 #### Flags:
 | Flag | Description | Syntax | Default |
@@ -166,8 +170,19 @@ At this point, you will be prompted if you want to to do backup before proceedin
 The `upgrade complete` command will run until all appliances that are part of the upgrade reaches the desired state of 'idle'.
 
 ### Monitoring appliances
+There are two commands in `appgatectl` to help monitoring appliances: `metric` and `stats`.
 
+The `stats` command will print out system resource statistics as well as some other useful information on each specific appliance.
+```bash
+$ appgatectl appliance stats
+Name                          Status         Function                      CPU         Memory        Network out/in             Disk        Version
+controller-site1              healthy        log server, controller        0.1%        50.8%         43.2 bps / 48.0 bps        1.4%        5.5.3-27108-release
+gateway-site1                 healthy        gateway                       0.3%        8.1%          43.3 bps / 48.1 bps        0.7%        5.5.2-27039-release
+```
 
+The `stats` command also accepts a `--json` flag, which will print out a more detailed information view in json format.
+
+TODO: Add description for metrics command
 
 ---
 ## The `token` command
