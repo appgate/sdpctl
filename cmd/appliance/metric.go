@@ -111,7 +111,6 @@ func promptForAppliance(opts metricOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	log.Debug(appliances)
 
 	names := []string{}
 	for _, a := range appliances {
