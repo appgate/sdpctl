@@ -122,7 +122,7 @@ func promptForAppliance(opts metricOptions) (string, error) {
 		Options:  names,
 	}
 	selectedIndex := 0
-	survey.AskOne(qs, &selectedIndex)
+	survey.AskOne(qs, &selectedIndex, survey.WithValidator(survey.Required))
 	appliance := appliances[selectedIndex]
 	return appliance.GetId(), nil
 }
