@@ -128,15 +128,39 @@ $ appgatectl appliance backup --destination /your/custom/backup/destination
 ### Upgrading appliances
 You can use `appgatectl` for upgrading your Appgate SDP appliances using the `upgrade` action command. Upgrading is a two step process where you first need to upload an image of the newer version which you want to upgrade to. You can find all supported Appgate SDP images available on [Appgate SDP support page](https://www.appgate.com/support/software-defined-perimeter-support).
 
-Once you have an image to upgrade your appliances with, you upload it using the `upgrade prepare` command. The `prepare` command has a mandatory `--image` flag where you will specify the path to the image you want to upload.
+You can view the current status of an upgrade by running `upgrade status`. If no upgrade is in progress, the upgrade status should be 'idle':
 ```bash
-$ appgatectl appliance upgrade prepare --image /path/to/image.img.zip
+$ appgatectl appliance upgrade status
+ID                                          Name                    Status        Upgrade Status        Details
+04cee88e-64bb-4389-adc0-ad01e752a001        controller-site1        online        idle
+47e9e708-0a9b-484d-b356-0b8f38cb13ec        controller2-site1       online        idle
+15786382-501a-4185-6713-d6a57e8f1448        gateway-site1           online        idle
 ```
 
-Once the upload is done, you can complete the upgrade by running `upgrade complete`.
+Once you have an image to upgrade your appliances with, you upload it using the `upgrade prepare` command. The `prepare` command has a mandatory `--image` flag where you will specify the path to the image you want to upload.
+```bash
+$ appgatectl appliance upgrade prepare --image /path/to/image-5.5.3.img.zip
+```
+> Note: The image path could either be a local file path to a downloaded image or a URL.<br />
+> If the path is a URL, make sure the URL is accessible so that the appliances can download it.
+
+Once the `upgrade prepare` command is completed, the upgrade status of the appliances should now be 'ready' and the 'Details' column should have the filename on the uploaded file:
+```bash
+$ appgatectl appliance upgrade status
+ID                                          Name                    Status        Upgrade Status        Details
+04cee88e-64bb-4389-adc0-ad01e752a001        controller-site1        online        ready                 image-5.5.3.img.zip
+47e9e708-0a9b-484d-b356-0b8f38cb13ec        controller2-site1       online        ready                 image-5.5.3.img.zip
+15786382-501a-4185-6713-d6a57e8f1448        gateway-site1           online        ready                 image-5.5.3.img.zip
+```
+At this point, you can choose to abort the upgrade using the `upgrade cancel` command. Running the `cancel` command will remove the uploaded upgrade image and return the appliances to the 'idle' state.
+
+If you wish to continue upgrading, the upgrade is completed using the `upgrade complete` command.
 ```bash
 $ appgatectl appliance upgrade complete
 ```
+At this point, you will be prompted if you want to to do backup before proceeding to complete the upgrade. If you want more backup option than provided in the prompt, it's recommended to use the standalone `appliance backup` command, since more options are available there.
+
+The `upgrade complete` command will run until all appliances that are part of the upgrade reaches the desired state of 'idle'.
 
 ---
 ## The `token` command
