@@ -46,19 +46,20 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-			} else {
-				// Validate UUID if the argument is applied
-				uuidArg := args[0]
-				_, err := uuid.Parse(uuidArg)
-				if err != nil {
-					log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-					uuidArg, err = promptForAppliance(opts)
-					if err != nil {
-						return err
-					}
-				}
-				opts.applianceID = uuidArg
+				return nil
 			}
+
+			// Validate UUID if the argument is applied
+			uuidArg := args[0]
+			_, err = uuid.Parse(uuidArg)
+			if err != nil {
+				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
+				uuidArg, err = promptForAppliance(opts)
+				if err != nil {
+					return err
+				}
+			}
+			opts.applianceID = uuidArg
 
 			return nil
 		},
@@ -106,8 +107,7 @@ func promptForAppliance(opts metricOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ctx := context.Background()
-	appliances, err := a.List(ctx, nil)
+	appliances, err := a.List(context.Background(), nil)
 	if err != nil {
 		return "", err
 	}
