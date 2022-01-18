@@ -17,6 +17,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "appliance",
 		Short:            "interact with appliances",
+		Aliases:          []string{"app", "a"},
 		TraverseChildren: true,
 	}
 	pFlags := cmd.PersistentFlags()

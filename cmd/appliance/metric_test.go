@@ -59,7 +59,7 @@ audit_event{collective_id="8dda5969-e9de-4d0f-b4e8-38954c7c0507", appliance_id="
 		return a, nil
 	}
 	cmd := NewMetricCmd(f)
-	cmd.SetArgs([]string{"--appliance-id", "0a11e7ba-4d18-4be1-bdc1-083be1411d7e"})
+	cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -123,7 +123,7 @@ func TestMetricCommandSpecificMetric(t *testing.T) {
 		return a, nil
 	}
 	cmd := NewMetricCmd(f)
-	cmd.SetArgs([]string{"--appliance-id", "0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "--metric-name", "vpn_total_sessions"})
+	cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "--metric-name", "vpn_total_sessions"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 

@@ -55,9 +55,9 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 	}
 
 	p := util.NewPrinter(opts.Out)
-	p.AddHeader("Name", "Hostname", "Site", "Activated")
+	p.AddHeader("Name", "ID", "Hostname", "Site", "Activated")
 	for _, a := range allAppliances {
-		p.AddLine(a.GetName(), a.GetHostname(), a.GetSiteName(), a.GetActivated())
+		p.AddLine(a.GetName(), a.GetId(), a.GetHostname(), a.GetSiteName(), a.GetActivated())
 	}
 	p.Print()
 

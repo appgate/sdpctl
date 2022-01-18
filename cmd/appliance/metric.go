@@ -2,19 +2,23 @@ package appliance
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/api"
+	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 type metricOptions struct {
 	Config      *configuration.Config
+	Appliance   func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	Out         io.Writer
 	APIClient   func(c *configuration.Config) (*openapi.APIClient, error)
 	debug       bool
@@ -29,14 +33,34 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		APIClient: f.APIClient,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		Appliance: f.Appliance,
 	}
 	var cmd = &cobra.Command{
-		Use:   "metric [<appliance-id>]",
-		Short: `Get all the Prometheus metrics for the given Appliance`,
+		Use:     "metric [<appliance-id>]",
+		Short:   `Get all the Prometheus metrics for the given Appliance`,
+		Aliases: []string{"metrics"},
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(opts.applianceID) < 1 {
-				return errors.New("--appliance-id is mandatory.")
+			var err error
+			if len(args) != 1 {
+				opts.applianceID, err = promptForAppliance(opts)
+				if err != nil {
+					return err
+				}
+				return nil
 			}
+
+			// Validate UUID if the argument is applied
+			uuidArg := args[0]
+			_, err = uuid.Parse(uuidArg)
+			if err != nil {
+				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
+				uuidArg, err = promptForAppliance(opts)
+				if err != nil {
+					return err
+				}
+			}
+			opts.applianceID = uuidArg
+
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -44,7 +68,6 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.applianceID, "appliance-id", "", "appliance UUID")
 	cmd.Flags().StringVar(&opts.metric, "metric-name", "", "Metric name")
 
 	return cmd
@@ -76,4 +99,39 @@ func metricRun(cmd *cobra.Command, args []string, opts *metricOptions) error {
 
 	fmt.Fprintln(opts.Out, data)
 	return nil
+}
+
+func promptForAppliance(opts metricOptions) (string, error) {
+	// Command accepts only one argument
+	a, err := opts.Appliance(opts.Config)
+	if err != nil {
+		return "", err
+	}
+	ctx := context.Background()
+	appliances, err := a.List(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	stats, _, err := a.Stats(ctx)
+	if err != nil {
+		return "", err
+	}
+	appliances, _, err = appliancepkg.FilterAvailable(appliances, stats.GetData())
+	if err != nil {
+		return "", err
+	}
+
+	names := []string{}
+	for _, a := range appliances {
+		names = append(names, a.GetName())
+	}
+	qs := &survey.Select{
+		PageSize: len(appliances),
+		Message:  "select appliance:",
+		Options:  names,
+	}
+	selectedIndex := 0
+	survey.AskOne(qs, &selectedIndex, survey.WithValidator(survey.Required))
+	appliance := appliances[selectedIndex]
+	return appliance.GetId(), nil
 }
