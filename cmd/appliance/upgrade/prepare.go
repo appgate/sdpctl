@@ -97,7 +97,7 @@ the signature verified as well as any other preconditions applicable at this poi
 	flags := prepareCmd.Flags()
 	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
-	flags.StringVarP(&opts.image, "image", "", "", "image path")
+	flags.StringVarP(&opts.image, "image", "", "", "Upgrade image file or URL")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
 	return prepareCmd
