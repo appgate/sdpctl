@@ -107,7 +107,16 @@ func promptForAppliance(opts metricOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	appliances, err := a.List(context.Background(), nil)
+	ctx := context.Background()
+	appliances, err := a.List(ctx, nil)
+	if err != nil {
+		return "", err
+	}
+	stats, _, err := a.Stats(ctx)
+	if err != nil {
+		return "", err
+	}
+	appliances, _, err = appliancepkg.FilterAvailable(appliances, stats.GetData())
 	if err != nil {
 		return "", err
 	}
