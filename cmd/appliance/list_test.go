@@ -176,9 +176,9 @@ func TestApplianceFiltering(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := `Name                                                   Hostname           Site          Activated
-----                                                   --------           ----          ---------
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1  controller.devops  Default Site  true
+	want := `Name                                                   ID                                    Hostname           Site          Activated
+----                                                   --                                    --------           ----          ---------
+controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1  4c07bc67-57ea-42dd-b702-c2d6c45419fc  controller.devops  Default Site  true
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
