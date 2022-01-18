@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
 	"os"
 	"sort"
 
@@ -60,6 +61,20 @@ func InBetween(i, min, max int) bool {
 func IsJSON(str string) bool {
 	var js json.RawMessage
 	return json.Unmarshal([]byte(str), &js) == nil
+}
+
+// IsValidURL tests a string to determine if it is a well-structured url or not.
+func IsValidURL(addr string) bool {
+	_, err := url.ParseRequestURI(addr)
+	if err != nil {
+		return false
+	}
+
+	u, err := url.Parse(addr)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
+	}
+	return true
 }
 
 func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {

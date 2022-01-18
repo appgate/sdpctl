@@ -9,7 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"sync/atomic"
 	"text/template"
@@ -21,6 +21,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
@@ -37,6 +38,8 @@ type prepareUpgradeOptions struct {
 	NoInteractive bool
 	image         string
 	DevKeyring    bool
+	remoteImage   bool
+	filename      string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -54,6 +57,38 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Long: `Prepare an upgrade but do NOT install it.
 This means the upgrade file will be downloaded/uploaded to all the appliances,
 the signature verified as well as any other preconditions applicable at this point.`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(opts.image) < 1 {
+				return errors.New("--image is mandatory")
+			}
+			opts.filename = path.Base(opts.image)
+			var errs error
+			// Check if its a valid filename
+			if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(opts.filename) {
+				errs = multierr.Append(errs, errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1"))
+			}
+
+			// allow remote addr for image, such as aws s3 bucket
+			if util.IsValidURL(opts.image) {
+				opts.remoteImage = true
+				return errs
+			}
+			// if the image is a local file, make sure its readable
+			ok, err := util.FileExists(opts.image)
+			if err != nil {
+				errs = multierr.Append(errs, err)
+			}
+			if !ok {
+				errs = multierr.Append(errs, fmt.Errorf("Image file not found %q", opts.image))
+			}
+			if ok {
+				_, err := zip.OpenReader(opts.image)
+				if err != nil {
+					errs = multierr.Append(errs, err)
+				}
+			}
+			return errs
+		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return prepareRun(c, args, opts)
 		},
@@ -62,7 +97,7 @@ the signature verified as well as any other preconditions applicable at this poi
 	flags := prepareCmd.Flags()
 	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
-	flags.StringVarP(&opts.image, "image", "", "", "image path")
+	flags.StringVarP(&opts.image, "image", "", "", "Upgrade image file or URL")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
 	return prepareCmd
@@ -80,44 +115,22 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if appliancepkg.IsOnAppliance() {
 		return appliancepkg.ErrExecutedOnAppliance
 	}
-	if opts.image == "" {
-		return errors.New("Image is mandatory")
-	}
-
-	if ok, err := util.FileExists(opts.image); err != nil || !ok {
-		return fmt.Errorf("Image file not found %q", opts.image)
-	}
-
-	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(opts.image) {
-		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
-	}
-	r, err := zip.OpenReader(opts.image)
-	if err != nil {
-		return errors.New("Image is not a valid zip file")
-	}
-	defer r.Close()
 
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
+	defer cancel()
 	if a.UpgradeStatusWorker == nil {
 		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
 			Appliance: a,
 		}
 	}
-	f, err := os.Open(opts.image)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
-	defer cancel()
 
-	filename := filepath.Base(f.Name())
-	targetVersion, err := appliancepkg.GuessVersion(filename)
+	targetVersion, err := appliancepkg.GuessVersion(opts.filename)
 	if err != nil {
-		log.Debugf("Could not guess target version based on the image file name %q", filename)
+		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
 	}
 	filter := util.ParseFilteringFlags(cmd.Flags())
 	appliances, err := a.List(ctx, filter)
@@ -199,7 +212,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if targetVersion != nil {
 		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
 	}
-	msg, err := showPrepareUpgradeMessage(f.Name(), appliances, initialStats.GetData())
+	msg, err := showPrepareUpgradeMessage(opts.filename, appliances, initialStats.GetData())
 	if err != nil {
 		return err
 	}
@@ -209,10 +222,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-
 	// Step 1
 	shouldUpload := false
-	existingFile, err := a.FileStatus(ctx, filename)
+	existingFile, err := a.FileStatus(ctx, opts.filename)
 	if err != nil {
 		// if we dont get 404, return err
 		if errors.Is(err, appliancepkg.ErrFileNotFound) {
@@ -222,18 +234,23 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 	if !shouldUpload && existingFile.GetStatus() != fileReady {
-		log.Infof("Remote file %q already exist, but is in status %s, overridring it", filename, existingFile.GetStatus())
+		log.Infof("Remote file %q already exist, but is in status %s, overridring it", opts.filename, existingFile.GetStatus())
 		shouldUpload = true
 	}
 	if existingFile.GetStatus() == fileReady {
 		log.Infof("File %s already exists, using it as is", existingFile.GetName())
 	}
-	if shouldUpload {
-		fileStat, err := f.Stat()
+	if shouldUpload && !opts.remoteImage {
+		imageFile, err := os.Open(opts.image)
 		if err != nil {
 			return err
 		}
-		content, err := io.ReadAll(f)
+		defer imageFile.Close()
+		fileStat, err := imageFile.Stat()
+		if err != nil {
+			return err
+		}
+		content, err := io.ReadAll(imageFile)
 		if err != nil {
 			return err
 		}
@@ -255,7 +272,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			DrawFunc: ioprogress.DrawTerminalf(opts.Out, func(p, t int64) string {
 				return fmt.Sprintf(
 					"Uploading %s: %s",
-					f.Name(),
+					imageFile.Name(),
 					ioprogress.DrawTextFormatBytes(p, t))
 			}),
 		})
@@ -266,25 +283,34 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := a.UploadFile(ctx, input, headers); err != nil {
 			return err
 		}
+
+		remoteFile, err := a.FileStatus(ctx, opts.filename)
+		if err != nil {
+			return err
+		}
+		if remoteFile.GetStatus() != fileReady {
+			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
+		}
+		log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
 	}
-	remoteFile, err := a.FileStatus(ctx, filename)
-	if err != nil {
-		return err
-	}
-	if remoteFile.GetStatus() != fileReady {
-		return fmt.Errorf("remote file %q is uploaded, but is in status %s", filename, existingFile.GetStatus())
-	}
-	log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
 
 	// Step 2
-	peerPort := 8443
-	if v, ok := primaryController.GetPeerInterfaceOk(); ok {
-		peerPort = int(v.GetHttpsPort())
+	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryController.GetHostname(), opts.filename)
+	// NOTE: Backwards compatibility with appliances older than API version 13.
+	// Appliances before API version require that the peer port be passed explicitly as part of the download URL.
+	// Insert the peer port into the URL if necessary.
+	if opts.Config.Version < 13 {
+		if v, ok := primaryController.GetPeerInterfaceOk(); ok {
+			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), int(v.GetHttpsPort()), opts.filename)
+		}
+	}
+
+	if opts.remoteImage {
+		remoteFilePath = opts.image
 	}
 	// prepare the image on the appliances,
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
-	prepare := func(ctx context.Context, primaryController openapi.Appliance, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
-		remoteFilePath := fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), peerPort, filename)
+	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		log.Infof("Remote file path for controller %s", remoteFilePath)
 		g, ctx := errgroup.WithContext(ctx)
 
@@ -339,7 +365,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		})
 		return r, g.Wait()
 	}
-	preparedAppliances, err := prepare(ctx, *primaryController, appliances)
+	preparedAppliances, err := prepare(ctx, remoteFilePath, appliances)
 	if err != nil {
 		return fmt.Errorf("Preparation failed %s, run appgatectl appliance upgrade cancel", err)
 	}
@@ -349,12 +375,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	// Step 3
-	log.Infof("3. Delete upgrade image %s from Controller", filename)
-	if err := a.DeleteFile(ctx, filename); err != nil {
-		log.Warnf("Failed to delete %s from controller %s", filename, err)
+	if !opts.remoteImage {
+		// Step 3
+		log.Infof("3. Delete upgrade image %s from Controller", opts.filename)
+		if err := a.DeleteFile(ctx, opts.filename); err != nil {
+			log.Warnf("Failed to delete %s from controller %s", opts.filename, err)
+		}
+		log.Infof("File %s deleted from Controller", opts.filename)
 	}
-	log.Infof("File %s deleted from Controller", filename)
 
 	return nil
 }

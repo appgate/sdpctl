@@ -190,7 +190,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			cli:        "prepare",
 			httpStubs:  []httpmock.Stub{},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`Image is mandatory`),
+			wantErrOut: regexp.MustCompile(`--image is mandatory`),
 		},
 		{
 			name: "disagree with peer warning",
@@ -266,7 +266,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Invalid mimetype on image file. The format is expected to be a .img.zip archive.`),
 		},
 		{
-			name: "file name error",
+			name: "invalid zip file error",
 			cli:  "prepare --image './testdata/invalid-5.5.1.img.zip'",
 			httpStubs: []httpmock.Stub{
 				{
@@ -279,7 +279,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`Image is not a valid zip file`),
+			wantErrOut: regexp.MustCompile(`zip: not a valid zip file`),
 		},
 	}
 	for _, tt := range tests {
