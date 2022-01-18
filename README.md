@@ -165,7 +165,7 @@ If you wish to continue upgrading, the upgrade is completed using the `upgrade c
 ```bash
 $ appgatectl appliance upgrade complete
 ```
-At this point, you will be prompted if you want to to do backup before proceeding to complete the upgrade. If you want more backup option than provided in the prompt, it's recommended to use the standalone `appliance backup` command, since more options are available there.
+At this point, you will be prompted if you want to do a backup before proceeding to complete the upgrade. If you want more backup options than provided in the prompt, it's recommended to use the standalone `appliance backup` command, since more options are available there.
 
 The `upgrade complete` command will run until all appliances that are part of the upgrade reaches the desired state of 'idle'.
 
