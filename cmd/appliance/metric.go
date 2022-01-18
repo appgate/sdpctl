@@ -41,20 +41,24 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Aliases: []string{"metrics"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			var err error
-            if len(args) != 1 {
-                opts.applianceID, err = promptForAppliance(opts, args)
-                if err != nil {
-                    return err
-                }
-            } else {
-                // Validate UUID if the argument is applied
-                uuidArg := args[0]
-                _, err := uuid.Parse(uuidArg)
-                if err != nil {
-                    return err
-                }
-                opts.applianceID = uuidArg
-            }
+			if len(args) != 1 {
+				opts.applianceID, err = promptForAppliance(opts)
+				if err != nil {
+					return err
+				}
+			} else {
+				// Validate UUID if the argument is applied
+				uuidArg := args[0]
+				_, err := uuid.Parse(uuidArg)
+				if err != nil {
+					log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
+					uuidArg, err = promptForAppliance(opts)
+					if err != nil {
+						return err
+					}
+				}
+				opts.applianceID = uuidArg
+			}
 
 			return nil
 		},
@@ -96,7 +100,7 @@ func metricRun(cmd *cobra.Command, args []string, opts *metricOptions) error {
 	return nil
 }
 
-func promptForAppliance(opts metricOptions, args []string) (string, error) {
+func promptForAppliance(opts metricOptions) (string, error) {
 	// Command accepts only one argument
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
