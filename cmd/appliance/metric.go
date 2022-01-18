@@ -124,6 +124,5 @@ func promptForAppliance(opts metricOptions) (string, error) {
 	selectedIndex := 0
 	survey.AskOne(qs, &selectedIndex)
 	appliance := appliances[selectedIndex]
-	log.WithField("appliance", appliance).Debug("Will get metric for appliance")
 	return appliance.GetId(), nil
 }
