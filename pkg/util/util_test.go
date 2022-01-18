@@ -21,7 +21,7 @@ func TestIsValidURL(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "valid url",
+			name: "invalid url",
 			args: args{
 				addr: "appgate.com",
 			},
