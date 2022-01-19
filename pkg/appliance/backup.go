@@ -90,7 +90,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}
 	if !backupEnabled {
-		return backupIDs, fmt.Errorf("Backup API is disabled in the collective.")
+		return backupIDs, fmt.Errorf("Backup API is disabled in the collective. Use the 'appgatectl appliance backup api' command to enable it.")
 	}
 
 	appliances, err := app.List(ctx, nil)
