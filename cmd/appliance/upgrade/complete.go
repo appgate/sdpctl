@@ -84,16 +84,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				Message: "Path to where backup should be saved",
 				Default: os.ExpandEnv(opts.backupDestination),
 			}
-			allPrompt := &survey.Select{
-				Message: "What do you want to backup?",
-				Options: []string{"primary controller", "all"},
-				Default: "primary controller",
-			}
 
 			if err := survey.AskOne(destPrompt, &opts.backupDestination, nil); err != nil {
-				return err
-			}
-			if err := survey.AskOne(allPrompt, &opts.backupAll, nil); err != nil {
 				return err
 			}
 		}
