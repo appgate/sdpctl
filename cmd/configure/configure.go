@@ -2,6 +2,8 @@ package configure
 
 import (
 	"fmt"
+	"net/url"
+	"regexp"
 	"strconv"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -89,7 +91,11 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		viper.Set("pem_filepath", p)
 	}
 
-	viper.Set("url", answers.URL)
+	url, err := normalizeURL(answers.URL)
+	if err != nil {
+		return err
+	}
+	viper.Set("url", url)
 	i, _ := strconv.ParseBool(answers.Insecure)
 	viper.Set("insecure", i)
 	viper.Set("device_id", configuration.DefaultDeviceID())
@@ -99,4 +105,22 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 	log.Infof("Config updated %s", viper.ConfigFileUsed())
 	return nil
+}
+
+func normalizeURL(u string) (string, error) {
+	if r := regexp.MustCompile(`^http`); !r.MatchString(u) {
+		u = fmt.Sprintf("https://%s", u)
+	}
+	log.Info(u)
+	url, err := url.Parse(u)
+	if err != nil {
+		return "", err
+	}
+	if url.Port() != "8443" {
+		url.Host = fmt.Sprintf("%s:%d", url.Hostname(), 8443)
+	}
+	if url.Path != "/admin" {
+		url.Path = "/admin"
+	}
+	return url.String(), nil
 }
