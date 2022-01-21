@@ -291,3 +291,85 @@ func TestConfigGetHost(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeURL(t *testing.T) {
+	tests := []struct {
+		Name string
+		URL  string
+		want string
+	}{
+		{
+			Name: "Full valid URL",
+			URL:  "https://some.valid.url:8443/admin",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "No scheme",
+			URL:  "some.valid.url:8443/admin",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "HTTP scheme",
+			URL:  "http://some.valid.url:8443/admin",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "No path",
+			URL:  "https://some.valid.url:8443",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "No port",
+			URL:  "https://some.valid.url/admin",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "No port and path",
+			URL:  "https://some.valid.url",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "No port, path or scheme",
+			URL:  "some.valid.url",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "No scheme or port",
+			URL:  "some.valid.url/admin",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "Wrong port",
+			URL:  "https://some.valid.url:443/admin",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "Wrong port, no path",
+			URL:  "https://some.valid.url:443",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "Wrong port, no path, no scheme",
+			URL:  "some.valid.url:443",
+			want: "https://some.valid.url:8443/admin",
+		},
+		{
+			Name: "Wrong port, no path, no scheme",
+			URL:  "some.valid.url:443",
+			want: "https://some.valid.url:8443/admin",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			result, err := NormalizeURL(tt.URL)
+			if err != nil {
+				t.Fatalf("Test failed. Error: %v", err)
+			}
+
+			if result != tt.want {
+				t.Fatalf("FAILED! EXPECTED: %s, GOT: %s", tt.want, result)
+			}
+		})
+	}
+}
