@@ -89,11 +89,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		viper.Set("pem_filepath", p)
 	}
 
-	url, err := configuration.NormalizeURL(answers.URL)
-	if err != nil {
-		return err
-	}
-	viper.Set("url", url)
+	viper.Set("url", answers.URL)
 	i, _ := strconv.ParseBool(answers.Insecure)
 	viper.Set("insecure", i)
 	viper.Set("device_id", configuration.DefaultDeviceID())
