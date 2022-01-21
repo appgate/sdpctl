@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/appgate/appgatectl/pkg/token"
-	"github.com/sirupsen/logrus"
 
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -33,12 +32,6 @@ type Factory struct {
 
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
-
-	url, err := configuration.NormalizeURL(config.URL)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	config.URL = url
 	f.Config = config
 	f.HTTPClient = httpClientFunc(f)           // depends on config
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
@@ -104,6 +97,10 @@ func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 			return nil, err
 		}
 
+		cfg.URL, err = configuration.NormalizeURL(cfg.URL)
+		if err != nil {
+			return nil, err
+		}
 		clientCfg := &openapi.Configuration{
 			DefaultHeader: map[string]string{
 				"Accept": fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
