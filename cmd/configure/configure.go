@@ -111,7 +111,7 @@ func normalizeURL(u string) (string, error) {
 	if r := regexp.MustCompile(`^http`); !r.MatchString(u) {
 		u = fmt.Sprintf("https://%s", u)
 	}
-	url, err := url.Parse(u)
+	url, err := url.ParseRequestURI(u)
 	if err != nil {
 		return "", err
 	}
