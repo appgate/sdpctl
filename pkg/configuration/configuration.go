@@ -112,6 +112,9 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 }
 
 func NormalizeURL(u string) (string, error) {
+	if len(u) <= 0 {
+		return "", errors.New("Invalid URL")
+	}
 	if r := regexp.MustCompile(`^http`); !r.MatchString(u) {
 		u = fmt.Sprintf("https://%s", u)
 	}

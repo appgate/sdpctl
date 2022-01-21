@@ -297,6 +297,7 @@ func TestNormalizeURL(t *testing.T) {
 		Name string
 		URL  string
 		want string
+		err  bool
 	}{
 		{
 			Name: "Full valid URL",
@@ -358,12 +359,18 @@ func TestNormalizeURL(t *testing.T) {
 			URL:  "some.valid.url:443",
 			want: "https://some.valid.url:8443/admin",
 		},
+		{
+			Name: "No URL",
+			URL:  "",
+			want: "",
+			err:  true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			result, err := NormalizeURL(tt.URL)
-			if err != nil {
+			if err != nil && !tt.err {
 				t.Fatalf("Test failed. Error: %v", err)
 			}
 
