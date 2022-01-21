@@ -32,8 +32,9 @@ func NewStatsCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var listCmd = &cobra.Command{
-		Use:   "stats",
-		Short: `show appliance stats`,
+		Use:     "stats",
+		Short:   `show appliance stats`,
+		Aliases: []string{"status"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return statsRun(c, args, &opts)
 		},

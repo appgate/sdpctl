@@ -96,6 +96,11 @@ func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 		if err != nil {
 			return nil, err
 		}
+
+		cfg.URL, err = configuration.NormalizeURL(cfg.URL)
+		if err != nil {
+			return nil, err
+		}
 		clientCfg := &openapi.Configuration{
 			DefaultHeader: map[string]string{
 				"Accept": fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
