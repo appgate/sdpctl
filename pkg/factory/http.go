@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/appgate/appgatectl/pkg/token"
+	"github.com/sirupsen/logrus"
 
 	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -33,7 +34,11 @@ type Factory struct {
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
 
-	config.URL, _ = configuration.NormalizeURL(config.URL)
+	url, err := configuration.NormalizeURL(config.URL)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	config.URL = url
 	f.Config = config
 	f.HTTPClient = httpClientFunc(f)           // depends on config
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
