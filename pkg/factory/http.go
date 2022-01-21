@@ -32,6 +32,8 @@ type Factory struct {
 
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
+
+    config.URL, _ = configuration.NormalizeURL(config.URL)
 	f.Config = config
 	f.HTTPClient = httpClientFunc(f)           // depends on config
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
@@ -96,11 +98,8 @@ func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 		if err != nil {
 			return nil, err
 		}
-		cfg.URL, err = configuration.NormalizeURL(cfg.URL)
-		if err != nil {
-			return nil, err
-		}
-		clientCfg := &openapi.Configuration{
+
+        clientCfg := &openapi.Configuration{
 			DefaultHeader: map[string]string{
 				"Accept": fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
 			},
