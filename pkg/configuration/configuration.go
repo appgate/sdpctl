@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -108,6 +109,23 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 		}
 	}
 	return true
+}
+
+func NormalizeURL(u string) (string, error) {
+	if r := regexp.MustCompile(`^http`); !r.MatchString(u) {
+		u = fmt.Sprintf("https://%s", u)
+	}
+	url, err := url.ParseRequestURI(u)
+	if err != nil {
+		return "", err
+	}
+	if url.Port() != "8443" {
+		url.Host = fmt.Sprintf("%s:%d", url.Hostname(), 8443)
+	}
+	if url.Path != "/admin" {
+		url.Path = "/admin"
+	}
+	return url.String(), nil
 }
 
 func (c *Config) CheckAuth() bool {
