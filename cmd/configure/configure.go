@@ -2,7 +2,7 @@ package configure
 
 import (
 	"fmt"
-	"strconv"
+	"os"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -50,53 +50,37 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 			Validate: survey.Required,
 		},
 		{
-			Name: "insecure",
-			Prompt: &survey.Select{
-				Message: "Whether server should be accessed without verifying the TLS certificate",
-				Options: []string{"true", "false"},
-				Default: strconv.FormatBool(opts.Config.Insecure),
+			Name: "pem",
+			Prompt: &survey.Input{
+				Message: "Path to PEM file: ",
+				Default: opts.Config.PemFilePath,
+			},
+			Validate: func(val interface{}) error {
+				if str, ok := val.(string); ok {
+					str := os.ExpandEnv(str)
+					if ok, err := util.FileExists(str); err != nil || !ok {
+						return fmt.Errorf("File not found %s", str)
+					}
+				}
+				return nil
 			},
 		},
 	}
 	answers := struct {
-		URL      string
-		Insecure string
+		URL string
+		PEM string
 	}{}
-
 	err := survey.Ask(qs, &answers)
 	if err != nil {
 		return err
 	}
 
-	if answers.Insecure == "false" {
-		prompt := &survey.Input{
-			Message: "Path to PEM file",
-			Default: opts.Config.PemFilePath,
-		}
-		v := func(val interface{}) error {
-			if str, ok := val.(string); ok {
-				if ok, err := util.FileExists(str); err != nil || !ok {
-					return fmt.Errorf("File not found %s", str)
-				}
-			}
-			return nil
-		}
-		var p string
-		if err := survey.AskOne(prompt, &p, survey.WithValidator(v)); err != nil {
-			return err
-		}
-
-		viper.Set("pem_filepath", p)
-	}
-
 	viper.Set("url", answers.URL)
-	i, _ := strconv.ParseBool(answers.Insecure)
-	viper.Set("insecure", i)
+	viper.Set("pem_filepath", os.ExpandEnv(answers.PEM))
 	viper.Set("device_id", configuration.DefaultDeviceID())
-
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}
-	log.Infof("Config updated %s", viper.ConfigFileUsed())
+	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
 	return nil
 }
