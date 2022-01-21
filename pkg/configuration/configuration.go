@@ -125,7 +125,7 @@ func NormalizeURL(u string) (string, error) {
 	if url.Scheme != "https" {
 		url.Scheme = "https"
 	}
-	if url.Port() != "8443" {
+	if len(url.Port()) <= 0 {
 		url.Host = fmt.Sprintf("%s:%d", url.Hostname(), 8443)
 	}
 	if url.Path != "/admin" {

@@ -340,24 +340,24 @@ func TestNormalizeURL(t *testing.T) {
 			want: "https://some.valid.url:8443/admin",
 		},
 		{
-			Name: "Wrong port",
+			Name: "Other port",
 			URL:  "https://some.valid.url:443/admin",
-			want: "https://some.valid.url:8443/admin",
+			want: "https://some.valid.url:443/admin",
 		},
 		{
-			Name: "Wrong port, no path",
+			Name: "Other port, no path",
 			URL:  "https://some.valid.url:443",
-			want: "https://some.valid.url:8443/admin",
+			want: "https://some.valid.url:443/admin",
 		},
 		{
-			Name: "Wrong port, no path, no scheme",
+			Name: "Other port, no path, no scheme",
 			URL:  "some.valid.url:443",
-			want: "https://some.valid.url:8443/admin",
+			want: "https://some.valid.url:443/admin",
 		},
 		{
-			Name: "Wrong port, no path, no scheme",
+			Name: "Other port, no path, no scheme",
 			URL:  "some.valid.url:443",
-			want: "https://some.valid.url:8443/admin",
+			want: "https://some.valid.url:443/admin",
 		},
 		{
 			Name: "No URL",
