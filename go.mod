@@ -9,7 +9,7 @@ require (
 	github.com/cheynewallace/tabby v1.1.1
 	github.com/cli/browser v1.1.0
 	github.com/denisbrodbeck/machineid v1.0.1
-	github.com/google/go-cmp v0.5.6
+	github.com/google/go-cmp v0.5.7
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
