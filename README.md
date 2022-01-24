@@ -34,9 +34,12 @@ For using appgatectl, you first need to configure and authenticate to the Appgat
 ```shell
 $ appgatectl configure
 ? Enter the url for the controller API (example https://appgate.controller.com/admin) https://sdp.controller.com/admin
-? Whether server should be accessed without verifying the TLS certificate true
 ```
-In case you chose to access the controller with TLS verification, you also need to provide a path to a valid PEM file.
+Optionally, if the controller uses an unsigned certificate, you can trust the certificate by specifying a PEM file for the command to use for certificate verification. You can that by using the `--pem` flag on the configure command:
+
+```bash
+$ appgatectl configure --pem=<path/to/pem>
+```
 
 After the host and TLS verification options are set, you'll need to authenticate to the controller:
 

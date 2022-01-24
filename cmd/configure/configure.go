@@ -2,7 +2,7 @@ package configure
 
 import (
 	"fmt"
-	"strconv"
+	"os"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -15,6 +15,7 @@ import (
 
 type configureOptions struct {
 	Config *configuration.Config
+	PEM    string
 }
 
 // NewCmdConfigure return a new Configure command
@@ -34,69 +35,37 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&opts.PEM, "pem", "", "Path to PEM file to use for request certificate validation")
+
 	cmd.AddCommand(NewLoginCmd(f))
 
 	return cmd
 }
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
-	var qs = []*survey.Question{
-		{
-			Name: "url",
-			Prompt: &survey.Input{
-				Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
-				Default: opts.Config.URL,
-			},
-			Validate: survey.Required,
-		},
-		{
-			Name: "insecure",
-			Prompt: &survey.Select{
-				Message: "Whether server should be accessed without verifying the TLS certificate",
-				Options: []string{"true", "false"},
-				Default: strconv.FormatBool(opts.Config.Insecure),
-			},
-		},
+	prompt := &survey.Input{
+		Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
+		Default: opts.Config.URL,
 	}
-	answers := struct {
-		URL      string
-		Insecure string
-	}{}
-
-	err := survey.Ask(qs, &answers)
+	var URL string
+	err := survey.AskOne(prompt, &URL, survey.WithValidator(survey.Required))
 	if err != nil {
 		return err
 	}
 
-	if answers.Insecure == "false" {
-		prompt := &survey.Input{
-			Message: "Path to PEM file",
-			Default: opts.Config.PemFilePath,
+	if len(opts.PEM) > 0 {
+		opts.PEM = os.ExpandEnv(opts.PEM)
+		if ok, err := util.FileExists(opts.PEM); err != nil || !ok {
+			return fmt.Errorf("File not found: %s", opts.PEM)
 		}
-		v := func(val interface{}) error {
-			if str, ok := val.(string); ok {
-				if ok, err := util.FileExists(str); err != nil || !ok {
-					return fmt.Errorf("File not found %s", str)
-				}
-			}
-			return nil
-		}
-		var p string
-		if err := survey.AskOne(prompt, &p, survey.WithValidator(v)); err != nil {
-			return err
-		}
-
-		viper.Set("pem_filepath", p)
+		viper.Set("pem_filepath", opts.PEM)
 	}
 
-	viper.Set("url", answers.URL)
-	i, _ := strconv.ParseBool(answers.Insecure)
-	viper.Set("insecure", i)
+	viper.Set("url", URL)
 	viper.Set("device_id", configuration.DefaultDeviceID())
-
 	if err := viper.WriteConfig(); err != nil {
 		return err
 	}
-	log.Infof("Config updated %s", viper.ConfigFileUsed())
+	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
 	return nil
 }
