@@ -1,10 +1,12 @@
 package appliance
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"path/filepath"
@@ -44,7 +46,7 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
-	log.WithField("destination", opts.Destination).Info("Preparing backup...")
+	log.WithField("destination", opts.Destination).Info("Preparing backup")
 
 	if IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
@@ -167,13 +169,18 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
 		}
 	}
+
+	msg, err := showPrepareSummary(opts.Destination, toBackup)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(opts.Out, "\n%s\n", msg)
 	g, ctx := errgroup.WithContext(ctx)
+	log.Infof("Starting backup on %d appliances", len(toBackup))
 	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
-			fields := log.Fields{"appliance": appliance.Name, "id": appliance.Id}
-			log.WithFields(fields).Info("Starting backup")
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
@@ -221,8 +228,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				return err
 			}
 
-			fields = log.Fields{"destination": dst.Name()}
-			log.WithFields(fields).Infof("Wrote backup file")
+			log.WithField("file", dst.Name()).Info("Wrote backup file")
 
 			return nil
 		})
@@ -243,21 +249,21 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 
 	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
+	log.Info("Cleaning up...")
 	for appID, bckID := range IDs {
 		ID := appID
 		backupID := bckID
 		g.Go(func() error {
 			entry := log.WithField("applianceID", ID).WithField("backupID", backupID)
-			entry.Info("Cleaning up backup")
 			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(opts.Config.GetBearTokenHeaderValue()).Execute()
 			if err != nil {
 				return err
 			}
 			entry.Debug(res)
-			entry.Info("Done")
 			return nil
 		})
 	}
+	log.Info("Finished cleanup")
 
 	return g.Wait()
 }
@@ -305,4 +311,40 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string)
 	}
 
 	return *settings.BackupApiEnabled, nil
+}
+
+func showPrepareSummary(dest string, appliances []openapi.Appliance) (string, error) {
+	type ApplianceStub struct {
+		Name string
+		ID   string
+	}
+	type SummaryStub struct {
+		Appliances  []ApplianceStub
+		Destination string
+	}
+
+	const message = `
+Will perform backup on the following appliances:
+{{ range .Appliances }}
+    - Name: {{ .Name }}
+      ID:   {{ .ID }}
+{{ end }}
+Backup destination is {{ .Destination }}
+`
+
+	data := SummaryStub{Destination: dest}
+	for _, app := range appliances {
+		data.Appliances = append(data.Appliances, ApplianceStub{
+			Name: app.GetName(),
+			ID:   app.GetId(),
+		})
+	}
+
+	t := template.Must(template.New("").Parse(message))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	return tpl.String(), nil
 }

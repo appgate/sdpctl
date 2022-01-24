@@ -180,7 +180,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
+	f := log.Fields{
+		"appliance": primaryController.GetName(),
+		"version":   currentPrimaryControllerVersion.String(),
+	}
+	log.WithFields(f).Info("Found primary controller")
 	// We will exclude the primary controller from the others controllers
 	// since the primary controller is a special case during the upgrade process.
 	for i, appliance := range appliances {
@@ -209,7 +213,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// so that we can leave the collective gracefully.
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
-		f := log.Fields{"controller": controller.GetName()}
+		f := log.Fields{"appliance": controller.GetName()}
 		log.WithFields(f).Info("Disabling controller function")
 		if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
 			log.WithFields(f).Error("Unable to disable controller")
@@ -265,15 +269,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("Unable to retrieve primary controller upgrade status %w", err)
 	}
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
-		log.Infof("Completing upgrade and switching partition on %s", primaryController.GetName())
+		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
 		if err := a.UpgradeComplete(ctx, primaryController.GetId(), true); err != nil {
 			return err
 		}
-		log.Infof("Waiting for primary controller to come back online in state %s", state)
+		log.WithField("appliance", primaryController.GetName()).Infof("Waiting for primary controller to reach state %s", state)
 		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
 			return err
 		}
-		log.Infof("Primary controller updated")
+		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")
 	}
 
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) ([]openapi.Appliance, error) {
@@ -326,11 +330,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		f := log.Fields{"controller": controller.GetName()}
 		log.WithFields(f).Info("Enabling controller function")
 		if err := a.EnableController(ctx, controller.GetId(), controller); err != nil {
-			log.WithFields(f).Errorf("Unable to enable controller %s", err)
+			log.WithFields(f).WithError(err).Error("Failed to enable controller")
 			return err
 		}
 		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{controller}, ctrlUpgradeState); err != nil {
-			log.WithFields(f).Errorf("Controller never got to desired state %s", err)
+			log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 			return err
 		}
 	}
@@ -409,7 +413,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("failed during switch partition of additional appliances %w", err)
 	}
 	for _, a := range switchedAppliances {
-		log.Infof("Upgraded %q with switched partition", a.GetName())
+		log.WithField("appliance", a.GetName()).Info("Switched partition")
 	}
 
 	if err := a.UpgradeStatusWorker.Wait(ctx, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
