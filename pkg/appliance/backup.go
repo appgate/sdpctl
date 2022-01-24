@@ -27,16 +27,17 @@ var (
 )
 
 type BackupOpts struct {
-	Config      *configuration.Config
-	Appliance   func(*configuration.Config) (*Appliance, error)
-	Out         io.Writer
-	Destination string
-	NotifyURL   string
-	Include     []string
-	AllFlag     bool
-	PrimaryFlag bool
-	CurrentFlag bool
-	Timeout     time.Duration
+	Config        *configuration.Config
+	Appliance     func(*configuration.Config) (*Appliance, error)
+	Out           io.Writer
+	Destination   string
+	NotifyURL     string
+	Include       []string
+	AllFlag       bool
+	PrimaryFlag   bool
+	CurrentFlag   bool
+	NoInteraction bool
+	Timeout       time.Duration
 }
 
 type backupHTTPResponse struct {
@@ -86,7 +87,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, err
 	}
 
-	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue())
+	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue(), opts.NoInteraction)
 	if err != nil {
 		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}
@@ -299,7 +300,7 @@ func getBackupState(ctx context.Context, client *openapi.APIClient, token string
 	return *res.Status, nil
 }
 
-func backupEnabled(ctx context.Context, client *openapi.APIClient, token string) (bool, error) {
+func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteractionFlag bool) (bool, error) {
 	enable := true
 	settings, _, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
 	if err != nil {
@@ -308,16 +309,18 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string)
 
 	if !*settings.BackupApiEnabled {
 		log.Warn("Backup API is disabled.")
-		q := &survey.Confirm{
-			Message: "Do you want to enable it now?",
-			Default: enable,
-		}
-		if err := survey.AskOne(q, &enable, survey.WithValidator(survey.Required)); err != nil {
-			return false, err
+		if !noInteractionFlag {
+			q := &survey.Confirm{
+				Message: "Do you want to enable it now?",
+				Default: enable,
+			}
+			if err := survey.AskOne(q, &enable, survey.WithValidator(survey.Required)); err != nil {
+				return false, err
+			}
 		}
 	}
 
-	if enable {
+	if enable && !noInteractionFlag {
 		var password string
 		p := &survey.Password{
 			Message: "Enter passphrase for backups: ",
