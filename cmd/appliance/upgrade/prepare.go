@@ -234,11 +234,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 	if !shouldUpload && existingFile.GetStatus() != fileReady {
-		log.Infof("Remote file %q already exist, but is in status %s, overridring it", opts.filename, existingFile.GetStatus())
+		log.WithField("file", opts.filename).Infof("Remote file already exist, but is in status %s, overriding it", existingFile.GetStatus())
 		shouldUpload = true
 	}
 	if existingFile.GetStatus() == fileReady {
-		log.Infof("File %s already exists, using it as is", existingFile.GetName())
+		log.WithField("file", existingFile.GetName()).Info("File already exists, using it as is")
 	}
 	if shouldUpload && !opts.remoteImage {
 		imageFile, err := os.Open(opts.image)
@@ -291,7 +291,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if remoteFile.GetStatus() != fileReady {
 			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
 		}
-		log.Infof("Remote file %s is %s", remoteFile.GetName(), remoteFile.GetStatus())
+		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
 	}
 
 	// Step 2

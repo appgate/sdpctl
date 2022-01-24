@@ -44,7 +44,9 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 				return backoff.Permanent(fmt.Errorf("Upgraded failed on %s - %s", appliance.GetName(), status.GetDetails()))
 			}
 		}
-		log.WithFields(fields).Infof("upgrade status %q %s waiting for %s", s, status.GetDetails(), desiredStatus)
+		fields["image"] = status.GetDetails()
+		fields["status"] = s
+		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatus)
 		if s == desiredStatus {
 			return nil
 		}
@@ -113,12 +115,14 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi
 			}
 		}
 		for _, stat := range candidates {
-			fields := log.Fields{"appliance": stat.GetName()}
+			fields := log.Fields{
+				"status":        stat.GetStatus(),
+				"current_state": stat.GetState(),
+				"appliance":     stat.GetName(),
+			}
 			log.WithFields(fields).Infof(
-				"got status %s state %q expects %q",
-				stat.GetStatus(),
+				"Waiting for state %q",
 				stat.GetState(),
-				expectedState,
 			)
 			if stat.GetState() == expectedState {
 				result[stat.GetId()] = 1
@@ -128,6 +132,6 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi
 			log.Infof("reached desired %q on %d appliances", expectedState, len(appliances))
 			return nil
 		}
-		return fmt.Errorf("never reached expected state %s", expectedState)
+		return fmt.Errorf("never reached desired state %s", expectedState)
 	}, b)
 }
