@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -28,16 +29,17 @@ var (
 )
 
 type BackupOpts struct {
-	Config      *configuration.Config
-	Appliance   func(*configuration.Config) (*Appliance, error)
-	Out         io.Writer
-	Destination string
-	NotifyURL   string
-	Include     []string
-	AllFlag     bool
-	PrimaryFlag bool
-	CurrentFlag bool
-	Timeout     time.Duration
+	Config        *configuration.Config
+	Appliance     func(*configuration.Config) (*Appliance, error)
+	Out           io.Writer
+	Destination   string
+	NotifyURL     string
+	Include       []string
+	AllFlag       bool
+	PrimaryFlag   bool
+	CurrentFlag   bool
+	NoInteraction bool
+	Timeout       time.Duration
 }
 
 type backupHTTPResponse struct {
@@ -87,7 +89,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, err
 	}
 
-	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue())
+	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue(), opts.NoInteraction)
 	if err != nil {
 		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}
@@ -304,13 +306,44 @@ func getBackupState(ctx context.Context, client *openapi.APIClient, token string
 	return *res.Status, nil
 }
 
-func backupEnabled(ctx context.Context, client *openapi.APIClient, token string) (bool, error) {
+func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteractionFlag bool) (bool, error) {
+	enable := true
 	settings, _, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
 	if err != nil {
 		return false, err
 	}
 
-	return *settings.BackupApiEnabled, nil
+	if !*settings.BackupApiEnabled {
+		log.Warn("Backup API is disabled.")
+		if !noInteractionFlag {
+			q := &survey.Confirm{
+				Message: "Do you want to enable it now?",
+				Default: enable,
+			}
+			if err := survey.AskOne(q, &enable, survey.WithValidator(survey.Required)); err != nil {
+				return false, err
+			}
+		}
+	}
+
+	if enable && !noInteractionFlag {
+		var password string
+		p := &survey.Password{
+			Message: "Enter passphrase for backups: ",
+		}
+		if err := survey.AskOne(p, &password, survey.WithValidator(survey.Required)); err != nil {
+			return false, err
+		}
+		settings.SetBackupApiEnabled(true)
+		settings.SetBackupPassphrase(password)
+		response, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(settings).Authorization(token).Execute()
+		if err != nil {
+			return false, api.HTTPErrorResponse(response, err)
+		}
+		log.Info("Backup API enabled")
+	}
+
+	return enable, nil
 }
 
 func showPrepareSummary(dest string, appliances []openapi.Appliance) (string, error) {
