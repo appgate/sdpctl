@@ -15,6 +15,7 @@ import (
 
 type configureOptions struct {
 	Config *configuration.Config
+	PEM    string
 }
 
 // NewCmdConfigure return a new Configure command
@@ -34,49 +35,33 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&opts.PEM, "pem", "", "Path to PEM file to use for request certificate validation")
+
 	cmd.AddCommand(NewLoginCmd(f))
 
 	return cmd
 }
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
-	var qs = []*survey.Question{
-		{
-			Name: "url",
-			Prompt: &survey.Input{
-				Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
-				Default: opts.Config.URL,
-			},
-			Validate: survey.Required,
-		},
-		{
-			Name: "pem",
-			Prompt: &survey.Input{
-				Message: "Path to PEM file: ",
-				Default: opts.Config.PemFilePath,
-			},
-			Validate: func(val interface{}) error {
-				if str, ok := val.(string); ok {
-					str := os.ExpandEnv(str)
-					if ok, err := util.FileExists(str); err != nil || !ok {
-						return fmt.Errorf("File not found %s", str)
-					}
-				}
-				return nil
-			},
-		},
+	prompt := &survey.Input{
+		Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
+		Default: opts.Config.URL,
 	}
-	answers := struct {
-		URL string
-		PEM string
-	}{}
-	err := survey.Ask(qs, &answers)
+	var URL string
+	err := survey.AskOne(prompt, &URL, survey.WithValidator(survey.Required))
 	if err != nil {
 		return err
 	}
 
-	viper.Set("url", answers.URL)
-	viper.Set("pem_filepath", os.ExpandEnv(answers.PEM))
+	if len(opts.PEM) > 0 {
+		opts.PEM = os.ExpandEnv(opts.PEM)
+		if ok, err := util.FileExists(opts.PEM); err != nil || !ok {
+			return fmt.Errorf("File not found: %s", opts.PEM)
+		}
+		viper.Set("pem_filepath", opts.PEM)
+	}
+
+	viper.Set("url", URL)
 	viper.Set("device_id", configuration.DefaultDeviceID())
 	if err := viper.WriteConfig(); err != nil {
 		return err
