@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -299,10 +300,39 @@ func getBackupState(ctx context.Context, client *openapi.APIClient, token string
 }
 
 func backupEnabled(ctx context.Context, client *openapi.APIClient, token string) (bool, error) {
+	enable := true
 	settings, _, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
 	if err != nil {
 		return false, err
 	}
 
-	return *settings.BackupApiEnabled, nil
+	if !*settings.BackupApiEnabled {
+		log.Warn("Backup API is disabled.")
+		q := &survey.Confirm{
+			Message: "Do you want to enable it now?",
+			Default: enable,
+		}
+		if err := survey.AskOne(q, &enable, survey.WithValidator(survey.Required)); err != nil {
+			return false, err
+		}
+	}
+
+	if enable {
+		var password string
+		p := &survey.Password{
+			Message: "Enter passphrase for backups: ",
+		}
+		if err := survey.AskOne(p, &password, survey.WithValidator(survey.Required)); err != nil {
+			return false, err
+		}
+		settings.SetBackupApiEnabled(true)
+		settings.SetBackupPassphrase(password)
+		response, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(settings).Authorization(token).Execute()
+		if err != nil {
+			return false, api.HTTPErrorResponse(response, err)
+		}
+		log.Info("Backup API enabled")
+	}
+
+	return enable, nil
 }
