@@ -1,0 +1,17 @@
+{
+    "claimsTokenExpiration": 1440,
+    "entitlementTokenExpiration": 180,
+    "administrationTokenExpiration": 720,
+    "vpnCertificateExpiration": 525600,
+    "spaMode": "TCP",
+    "loginBannerMessage": "Authorized use only.",
+    "messageOfTheDay": "Welcome to Appgate SDP.",
+    "backupApiEnabled": false,
+    "fips": false,
+    "geoIpUpdates": false,
+    "auditLogPersistenceMode": "Default",
+    "appDiscoveryDomains": [
+        "company.com"
+    ],
+    "collectiveId": "4c07bc67-57ea-42dd-b702-c2d6c45419fc"
+}
