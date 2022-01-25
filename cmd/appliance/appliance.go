@@ -21,6 +21,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 		TraverseChildren: true,
 	}
 	pFlags := cmd.PersistentFlags()
+	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	pFlags.StringToStringP("filter", "f", map[string]string{}, filterHelp)
 	pFlags.StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances. Adheres to the same syntax and key-value pairs as '--filter'")
 

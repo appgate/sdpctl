@@ -46,13 +46,19 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Long: `Complete a prepared upgrade.
 Install a prepared upgrade on the secondary partition
 and perform a reboot to make the second partition the primary.`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
+				return err
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCompleteRun(c, args, &opts)
 		},
 	}
 
 	flags := upgradeCompleteCmd.Flags()
-	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 
@@ -93,11 +99,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if opts.backup {
 		bOpts := appliancepkg.BackupOpts{
-			Config:      opts.Config,
-			Appliance:   opts.Appliance,
-			Destination: opts.backupDestination,
-			AllFlag:     false,
-			Timeout:     5 * time.Minute,
+			Config:        opts.Config,
+			Appliance:     opts.Appliance,
+			Destination:   opts.backupDestination,
+			AllFlag:       false,
+			Timeout:       5 * time.Minute,
+			Out:           opts.Out,
+			NoInteractive: opts.NoInteractive,
 		}
 		if opts.backupAll == "all" {
 			bOpts.AllFlag = true

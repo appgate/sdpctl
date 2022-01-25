@@ -35,6 +35,10 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		Long:      longDescription,
 		ValidArgs: []string{"controller"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
+				return err
+			}
 			return appliance.PrepareBackup(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
