@@ -14,7 +14,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/cli/browser"
+	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
 
