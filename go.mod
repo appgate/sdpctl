@@ -7,7 +7,6 @@ require (
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20211229102702-55d570847963
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cheynewallace/tabby v1.1.1
-	github.com/cli/browser v1.1.0
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/google/go-cmp v0.5.7
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -17,6 +16,7 @@ require (
 	github.com/hashicorp/go-version v1.4.0
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mitchellh/ioprogress v0.0.0-20180201004757-6a23b12fa88e
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0

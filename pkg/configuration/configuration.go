@@ -111,9 +111,11 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 	return true
 }
 
+var ErrNoAddr = errors.New("no valid address set, run 'appgatectl configure' or set APPGATECTL_URL")
+
 func NormalizeURL(u string) (string, error) {
 	if len(u) <= 0 {
-		return "", errors.New("Invalid URL")
+		return "", ErrNoAddr
 	}
 	if r := regexp.MustCompile(`^https?://`); !r.MatchString(u) {
 		u = fmt.Sprintf("https://%s", u)
@@ -232,7 +234,7 @@ func (c *Config) StoreCredentials(crd *Credentials) error {
 
 func (c *Config) GetHost() (string, error) {
 	if len(c.URL) == 0 {
-		return "", errors.New("no valid address set, run 'appgatectl configure' or set APPGATECTL_URL")
+		return "", ErrNoAddr
 	}
 	url, err := url.Parse(c.URL)
 	if err != nil {
