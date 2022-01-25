@@ -35,6 +35,10 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		Long:      longDescription,
 		ValidArgs: []string{"controller"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
+				return err
+			}
 			return appliance.PrepareBackup(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,7 +62,6 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.CurrentFlag, "current", false, "backup current peer controller")
 	flags.StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
-	flags.BoolVar(&opts.NoInteraction, "no-interaction", false, "Run command with no interactions, using default values if possible.")
 
 	cmd.AddCommand(NewBackupAPICmd(f))
 

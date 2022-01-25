@@ -39,7 +39,7 @@ type BackupOpts struct {
 	PrimaryFlag   bool
 	CurrentFlag   bool
 	Timeout       time.Duration
-	NoInteraction bool
+	NoInteractive bool
 }
 
 type backupHTTPResponse struct {
@@ -89,7 +89,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, err
 	}
 
-	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue(), opts.NoInteraction)
+	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue(), opts.NoInteractive)
 	if err != nil {
 		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}

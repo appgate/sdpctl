@@ -75,7 +75,8 @@ func TestBackupCmd(t *testing.T) {
 	}
 
 	cmd := NewCmdBackup(f)
-	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing", "--primary", "--no-interaction"})
+	cmd.Flags().Bool("no-interactive", false, "usage")
+	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing", "--primary", "--no-interactive"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 

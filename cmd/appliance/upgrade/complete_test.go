@@ -181,6 +181,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			cmd := NewUpgradeCompleteCmd(f)
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
+			cmd.Flags().Bool("no-interactive", false, "usage")
 
 			argv, err := shlex.Split(tt.cli)
 			if err != nil {
