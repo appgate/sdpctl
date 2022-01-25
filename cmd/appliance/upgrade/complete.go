@@ -99,12 +99,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if opts.backup {
 		bOpts := appliancepkg.BackupOpts{
-			Config:      opts.Config,
-			Appliance:   opts.Appliance,
-			Destination: opts.backupDestination,
-			AllFlag:     false,
-			Timeout:     5 * time.Minute,
-			Out:         opts.Out,
+			Config:        opts.Config,
+			Appliance:     opts.Appliance,
+			Destination:   opts.backupDestination,
+			AllFlag:       false,
+			Timeout:       5 * time.Minute,
+			Out:           opts.Out,
+			NoInteractive: opts.NoInteractive,
 		}
 		if opts.backupAll == "all" {
 			bOpts.AllFlag = true

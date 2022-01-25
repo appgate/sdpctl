@@ -91,9 +91,17 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue(), opts.NoInteractive)
 	if err != nil {
+		if opts.NoInteractive {
+			log.WithError(err).Warn("Skipping backup due to error while --no-interactive flag is set")
+			return backupIDs, nil
+		}
 		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}
 	if !backupEnabled {
+		if opts.NoInteractive {
+			log.Warn("Skipping backup. Backup API is disabled while --no-interactive flag is set")
+			return backupIDs, nil
+		}
 		return backupIDs, fmt.Errorf("Backup API is disabled in the collective. Use the 'appgatectl appliance backup api' command to enable it.")
 	}
 
@@ -113,7 +121,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 		filter := util.ParseFilteringFlags(cmd.Flags())
 
-		if opts.PrimaryFlag {
+		if opts.PrimaryFlag || opts.NoInteractive {
 			pc, err := FindPrimaryController(appliances, hostname)
 			if err != nil {
 				log.Warn("failed to determine primary controller")

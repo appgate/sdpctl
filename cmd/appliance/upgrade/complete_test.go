@@ -30,6 +30,9 @@ func (u *errApplianceStatus) WaitForState(ctx context.Context, appliances []open
 }
 
 func TestUpgradeCompleteCommand(t *testing.T) {
+	applianceUUID := "4c07bc67-57ea-42dd-b702-c2d6c45419fc"
+	backupUUID := "fd5ea380-496b-41eb-8bc8-2c84eb36b605"
+
 	tests := []struct {
 		name                        string
 		cli                         string
@@ -51,6 +54,45 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				{
 					URL:       "/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test complete multiple appliances",
+			cli:  "--backup=true --no-interactive=true",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/global-settings",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_global_options.json"),
+				},
+				{
+					URL:       fmt.Sprintf("/appliances/%s/backup", applianceUUID),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_initiated.json"),
+				},
+				{
+					URL:       fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_status_done.json"),
+				},
+				{
+					URL:       fmt.Sprintf("/appliances/%s/backup/%s", applianceUUID, backupUUID),
+					Responder: httpmock.FileResponse(),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
