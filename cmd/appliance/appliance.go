@@ -15,8 +15,10 @@ Available keywords to filter on are: name, id, tags|tag, version, hostname|host,
 // NewApplianceCmd return a new appliance command
 func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:              "appliance",
-		Short:            "interact with appliances",
+		Use:   "appliance",
+		Short: "interact with Appgate SDP Appliances",
+		Long: `The base command to access and interact with your Appgate SDP Appliances. This command does not do anything by itself, it is
+used together with one of the available sub-commands listed below.`,
 		Aliases:          []string{"app", "a"},
 		TraverseChildren: true,
 	}
