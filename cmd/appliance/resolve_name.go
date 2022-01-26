@@ -2,7 +2,6 @@ package appliance
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -38,7 +37,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 	}
-	var listCmd = &cobra.Command{
+	var cmd = &cobra.Command{
 		Use:   "resolve-name [<appliance-id>] --resolve-name=query",
 		Short: `Test a resolver name on a Gateway`,
 		Args: func(cmd *cobra.Command, args []string) error {
@@ -78,17 +77,15 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 			return resolveNameRun(c, args, &opts)
 		},
 	}
-	listCmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
-	listCmd.Flags().StringVar(&opts.applianceID, "appliance-id", "", "appliance UUID")
-	listCmd.Flags().StringVar(&opts.resourceName, "resource-name", "", "The resource name to test on the Gateway.")
+	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	cmd.Flags().StringVar(&opts.applianceID, "appliance-id", "", "appliance UUID")
+	cmd.Flags().StringVar(&opts.resourceName, "resource-name", "", "The resource name to test on the Gateway. (Required)")
+	cmd.MarkFlagRequired("resource-name")
 
-	return listCmd
+	return cmd
 }
 
 func resolveNameRun(cmd *cobra.Command, args []string, opts *resolveNameOpts) error {
-	if len(opts.resourceName) < 1 {
-		return errors.New("--resource-name flag is mandatory")
-	}
 	client, err := opts.Client(opts.Config)
 	if err != nil {
 		return err
