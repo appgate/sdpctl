@@ -13,20 +13,22 @@ type loginOptions struct {
 	remember bool
 }
 
-// NewLoginCmd return a new login command
-func NewLoginCmd(f *factory.Factory) *cobra.Command {
+// NewSigninCmd return a new login command
+func NewSigninCmd(f *factory.Factory) *cobra.Command {
 	opts := loginOptions{
 		f: f,
 	}
 	var loginCmd = &cobra.Command{
-		Use: "login",
+		Use: "signin",
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},
-		Short: "login and authenticate to appgate SDP collective",
-		Long:  `Setup a configuration file towards your appgate sdp collective to be able to interact with the collective.`,
+		Aliases: []string{"login"},
+		Short:   "Sign in and authenticate to Appgate SDP Collective",
+		Long: `Sign in to the Appgate SDP Collective using the configuration file created by the 'appgatectl configure' command.
+This will fetch a token on valid authentication which will be valid for 24 hours and stored in the configuration.`,
 		RunE: func(c *cobra.Command, args []string) error {
-			return loginRun(c, args, &opts)
+			return signinRun(c, args, &opts)
 		},
 	}
 
@@ -37,7 +39,7 @@ func NewLoginCmd(f *factory.Factory) *cobra.Command {
 	return loginCmd
 }
 
-func loginRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
+func signinRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
 	if err := auth.Login(opts.f, opts.remember, true); err != nil {
 		return err
 	}

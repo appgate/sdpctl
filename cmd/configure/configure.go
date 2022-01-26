@@ -37,7 +37,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 
 	cmd.Flags().StringVar(&opts.PEM, "pem", "", "Path to PEM file to use for request certificate validation")
 
-	cmd.AddCommand(NewLoginCmd(f))
+	cmd.AddCommand(NewSigninCmd(f))
 
 	return cmd
 }
