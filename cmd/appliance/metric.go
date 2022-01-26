@@ -36,8 +36,16 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 	}
 	var cmd = &cobra.Command{
-		Use:     "metric [<appliance-id>]",
-		Short:   `Get all the Prometheus metrics for the given Appliance`,
+		Use:   "metric [<appliance-id>]",
+		Short: `Get all the Prometheus metrics for the given Appgate SDP Appliance`,
+		Long: `The 'metric' command will return a list of all the available metrics provided by an Appgate SDP Appliance for use in Prometheus.
+If no Appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. The '--metric-name' flag can be used
+to get a specific metric name. This needs to be an exact match.
+
+NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
+		Example: `appgatectl appliance metric
+appgatectl appliance metric <appliance-id>
+appgatectl appliance metric <appliance-id> --metric-name=<some_metric_name>`,
 		Aliases: []string{"metrics"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
