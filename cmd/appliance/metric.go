@@ -26,10 +26,6 @@ type metricOptions struct {
 	metric      string
 }
 
-func (o metricOptions) ResolveAppliance(c *configuration.Config) (*appliancepkg.Appliance, error) {
-	return o.Appliance(c)
-}
-
 // NewMetricCmd return a new appliance metric command
 func NewMetricCmd(f *factory.Factory) *cobra.Command {
 	opts := metricOptions{
@@ -45,9 +41,12 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Aliases: []string{"metrics"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			var err error
+			a, err := opts.Appliance(opts.Config)
+			if err != nil {
+				return err
+			}
 			if len(args) != 1 {
-				opts.applianceID, err = prompt.SelectAppliance(ctx, opts, opts.Config, nil)
+				opts.applianceID, err = prompt.SelectAppliance(ctx, a, nil)
 				if err != nil {
 					return err
 				}
@@ -59,7 +58,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 			_, err = uuid.Parse(uuidArg)
 			if err != nil {
 				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = prompt.SelectAppliance(ctx, opts, opts.Config, nil)
+				uuidArg, err = prompt.SelectAppliance(ctx, a, nil)
 				if err != nil {
 					return err
 				}

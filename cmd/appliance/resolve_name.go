@@ -29,10 +29,6 @@ type resolveNameOpts struct {
 	resourceName string
 }
 
-func (o resolveNameOpts) ResolveAppliance(c *configuration.Config) (*appliancepkg.Appliance, error) {
-	return o.Appliance(c)
-}
-
 // NewResolveNameCmd return a new appliance list command
 func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 	opts := resolveNameOpts{
@@ -46,15 +42,18 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		Use:   "resolve-name [<appliance-id>] --resolve-name=query",
 		Short: `Test a resolver name on a Gateway`,
 		Args: func(cmd *cobra.Command, args []string) error {
+			a, err := opts.Appliance(opts.Config)
+			if err != nil {
+				return err
+			}
 			ctx := context.Background()
-			var err error
 			filter := map[string]map[string]string{
 				"filter": {
 					"role": "gateway",
 				},
 			}
 			if len(args) != 1 {
-				opts.applianceID, err = prompt.SelectAppliance(ctx, opts, opts.Config, filter)
+				opts.applianceID, err = prompt.SelectAppliance(ctx, a, filter)
 				if err != nil {
 					return err
 				}
@@ -66,7 +65,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 			_, err = uuid.Parse(uuidArg)
 			if err != nil {
 				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = prompt.SelectAppliance(ctx, opts, opts.Config, filter)
+				uuidArg, err = prompt.SelectAppliance(ctx, a, filter)
 				if err != nil {
 					return err
 				}

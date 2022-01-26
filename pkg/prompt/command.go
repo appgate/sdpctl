@@ -2,23 +2,13 @@ package prompt
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
 )
 
-type AppliancePrompt interface {
-	ResolveAppliance(c *configuration.Config) (*appliancepkg.Appliance, error)
-}
-
-func SelectAppliance(ctx context.Context, opts AppliancePrompt, config *configuration.Config, filter map[string]map[string]string) (string, error) {
-	// Command accepts only one argument
-	a, err := opts.ResolveAppliance(config)
-	if err != nil {
-		return "", err
-	}
-
+func SelectAppliance(ctx context.Context, a *appliancepkg.Appliance, filter map[string]map[string]string) (string, error) {
 	appliances, err := a.List(ctx, filter)
 	if err != nil {
 		return "", err
@@ -34,7 +24,7 @@ func SelectAppliance(ctx context.Context, opts AppliancePrompt, config *configur
 
 	names := []string{}
 	for _, a := range appliances {
-		names = append(names, a.GetName())
+		names = append(names, fmt.Sprintf("%s - %s - %s", a.GetName(), a.GetSiteName(), a.GetTags()))
 	}
 	qs := &survey.Select{
 		PageSize: len(appliances),
@@ -42,7 +32,10 @@ func SelectAppliance(ctx context.Context, opts AppliancePrompt, config *configur
 		Options:  names,
 	}
 	selectedIndex := 0
-	survey.AskOne(qs, &selectedIndex, survey.WithValidator(survey.Required))
+	if err := SurveyAskOne(qs, &selectedIndex, survey.WithValidator(survey.Required)); err != nil {
+		return "", err
+	}
+
 	appliance := appliances[selectedIndex]
 	return appliance.GetId(), nil
 }
