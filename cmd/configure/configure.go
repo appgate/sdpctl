@@ -28,8 +28,13 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},
-		Short: "Configure your appgate SDP collective",
-		Long:  `Setup a configuration file towards your appgate sdp collective to be able to interact with the collective.`,
+		Short: "Configure your Appgate SDP Collective",
+		Long: `Setup a configuration file towards your Appgate SDP Collective to be able to interact with the collective. By default, the configuration file
+will be created in a default directory in depending on your system. This can be overriden by setting the 'APPGATECTL_CONFIG_DIR' environment variable.
+See 'appgatectl help environment' for more information on using environment variables.`,
+		Example: `appgatectl configure
+appgatectl configure --pem <path/to/pem>
+APPGATECTL_CONFIG_DIR=<path/to/config/dir appgatectl configure`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return configRun(c, args, &opts)
 		},
