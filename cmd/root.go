@@ -181,7 +181,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		log.SetOutput(f.IOOutWriter)
 
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
-			if err := auth.Login(f, false, false); err != nil {
+			if err := auth.Signin(f, false, false); err != nil {
 				fmt.Fprintln(os.Stderr, "appgatectl authentication err")
 				fmt.Fprintln(os.Stderr)
 				fmt.Fprintln(os.Stderr, err)

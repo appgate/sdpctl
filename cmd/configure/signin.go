@@ -34,13 +34,13 @@ This will fetch a token on valid authentication which will be valid for 24 hours
 
 	flags := loginCmd.Flags()
 
-	flags.BoolVar(&opts.remember, "remember-me", false, "remember login credentials")
+	flags.BoolVar(&opts.remember, "remember-me", false, "remember sign in credentials")
 
 	return loginCmd
 }
 
 func signinRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
-	if err := auth.Login(opts.f, opts.remember, true); err != nil {
+	if err := auth.Signin(opts.f, opts.remember, true); err != nil {
 		return err
 	}
 	log.WithField("config file", viper.ConfigFileUsed()).Info("Config updated")
