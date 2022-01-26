@@ -18,11 +18,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Login is an interactive login function, that generates the config file
-// Login will show a interactive prompt to query the user for username, password and enter MFA if needed.
+// Signin is an interactive login function, that generates the config file
+// Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support APPGATECTL_USERNAME & APPGATECTL_PASSWORD environment variables.
-// Login supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Login(f *factory.Factory, remember, saveConfig bool) error {
+// Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
+func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
@@ -114,11 +114,11 @@ func Login(f *factory.Factory, remember, saveConfig bool) error {
 		}
 	}
 
-	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
+	signinResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
 	if err != nil {
 		return err
 	}
-	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
+	authToken := fmt.Sprintf("Bearer %s", signinResponse.GetToken())
 	_, err = authenticator.Authorization(ctxWithAccept, authToken)
 	if errors.Is(err, ErrPreConditionFailed) {
 		otp, err := authenticator.InitializeOTP(ctxWithAccept, loginOpts.GetPassword(), authToken)
