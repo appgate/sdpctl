@@ -184,7 +184,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		if !preV.Equal(currentPrimaryControllerVersion) {
-			return fmt.Errorf("version mismatch: run appgatectl configure login")
+			return fmt.Errorf("version mismatch: run appgatectl configure signin")
 		}
 	}
 

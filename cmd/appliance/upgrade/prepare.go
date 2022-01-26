@@ -117,7 +117,7 @@ const (
 	fileFailed     = "Failed"
 )
 
-var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure login")
+var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	if appliancepkg.IsOnAppliance() {

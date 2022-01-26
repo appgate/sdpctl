@@ -8,17 +8,17 @@ import (
 	"github.com/spf13/viper"
 )
 
-type loginOptions struct {
+type signinOptions struct {
 	f        *factory.Factory
 	remember bool
 }
 
-// NewSigninCmd return a new login command
+// NewSigninCmd return a new signin command
 func NewSigninCmd(f *factory.Factory) *cobra.Command {
-	opts := loginOptions{
+	opts := signinOptions{
 		f: f,
 	}
-	var loginCmd = &cobra.Command{
+	var signinCmd = &cobra.Command{
 		Use: "signin",
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
@@ -32,14 +32,14 @@ This will fetch a token on valid authentication which will be valid for 24 hours
 		},
 	}
 
-	flags := loginCmd.Flags()
+	flags := signinCmd.Flags()
 
 	flags.BoolVar(&opts.remember, "remember-me", false, "remember sign in credentials")
 
-	return loginCmd
+	return signinCmd
 }
 
-func signinRun(cmd *cobra.Command, args []string, opts *loginOptions) error {
+func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
 	if err := auth.Signin(opts.f, opts.remember, true); err != nil {
 		return err
 	}

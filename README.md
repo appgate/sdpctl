@@ -44,23 +44,23 @@ $ appgatectl configure --pem=<path/to/pem>
 After the host and TLS verification options are set, you'll need to authenticate to the controller:
 
 ```bash
-# using the login command will prompt for username and password
-$ appgatectl configure login
+# using the signin command will prompt for username and password
+$ appgatectl configure signin
 ? Username: <your username>
 ? Password: <your password>
 
 # skip the prompting by setting the username and password as environment variables. This is only supported when using local provider for authentication.
-$ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login
+$ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure signin
 
-# setting only one of the environment variables will make the login command prompt for the missing information. For example:
-$ APPGATECTL_USERNAME=<username> appgatectl configure login
+# setting only one of the environment variables will make the signin command prompt for the missing information. For example:
+$ APPGATECTL_USERNAME=<username> appgatectl configure signin
 ? Password: <password>
 ```
 
-On successful authentication, a token is retrieved and stored in the appgatectl configuration and will be used for all the consecutive commands executed until the token expires. Once the token is expired, you'll need to re-authenticate to get a new token using the same login command. For convenience, you can also store username and/or password for future use by using the `--remember-me` flag when logging in.
+On successful authentication, a token is retrieved and stored in the appgatectl configuration and will be used for all the consecutive commands executed until the token expires. Once the token is expired, you'll need to re-authenticate to get a new token using the same signin command. For convenience, you can also store username and/or password for future use by using the `--remember-me` flag when logging in.
 
 ```bash
-$ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure login --remember-me
+$ APPGATECTL_USERNAME=<username> APPGATECTL_PASSWORD=<password> appgatectl configure signin --remember-me
 ```
 ---
 ## The `appliance` command

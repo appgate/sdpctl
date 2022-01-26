@@ -39,7 +39,7 @@ func (a *Auth) ProviderNames(ctx context.Context) ([]string, error) {
 
 func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*openapi.LoginResponse, *MinMax, error) {
 	c := a.APIClient
-	loginResponse, response, err := c.LoginApi.AuthenticationPost(ctx).LoginRequest(opts).Execute()
+	signinResponse, response, err := c.LoginApi.AuthenticationPost(ctx).LoginRequest(opts).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusNotAcceptable {
 			responseBody, errRead := io.ReadAll(response.Body)
@@ -54,22 +54,22 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 				Min: errBody.GetMinSupportedVersion(),
 				Max: errBody.GetMaxSupportedVersion(),
 			}
-			return &loginResponse, mm, err
+			return &signinResponse, mm, err
 		}
 		return nil, nil, api.HTTPErrorResponse(response, err)
 	}
-	return &loginResponse, nil, nil
+	return &signinResponse, nil, nil
 }
 
 func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginResponse, error) {
-	loginResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Authorization(token).Execute()
+	signinResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Authorization(token).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusPreconditionFailed {
-			return &loginResponse, ErrPreConditionFailed
+			return &signinResponse, ErrPreConditionFailed
 		}
-		return &loginResponse, api.HTTPErrorResponse(response, err)
+		return &signinResponse, api.HTTPErrorResponse(response, err)
 	}
-	return &loginResponse, nil
+	return &signinResponse, nil
 }
 
 func (a *Auth) InitializeOTP(ctx context.Context, password, token string) (openapi.InlineResponse2007, error) {
