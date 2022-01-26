@@ -13,10 +13,6 @@ import (
 const (
 	longDescription string = `Appgate backup script.
 
-© 2021 Appgate Cybersecurity, Inc.
-All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
-htts://www.appgate.com
-
 For more information on the backup process, go to: https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html
 `
 )
