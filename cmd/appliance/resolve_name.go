@@ -78,7 +78,6 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
-	cmd.Flags().StringVar(&opts.applianceID, "appliance-id", "", "appliance UUID")
 	cmd.Flags().StringVar(&opts.resourceName, "resource-name", "", "The resource name to test on the Gateway. (Required)")
 	cmd.MarkFlagRequired("resource-name")
 
