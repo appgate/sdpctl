@@ -63,9 +63,9 @@ the signature verified as well as any other preconditions applicable at this poi
 			}
 			opts.filename = path.Base(opts.image)
 			var errs error
-			// Check if its a valid filename
-			if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(opts.filename) {
-				errs = multierr.Append(errs, errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1"))
+
+			if err := checkImageFilename(opts.filename); err != nil {
+				errs = multierr.Append(errs, err)
 			}
 
 			// allow remote addr for image, such as aws s3 bucket
@@ -101,6 +101,14 @@ the signature verified as well as any other preconditions applicable at this poi
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 
 	return prepareCmd
+}
+
+func checkImageFilename(i string) error {
+	// Check if its a valid filename
+	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(i) {
+		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
+	}
+	return nil
 }
 
 const (
