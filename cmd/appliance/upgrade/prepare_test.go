@@ -359,3 +359,51 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckImageFilename(t *testing.T) {
+	type args struct {
+		i string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "s3 bucket url",
+			args: args{
+				i: "https://s3.us-central-1.amazonaws.com/bucket/appgate-5.5.99-123-release.img.zip",
+			},
+			wantErr: false,
+		},
+
+		{
+			name: "localpath",
+			args: args{
+				i: "/tmp/artifacts/55/appgate-5.5.2-99999-release.img.zip",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test url with get variables",
+			args: args{
+				i: "https://downlad.com/release-5.5/artifact/appgate-5.5.3-27278-release.img.zip?is-build-type-id",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test url with get variables key value",
+			args: args{
+				i: "https://downlad.com/release-5.5/artifact/appgate-5.5.3-27278-release.img.zip?foo=bar",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := checkImageFilename(tt.args.i); (err != nil) != tt.wantErr {
+				t.Errorf("checkImageFilename() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
