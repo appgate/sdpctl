@@ -80,7 +80,7 @@ appgatectl appliance metric <appliance-id> --metric-name=<some_metric_name>`,
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.metric, "metric-name", "", "Metric name")
+	cmd.Flags().StringVar(&opts.metric, "metric-name", "", "Query for a specific metric by name (exact match)")
 
 	return cmd
 }
