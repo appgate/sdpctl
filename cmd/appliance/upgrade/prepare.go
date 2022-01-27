@@ -105,7 +105,7 @@ the signature verified as well as any other preconditions applicable at this poi
 
 func checkImageFilename(i string) error {
 	// Check if its a valid filename
-	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip$`); !rg.MatchString(i) {
+	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip`); !rg.MatchString(i) {
 		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
 	}
 	return nil
