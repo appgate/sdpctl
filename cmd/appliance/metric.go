@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/api"
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -40,9 +40,13 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Short:   `Get all the Prometheus metrics for the given Appliance`,
 		Aliases: []string{"metrics"},
 		Args: func(cmd *cobra.Command, args []string) error {
-			var err error
+			ctx := context.Background()
+			a, err := opts.Appliance(opts.Config)
+			if err != nil {
+				return err
+			}
 			if len(args) != 1 {
-				opts.applianceID, err = promptForAppliance(opts)
+				opts.applianceID, err = prompt.SelectAppliance(ctx, a, nil)
 				if err != nil {
 					return err
 				}
@@ -54,7 +58,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 			_, err = uuid.Parse(uuidArg)
 			if err != nil {
 				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = promptForAppliance(opts)
+				uuidArg, err = prompt.SelectAppliance(ctx, a, nil)
 				if err != nil {
 					return err
 				}
@@ -99,39 +103,4 @@ func metricRun(cmd *cobra.Command, args []string, opts *metricOptions) error {
 
 	fmt.Fprintln(opts.Out, data)
 	return nil
-}
-
-func promptForAppliance(opts metricOptions) (string, error) {
-	// Command accepts only one argument
-	a, err := opts.Appliance(opts.Config)
-	if err != nil {
-		return "", err
-	}
-	ctx := context.Background()
-	appliances, err := a.List(ctx, nil)
-	if err != nil {
-		return "", err
-	}
-	stats, _, err := a.Stats(ctx)
-	if err != nil {
-		return "", err
-	}
-	appliances, _, err = appliancepkg.FilterAvailable(appliances, stats.GetData())
-	if err != nil {
-		return "", err
-	}
-
-	names := []string{}
-	for _, a := range appliances {
-		names = append(names, a.GetName())
-	}
-	qs := &survey.Select{
-		PageSize: len(appliances),
-		Message:  "select appliance:",
-		Options:  names,
-	}
-	selectedIndex := 0
-	survey.AskOne(qs, &selectedIndex, survey.WithValidator(survey.Required))
-	appliance := appliances[selectedIndex]
-	return appliance.GetId(), nil
 }
