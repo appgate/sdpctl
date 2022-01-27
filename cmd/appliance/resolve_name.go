@@ -28,25 +28,23 @@ type resolveNameOpts struct {
 	resourceName string
 }
 
-const resolveNameLong = `
-
-Test a resolver name on a Gateway.
-
-Name resolvers are used by the Gateways on a Site resolve the IPs in the specific network or set of protected resources.
-
-Example:
-
-# with a specific gateway appliance id:
-appgatectl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se
+const (
+	resolveNameLong = `
+    Test a resolver name on a Gateway.
+    Name resolvers are used by the Gateways on a Site resolve the IPs in the specific network or set of protected resources.
+    `
+	resolveNameExample = `
+    # with a specific gateway appliance id:
+    appgatectl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se
 
 
-# If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.
-> appgatectl appliance resolve-name --resource-name dns://google.se
-? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
-142.251.36.3
-2a00:1450:400e:80f::2003
-
-`
+    # If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.
+    > appgatectl appliance resolve-name --resource-name dns://google.se
+    ? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
+    142.251.36.3
+    2a00:1450:400e:80f::2003
+    `
+)
 
 // NewResolveNameCmd return a new appliance list command
 func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
@@ -58,9 +56,10 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var cmd = &cobra.Command{
-		Use:   "resolve-name [<appliance-id>] --resolve-name=query",
-		Short: `Test a resolver name on a Gateway`,
-		Long:  resolveNameLong,
+		Use:     "resolve-name [<appliance-id>] --resolve-name=query",
+		Short:   `Test a resolver name on a Gateway`,
+		Long:    resolveNameLong,
+		Example: resolveNameExample,
 		Args: func(cmd *cobra.Command, args []string) error {
 			a, err := opts.Appliance(opts.Config)
 			if err != nil {
