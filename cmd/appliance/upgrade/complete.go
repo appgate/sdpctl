@@ -46,6 +46,14 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Long: `Complete a prepared upgrade.
 Install a prepared upgrade on the secondary partition
 and perform a reboot to make the second partition the primary.`,
+		Example: `# complete all pending upgrades
+$ appgatectl appliance upgrade complete
+
+# backup primary controller before completing
+$ appgatectl appliance upgrade complete --backup
+
+# backup to custom directory when completing pending upgrade
+$ appgatectl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
@@ -59,7 +67,7 @@ and perform a reboot to make the second partition the primary.`,
 	}
 
 	flags := upgradeCompleteCmd.Flags()
-	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup main controller before completing upgrade")
+	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 
 	return upgradeCompleteCmd

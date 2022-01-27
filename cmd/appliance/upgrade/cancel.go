@@ -38,6 +38,17 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 	var upgradeCancelCmd = &cobra.Command{
 		Use:   "cancel",
 		Short: `Cancel a prepared upgrade`,
+        Long: `Cancel a prepared upgrade. The command will attempt to cancel upgrades on
+Appliances that are not in the 'idle' upgrade state. Cancelling will remove the uploaded
+upgrade image from the Appliance.
+
+Note that you can cancel upgrades on specific appliances by using the '--filter' and/or
+'--exclude' flags in combination with this command.`,
+        Example: `# Cancel upgrade on all Appgate SDP Appliances
+$ appgatectl appliance upgrade cancel
+
+# Cancel upgrade on specific appliance, a gateway in this case
+$ appgatectl appliance upgrade cancel --filter=role=gateway`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCancelRun(c, args, &opts)
 		},
