@@ -147,10 +147,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
 	defer cancel()
 	filter := util.ParseFilteringFlags(cmd.Flags())
-	allAppliances, err := a.List(ctx, filter)
+	rawAppliances, err := a.List(ctx, nil)
 	if err != nil {
 		return err
 	}
+	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, host)
+	if err != nil {
+		return err
+	}
+	allAppliances := appliancepkg.FilterAppliances(rawAppliances, filter)
 	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
@@ -176,10 +181,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	primaryController, err := appliancepkg.FindPrimaryController(appliances, host)
-	if err != nil {
-		return err
-	}
 	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
 	if err != nil {
 		return err
