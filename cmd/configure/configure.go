@@ -30,7 +30,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		},
 		Short: "Configure your Appgate SDP Collective",
 		Long: `Setup a configuration file towards your Appgate SDP Collective to be able to interact with the collective. By default, the configuration file
-will be created in a default directory in depending on your system. This can be overriden by setting the 'APPGATECTL_CONFIG_DIR' environment variable.
+will be created in a default directory in depending on your system. This can be overridden by setting the 'APPGATECTL_CONFIG_DIR' environment variable.
 See 'appgatectl help environment' for more information on using environment variables.`,
 		Example: `appgatectl configure
 appgatectl configure --pem <path/to/pem>
