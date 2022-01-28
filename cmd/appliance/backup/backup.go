@@ -49,11 +49,10 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 		Destination: appliance.DefaultBackupDestination,
 	}
 	cmd := &cobra.Command{
-		Use:       "backup [flags] [appliance]",
-		Short:     "Perform backup of the Appgate SDP Collective",
-		Long:      longDescription,
-		Example:   example,
-		ValidArgs: []string{"appliance"},
+		Use:     "backup",
+		Short:   "Perform backup of the Appgate SDP Collective",
+		Long:    longDescription,
+		Example: example,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {

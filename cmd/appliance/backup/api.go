@@ -32,7 +32,7 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 	}
 	var cmd = &cobra.Command{
 		Use:   "api",
-		Short: `Whether the backup API is enabled or not.`,
+		Short: `Controls the state of the backup API.`,
 		Long: `This command controls the state of the backup API on the Appgate SDP Collective.
 You will be prompted for a passphrase for the backups when enabling the backup API using this command.
 The passphrase is required.`,
