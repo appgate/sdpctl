@@ -74,7 +74,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 		}
 	}
 
-	signinOpts := openapi.LoginRequest{
+	loginOpts := openapi.LoginRequest{
 		ProviderName: cfg.Provider,
 		Username:     openapi.PtrString(credentials.Username),
 		Password:     openapi.PtrString(credentials.Password),
@@ -84,7 +84,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
 	// initial authtentication, this will fail, since we will use the singin response
 	// to compute the correct peerVersion used in the selected appgate sdp collective.
-	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), signinOpts)
+	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
 	if err != nil && minMax == nil {
 		if err, ok := errors.Unwrap(err).(*url.Error); ok {
 			if err, ok := err.Unwrap().(x509.UnknownAuthorityError); ok {
@@ -109,19 +109,19 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 			Message: "Choose a provider:",
 			Options: providers,
 		}
-		if err := survey.AskOne(prompt, &signinOpts.ProviderName); err != nil {
+		if err := survey.AskOne(prompt, &loginOpts.ProviderName); err != nil {
 			return err
 		}
 	}
 
-	signinResponse, _, err := authenticator.Authentication(ctxWithAccept, signinOpts)
+	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
 	if err != nil {
 		return err
 	}
-	authToken := fmt.Sprintf("Bearer %s", signinResponse.GetToken())
+	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
 	_, err = authenticator.Authorization(ctxWithAccept, authToken)
 	if errors.Is(err, ErrPreConditionFailed) {
-		otp, err := authenticator.InitializeOTP(ctxWithAccept, signinOpts.GetPassword(), authToken)
+		otp, err := authenticator.InitializeOTP(ctxWithAccept, loginOpts.GetPassword(), authToken)
 		if err != nil {
 			return err
 		}
