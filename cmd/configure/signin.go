@@ -27,6 +27,11 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 		Short:   "Sign in and authenticate to Appgate SDP Collective",
 		Long: `Sign in to the Appgate SDP Collective using the configuration file created by the 'appgatectl configure' command.
 This will fetch a token on valid authentication which will be valid for 24 hours and stored in the configuration.`,
+		Example: `# Default sign in
+$ appgatectl configure signin
+
+# Remember credentials on sign in
+$ appgatectl configure signin --remember-me`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return signinRun(c, args, &opts)
 		},

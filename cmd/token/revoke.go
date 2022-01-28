@@ -72,7 +72,18 @@ func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 	var revokeCmd = &cobra.Command{
 		Use:   "revoke [<distinguished-name> | --by-token-type <type>]",
 		Short: "revoke entitlement tokens by distinguished name or token-type",
+		Long: `Revoke tokens by distinguished name or token type.
 
+Valid token types are:
+  - administration
+  - adminclaims
+  - entitlements
+  - claims`,
+		Example: `# revoke by distinguished name
+$ appgatectl token revoke <distinguished-name>
+
+# revoke by token type
+$ appgatectl token revoke --token-type=claims`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if (len(args) != 0 && len(args) != 1) || (len(args) == 0 && opts.ByTokenType == "") {
 				return errors.New("must set either <distinghuished-name> or --by-token-type <type>")
@@ -101,13 +112,14 @@ func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 		},
 	}
 
-	revokeCmd.Flags().StringVar(&opts.ByTokenType, "by-token-type", "", "revoke all tokens of this type. { administration, adminclaims, entitlements, claims }")
-	revokeCmd.Flags().StringVar(&opts.SiteID, "site-id", "", "revoke only tokens for the given site ID")
-	revokeCmd.Flags().StringVar(&opts.RevocationReason, "reason", "", "reason for revocation")
-	revokeCmd.Flags().Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
-	revokeCmd.Flags().Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
-	revokeCmd.Flags().StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
-	revokeCmd.Flags().StringVar(&opts.TokenType, "token-type", "", "revoke only certain types of token when revoking by distinguished name")
+	flags := revokeCmd.Flags()
+	flags.StringVar(&opts.ByTokenType, "by-token-type", "", "revoke all tokens of this type. { administration, adminclaims, entitlements, claims }")
+	flags.StringVar(&opts.SiteID, "site-id", "", "revoke only tokens for the given site ID")
+	flags.StringVar(&opts.RevocationReason, "reason", "", "reason for revocation")
+	flags.Float32Var(&opts.TokensPerSecond, "per-second", 7, "tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second")
+	flags.Int32Var(&opts.DelayMinutes, "delay-minutes", 5, "delay time for token revocations in minutes. defaults to 5 minutes")
+	flags.StringSliceVar(&opts.SpecificDistinguishedNames, "specific-distinguished-names", []string{}, "comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices")
+	flags.StringVar(&opts.TokenType, "token-type", "", "revoke only certain types of token when revoking by distinguished name")
 
 	return revokeCmd
 }
