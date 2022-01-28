@@ -32,8 +32,25 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	}
 	var upgradeStatusCmd = &cobra.Command{
 		Use:   "status",
-		Short: "upgrade status",
-		Long:  `Display the upgrade status`,
+		Short: `Display the upgrade status of Appgate SDP Appliances`,
+		Long: `Display the upgrade status of Appgate SDP Appliances in either table or json format.
+Upgrade statuses:
+- idle:         No upgrade is initiated
+- started:      Upgrade process has started
+- downloading:  Appliance is downloading the upgrade image
+- verifying:    Upgrade image download is completed and the image is being verified
+- ready:        Image is verified and ready to be applied
+- installing:   Appliance is installing the upgrade image
+- success:      Upgrade successful
+- failed:       Upgrade failed for some reason during the process`,
+		Example: `# View in table format
+$ appgatectl appliance upgrade status
+
+# View in JSON format
+$ appgatectl appliance upgrade status --json
+
+# Filter appliances
+$ appgatectl appliance upgrade status --filter=name=controller`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeStatusRun(c, args, &opts)
 		},

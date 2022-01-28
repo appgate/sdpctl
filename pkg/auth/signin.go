@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Signin is an interactive login function, that generates the config file
+// Signin is an interactive sign in function, that generates the config file
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support APPGATECTL_USERNAME & APPGATECTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
@@ -82,7 +82,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	}
 	ctx := context.Background()
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
-	// initial authtentication, this will fail, since we will use the login response
+	// initial authtentication, this will fail, since we will use the singin response
 	// to compute the correct peerVersion used in the selected appgate sdp collective.
 	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
 	if err != nil && minMax == nil {
@@ -114,11 +114,11 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 		}
 	}
 
-	signinResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
+	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
 	if err != nil {
 		return err
 	}
-	authToken := fmt.Sprintf("Bearer %s", signinResponse.GetToken())
+	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
 	_, err = authenticator.Authorization(ctxWithAccept, authToken)
 	if errors.Is(err, ErrPreConditionFailed) {
 		otp, err := authenticator.InitializeOTP(ctxWithAccept, loginOpts.GetPassword(), authToken)

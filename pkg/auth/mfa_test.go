@@ -110,11 +110,11 @@ const successfulLoginResponse = `{
 
 func TestAuthAuthentication(t *testing.T) {
 	tests := []struct {
-		name      string
-		httpStubs []httpmock.Stub
-		loginOpts openapi.LoginRequest
-		wantToken string
-		wantErr   bool
+		name       string
+		httpStubs  []httpmock.Stub
+		signinOpts openapi.LoginRequest
+		wantToken  string
+		wantErr    bool
 	}{
 		{
 			name: "authentication OK",
@@ -130,7 +130,7 @@ func TestAuthAuthentication(t *testing.T) {
 					},
 				},
 			},
-			loginOpts: openapi.LoginRequest{
+			signinOpts: openapi.LoginRequest{
 				ProviderName: "local",
 				Username:     openapi.PtrString("user"),
 				Password:     openapi.PtrString("tSW3!QBv(rj{UuLY"),
@@ -158,7 +158,7 @@ func TestAuthAuthentication(t *testing.T) {
 					},
 				},
 			},
-			loginOpts: openapi.LoginRequest{
+			signinOpts: openapi.LoginRequest{
 				ProviderName: "local",
 				Username:     openapi.PtrString("user"),
 				Password:     openapi.PtrString("tSW3!QBv(rj{UuLY"),
@@ -184,7 +184,7 @@ func TestAuthAuthentication(t *testing.T) {
 					},
 				},
 			},
-			loginOpts: openapi.LoginRequest{
+			signinOpts: openapi.LoginRequest{
 				ProviderName: "local",
 				Username:     openapi.PtrString("user"),
 				Password:     openapi.PtrString("tSW3!QBv(rj{UuLY"),
@@ -205,7 +205,7 @@ func TestAuthAuthentication(t *testing.T) {
 			a := &Auth{
 				APIClient: registry.Client,
 			}
-			got, minMax, err := a.Authentication(context.TODO(), tt.loginOpts)
+			got, minMax, err := a.Authentication(context.TODO(), tt.signinOpts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Auth.Authentication() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -229,11 +229,11 @@ func TestAuthAuthentication(t *testing.T) {
 
 func TestAuthAuthorization(t *testing.T) {
 	tests := []struct {
-		name      string
-		httpStubs []httpmock.Stub
-		loginOpts openapi.LoginRequest
-		wantToken string
-		wantErr   bool
+		name       string
+		httpStubs  []httpmock.Stub
+		signinOpts openapi.LoginRequest
+		wantToken  string
+		wantErr    bool
 	}{
 		{
 			name: "Authorization OK",
@@ -249,7 +249,7 @@ func TestAuthAuthorization(t *testing.T) {
 					},
 				},
 			},
-			loginOpts: openapi.LoginRequest{
+			signinOpts: openapi.LoginRequest{
 				ProviderName: "local",
 				Username:     openapi.PtrString("user"),
 				Password:     openapi.PtrString("tSW3!QBv(rj{UuLY"),
@@ -277,7 +277,7 @@ func TestAuthAuthorization(t *testing.T) {
 					},
 				},
 			},
-			loginOpts: openapi.LoginRequest{
+			signinOpts: openapi.LoginRequest{
 				ProviderName: "local",
 				Username:     openapi.PtrString("user"),
 				Password:     openapi.PtrString("tSW3!QBv(rj{UuLY"),

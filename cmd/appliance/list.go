@@ -2,12 +2,13 @@ package appliance
 
 import (
 	"context"
+	"io"
+
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/spf13/cobra"
-	"io"
 )
 
 type listOptions struct {
@@ -27,8 +28,14 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var listCmd = &cobra.Command{
-		Use:     "list",
-		Short:   `list all appliances`,
+		Use:   "list",
+		Short: `List all Appgate SDP Appliances`,
+		Long: `List all Appliances in the Appgate SDP Collective. The appliances will be listed in no particular order. Using without arguments
+will print a table view with a limited set of information. Using the command with the provided '--json' flag will print out a more detailed
+list view in json format. The list command can also be combined with the global '--filter' and '--exclude' flags`,
+		Example: `appgatectl appliance list
+appgatectl appliance list --json
+appgatectl appliance list --filter=<key>=<value>`,
 		Aliases: []string{"ls"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, &opts)

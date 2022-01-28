@@ -1,11 +1,12 @@
 package token
 
 import (
+	"io"
+
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/token"
 	"github.com/spf13/cobra"
-	"io"
 )
 
 type TokenOptions struct {
@@ -27,6 +28,7 @@ func NewTokenCmd(f *factory.Factory) *cobra.Command {
 	var tokenCmd = &cobra.Command{
 		Use:   "token",
 		Short: "Perform actions related to token on the Appgate SDP Collective",
+		Long:  `The token command allows you to renew or revoke device tokens used in the Appgate SDP Collective.`,
 	}
 
 	tokenCmd.PersistentFlags().BoolVar(&opts.useJSON, "json", false, "Display in JSON format")

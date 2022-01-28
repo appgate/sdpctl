@@ -22,9 +22,11 @@ import (
 )
 
 var (
-	version       string = "dev"
-	commit        string
-	buildDate     string
+	version         string = "dev"
+	commit          string
+	buildDate       string
+	longDescription string = `The official CLI tool for managing your Appgate SDP Collective.
+With appgatectl, you can list, backup and upgrade your Appgate SDP Appliances with a single command.`
 	versionOutput string = fmt.Sprintf(`%s
 commit: %s
 build date: %s`, version, commit, buildDate)
@@ -58,15 +60,12 @@ func initConfig() {
 
 func NewCmdRoot() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use:           "appgatectl [COMMAND]",
+		Use:           "appgatectl",
 		Short:         "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
+		Long:          longDescription,
 		Version:       versionOutput,
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		Aliases: []string{
-			"agctl",
-			"ag",
-		},
 	}
 
 	cobra.OnInitialize(initConfig)
@@ -193,7 +192,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			fmt.Fprintln(os.Stderr, "appgatectl err")
 			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure login`.")
+			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure signin`.")
 			return ErrExitAuth
 		}
 

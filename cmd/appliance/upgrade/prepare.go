@@ -56,7 +56,16 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Short: "prepare upgrade",
 		Long: `Prepare an upgrade but do NOT install it.
 This means the upgrade file will be downloaded/uploaded to all the appliances,
-the signature verified as well as any other preconditions applicable at this point.`,
+the signature verified as well as any other preconditions applicable at this point.
+
+There are initial checks on the filename before attempting to upload it to the Appliances.
+A valid filename ends with '.img.zip' and also needs to have a semver included somewhere
+in the name, eg. 'upgrade.img.zip' will not not be valid, but 'upgrade5.5.3.img.zip' is
+considered valid.
+
+Note that the '--image' flag also accepts URL:s. The Appliances will then attempt to download
+the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.`,
+		Example: `$ appgatectl appliance upgrade prepare --image=/path/to/upgrade-5.5.3.img.zip`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
@@ -117,7 +126,7 @@ const (
 	fileFailed     = "Failed"
 )
 
-var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure login")
+var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	if appliancepkg.IsOnAppliance() {

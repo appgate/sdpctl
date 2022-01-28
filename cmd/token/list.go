@@ -2,14 +2,18 @@ package token
 
 import (
 	"context"
+
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 func NewTokenListCmd(opts *TokenOptions) *cobra.Command {
 	var listCmd = &cobra.Command{
-		Use:     "list",
-		Short:   "list distinguished names of active devices",
+		Use:   "list",
+		Short: "list distinguished names of active devices",
+		Long:  `List distinguished names of active tokens, either in table format or JSON format using the '--json' flag`,
+		Example: `$ appgatectl token list
+$ appgatectl token list --json`,
 		Aliases: []string{"ls"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return tokenListRun(opts)
