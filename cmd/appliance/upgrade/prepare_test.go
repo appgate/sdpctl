@@ -17,6 +17,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/shlex"
+	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -36,6 +37,20 @@ func (u *errorUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appl
 	return fmt.Errorf("gateway never reached %s, got failed", desiredStatus)
 }
 
+func NewApplianceCmd(f *factory.Factory) *cobra.Command {
+	// define prepare parent command flags so we can include these in the tests.
+	cmd := &cobra.Command{
+		Use:              "appliance",
+		Short:            "interact with appliances",
+		Aliases:          []string{"app", "a"},
+		TraverseChildren: true,
+	}
+	cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
+	cmd.PersistentFlags().StringToStringP("filter", "f", map[string]string{}, "")
+	cmd.PersistentFlags().StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances. Adheres to the same syntax and key-value pairs as '--filter'")
+	return cmd
+}
+
 func TestUpgradePrepareCommand(t *testing.T) {
 
 	tests := []struct {
@@ -50,6 +65,74 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "with existing file",
 			cli:  "prepare --image './testdata/appgate-5.5.1.img.zip'",
+			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne(true) // auto-scaling warning
+				s.StubOne(true) // disk usage
+				s.StubOne(true) // peer_warning message
+				s.StubOne(true) // upgrade_confirm
+			},
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+				},
+				{
+					URL:       "/files/appgate-5.5.1.img.zip",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+						}
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
+						}
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{
+		                    "status": "idle",
+		                    "details": "a reboot is required for the Upgrade to go into effect"
+		                  }`))
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "with gateway filter",
+			cli:  `prepare --filter role=gateway --image './testdata/appgate-5.5.1.img.zip'`,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
@@ -325,7 +408,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 
 				return a, nil
 			}
-			cmd := NewPrepareUpgradeCmd(f)
+			// add parent command to allow us to include test with parent flags
+			cmd := NewApplianceCmd(f)
+			cmd.AddCommand(NewPrepareUpgradeCmd(f))
+
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
 
