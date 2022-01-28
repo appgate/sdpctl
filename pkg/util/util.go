@@ -7,7 +7,6 @@ import (
 	"os"
 	"sort"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
 
@@ -85,10 +84,9 @@ func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
 
 	for v := range result {
 		arg, err := flags.GetStringToString(v)
-		if err != nil {
-			logrus.Warnf("Failed to parse %s flag: %s", v, err)
+		if err == nil {
+			result[v] = arg
 		}
-		result[v] = arg
 	}
 
 	return result
