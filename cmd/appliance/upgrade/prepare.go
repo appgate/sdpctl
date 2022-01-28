@@ -150,10 +150,21 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
 	}
 	filter := util.ParseFilteringFlags(cmd.Flags())
-	appliances, err := a.List(ctx, filter)
+	Allappliances, err := a.List(ctx, nil)
 	if err != nil {
 		return err
 	}
+	host, err := opts.Config.GetHost()
+	if err != nil {
+		return err
+	}
+	appliances := appliancepkg.FilterAppliances(Allappliances, filter)
+
+	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host)
+	if err != nil {
+		return err
+	}
+
 	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
@@ -200,15 +211,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	host, err := opts.Config.GetHost()
-	if err != nil {
-		return err
-	}
 
-	primaryController, err := appliancepkg.FindPrimaryController(groups[appliancepkg.FunctionController], host)
-	if err != nil {
-		return err
-	}
 	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
 	if err != nil {
 		return err
