@@ -46,7 +46,6 @@ const (
     `
 )
 
-// NewResolveNameCmd return a new appliance list command
 func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 	opts := resolveNameOpts{
 		Config:    f.Config,
