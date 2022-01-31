@@ -129,7 +129,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 			optKey := &survey.Password{
 				Message: "Please enter your one-time password:",
 			}
-			if err := survey.AskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
+			if err := prompt.SurveyAskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
 				return nil, err
 			}
 			return authenticator.PushOTP(ctxWithAccept, answer, authToken)

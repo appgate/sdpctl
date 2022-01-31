@@ -163,6 +163,103 @@ func TestSignin(t *testing.T) {
 				s.StubOne("alice") // password
 			},
 		},
+		{
+			name: "signin prompt username and password and MFA token",
+			args: args{
+				remember:   false,
+				saveConfig: false,
+			},
+
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderNnames,
+				{
+					URL: "/authorization",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							rw.Header().Set("Content-Type", "application/json")
+							if v, ok := r.Header["Authorization"]; ok && v[0] == "Bearer newToken" {
+								rw.WriteHeader(http.StatusOK)
+								fmt.Fprint(rw, string(`{
+                                    "user": {
+                                        "name": "admin",
+                                        "needTwoFactorAuth": false,
+                                        "canAccessAuditLogs": true,
+                                        "privileges": [
+                                            {
+                                                "type": "All",
+                                                "target": "All",
+                                                "scope": {
+                                                    "all": true,
+                                                    "ids": [],
+                                                    "tags": []
+                                                }
+                                            }
+                                        ]
+                                    },
+                                    "token": "authorizedNewToken",
+                                    "expires": "2022-02-01T15:07:04.451882Z"
+                                }`))
+								return
+							}
+							rw.WriteHeader(http.StatusPreconditionFailed)
+							fmt.Fprint(rw, string(`{
+                                "id": "precondition failed",
+                                "message": "Administrative authorization requires two-factor authentication.",
+                                "otpRequired": true,
+                                "username": "admin"
+                            }`))
+							return
+						}
+					},
+				},
+				{
+					URL: "/authentication/otp/initialize",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{
+                                "inputType": "Numeric",
+                                "type": "AlreadySeeded"
+                            }`))
+						}
+					},
+				},
+				{
+					URL: "/authentication/otp",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{
+                                "user": {
+                                    "name": "admin",
+                                    "needTwoFactorAuth": false,
+                                    "canAccessAuditLogs": false,
+                                    "privileges": []
+                                },
+                                "token": "newToken",
+                                "expires": "2022-02-01T15:07:04.451882Z"
+                            }`))
+						}
+					},
+				},
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"),
+				},
+			},
+			askStubs: func(s *prompt.AskStubber) {
+				s.StubOne("bob")    // username
+				s.StubOne("alice")  // password
+				s.StubOne("123456") // OTP
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
