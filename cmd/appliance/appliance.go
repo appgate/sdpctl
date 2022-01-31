@@ -33,6 +33,7 @@ used together with one of the available sub-commands listed below.`,
 	cmd.AddCommand(NewStatsCmd(f))
 	cmd.AddCommand(NewMetricCmd(f))
 	cmd.AddCommand(NewResolveNameCmd(f))
+	cmd.AddCommand(NewResolveNameStatusCmd(f))
 
 	return cmd
 }
