@@ -9,7 +9,6 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/uuid"
@@ -72,7 +71,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 				},
 			}
 			if len(args) != 1 {
-				opts.applianceID, err = prompt.SelectAppliance(ctx, a, filter)
+				opts.applianceID, err = appliancepkg.PromptSelect(ctx, a, filter)
 				if err != nil {
 					return err
 				}
@@ -84,7 +83,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 			_, err = uuid.Parse(uuidArg)
 			if err != nil {
 				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = prompt.SelectAppliance(ctx, a, filter)
+				uuidArg, err = appliancepkg.PromptSelect(ctx, a, filter)
 				if err != nil {
 					return err
 				}

@@ -1,14 +1,14 @@
-package prompt
+package appliance
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/prompt"
 )
 
-func SelectAppliance(ctx context.Context, a *appliancepkg.Appliance, filter map[string]map[string]string) (string, error) {
+func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[string]string) (string, error) {
 	appliances, err := a.List(ctx, filter)
 	if err != nil {
 		return "", err
@@ -17,7 +17,7 @@ func SelectAppliance(ctx context.Context, a *appliancepkg.Appliance, filter map[
 	if err != nil {
 		return "", err
 	}
-	appliances, _, err = appliancepkg.FilterAvailable(appliances, stats.GetData())
+	appliances, _, err = FilterAvailable(appliances, stats.GetData())
 	if err != nil {
 		return "", err
 	}
@@ -32,7 +32,7 @@ func SelectAppliance(ctx context.Context, a *appliancepkg.Appliance, filter map[
 		Options:  names,
 	}
 	selectedIndex := 0
-	if err := SurveyAskOne(qs, &selectedIndex, survey.WithValidator(survey.Required)); err != nil {
+	if err := prompt.SurveyAskOne(qs, &selectedIndex, survey.WithValidator(survey.Required)); err != nil {
 		return "", err
 	}
 
