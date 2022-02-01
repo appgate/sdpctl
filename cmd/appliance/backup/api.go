@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
@@ -71,11 +70,8 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		message = "backup API has been disabled."
 	} else {
 		settings.SetBackupApiEnabled(true)
-		var answer string
-		passwordPrompt := &survey.Password{
-			Message: "The passphrase to encrypt Appliance Backups when backup API is used:",
-		}
-		if err := prompt.SurveyAskOne(passwordPrompt, &answer, survey.WithValidator(survey.Required)); err != nil {
+		answer, err := prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
+		if err != nil {
 			return err
 		}
 		settings.SetBackupPassphrase(answer)

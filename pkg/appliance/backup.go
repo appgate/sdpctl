@@ -17,6 +17,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	log "github.com/sirupsen/logrus"
@@ -333,11 +334,8 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
-			qp := &survey.Password{
-				Message: "Set passphrase to use for backups:",
-			}
-			var password string
-			if err := survey.AskOne(qp, &password, survey.WithValidator(survey.Required)); err != nil {
+			password, err := prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
+			if err != nil {
 				return false, err
 			}
 			settings.SetBackupPassphrase(password)

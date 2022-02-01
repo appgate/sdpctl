@@ -156,10 +156,10 @@ func TestBackupAPICommand(t *testing.T) {
 	cmd.SetErr(io.Discard)
 	stubber, teardown := prompt.InitAskStubber()
 	defer teardown()
-	foo := func(prompt *prompt.AskStubber) {
-		prompt.StubOne("newBackupPassphrase")
-	}
-	foo(stubber)
+	func(prompt *prompt.AskStubber) {
+		prompt.StubOne("newBackupPassphrase") // password
+		prompt.StubOne("newBackupPassphrase") // password confirmation
+	}(stubber)
 
 	_, err := cmd.ExecuteC()
 	if err != nil {
