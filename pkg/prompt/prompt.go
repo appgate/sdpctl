@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/cmdutil"
 )
 
 // AskConfirmation make sure user confirm action, otherwise abort.
@@ -15,7 +15,7 @@ func AskConfirmation(m ...string) error {
 		Message: strings.Join(m, "\n\n"),
 	}
 	if err := SurveyAskOne(p, &ok); err != nil || !ok {
-		return appliance.ErrExecutionCanceledByUser
+		return cmdutil.ErrExecutionCanceledByUser
 	}
 	return nil
 }
