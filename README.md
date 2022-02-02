@@ -1,5 +1,7 @@
 <img src="./appgate_sdp_logo.svg" width="400">
 
+
+
 ---
 # appgatectl documentation
 Appgatectl is a command line tool for managing your Appgate SDP collective.
