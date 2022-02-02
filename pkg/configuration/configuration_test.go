@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/appgate/appgatectl/pkg/keyring"
+	zkeyring "github.com/zalando/go-keyring"
 )
 
 func Test_ConfigDir(t *testing.T) {
@@ -63,6 +66,10 @@ func Test_ConfigDir(t *testing.T) {
 }
 
 func TestConfigCheckAuth(t *testing.T) {
+	zkeyring.MockInit()
+	if err := keyring.SetBearer("abc12345"); err != nil {
+		t.Fatalf("unable to mock keyring in TestConfigCheckAuth() %v", err)
+	}
 	type fields struct {
 		URL                      string
 		Provider                 string
@@ -84,20 +91,18 @@ func TestConfigCheckAuth(t *testing.T) {
 		{
 			name: "valid",
 			fields: fields{
-				ExpiresAt:   "2031-12-08 08:15:39.137584 +0000 UTC",
-				BearerToken: "abc123456789",
-				URL:         "https://controller.appgate.com",
-				Provider:    "local",
+				ExpiresAt: "2031-12-08 08:15:39.137584 +0000 UTC",
+				URL:       "https://controller.appgate.com",
+				Provider:  "local",
 			},
 			want: true,
 		},
 		{
 			name: "invalid expire date",
 			fields: fields{
-				ExpiresAt:   "2001-01-01 08:15:39.137584 +0000 UTC",
-				BearerToken: "abc123456789",
-				URL:         "https://controller.appgate.com",
-				Provider:    "local",
+				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
+				URL:       "https://controller.appgate.com",
+				Provider:  "local",
 			},
 			want: false,
 		},
@@ -111,18 +116,16 @@ func TestConfigCheckAuth(t *testing.T) {
 		{
 			name: "no url",
 			fields: fields{
-				ExpiresAt:   "2001-01-01 08:15:39.137584 +0000 UTC",
-				BearerToken: "abc123456789",
-				Provider:    "local",
+				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
+				Provider:  "local",
 			},
 			want: false,
 		},
 		{
 			name: "no provider",
 			fields: fields{
-				ExpiresAt:   "2001-01-01 08:15:39.137584 +0000 UTC",
-				BearerToken: "abc123456789",
-				URL:         "https://controller.appgate.com",
+				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
+				URL:       "https://controller.appgate.com",
 			},
 			want: false,
 		},
