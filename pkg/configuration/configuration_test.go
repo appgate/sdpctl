@@ -62,97 +62,6 @@ func Test_ConfigDir(t *testing.T) {
 	}
 }
 
-func TestLoadCredentialsFile(t *testing.T) {
-	tempDir := os.TempDir()
-
-	tests := []struct {
-		name        string
-		fileName    string
-		fileContent string
-		fileMode    int
-		output      string
-		comparison  *Credentials
-		wantErr     bool
-	}{
-		{
-			name:        "should fail on invalid credentials",
-			fileName:    "credentials",
-			fileContent: "username=\npassword=",
-			fileMode:    0600,
-			output:      "invalid credentials",
-			comparison:  &Credentials{},
-			wantErr:     true,
-		},
-		{
-			name:        "should fail on invalid mode set",
-			fileName:    "credentials",
-			fileContent: "username=test\npassword=password",
-			fileMode:    0755,
-			output:      "invalid permissions on credentials file",
-			comparison:  &Credentials{},
-			wantErr:     true,
-		},
-		{
-			name:        "should fail on no credentials file set",
-			fileName:    "",
-			fileContent: "",
-			fileMode:    0700,
-			output:      "no credentials file set",
-			comparison:  &Credentials{},
-			wantErr:     true,
-		},
-		{
-			name:        "should pass",
-			fileName:    "credentials",
-			fileContent: "username=testuser\npassword=password",
-			fileMode:    0600,
-			output:      "",
-			comparison: &Credentials{
-				Username: "testuser",
-				Password: "password",
-			},
-			wantErr: false,
-		},
-		{
-			name:        "should pass with only one of the credentials set",
-			fileName:    "credentials",
-			fileContent: "username=testuser",
-			fileMode:    0600,
-			output:      "",
-			comparison: &Credentials{
-				Username: "testuser",
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			conf := &Config{}
-			if len(tt.fileName) > 0 {
-				file, _ := os.CreateTemp(tempDir, tt.fileName)
-				file.Chmod(os.FileMode(tt.fileMode))
-				file.WriteString(tt.fileContent)
-				conf.CredentialsFile = file.Name()
-				defer file.Close()
-			}
-
-			res, err := conf.LoadCredentials()
-			if err != nil && tt.wantErr {
-				if tt.output != err.Error() {
-					t.Fatalf("EXPECTED: %s\n, GOT: %+v", tt.output, err.Error())
-				}
-			}
-
-			if res != nil {
-				if res.Password != tt.comparison.Password || res.Username != tt.comparison.Username {
-					t.Fatalf("EXPECTED: %+v,\nGOT: %+v", tt.comparison, res)
-				}
-			}
-		})
-	}
-}
-
 func TestConfigCheckAuth(t *testing.T) {
 	type fields struct {
 		URL                      string
@@ -228,7 +137,6 @@ func TestConfigCheckAuth(t *testing.T) {
 				Version:                  tt.fields.Version,
 				BearerToken:              tt.fields.BearerToken,
 				ExpiresAt:                tt.fields.ExpiresAt,
-				CredentialsFile:          tt.fields.CredentialsFile,
 				DeviceID:                 tt.fields.DeviceID,
 				PemFilePath:              tt.fields.PemFilePath,
 				PrimaryControllerVersion: tt.fields.PrimaryControllerVersion,

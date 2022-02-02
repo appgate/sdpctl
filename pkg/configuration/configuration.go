@@ -1,7 +1,6 @@
 package configuration
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"net/url"
@@ -9,13 +8,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strings"
 	"time"
 
+	"github.com/appgate/appgatectl/pkg/keyring"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -32,7 +30,6 @@ type Config struct {
 	Version                  int    `mapstructure:"api_version"` // api peer interface version
 	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
 	ExpiresAt                string `mapstructure:"expires_at"`
-	CredentialsFile          string `mapstructure:"credentials_file"`
 	DeviceID                 string `mapstructure:"device_id"`
 	PemFilePath              string `mapstructure:"pem_filepath"`
 	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
@@ -45,7 +42,10 @@ type Credentials struct {
 }
 
 func (c *Config) GetBearTokenHeaderValue() string {
-	return fmt.Sprintf("Bearer %s", c.BearerToken)
+	if v, err := keyring.GetBearer(); err == nil {
+		return fmt.Sprintf("Bearer %s", v)
+	}
+	return ""
 }
 
 // ConfigDir path precedence
@@ -137,7 +137,7 @@ func NormalizeURL(u string) (string, error) {
 }
 
 func (c *Config) CheckAuth() bool {
-	if len(c.BearerToken) < 1 {
+	if len(c.GetBearTokenHeaderValue()) < 10 {
 		return false
 	}
 	if len(c.URL) < 1 {
@@ -161,72 +161,26 @@ func (c *Config) ExpiredAtValid() bool {
 
 func (c *Config) LoadCredentials() (*Credentials, error) {
 	creds := &Credentials{}
-
-	// No file is set so we return empty credentials
-	if len(c.CredentialsFile) <= 0 {
-		return creds, nil
+	if v, err := keyring.GetUsername(); err == nil && len(v) > 0 {
+		creds.Username = v
 	}
-
-	// File is set in the config, but does not exists, so we return empty credentials
-	info, err := os.Stat(c.CredentialsFile)
-	if err != nil && os.IsNotExist(err) {
-		return creds, nil
-	}
-
-	// Check file permissions
-	// If file exists, it should only be readable by the executing user
-	mode := info.Mode()
-	if mode&(1<<2) != 0 {
-		return nil, errors.New("invalid permissions on credentials file")
-	}
-
-	// Scan file for credentials
-	file, err := os.Open(c.CredentialsFile)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		data := strings.Split(scanner.Text(), "=")
-		switch data[0] {
-		case "username":
-			creds.Username = data[1]
-		case "password":
-			creds.Password = data[1]
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	if v, err := keyring.GetPassword(); err == nil && len(v) > 0 {
+		creds.Password = v
 	}
 
 	return creds, nil
 }
 
 func (c *Config) StoreCredentials(crd *Credentials) error {
-	joinStrings := []string{}
 	if len(crd.Username) > 0 {
-		joinStrings = append(joinStrings, fmt.Sprintf("username=%s", crd.Username))
+		if err := keyring.SetUsername(crd.Username); err != nil {
+			return fmt.Errorf("could not store username in keychain %s", err)
+		}
 	}
 	if len(crd.Password) > 0 {
-		joinStrings = append(joinStrings, fmt.Sprintf("password=%s", crd.Password))
-	}
-	b := []byte(strings.Join(joinStrings, "\n"))
-
-	path := filepath.FromSlash(c.CredentialsFile)
-	err := os.MkdirAll(filepath.Dir(path), 0700)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(path, b, 0600)
-	if err != nil {
-		return err
-	}
-
-	viper.Set("credentials_file", c.CredentialsFile)
-	err = viper.WriteConfig()
-	if err != nil {
-		return err
+		if err := keyring.SetPassword(crd.Password); err != nil {
+			return fmt.Errorf("could not store password in keychain %s", err)
+		}
 	}
 
 	return nil

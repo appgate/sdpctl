@@ -12,6 +12,7 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/keyring"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -177,8 +178,10 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 
 	cfg.BearerToken = authorizationToken.GetToken()
 	cfg.ExpiresAt = authorizationToken.Expires.String()
+	if err := keyring.SetBearer(cfg.BearerToken); err != nil {
+		return fmt.Errorf("could not store bearer token in keychain %w", err)
+	}
 
-	viper.Set("bearer", cfg.BearerToken)
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
 
@@ -221,19 +224,10 @@ func rememberCredentials(cfg *configuration.Config, credentials *configuration.C
 				Default: "both",
 			},
 		},
-		{
-			Name: "path",
-			Prompt: &survey.Input{
-				Message: "Path to credentials file:",
-				Default: fmt.Sprintf("%s/credentials", configuration.ConfigDir()),
-			},
-			Validate: survey.Required,
-		},
 	}
 
 	answers := struct {
 		Remember string `survey:"remember"`
-		Path     string
 	}{}
 
 	if err := survey.Ask(q, &answers); err != nil {
@@ -250,9 +244,6 @@ func rememberCredentials(cfg *configuration.Config, credentials *configuration.C
 		credentialsCopy.Username = credentials.Username
 		credentialsCopy.Password = credentials.Password
 	}
-
-	// Allow variable expansion for path
-	cfg.CredentialsFile = os.ExpandEnv(answers.Path)
 
 	if err := cfg.StoreCredentials(credentialsCopy); err != nil {
 		return err
