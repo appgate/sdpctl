@@ -1,6 +1,11 @@
 package keyring
 
-import zkeyring "github.com/zalando/go-keyring"
+import (
+	"fmt"
+
+	"github.com/appgate/appgatectl/pkg/hashcode"
+	zkeyring "github.com/zalando/go-keyring"
+)
 
 const (
 	keyringService = "appgatectl"
@@ -17,30 +22,34 @@ func getSecret(key string) (string, error) {
 	return secret, nil
 }
 
+func format(prefix, value string) string {
+	return fmt.Sprintf("%d.%s", hashcode.String(prefix), value)
+}
+
 func setSecret(key, value string) error {
 	return zkeyring.Set(keyringService, key, value)
 }
 
-func GetPassword() (string, error) {
-	return getSecret(password)
+func GetPassword(prefix string) (string, error) {
+	return getSecret(format(prefix, password))
 }
 
-func SetPassword(secret string) error {
-	return setSecret(password, secret)
+func SetPassword(prefix, secret string) error {
+	return setSecret(format(prefix, password), secret)
 }
 
-func GetBearer() (string, error) {
-	return getSecret(bearer)
+func GetBearer(prefix string) (string, error) {
+	return getSecret(format(prefix, bearer))
 }
 
-func SetBearer(secret string) error {
-	return setSecret(bearer, secret)
+func SetBearer(prefix, secret string) error {
+	return setSecret(format(prefix, bearer), secret)
 }
 
-func SetUsername(secret string) error {
-	return setSecret(username, secret)
+func SetUsername(prefix, secret string) error {
+	return setSecret(format(prefix, username), secret)
 }
 
-func GetUsername() (string, error) {
-	return getSecret(username)
+func GetUsername(prefix string) (string, error) {
+	return getSecret(format(prefix, username))
 }

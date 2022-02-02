@@ -42,7 +42,8 @@ type Credentials struct {
 }
 
 func (c *Config) GetBearTokenHeaderValue() string {
-	if v, err := keyring.GetBearer(); err == nil {
+	h, _ := c.GetHost() // TODO catch err, update function signature (string, error)
+	if v, err := keyring.GetBearer(h); err == nil {
 		return fmt.Sprintf("Bearer %s", v)
 	}
 	return ""
@@ -161,10 +162,14 @@ func (c *Config) ExpiredAtValid() bool {
 
 func (c *Config) LoadCredentials() (*Credentials, error) {
 	creds := &Credentials{}
-	if v, err := keyring.GetUsername(); err == nil && len(v) > 0 {
+	h, err := c.GetHost()
+	if err != nil {
+		return nil, err
+	}
+	if v, err := keyring.GetUsername(h); err == nil && len(v) > 0 {
 		creds.Username = v
 	}
-	if v, err := keyring.GetPassword(); err == nil && len(v) > 0 {
+	if v, err := keyring.GetPassword(h); err == nil && len(v) > 0 {
 		creds.Password = v
 	}
 
@@ -172,13 +177,17 @@ func (c *Config) LoadCredentials() (*Credentials, error) {
 }
 
 func (c *Config) StoreCredentials(crd *Credentials) error {
+	h, err := c.GetHost()
+	if err != nil {
+		return err
+	}
 	if len(crd.Username) > 0 {
-		if err := keyring.SetUsername(crd.Username); err != nil {
+		if err := keyring.SetUsername(h, crd.Username); err != nil {
 			return fmt.Errorf("could not store username in keychain %s", err)
 		}
 	}
 	if len(crd.Password) > 0 {
-		if err := keyring.SetPassword(crd.Password); err != nil {
+		if err := keyring.SetPassword(h, crd.Password); err != nil {
 			return fmt.Errorf("could not store password in keychain %s", err)
 		}
 	}

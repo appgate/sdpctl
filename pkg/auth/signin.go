@@ -178,7 +178,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 
 	cfg.BearerToken = authorizationToken.GetToken()
 	cfg.ExpiresAt = authorizationToken.Expires.String()
-	if err := keyring.SetBearer(cfg.BearerToken); err != nil {
+	if err := keyring.SetBearer(host, cfg.BearerToken); err != nil {
 		return fmt.Errorf("could not store bearer token in keychain %w", err)
 	}
 
