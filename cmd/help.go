@@ -55,8 +55,6 @@ Available Variables:
              /etc/hostid on BSD
              ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformUUID on OSX
              reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography /v MachineGuid on Windows
-  APPGATECTL_CREDENTIALS_FILE:
-    Description: The filepath to optional credentials file, generated from 'appgatectl configure signin --remember-me'
   APPGATECTL_CONFIG_DIR:
     Description: the directory where appgatectl will store configuration files.
     Default: "$XDG_CONFIG_HOME/appgatectl" or "$HOME/.config/appgatectl on UNIX".
