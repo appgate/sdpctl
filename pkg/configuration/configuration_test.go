@@ -9,7 +9,7 @@ import (
 
 func TestConfigCheckAuth(t *testing.T) {
 	zkeyring.MockInit()
-	if err := keyring.SetBearer("testing", "abc12345"); err != nil {
+	if err := keyring.SetBearer("controller.appgate.com", "abc123456789"); err != nil {
 		t.Fatalf("unable to mock keyring in TestConfigCheckAuth() %v", err)
 	}
 	type fields struct {

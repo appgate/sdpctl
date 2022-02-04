@@ -33,8 +33,14 @@ type Credentials struct {
 }
 
 func (c *Config) GetBearTokenHeaderValue() string {
+	// if the bearer token is in the config, we asume the current environment does not support a keyring, so we will use it.
+	// this will also include if the environment variable APPGATECTL_BEARER is being used.
+	if len(c.BearerToken) > 10 {
+		return fmt.Sprintf("Bearer %s", c.BearerToken)
+	}
 	h, _ := c.GetHost() // TODO catch err, update function signature (string, error)
-	if v, err := keyring.GetBearer(h); err == nil {
+	v, err := keyring.GetBearer(h)
+	if err == nil {
 		return fmt.Sprintf("Bearer %s", v)
 	}
 	return ""

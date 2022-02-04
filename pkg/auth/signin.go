@@ -37,7 +37,11 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	if err != nil {
 		return err
 	}
-
+	// if we already have a valid bearer token, we will continue without
+	// without any additional checks.
+	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 && !saveConfig {
+		return nil
+	}
 	authenticator := NewAuth(client)
 	// Get credentials from credentials file
 	// Overwrite credentials with values set through environment variables
@@ -179,7 +183,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	cfg.BearerToken = authorizationToken.GetToken()
 	cfg.ExpiresAt = authorizationToken.Expires.String()
 	if err := keyring.SetBearer(host, cfg.BearerToken); err != nil {
-		return fmt.Errorf("could not store bearer token in keychain %w", err)
+		return fmt.Errorf("could not store token in keychain %w", err)
 	}
 
 	viper.Set("expires_at", cfg.ExpiresAt)
