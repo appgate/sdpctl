@@ -2,7 +2,6 @@ package appliance
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/appgate/appgatectl/pkg/api"
@@ -17,37 +16,44 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type resolveNameOpts struct {
-	Config       *configuration.Config
-	Out          io.Writer
-	Client       func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance    func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug        bool
-	json         bool
-	applianceID  string
-	resourceName string
+type resolveNameStatusOpts struct {
+	Config      *configuration.Config
+	Out         io.Writer
+	Client      func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance   func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug       bool
+	json        bool
+	applianceID string
 }
 
 const (
-	resolveNameLong = `
-    Test a resolver name on a Gateway.
-    Name resolvers are used by the Gateways on a Site resolve the IPs in the specific network or set of protected resources.
+	resolveNameStatusLong = `
+    Get the status of name resolution on a Gateway. It lists all the subscribed resource names from all the connected Clients and shows the resolution results.
     `
-	resolveNameExample = `
+	resolveNameStatusExample = `
     # with a specific gateway appliance id:
-    appgatectl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se
-
-
-    # If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.
-    > appgatectl appliance resolve-name --resource-name dns://google.se
-    ? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
-    142.251.36.3
-    2a00:1450:400e:80f::2003
+    appliance resolve-name-status 7f340572-0cd3-416b-7755-9f5c4e546391 --json
+    {
+        "resolutions": {
+          "aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev": {
+            "partial": false,
+            "finals": [
+              "3.120.51.78",
+              "35.156.237.184"
+            ],
+            "partials": [
+              "dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com",
+              "dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com"
+            ],
+            "errors": []
+          }
+        }
+    }
     `
 )
 
-func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
-	opts := resolveNameOpts{
+func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
+	opts := resolveNameStatusOpts{
 		Config:    f.Config,
 		Client:    f.APIClient,
 		Appliance: f.Appliance,
@@ -55,10 +61,10 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var cmd = &cobra.Command{
-		Use:     "resolve-name [<appliance-id>] --resolve-name=query",
-		Short:   `Test a resolver name on a Gateway`,
-		Long:    resolveNameLong,
-		Example: resolveNameExample,
+		Use:     "resolve-name-status [<appliance-id>]",
+		Short:   `Get the status of name resolution on a Gateway.`,
+		Long:    resolveNameStatusLong,
+		Example: resolveNameStatusExample,
 		Args: func(cmd *cobra.Command, args []string) error {
 			a, err := opts.Appliance(opts.Config)
 			if err != nil {
@@ -93,39 +99,35 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			return resolveNameRun(c, args, &opts)
+			return resolveNameStatusRun(c, args, &opts)
 		},
 	}
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
-	cmd.Flags().StringVar(&opts.resourceName, "resource-name", "", "The resource name to test on the Gateway. (Required)")
-	cmd.MarkFlagRequired("resource-name")
 
 	return cmd
 }
 
-func resolveNameRun(cmd *cobra.Command, args []string, opts *resolveNameOpts) error {
+func resolveNameStatusRun(cmd *cobra.Command, args []string, opts *resolveNameStatusOpts) error {
 	client, err := opts.Client(opts.Config)
 	if err != nil {
 		return err
 	}
 	token := opts.Config.GetBearTokenHeaderValue()
-
 	ctx := context.Background()
-	body := openapi.InlineObject4{
-		ResourceName: openapi.PtrString(opts.resourceName),
-	}
-	result, response, err := client.AppliancesApi.AppliancesIdTestResolverNamePost(ctx, opts.applianceID).InlineObject4(body).Authorization(token).Execute()
+
+	result, response, err := client.AppliancesApi.AppliancesIdNameResolutionStatusGet(ctx, opts.applianceID).Authorization(token).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
 	if opts.json {
 		return util.PrintJSON(opts.Out, result)
 	}
-	for _, ip := range result.GetIps() {
-		fmt.Fprintln(opts.Out, ip)
+
+	p := util.NewPrinter(opts.Out)
+	p.AddHeader("Partial", "Finals", "Partials", "Errors")
+	for _, r := range result.GetResolutions() {
+		p.AddLine(r.GetPartial(), r.GetFinals(), r.GetPartials(), r.GetErrors())
 	}
-
-	fmt.Fprintln(opts.Out, result.GetError())
-
+	p.Print()
 	return nil
 }
