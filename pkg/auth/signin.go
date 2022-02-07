@@ -12,6 +12,7 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/pkg/browser"
@@ -50,34 +51,8 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 		credentials.Password = envPassword
 	}
 
-	if len(credentials.Username) <= 0 {
-		err := survey.AskOne(&survey.Input{
-			Message: "Username:",
-		}, &credentials.Username, survey.WithValidator(survey.Required))
-		if err != nil {
-			return err
-		}
-	}
-
-	if len(credentials.Password) <= 0 {
-		err := survey.AskOne(&survey.Password{
-			Message: "Password:",
-		}, &credentials.Password, survey.WithValidator(survey.Required))
-		if err != nil {
-			return err
-		}
-	}
-
-	if remember {
-		if err := rememberCredentials(cfg, credentials); err != nil {
-			return fmt.Errorf("Failed to store credentials: %+v", err)
-		}
-	}
-
 	loginOpts := openapi.LoginRequest{
 		ProviderName: cfg.Provider,
-		Username:     openapi.PtrString(credentials.Username),
-		Password:     openapi.PtrString(credentials.Password),
 		DeviceId:     cfg.DeviceID,
 	}
 	ctx := context.Background()
@@ -105,14 +80,38 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 		return err
 	}
 	if len(providers) > 1 {
-		prompt := &survey.Select{
+		qs := &survey.Select{
 			Message: "Choose a provider:",
 			Options: providers,
 		}
-		if err := survey.AskOne(prompt, &loginOpts.ProviderName); err != nil {
+		if err := prompt.SurveyAskOne(qs, &loginOpts.ProviderName); err != nil {
 			return err
 		}
 	}
+	if len(credentials.Username) <= 0 {
+		err := prompt.SurveyAskOne(&survey.Input{
+			Message: "Username:",
+		}, &credentials.Username, survey.WithValidator(survey.Required))
+		if err != nil {
+			return err
+		}
+	}
+	if len(credentials.Password) <= 0 {
+		err := prompt.SurveyAskOne(&survey.Password{
+			Message: "Password:",
+		}, &credentials.Password, survey.WithValidator(survey.Required))
+		if err != nil {
+			return err
+		}
+	}
+
+	if remember {
+		if err := rememberCredentials(cfg, credentials); err != nil {
+			return fmt.Errorf("Failed to store credentials: %+v", err)
+		}
+	}
+	loginOpts.Username = openapi.PtrString(credentials.Username)
+	loginOpts.Password = openapi.PtrString(credentials.Password)
 
 	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
 	if err != nil {
@@ -130,7 +129,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 			optKey := &survey.Password{
 				Message: "Please enter your one-time password:",
 			}
-			if err := survey.AskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
+			if err := prompt.SurveyAskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
 				return nil, err
 			}
 			return authenticator.PushOTP(ctxWithAccept, answer, authToken)
