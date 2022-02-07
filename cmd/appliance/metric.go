@@ -9,7 +9,6 @@ import (
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -54,7 +53,7 @@ appgatectl appliance metric <appliance-id> --metric-name=<some_metric_name>`,
 				return err
 			}
 			if len(args) != 1 {
-				opts.applianceID, err = prompt.SelectAppliance(ctx, a, nil)
+				opts.applianceID, err = appliancepkg.PromptSelect(ctx, a, nil)
 				if err != nil {
 					return err
 				}
@@ -66,7 +65,7 @@ appgatectl appliance metric <appliance-id> --metric-name=<some_metric_name>`,
 			_, err = uuid.Parse(uuidArg)
 			if err != nil {
 				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = prompt.SelectAppliance(ctx, a, nil)
+				uuidArg, err = appliancepkg.PromptSelect(ctx, a, nil)
 				if err != nil {
 					return err
 				}

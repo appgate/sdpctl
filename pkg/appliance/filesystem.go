@@ -1,13 +1,7 @@
 package appliance
 
 import (
-	"errors"
 	"os"
-)
-
-var (
-	ErrExecutedOnAppliance     = errors.New("This should not be executed on an appliance")
-	ErrExecutionCanceledByUser = errors.New("Cancelled by user")
 )
 
 func IsOnAppliance() bool {

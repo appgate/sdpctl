@@ -11,8 +11,8 @@ import (
 
 	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
 	cfgcmd "github.com/appgate/appgatectl/cmd/configure"
-	"github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/auth"
+	"github.com/appgate/appgatectl/pkg/cmdutil"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/util"
@@ -136,7 +136,7 @@ func Execute() exitCode {
 		if errors.Is(err, ErrExitAuth) {
 			return exitAuth
 		}
-		if errors.Is(err, appliance.ErrExecutionCanceledByUser) {
+		if errors.Is(err, cmdutil.ErrExecutionCanceledByUser) {
 			return exitCancel
 		}
 		// only show usage prompt if we get invalid args / flags

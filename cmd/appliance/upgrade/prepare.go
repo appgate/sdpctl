@@ -16,6 +16,7 @@ import (
 	"time"
 
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
+	"github.com/appgate/appgatectl/pkg/cmdutil"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/prompt"
@@ -130,7 +131,7 @@ var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatect
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	if appliancepkg.IsOnAppliance() {
-		return appliancepkg.ErrExecutedOnAppliance
+		return cmdutil.ErrExecutedOnAppliance
 	}
 
 	a, err := opts.Appliance(opts.Config)
