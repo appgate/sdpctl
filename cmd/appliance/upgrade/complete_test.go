@@ -45,7 +45,30 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 	}{
 		{
 			name: "test complete multiple appliances",
-			cli:  "--backup=false",
+			cli:  "complete --backup=false",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test complete with filter role gateway",
+			cli:  "complete --backup=false --filter role=gateway --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -68,7 +91,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "test complete multiple appliances",
-			cli:  "--backup=true --no-interactive=true",
+			cli:  "complete --backup=true --no-interactive=true",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -107,7 +130,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "first controller failed",
-			cli:  "--backup=false",
+			cli:  "complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -132,7 +155,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "gateway failure",
-			cli:  "--backup=false",
+			cli:  "complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -157,7 +180,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "one offline controller",
-			cli:  "--backup=false",
+			cli:  "complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -220,7 +243,10 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				}
 				return a, nil
 			}
-			cmd := NewUpgradeCompleteCmd(f)
+			// add parent command to allow us to include test with parent flags
+			cmd := NewApplianceCmd(f)
+			cmd.AddCommand(NewUpgradeCompleteCmd(f))
+
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
 			cmd.Flags().Bool("no-interactive", false, "usage")
