@@ -14,7 +14,6 @@ import (
 	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/appgatectl/pkg/keyring"
 	"github.com/appgate/appgatectl/pkg/prompt"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
@@ -48,12 +47,6 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	credentials, err := cfg.LoadCredentials()
 	if err != nil {
 		return err
-	}
-	if envUsername := util.Getenv("APPGATECTL_USERNAME", viper.GetString("username")); len(envUsername) > 0 {
-		credentials.Username = envUsername
-	}
-	if envPassword := util.Getenv("APPGATECTL_PASSWORD", viper.GetString("password")); len(envPassword) > 0 {
-		credentials.Password = envPassword
 	}
 
 	loginOpts := openapi.LoginRequest{
