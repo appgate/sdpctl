@@ -14,6 +14,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/httpmock"
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/zalando/go-keyring"
 )
 
 var (
@@ -102,6 +103,7 @@ var (
 )
 
 func TestSignin(t *testing.T) {
+	keyring.MockInit()
 	type args struct {
 		remember   bool
 		saveConfig bool
