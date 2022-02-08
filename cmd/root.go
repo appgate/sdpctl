@@ -177,7 +177,15 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			TimestampFormat: "2006-01-02 15:04:05",
 			PadLevelText:    true,
 		})
-		log.SetOutput(f.IOOutWriter)
+
+		fName := fmt.Sprintf("%s/appgatectl.log", configuration.ConfigDir())
+		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			log.Warn("Failed to open log file. Logging to stderr")
+			log.SetOutput(f.IOOutWriter)
+		} else {
+			log.SetOutput(file)
+		}
 
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			if err := auth.Signin(f, false, false); err != nil {
