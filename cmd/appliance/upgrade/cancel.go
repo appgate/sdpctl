@@ -130,6 +130,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 		return result, nil
 	}
+	fmt.Fprint(opts.Out, "Cancelling pending upgrades...")
 	cancelled, err := cancel(ctx, noneIdleAppliances)
 	if err != nil {
 		return err
@@ -149,6 +150,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 		return nil
 	}
+	fmt.Fprintln(opts.Out, "done")
 	return nil
 }
 

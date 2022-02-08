@@ -7,6 +7,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,12 +49,12 @@ APPGATECTL_CONFIG_DIR=<path/to/config/dir appgatectl configure`,
 }
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
-	prompt := &survey.Input{
+	q := &survey.Input{
 		Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
 		Default: opts.Config.URL,
 	}
 	var URL string
-	err := survey.AskOne(prompt, &URL, survey.WithValidator(survey.Required))
+	err := prompt.SurveyAskOne(q, &URL, survey.WithValidator(survey.Required))
 	if err != nil {
 		return err
 	}
@@ -72,5 +73,6 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		return err
 	}
 	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
+	fmt.Println("Configuration updated successfully")
 	return nil
 }

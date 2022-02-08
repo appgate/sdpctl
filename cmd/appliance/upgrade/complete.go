@@ -228,6 +228,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// 1. Disable Controller function on the following appliance
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
+    fmt.Fprint(opts.Out, "Disabling additional controllers...")
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"appliance": controller.GetName()}
@@ -249,6 +250,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
 		return fmt.Errorf("primary controller %s", err)
 	}
+    fmt.Fprintln(opts.Out, "ok")
 	log.Info("all controllers are in correct state")
 
 	if cfg.Version >= 15 && len(addtitionalControllers) > 0 {
@@ -257,7 +259,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithFields(f).Info("enabling maintenance mode")
 			id, err := a.EnableMaintenanceMode(ctx, controller.GetId())
 			if err != nil {
-				log.WithFields(f).Warnf("Unable to enable maintenanc mode %s", err)
+				log.WithFields(f).Warnf("Unable to enable maintenance mode %s", err)
 				return err
 			}
 			log.WithFields(f).Infof("id %s", id)
@@ -265,7 +267,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	m, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
-		log.Errorf("Upgrade status failed %s", err)
+		log.WithError(err).Error("Upgrade status failed")
 		return err
 	}
 	notReady := make([]string, 0)
@@ -281,6 +283,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.Errorf("appliance %s is not ready for upgrade", strings.Join(notReady, ", "))
 		return fmt.Errorf("one or more appliances are not ready for upgrade.")
 	}
+	fmt.Fprint(opts.Out, "Upgrading primary controller...")
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
 		return fmt.Errorf("Unable to retrieve primary controller upgrade status %w", err)
@@ -295,6 +298,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")
+		fmt.Fprintln(opts.Out, "ok")
 	}
 
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) ([]openapi.Appliance, error) {
@@ -328,6 +332,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		return result, nil
 	}
+	fmt.Fprint(opts.Out, "Upgrading additional controllers...")
 	upgradedAdditionalControllers, err := batchUpgrade(ctx, addtitionalControllers, true)
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional controllers %w", err)
@@ -355,6 +360,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 	}
+	fmt.Fprintln(opts.Out, "ok")
 
 	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
@@ -374,6 +380,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	}
 
+	fmt.Fprintf(opts.Out, "Upgrading %d remaining appliances...", len(additionalAppliances))
 	upgradedAppliances, err := batchUpgrade(ctx, additionalAppliances, false)
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional appliances %w", err)
@@ -437,5 +444,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 	log.Info("Upgrade finished")
+	fmt.Fprintln(opts.Out, "ok")
+	fmt.Fprintln(opts.Out, "Upgrade finished")
 	return nil
 }

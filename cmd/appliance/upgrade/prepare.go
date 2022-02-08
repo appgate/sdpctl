@@ -404,7 +404,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		log.Infof("File %s deleted from Controller", opts.filename)
 	}
-
+	fmt.Fprintln(opts.Out, "Finished upgrade preperations")
 	return nil
 }
 

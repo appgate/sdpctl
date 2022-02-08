@@ -188,9 +188,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(opts.Out, "\n%s\n", msg)
+	fmt.Fprintf(opts.Out, "%s\n", msg)
 	g, ctx := errgroup.WithContext(ctx)
-	log.Infof("Starting backup on %d appliances", len(toBackup))
+	backupCount := len(toBackup)
+	log.Infof("Starting backup on %d appliances", backupCount)
+	fmt.Fprintf(opts.Out, "\rBacking up %d appliances...", backupCount)
 	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
@@ -203,7 +205,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				if decodeErr != nil {
 					return decodeErr
 				}
-				log.Debug(err)
+				log.WithError(err).Error("Caught backup error")
 				return err
 			}
 			backupID := res.GetId()
@@ -227,7 +229,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
-				log.WithField("error", err).WithField("response", inlineRes).Debug(err)
+				log.WithError(err).WithField("response", inlineRes).Debug(err)
 				return err
 			}
 			defer file.Close()
@@ -243,6 +245,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			}
 
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
+			backupCount--
+			fmt.Fprintf(opts.Out, "\rBacking up %d appliances...", backupCount)
 
 			return nil
 		})
@@ -252,10 +256,12 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, err
 	}
 
+	fmt.Fprintln(opts.Out, "done")
 	return backupIDs, nil
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
+	fmt.Fprint(opts.Out, "Cleaning up...")
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
@@ -263,7 +269,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 
 	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
-	log.Info("Cleaning up...")
+	log.WithField("backup_ids", IDs).Info("Cleaning up...")
 	for appID, bckID := range IDs {
 		ID := appID
 		backupID := bckID
@@ -278,6 +284,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		})
 	}
 	log.Info("Finished cleanup")
+	fmt.Fprintln(opts.Out, "done")
 
 	return g.Wait()
 }
@@ -371,12 +378,10 @@ func showPrepareSummary(dest string, appliances []openapi.Appliance) (string, er
 
 	const message = `
 Will perform backup on the following appliances:
-{{ range .Appliances }}
-    - Name: {{ .Name }}
-      ID:   {{ .ID }}
+{{ range .Appliances -}}
+    - {{ .Name }}
 {{ end }}
-Backup destination is {{ .Destination }}
-`
+Backup destination is {{ .Destination }}`
 
 	data := SummaryStub{Destination: dest}
 	for _, app := range appliances {
