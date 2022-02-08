@@ -19,6 +19,9 @@ import (
 )
 
 func GetPassword(prefix string) (string, error) {
+	if v, ok := os.LookupEnv("APPGATECTL_PASSWORD"); ok {
+		return v, nil
+	}
 	return getSecret(format(prefix, password))
 }
 
@@ -31,10 +34,16 @@ func SetUsername(prefix, secret string) error {
 }
 
 func GetUsername(prefix string) (string, error) {
+	if v, ok := os.LookupEnv("APPGATECTL_USERNAME"); ok {
+		return v, nil
+	}
 	return getSecret(format(prefix, username))
 }
 
 func GetBearer(prefix string) (string, error) {
+	if v, ok := os.LookupEnv("APPGATECTL_BEARER"); ok {
+		return v, nil
+	}
 	filepath := filesystem.ConfigDir()
 	filename := format(prefix, bearer)
 
