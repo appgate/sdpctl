@@ -137,10 +137,14 @@ func applianceFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 		if err != nil {
 			return nil, err
 		}
+		token, err := cfg.GetBearTokenHeaderValue()
+		if err != nil {
+			return nil, err
+		}
 		a := &appliance.Appliance{
 			HTTPClient: httpClient,
 			APIClient:  apiClient,
-			Token:      cfg.GetBearTokenHeaderValue(),
+			Token:      token,
 		}
 		return a, nil
 	}
@@ -152,10 +156,14 @@ func tokenFunc(f *Factory, appVersion string) func(c *configuration.Config) (*to
 		if err != nil {
 			return nil, err
 		}
+		bearerToken, err := cfg.GetBearTokenHeaderValue()
+		if err != nil {
+			return nil, err
+		}
 		t := &token.Token{
 			HTTPClient: httpClient,
 			APIClient:  apiClient,
-			Token:      cfg.GetBearTokenHeaderValue(),
+			Token:      bearerToken,
 		}
 		return t, nil
 	}

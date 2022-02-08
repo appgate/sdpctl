@@ -55,7 +55,10 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	t := opts.Config.GetBearTokenHeaderValue()
+	t, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
 	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(t).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)

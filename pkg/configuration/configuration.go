@@ -32,18 +32,21 @@ type Credentials struct {
 	Password string
 }
 
-func (c *Config) GetBearTokenHeaderValue() string {
+func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	// if the bearer token is in the config, we asume the current environment does not support a keyring, so we will use it.
 	// this will also include if the environment variable APPGATECTL_BEARER is being used.
 	if len(c.BearerToken) > 10 {
-		return fmt.Sprintf("Bearer %s", c.BearerToken)
+		return fmt.Sprintf("Bearer %s", c.BearerToken), nil
 	}
-	h, _ := c.GetHost() // TODO catch err, update function signature (string, error)
+	h, err := c.GetHost()
+	if err != nil {
+		return "", fmt.Errorf("could not retrieve token for current host configuration %w", err)
+	}
 	v, err := keyring.GetBearer(h)
-	if err == nil {
-		return fmt.Sprintf("Bearer %s", v)
+	if err != nil {
+		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'appgatectl configure login' or set APPGATECTL_BEARER %w", h, err)
 	}
-	return ""
+	return fmt.Sprintf("Bearer %s", v), nil
 }
 
 // DefaultDeviceID return a unique ID in UUID format.
@@ -113,13 +116,17 @@ func NormalizeURL(u string) (string, error) {
 }
 
 func (c *Config) CheckAuth() bool {
-	if len(c.GetBearTokenHeaderValue()) < 10 {
-		return false
-	}
 	if len(c.URL) < 1 {
 		return false
 	}
 	if len(c.Provider) < 1 {
+		return false
+	}
+	t, err := c.GetBearTokenHeaderValue()
+	if err != nil {
+		return false
+	}
+	if len(t) < 10 {
 		return false
 	}
 	return c.ExpiredAtValid()

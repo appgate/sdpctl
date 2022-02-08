@@ -94,7 +94,10 @@ func metricRun(cmd *cobra.Command, args []string, opts *metricOptions) error {
 		openapi.ContextAcceptHeader,
 		fmt.Sprintf("application/vnd.appgate.peer-v%d+text", opts.Config.Version),
 	)
-	t := opts.Config.GetBearTokenHeaderValue()
+	t, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
 	if len(opts.metric) > 0 {
 		data, response, err := client.ApplianceMetricsApi.AppliancesIdMetricsNameGet(ctx, opts.applianceID, opts.metric).Authorization(t).Execute()
 		if err != nil {
