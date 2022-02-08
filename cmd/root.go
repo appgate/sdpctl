@@ -181,7 +181,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		fName := fmt.Sprintf("%s/appgatectl.log", configuration.ConfigDir())
 		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
-			log.Warn("Failed to open log file. Logging to stderr")
+			log.Warn("Failed to open log file. Logging to stdout")
 			log.SetOutput(f.IOOutWriter)
 		} else {
 			log.SetOutput(file)
