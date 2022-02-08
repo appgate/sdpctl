@@ -228,7 +228,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// 1. Disable Controller function on the following appliance
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
-    fmt.Fprint(opts.Out, "Disabling additional controllers...")
+	fmt.Fprint(opts.Out, "Disabling additional controllers...")
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"appliance": controller.GetName()}
@@ -250,7 +250,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
 		return fmt.Errorf("primary controller %s", err)
 	}
-    fmt.Fprintln(opts.Out, "ok")
+	fmt.Fprintln(opts.Out, "ok")
 	log.Info("all controllers are in correct state")
 
 	if cfg.Version >= 15 && len(addtitionalControllers) > 0 {
