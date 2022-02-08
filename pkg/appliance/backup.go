@@ -165,7 +165,10 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 
 	if len(toBackup) <= 0 {
-		toBackup = backupPrompt(appliances)
+		toBackup, err = backupPrompt(appliances)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Filter offline appliances
@@ -279,7 +282,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	return g.Wait()
 }
 
-func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
+func backupPrompt(appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	names := []string{}
 
 	for _, a := range appliances {
@@ -292,7 +295,9 @@ func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
 		Options:  names,
 	}
 	var selected []string
-	survey.AskOne(qs, &selected)
+	if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+		return nil, err
+	}
 	log.WithField("appliances", selected)
 
 	result := FilterAppliances(appliances, map[string]map[string]string{
@@ -301,7 +306,7 @@ func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
 		},
 	})
 
-	return result
+	return result, nil
 }
 
 func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
