@@ -51,6 +51,7 @@ func NewRegistry() *Registry {
 		Port:     port,
 		Teardown: teardown,
 	}
+	os.Setenv("APPGATECTL_BEARER", "header-token-value")
 	return r
 }
 
