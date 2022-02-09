@@ -315,7 +315,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := a.UploadFile(ctx, input, headers); err != nil {
 			return err
 		}
-        spin.Unlock()
+		spin.Unlock()
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
