@@ -15,6 +15,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/briandowns/spinner"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -74,6 +75,9 @@ $ appgatectl appliance upgrade complete --backup --backup-destination=/path/to/c
 }
 
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
+	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("upgrade done\n"))
+	spin.Writer = opts.Out
+	defer spin.Stop()
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
@@ -129,7 +133,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 	}
-
 	if a.ApplianceStats == nil {
 		a.ApplianceStats = &appliancepkg.ApplianceStatus{
 			Appliance: a,
@@ -181,6 +184,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
+	spin.Start()
 	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
 	if err != nil {
 		return err
@@ -228,6 +232,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// 1. Disable Controller function on the following appliance
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
+	spin.Suffix = " disabling additional controllers"
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"appliance": controller.GetName()}
@@ -257,7 +262,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithFields(f).Info("enabling maintenance mode")
 			id, err := a.EnableMaintenanceMode(ctx, controller.GetId())
 			if err != nil {
-				log.WithFields(f).Warnf("Unable to enable maintenanc mode %s", err)
+				log.WithFields(f).Warnf("Unable to enable maintenance mode %s", err)
 				return err
 			}
 			log.WithFields(f).Infof("id %s", id)
@@ -265,7 +270,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	m, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
-		log.Errorf("Upgrade status failed %s", err)
+		log.WithError(err).Error("Upgrade status failed")
 		return err
 	}
 	notReady := make([]string, 0)
@@ -281,6 +286,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.Errorf("appliance %s is not ready for upgrade", strings.Join(notReady, ", "))
 		return fmt.Errorf("one or more appliances are not ready for upgrade.")
 	}
+	spin.Suffix = " upgrading primary controller"
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
 		return fmt.Errorf("Unable to retrieve primary controller upgrade status %w", err)
@@ -328,6 +334,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		return result, nil
 	}
+	spin.Suffix = " upgrading additional controllers"
 	upgradedAdditionalControllers, err := batchUpgrade(ctx, addtitionalControllers, true)
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional controllers %w", err)
@@ -374,6 +381,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	}
 
+	spin.Suffix = fmt.Sprintf(" upgrading %d additional appliances", len(additionalAppliances))
 	upgradedAppliances, err := batchUpgrade(ctx, additionalAppliances, false)
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional appliances %w", err)

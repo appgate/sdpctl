@@ -20,6 +20,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -27,6 +28,7 @@ import (
 
 var (
 	DefaultBackupDestination = "$HOME/Downloads/appgate/backup"
+	spin                     = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("backup done\n"))
 )
 
 type BackupOpts struct {
@@ -49,6 +51,9 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
+	spin.Writer = opts.Out
+	spin.Suffix = " preparing"
+
 	log.WithField("destination", opts.Destination).Info("Preparing backup")
 
 	if IsOnAppliance() {
@@ -165,7 +170,10 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 
 	if len(toBackup) <= 0 {
-		toBackup = backupPrompt(appliances)
+		toBackup, err = backupPrompt(appliances)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Filter offline appliances
@@ -185,9 +193,12 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	if err != nil {
 		return nil, err
 	}
-	fmt.Fprintf(opts.Out, "\n%s\n", msg)
+	fmt.Fprintf(opts.Out, "%s\n", msg)
 	g, ctx := errgroup.WithContext(ctx)
-	log.Infof("Starting backup on %d appliances", len(toBackup))
+	backupCount := len(toBackup)
+	log.Infof("Starting backup on %d appliances", backupCount)
+	spin.Start()
+	spin.Suffix = fmt.Sprintf(" Backing up %d appliances...", backupCount)
 	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
@@ -200,7 +211,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				if decodeErr != nil {
 					return decodeErr
 				}
-				log.Debug(err)
+				log.WithError(err).Error("Caught backup error")
 				return err
 			}
 			backupID := res.GetId()
@@ -224,7 +235,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
-				log.WithField("error", err).WithField("response", inlineRes).Debug(err)
+				log.WithError(err).WithField("response", inlineRes).Debug(err)
 				return err
 			}
 			defer file.Close()
@@ -240,6 +251,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			}
 
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
+			backupCount--
+			spin.Suffix = fmt.Sprintf(" Backing up %d appliances...", backupCount)
 
 			return nil
 		})
@@ -253,6 +266,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
+	spin.Suffix = " Cleaning up"
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
@@ -260,7 +274,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 
 	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
-	log.Info("Cleaning up...")
+	log.WithField("backup_ids", IDs).Info("Cleaning up...")
 	for appID, bckID := range IDs {
 		ID := appID
 		backupID := bckID
@@ -276,10 +290,11 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	}
 	log.Info("Finished cleanup")
 
+	spin.Stop()
 	return g.Wait()
 }
 
-func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
+func backupPrompt(appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	names := []string{}
 
 	for _, a := range appliances {
@@ -292,7 +307,9 @@ func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
 		Options:  names,
 	}
 	var selected []string
-	survey.AskOne(qs, &selected)
+	if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+		return nil, err
+	}
 	log.WithField("appliances", selected)
 
 	result := FilterAppliances(appliances, map[string]map[string]string{
@@ -301,7 +318,7 @@ func backupPrompt(appliances []openapi.Appliance) []openapi.Appliance {
 		},
 	})
 
-	return result
+	return result, nil
 }
 
 func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
@@ -366,12 +383,10 @@ func showPrepareSummary(dest string, appliances []openapi.Appliance) (string, er
 
 	const message = `
 Will perform backup on the following appliances:
-{{ range .Appliances }}
-    - Name: {{ .Name }}
-      ID:   {{ .ID }}
+{{ range .Appliances -}}
+    - {{ .Name }}
 {{ end }}
-Backup destination is {{ .Destination }}
-`
+Backup destination is {{ .Destination }}`
 
 	data := SummaryStub{Destination: dest}
 	for _, app := range appliances {

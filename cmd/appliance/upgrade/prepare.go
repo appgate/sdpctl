@@ -22,6 +22,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/briandowns/spinner"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
@@ -42,6 +43,8 @@ type prepareUpgradeOptions struct {
 	remoteImage   bool
 	filename      string
 }
+
+var spin = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("done\n"))
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
@@ -130,6 +133,10 @@ const (
 var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
+	spin.Writer = opts.Out
+	spin.Suffix = " preparing image"
+	defer spin.Stop()
+
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
@@ -243,6 +250,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
+	spin.Start()
+
 	// Step 1
 	shouldUpload := false
 	existingFile, err := a.FileStatus(ctx, opts.filename)
@@ -287,6 +296,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err = writer.Close(); err != nil {
 			return err
 		}
+		spin.Lock()
+		fmt.Print("\r")
 		input := io.NopCloser(&ioprogress.Reader{
 			Reader: body,
 			Size:   fs,
@@ -304,6 +315,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := a.UploadFile(ctx, input, headers); err != nil {
 			return err
 		}
+		spin.Unlock()
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
@@ -404,7 +416,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		log.Infof("File %s deleted from Controller", opts.filename)
 	}
-
 	return nil
 }
 

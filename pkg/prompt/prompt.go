@@ -1,9 +1,11 @@
 package prompt
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/appgate/appgatectl/pkg/cmdutil"
 )
 
@@ -22,5 +24,12 @@ func AskConfirmation(m ...string) error {
 
 // SurveyAskOne helper method, mainly used within tests
 var SurveyAskOne = func(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
-	return survey.AskOne(p, response, opts...)
+	err := survey.AskOne(p, response, opts...)
+	if err != nil {
+		if errors.Is(err, terminal.InterruptErr) {
+			return cmdutil.ErrExecutionCanceledByUser
+		}
+		return err
+	}
+	return nil
 }

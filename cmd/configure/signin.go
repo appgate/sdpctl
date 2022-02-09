@@ -1,6 +1,8 @@
 package configure
 
 import (
+	"fmt"
+
 	"github.com/appgate/appgatectl/pkg/auth"
 	"github.com/appgate/appgatectl/pkg/factory"
 	log "github.com/sirupsen/logrus"
@@ -48,6 +50,7 @@ func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
 	if err := auth.Signin(opts.f, opts.remember, true); err != nil {
 		return err
 	}
-	log.WithField("config file", viper.ConfigFileUsed()).Info("Config updated")
+	log.WithField("config file", viper.ConfigFileUsed()).Info("Sign in event")
+	fmt.Println("Successfully signed in")
 	return nil
 }
