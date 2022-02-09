@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -25,7 +26,7 @@ func AskConfirmation(m ...string) error {
 var SurveyAskOne = func(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
 	err := survey.AskOne(p, response, opts...)
 	if err != nil {
-		if err == terminal.InterruptErr {
+		if errors.Is(err, terminal.InterruptErr) {
 			return cmdutil.ErrExecutionCanceledByUser
 		}
 		return err
