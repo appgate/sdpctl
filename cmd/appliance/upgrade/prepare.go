@@ -133,6 +133,10 @@ const (
 var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
+	spin.Writer = opts.Out
+	spin.Suffix = " preparing image"
+	defer spin.Stop()
+
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
@@ -246,6 +250,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
+	spin.Start()
+
 	// Step 1
 	shouldUpload := false
 	existingFile, err := a.FileStatus(ctx, opts.filename)
@@ -290,6 +296,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err = writer.Close(); err != nil {
 			return err
 		}
+		spin.Lock()
+		fmt.Print("\r")
 		input := io.NopCloser(&ioprogress.Reader{
 			Reader: body,
 			Size:   fs,
@@ -307,10 +315,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := a.UploadFile(ctx, input, headers); err != nil {
 			return err
 		}
-		spin.Writer = opts.Out
-		spin.Suffix = " verifying image"
-		spin.Start()
-		defer spin.Stop()
+        spin.Unlock()
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
