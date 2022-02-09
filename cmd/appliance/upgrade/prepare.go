@@ -307,7 +307,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := a.UploadFile(ctx, input, headers); err != nil {
 			return err
 		}
-        spin.Writer = opts.Out
+		spin.Writer = opts.Out
 		spin.Suffix = "\tverifying image"
 		spin.Start()
 		defer spin.Stop()
