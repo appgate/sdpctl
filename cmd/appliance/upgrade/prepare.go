@@ -22,6 +22,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/briandowns/spinner"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	"github.com/mitchellh/ioprogress"
@@ -42,6 +43,8 @@ type prepareUpgradeOptions struct {
 	remoteImage   bool
 	filename      string
 }
+
+var spin = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("done\n"))
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
@@ -304,6 +307,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := a.UploadFile(ctx, input, headers); err != nil {
 			return err
 		}
+        spin.Writer = opts.Out
+		spin.Suffix = "\tverifying image"
+		spin.Start()
+		defer spin.Stop()
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
@@ -404,7 +411,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		log.Infof("File %s deleted from Controller", opts.filename)
 	}
-	fmt.Fprintln(opts.Out, "Finished upgrade preperations")
 	return nil
 }
 

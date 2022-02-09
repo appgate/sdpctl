@@ -20,6 +20,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -27,6 +28,7 @@ import (
 
 var (
 	DefaultBackupDestination = "$HOME/Downloads/appgate/backup"
+	spin                     = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("backup done\n"))
 )
 
 type BackupOpts struct {
@@ -49,6 +51,9 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
+	spin.Writer = opts.Out
+	spin.Suffix = "\tpreparing"
+
 	log.WithField("destination", opts.Destination).Info("Preparing backup")
 
 	if IsOnAppliance() {
@@ -192,7 +197,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	g, ctx := errgroup.WithContext(ctx)
 	backupCount := len(toBackup)
 	log.Infof("Starting backup on %d appliances", backupCount)
-	fmt.Fprintf(opts.Out, "\rBacking up %d appliances...", backupCount)
+	spin.Start()
+	spin.Suffix = fmt.Sprintf("\tBacking up %d appliances...", backupCount)
 	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
@@ -246,7 +252,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
 			backupCount--
-			fmt.Fprintf(opts.Out, "\rBacking up %d appliances...", backupCount)
+			spin.Suffix = fmt.Sprintf("\tBacking up %d appliances...", backupCount)
 
 			return nil
 		})
@@ -256,12 +262,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, err
 	}
 
-	fmt.Fprintln(opts.Out, "done")
 	return backupIDs, nil
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
-	fmt.Fprint(opts.Out, "Cleaning up...")
+	spin.Suffix = " Cleaning up"
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
@@ -284,8 +289,8 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		})
 	}
 	log.Info("Finished cleanup")
-	fmt.Fprintln(opts.Out, "done")
 
+	spin.Stop()
 	return g.Wait()
 }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"text/template"
+	"time"
 
 	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
 	"github.com/appgate/appgatectl/pkg/configuration"
@@ -13,6 +14,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -62,6 +64,10 @@ $ appgatectl appliance upgrade cancel --filter=role=gateway`,
 }
 
 func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOptions) error {
+	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("ok\n"))
+	spin.Writer = opts.Out
+	spin.Suffix = " cancelling"
+	defer spin.Stop()
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
@@ -98,6 +104,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			return err
 		}
 	}
+	spin.Start()
 
 	cancel := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		g, ctx := errgroup.WithContext(ctx)
@@ -150,7 +157,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 		return nil
 	}
-	fmt.Fprintln(opts.Out, "done")
+
 	return nil
 }
 
