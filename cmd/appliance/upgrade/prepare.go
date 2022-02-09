@@ -308,7 +308,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		spin.Writer = opts.Out
-		spin.Suffix = "\tverifying image"
+		spin.Suffix = " verifying image"
 		spin.Start()
 		defer spin.Stop()
 

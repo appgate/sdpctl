@@ -52,7 +52,7 @@ type backupHTTPResponse struct {
 
 func PrepareBackup(opts *BackupOpts) error {
 	spin.Writer = opts.Out
-	spin.Suffix = "\tpreparing"
+	spin.Suffix = " preparing"
 
 	log.WithField("destination", opts.Destination).Info("Preparing backup")
 
@@ -198,7 +198,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	backupCount := len(toBackup)
 	log.Infof("Starting backup on %d appliances", backupCount)
 	spin.Start()
-	spin.Suffix = fmt.Sprintf("\tBacking up %d appliances...", backupCount)
+	spin.Suffix = fmt.Sprintf(" Backing up %d appliances...", backupCount)
 	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
@@ -252,7 +252,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
 			backupCount--
-			spin.Suffix = fmt.Sprintf("\tBacking up %d appliances...", backupCount)
+			spin.Suffix = fmt.Sprintf(" Backing up %d appliances...", backupCount)
 
 			return nil
 		})
