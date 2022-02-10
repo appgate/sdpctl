@@ -1,7 +1,7 @@
 package upgrade
 
 import (
-	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 

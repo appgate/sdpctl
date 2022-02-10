@@ -3,12 +3,12 @@ package keyring
 import (
 	"fmt"
 
-	"github.com/appgate/appgatectl/pkg/hashcode"
+	"github.com/appgate/sdpctl/pkg/hashcode"
 	zkeyring "github.com/zalando/go-keyring"
 )
 
 const (
-	keyringService = "appgatectl"
+	keyringService = "sdpctl"
 	password       = "password"
 	username       = "username"
 	bearer         = "bearer"

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 
@@ -38,8 +38,8 @@ func NewStatsCmd(f *factory.Factory) *cobra.Command {
 Using the '--json' flag will return a more detailed list of stats in json format.
 
 NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
-		Example: `appgatectl appliance stats
-appgatectl appliance stats --json`,
+		Example: `sdpctl appliance stats
+sdpctl appliance stats --json`,
 		Aliases: []string{"status"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return statsRun(c, args, &opts)

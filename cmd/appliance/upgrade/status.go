@@ -7,10 +7,10 @@ import (
 	"io"
 	"text/tabwriter"
 
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/util"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -44,13 +44,13 @@ Upgrade statuses:
 - success:      Upgrade successful
 - failed:       Upgrade failed for some reason during the process`,
 		Example: `# View in table format
-$ appgatectl appliance upgrade status
+$ sdpctl appliance upgrade status
 
 # View in JSON format
-$ appgatectl appliance upgrade status --json
+$ sdpctl appliance upgrade status --json
 
 # Filter appliances
-$ appgatectl appliance upgrade status --filter=name=controller`,
+$ sdpctl appliance upgrade status --filter=name=controller`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeStatusRun(c, args, &opts)
 		},

@@ -8,12 +8,12 @@ import (
 	"text/template"
 	"time"
 
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -47,10 +47,10 @@ upgrade image from the Appliance.
 Note that you can cancel upgrades on specific appliances by using the '--filter' and/or
 '--exclude' flags in combination with this command.`,
 		Example: `# Cancel upgrade on all Appgate SDP Appliances
-$ appgatectl appliance upgrade cancel
+$ sdpctl appliance upgrade cancel
 
 # Cancel upgrade on specific appliance, a gateway in this case
-$ appgatectl appliance upgrade cancel --filter=role=gateway`,
+$ sdpctl appliance upgrade cancel --filter=role=gateway`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCancelRun(c, args, &opts)
 		},

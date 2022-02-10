@@ -9,19 +9,19 @@ import (
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/keyring"
-	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/keyring"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
 
 // Signin is an interactive sign in function, that generates the config file
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
-// and support APPGATECTL_USERNAME & APPGATECTL_PASSWORD environment variables.
+// and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
 func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	cfg := f.Config
@@ -61,7 +61,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	if err != nil && minMax == nil {
 		if err, ok := errors.Unwrap(err).(*url.Error); ok {
 			if err, ok := err.Unwrap().(x509.UnknownAuthorityError); ok {
-				return fmt.Errorf("%w. Trust the certificate or import a PEM file using 'appgatectl configure --pem=<path/to/pem>'", err)
+				return fmt.Errorf("%w. Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'", err)
 			}
 		}
 		return fmt.Errorf("invalid credentials %w", err)

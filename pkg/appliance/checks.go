@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/util"
 )
 
 const showDiskSpaceWarning = `

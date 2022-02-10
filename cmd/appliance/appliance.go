@@ -1,9 +1,9 @@
 package appliance
 
 import (
-	"github.com/appgate/appgatectl/cmd/appliance/backup"
-	"github.com/appgate/appgatectl/cmd/appliance/upgrade"
-	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/sdpctl/cmd/appliance/backup"
+	"github.com/appgate/sdpctl/cmd/appliance/upgrade"
+	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 

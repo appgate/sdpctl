@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/appgate/appgatectl/pkg/httpmock"
-	"github.com/appgate/appgatectl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/appgate/sdpctl/pkg/prompt"
 )
 
 func TestPromptSelect(t *testing.T) {

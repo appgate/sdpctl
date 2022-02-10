@@ -15,13 +15,13 @@ import (
 	"text/template"
 	"time"
 
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/cmdutil"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/briandowns/spinner"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
@@ -69,7 +69,7 @@ considered valid.
 
 Note that the '--image' flag also accepts URL:s. The Appliances will then attempt to download
 the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.`,
-		Example: `$ appgatectl appliance upgrade prepare --image=/path/to/upgrade-5.5.3.img.zip`,
+		Example: `$ sdpctl appliance upgrade prepare --image=/path/to/upgrade-5.5.3.img.zip`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
@@ -130,7 +130,7 @@ const (
 	fileFailed     = "Failed"
 )
 
-var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run appgatectl configure signin")
+var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run sdpctl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	spin.Writer = opts.Out
@@ -400,7 +400,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	preparedAppliances, err := prepare(ctx, remoteFilePath, appliances)
 	if err != nil {
-		return fmt.Errorf("Preparation failed %s, run appgatectl appliance upgrade cancel", err)
+		return fmt.Errorf("Preparation failed %s, run sdpctl appliance upgrade cancel", err)
 	}
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.

@@ -3,7 +3,7 @@ package configuration
 import (
 	"testing"
 
-	"github.com/appgate/appgatectl/pkg/keyring"
+	"github.com/appgate/sdpctl/pkg/keyring"
 	zkeyring "github.com/zalando/go-keyring"
 )
 

@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/appgate/appgatectl/pkg/api"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
 	"golang.org/x/sync/errgroup"
 )
 

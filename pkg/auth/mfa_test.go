@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appgate/appgatectl/pkg/httpmock"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/httpmock"
 )
 
 func TestAuthProviderNames(t *testing.T) {

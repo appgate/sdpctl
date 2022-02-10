@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -80,10 +80,10 @@ Valid token types are:
   - entitlements
   - claims`,
 		Example: `# revoke by distinguished name
-$ appgatectl token revoke <distinguished-name>
+$ sdpctl token revoke <distinguished-name>
 
 # revoke by token type
-$ appgatectl token revoke --token-type=claims`,
+$ sdpctl token revoke --token-type=claims`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if (len(args) != 0 && len(args) != 1) || (len(args) == 0 && opts.ByTokenType == "") {
 				return errors.New("must set either <distinghuished-name> or --by-token-type <type>")

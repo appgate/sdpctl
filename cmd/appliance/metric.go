@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/appgate/appgatectl/pkg/api"
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -42,9 +42,9 @@ If no Appliance ID is given as an argument, the command will prompt for which Ap
 to get a specific metric name. This needs to be an exact match.
 
 NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
-		Example: `appgatectl appliance metric
-appgatectl appliance metric <appliance-id>
-appgatectl appliance metric <appliance-id> --metric-name=<some_metric_name>`,
+		Example: `sdpctl appliance metric
+sdpctl appliance metric <appliance-id>
+sdpctl appliance metric <appliance-id> --metric-name=<some_metric_name>`,
 		Aliases: []string{"metrics"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()

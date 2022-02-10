@@ -14,8 +14,8 @@ import (
 	"strconv"
 	"testing/fstest"
 
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -51,7 +51,7 @@ func NewRegistry() *Registry {
 		Port:     port,
 		Teardown: teardown,
 	}
-	os.Setenv("APPGATECTL_BEARER", "header-token-value")
+	os.Setenv("SDPCTL_BEARER", "header-token-value")
 	return r
 }
 

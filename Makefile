@@ -1,4 +1,4 @@
-BIN_NAME=appgatectl
+BIN_NAME=sdpctl
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 DESTDIR :=
 prefix  := /usr/local
