@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/keyring"
+	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ type Credentials struct {
 
 func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	// if the bearer token is in the config, we asume the current environment does not support a keyring, so we will use it.
-	// this will also include if the environment variable APPGATECTL_BEARER is being used.
+	// this will also include if the environment variable SDPCTL_BEARER is being used.
 	if len(c.BearerToken) > 10 {
 		return fmt.Sprintf("Bearer %s", c.BearerToken), nil
 	}
@@ -44,7 +44,7 @@ func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	}
 	v, err := keyring.GetBearer(h)
 	if err != nil {
-		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'appgatectl configure login' or set APPGATECTL_BEARER %w", h, err)
+		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'sdpctl configure login' or set SDPCTL_BEARER %w", h, err)
 	}
 	return fmt.Sprintf("Bearer %s", v), nil
 }
@@ -90,7 +90,7 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 	return true
 }
 
-var ErrNoAddr = errors.New("no valid address set, run 'appgatectl configure' or set APPGATECTL_URL")
+var ErrNoAddr = errors.New("no valid address set, run 'sdpctl configure' or set SDPCTL_URL")
 
 func NormalizeURL(u string) (string, error) {
 	if len(u) <= 0 {

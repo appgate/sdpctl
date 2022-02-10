@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2/core"
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/httpmock"
-	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 )

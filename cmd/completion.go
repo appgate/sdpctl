@@ -18,13 +18,13 @@ func NewCmdCompletion() *cobra.Command {
 
 Bash:
 
-  $ source <(appgatectl completion bash)
+  $ source <(sdpctl completion bash)
 
   # To load completions for each session, execute once:
   # Linux:
-  $ appgatectl completion bash > /etc/bash_completion.d/appgatectl
+  $ sdpctl completion bash > /etc/bash_completion.d/sdpctl
   # macOS:
-  $ appgatectl completion bash > /usr/local/etc/bash_completion.d/appgatectl
+  $ sdpctl completion bash > /usr/local/etc/bash_completion.d/sdpctl
 
 Zsh:
 
@@ -34,23 +34,23 @@ Zsh:
   $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
   # To load completions for each session, execute once (you may need to execute as 'sudo' user):
-  $ appgatectl completion zsh > "/usr/share/zsh/vendor-completions/_appgatectl"
+  $ sdpctl completion zsh > "/usr/share/zsh/vendor-completions/_sdpctl"
 
   # You will need to start a new shell for this setup to take effect.
 
 
 PowerShell:
 
-  PS> appgatectl completion powershell | Out-String | Invoke-Expression
+  PS> sdpctl completion powershell | Out-String | Invoke-Expression
 
   # To load completions for every new session, run:
-  PS> appgatectl completion powershell > appgatectl.ps1
+  PS> sdpctl completion powershell > sdpctl.ps1
   # and source this file from your PowerShell profile.
 `,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash", "zsh", "powershell"},
 		Args:                  cobra.ExactValidArgs(1),
-		Example:               "appgatectl completion bash",
+		Example:               "sdpctl completion bash",
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "bash":

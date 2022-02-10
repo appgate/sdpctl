@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/appgate/appgatectl/pkg/util"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 )
 

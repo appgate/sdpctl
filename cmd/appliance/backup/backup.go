@@ -3,8 +3,8 @@ package backup
 import (
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/factory"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
@@ -24,19 +24,19 @@ will be created there if it doesn't already exist and the backups will be downlo
 For more information on the backup process, go to: https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html`
 
 	example string = `# backup with no arguments or flags will prompt for appliance
-$ appgatectl appliance backup
+$ sdpctl appliance backup
 
 # download backups to a custom directory
-$ appgatectl appliance backup --destination=path/to/backup/destination
+$ sdpctl appliance backup --destination=path/to/backup/destination
 
 # backup only primary controller using flag
-$ appgatectl appliance backup --primary
+$ sdpctl appliance backup --primary
 
 # backup all Appgate SDP Appliances
-$ appgatectl appliance backup --all
+$ sdpctl appliance backup --all
 
 # backup using '--filter' and '--exclude' flags
-$ appgatectl appliance backup --filter=function=controller --exclude=tag=secondary
+$ sdpctl appliance backup --filter=function=controller --exclude=tag=secondary
 `
 )
 

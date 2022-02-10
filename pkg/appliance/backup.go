@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/appgatectl/pkg/api"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/prompt"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -111,7 +111,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			log.Warn("Skipping backup. Backup API is disabled while --no-interactive flag is set")
 			return backupIDs, nil
 		}
-		return backupIDs, fmt.Errorf("Backup API is disabled in the collective. Use the 'appgatectl appliance backup api' command to enable it.")
+		return backupIDs, fmt.Errorf("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it.")
 	}
 
 	appliances, err := app.List(ctx, nil)

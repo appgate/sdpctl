@@ -8,12 +8,12 @@ import (
 	"os"
 	"testing"
 
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/httpmock"
-	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/zalando/go-keyring"
 )
 
@@ -123,8 +123,8 @@ func TestSignin(t *testing.T) {
 				saveConfig: false,
 			},
 			environmentVariables: map[string]string{
-				"APPGATECTL_USERNAME": "bob",
-				"APPGATECTL_PASSWORD": "alice",
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
 			},
 			httpStubs: []httpmock.Stub{
 				authenticationResponse,

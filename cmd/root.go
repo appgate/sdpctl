@@ -7,16 +7,16 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/appgate/appgatectl/cmd/token"
+	"github.com/appgate/sdpctl/cmd/token"
 
-	appliancecmd "github.com/appgate/appgatectl/cmd/appliance"
-	cfgcmd "github.com/appgate/appgatectl/cmd/configure"
-	"github.com/appgate/appgatectl/pkg/auth"
-	"github.com/appgate/appgatectl/pkg/cmdutil"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/filesystem"
-	"github.com/appgate/appgatectl/pkg/util"
+	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
+	cfgcmd "github.com/appgate/sdpctl/cmd/configure"
+	"github.com/appgate/sdpctl/pkg/auth"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,7 +27,7 @@ var (
 	commit          string
 	buildDate       string
 	longDescription string = `The official CLI tool for managing your Appgate SDP Collective.
-With appgatectl, you can list, backup and upgrade your Appgate SDP Appliances with a single command.`
+With sdpctl, you can list, backup and upgrade your Appgate SDP Appliances with a single command.`
 	versionOutput string = fmt.Sprintf(`%s
 commit: %s
 build date: %s`, version, commit, buildDate)
@@ -45,15 +45,15 @@ func initConfig() {
 	viper.AddConfigPath(dir)
 	viper.SafeWriteConfig()
 	viper.SetConfigName("config")
-	viper.SetEnvPrefix("APPGATECTL")
+	viper.SetEnvPrefix("SDPCTL")
 	viper.AutomaticEnv()
 	viper.SetConfigType("json")
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Its OK if we can't the file, fallback to arguments and/or environment variables
-			// or configure it with appgatectl configure
+			// or configure it with sdpctl configure
 		} else {
-			fmt.Printf("can't find config; run appgatectl configure %s %s\n", dir, err)
+			fmt.Printf("can't find config; run sdpctl configure %s %s\n", dir, err)
 			os.Exit(1)
 		}
 	}
@@ -61,8 +61,8 @@ func initConfig() {
 
 func NewCmdRoot() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use:           "appgatectl",
-		Short:         "appgatectl is a command line tool to control and handle Appgate SDP using the CLI",
+		Use:           "sdpctl",
+		Short:         "sdpctl is a command line tool to control and handle Appgate SDP using the CLI",
 		Long:          longDescription,
 		Version:       versionOutput,
 		SilenceErrors: true,
@@ -154,7 +154,7 @@ func Execute() exitCode {
 
 func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		logLevel := strings.ToLower(util.Getenv("APPGATECTL_LOG_LEVEL", "info"))
+		logLevel := strings.ToLower(util.Getenv("SDPCTL_LOG_LEVEL", "info"))
 
 		switch logLevel {
 		case "panic":
@@ -174,7 +174,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.DebugLevel)
 		}
 
-		fName := fmt.Sprintf("%s/appgatectl.log", filesystem.ConfigDir())
+		fName := fmt.Sprintf("%s/sdpctl.log", filesystem.ConfigDir())
 		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			log.SetFormatter(&log.TextFormatter{
@@ -191,7 +191,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			if err := auth.Signin(f, false, false); err != nil {
-				fmt.Fprintln(os.Stderr, "appgatectl authentication err")
+				fmt.Fprintln(os.Stderr, "sdpctl authentication err")
 				fmt.Fprintln(os.Stderr)
 				fmt.Fprintln(os.Stderr, err)
 				return ErrExitAuth
@@ -200,9 +200,9 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		// require that the user is authenticated before running most commands
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
-			fmt.Fprintln(os.Stderr, "appgatectl err")
+			fmt.Fprintln(os.Stderr, "sdpctl err")
 			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, "To authenticate, please run `appgatectl configure signin`.")
+			fmt.Fprintln(os.Stderr, "To authenticate, please run `sdpctl configure signin`.")
 			return ErrExitAuth
 		}
 

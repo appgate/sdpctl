@@ -5,8 +5,8 @@
 // so for Windows, we will store and fetch the bearer token from file.
 // the content of the file will be encrypted with The Windows DPAPI
 //
-// By default, the bearer token file will be located in %APPDATA%/appgatectl
-// if not overwritten by APPGATECTL_CONFIG_DIR
+// By default, the bearer token file will be located in %APPDATA%/sdpctl
+// if not overwritten by SDPCTL_CONFIG_DIR
 //
 package keyring
 
@@ -14,12 +14,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/appgate/appgatectl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/billgraziano/dpapi"
 )
 
 func GetPassword(prefix string) (string, error) {
-	if v, ok := os.LookupEnv("APPGATECTL_PASSWORD"); ok {
+	if v, ok := os.LookupEnv("SDPCTL_PASSWORD"); ok {
 		return v, nil
 	}
 	return getSecret(format(prefix, password))
@@ -34,14 +34,14 @@ func SetUsername(prefix, secret string) error {
 }
 
 func GetUsername(prefix string) (string, error) {
-	if v, ok := os.LookupEnv("APPGATECTL_USERNAME"); ok {
+	if v, ok := os.LookupEnv("SDPCTL_USERNAME"); ok {
 		return v, nil
 	}
 	return getSecret(format(prefix, username))
 }
 
 func GetBearer(prefix string) (string, error) {
-	if v, ok := os.LookupEnv("APPGATECTL_BEARER"); ok {
+	if v, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		return v, nil
 	}
 	filepath := filesystem.ConfigDir()

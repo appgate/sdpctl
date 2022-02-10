@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/appgate/appgatectl/cmd"
+	"github.com/appgate/sdpctl/cmd"
 )
 
 func main() {

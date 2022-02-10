@@ -11,12 +11,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/token"
+	"github.com/appgate/sdpctl/pkg/token"
 
-	"github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/util"
 )
 
 type Factory struct {
@@ -106,7 +106,7 @@ func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 				"Accept": fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
 			},
 			Debug:     cfg.Debug,
-			UserAgent: "appgatectl/" + appVersion + "/go",
+			UserAgent: "sdpctl/" + appVersion + "/go",
 			Servers: []openapi.ServerConfiguration{
 				{
 					URL: cfg.URL,

@@ -3,7 +3,7 @@ package cmd
 import (
 	"time"
 
-	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 
@@ -16,67 +16,67 @@ https://www.appgate.com
 {{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}{{end}}
 
 Environment Variables:
-  See 'appgatectl help environment' for the list of supported environment variables.
+  See 'sdpctl help environment' for the list of supported environment variables.
 
 {{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
 
 const environmentHelpLong = `
-All environment variables are Optional, for initial configuration of appgatectl, run 'appgatectl configure'
+All environment variables are Optional, for initial configuration of sdpctl, run 'sdpctl configure'
 
 The environment variables will take precedence over the values in the config file,
-The default path to the config file is "$XDG_CONFIG_HOME/appgatectl" or "$HOME/.config/appgatectl on UNIX
+The default path to the config file is "$XDG_CONFIG_HOME/sdpctl" or "$HOME/.config/sdpctl on UNIX
 
 Available Variables:
-  APPGATECTL_URL:
+  SDPCTL_URL:
     Description: URL to the controller API endpoint, for example https://appgate.acme.com:8443/admin
-  APPGATECTL_PROVIDER:
+  SDPCTL_PROVIDER:
     Description: Display name of the Identity Provider name. Used during sign in
     Default: local
-  APPGATECTL_INSECURE:
+  SDPCTL_INSECURE:
     Description: Whether server should be accessed without verifying the TLS certificate.
                  WARNING! Setting this to 'true' is strongly disadvised in a production environment.
     Default: false
-  APPGATECTL_PEM_FILEPATH:
-    Description: If appgatectl is configured insecure:false, you need to append this configuration and point
+  SDPCTL_PEM_FILEPATH:
+    Description: If sdpctl is configured insecure:false, you need to append this configuration and point
                  to a valid PEM file used by the controller.
-  APPGATECTL_VERSION:
+  SDPCTL_VERSION:
     Description: Client peer version used to communicate with the controller API, default value will be computed based on the
                  primary controller appliance version.
-  APPGATECTL_BEARER:
-    Description: The Bearer authentication, computed from 'appgatectl configure signin'
-  APPGATECTL_USERNAME:
-    Description: username for local identity provider, can be used instead of APPGATECTL_BEARER in combination with APPGATECTL_PASSWORD.
-  APPGATECTL_PASSWORD:
-    Description: password for local identity provider, can be used instead of APPGATECTL_BEARER in combination with APPGATECTL_USERNAME.
-  APPGATECTL_DEVICE_ID:
+  SDPCTL_BEARER:
+    Description: The Bearer authentication, computed from 'sdpctl configure signin'
+  SDPCTL_USERNAME:
+    Description: username for local identity provider, can be used instead of SDPCTL_BEARER in combination with SDPCTL_PASSWORD.
+  SDPCTL_PASSWORD:
+    Description: password for local identity provider, can be used instead of SDPCTL_BEARER in combination with SDPCTL_USERNAME.
+  SDPCTL_DEVICE_ID:
     Description: UUID to distinguish the Client device making the request. It is supposed to be same for every sign in request from the same server.
     Default: /etc/machine-id on Linux
              /etc/hostid on BSD
              ioreg -rd1 -c IOPlatformExpertDevice | grep IOPlatformUUID on OSX
              reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography /v MachineGuid on Windows
-  APPGATECTL_CONFIG_DIR:
-    Description: the directory where appgatectl will store configuration files.
-    Default: "$XDG_CONFIG_HOME/appgatectl" or "$HOME/.config/appgatectl on UNIX".
-  APPGATECTL_LOG_LEVEL:
+  SDPCTL_CONFIG_DIR:
+    Description: the directory where sdpctl will store configuration files.
+    Default: "$XDG_CONFIG_HOME/sdpctl" or "$HOME/.config/sdpctl on UNIX".
+  SDPCTL_LOG_LEVEL:
     Description: application log level
     Default: INFO
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 
 Example Usage:
-  APPGATECTL_USERNAME=admin \
-  APPGATECTL_PASSWORD=admin \
-  APPGATECTL_URL=https://controller.appgate.com/admin \
-  APPGATECTL_INSECURE=true \
-  APPGATECTL_API_VERSION=15 \
-  appgatectl appliance list
+  SDPCTL_USERNAME=admin \
+  SDPCTL_PASSWORD=admin \
+  SDPCTL_URL=https://controller.appgate.com/admin \
+  SDPCTL_INSECURE=true \
+  SDPCTL_API_VERSION=15 \
+  sdpctl appliance list
 `
 
 func NewHelpCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "environment",
-		Short:  "Environment variables that can be used with appgatectl",
+		Short:  "Environment variables that can be used with sdpctl",
 		Long:   environmentHelpLong,
 		Hidden: true,
 	}

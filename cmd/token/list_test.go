@@ -3,15 +3,16 @@ package token
 import (
 	"bytes"
 	"fmt"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/httpmock"
-	"github.com/appgate/appgatectl/pkg/token"
-	"github.com/appgate/appgatectl/pkg/util"
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"testing"
+
+	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/appgate/sdpctl/pkg/token"
+	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func setupTokenListTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {

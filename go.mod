@@ -1,4 +1,4 @@
-module github.com/appgate/appgatectl
+module github.com/appgate/sdpctl
 
 go 1.16
 

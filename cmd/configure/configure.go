@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
-	"github.com/appgate/appgatectl/pkg/util"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,11 +31,11 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		},
 		Short: "Configure your Appgate SDP Collective",
 		Long: `Setup a configuration file towards your Appgate SDP Collective to be able to interact with the collective. By default, the configuration file
-will be created in a default directory in depending on your system. This can be overridden by setting the 'APPGATECTL_CONFIG_DIR' environment variable.
-See 'appgatectl help environment' for more information on using environment variables.`,
-		Example: `appgatectl configure
-appgatectl configure --pem <path/to/pem>
-APPGATECTL_CONFIG_DIR=<path/to/config/dir appgatectl configure`,
+will be created in a default directory in depending on your system. This can be overridden by setting the 'SDPCTL_CONFIG_DIR' environment variable.
+See 'sdpctl help environment' for more information on using environment variables.`,
+		Example: `sdpctl configure
+sdpctl configure --pem <path/to/pem>
+SDPCTL_CONFIG_DIR=<path/to/config/dir sdpctl configure`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return configRun(c, args, &opts)
 		},

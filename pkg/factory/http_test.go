@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/appgate/appgatectl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/configuration"
 )
 
 func TestHttpClientTransportTLSFromConfig(t *testing.T) {
@@ -119,8 +119,8 @@ func TestNew(t *testing.T) {
 			if clientConfig.Servers[0].URL != inputCfg.URL {
 				t.Errorf("Got %s expected %s", clientConfig.Host, inputCfg.URL)
 			}
-			if clientConfig.UserAgent != "appgatectl/1.1.1./go" {
-				t.Errorf("Got %s expected %s", clientConfig.UserAgent, "appgatectl/1.1.1./go")
+			if clientConfig.UserAgent != "sdpctl/1.1.1./go" {
+				t.Errorf("Got %s expected %s", clientConfig.UserAgent, "sdpctl/1.1.1./go")
 			}
 			if clientConfig.Debug != inputCfg.Debug {
 				t.Errorf("Got %v expected %v", clientConfig.Debug, inputCfg.Debug)

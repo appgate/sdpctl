@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/appgate/appgatectl/pkg/api"
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -34,11 +34,11 @@ const (
     `
 	resolveNameExample = `
     # with a specific gateway appliance id:
-    appgatectl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se
+    sdpctl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se
 
 
     # If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.
-    > appgatectl appliance resolve-name --resource-name dns://google.se
+    > sdpctl appliance resolve-name --resource-name dns://google.se
     ? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
     142.251.36.3
     2a00:1450:400e:80f::2003

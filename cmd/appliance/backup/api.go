@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/appgate/appgatectl/pkg/api"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ The passphrase is required.`,
 $ appgate appliance backup api
 
 # disable the backup API
-$ appgatectl appliance backup api --disable`,
+$ sdpctl appliance backup api --disable`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return backupAPIrun(c, args, &opts)
 		},

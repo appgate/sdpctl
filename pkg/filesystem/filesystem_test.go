@@ -19,26 +19,26 @@ func TestConfigDir(t *testing.T) {
 		{
 			name: "HOME/USERPROFILE specified",
 			env: map[string]string{
-				"APPGATECTL_CONFIG_DIR": "",
-				"XDG_CONFIG_HOME":       "",
-				"AppData":               "",
-				"HOME":                  tempDir,
+				"SDPCTL_CONFIG_DIR": "",
+				"XDG_CONFIG_HOME":   "",
+				"AppData":           "",
+				"HOME":              tempDir,
 			},
-			output: filepath.Join(tempDir, ".config", "appgatectl"),
+			output: filepath.Join(tempDir, ".config", "sdpctl"),
 		},
 		{
-			name: "APPGATECTL_CONFIG_DIR specified",
+			name: "SDPCTL_CONFIG_DIR specified",
 			env: map[string]string{
-				"APPGATECTL_CONFIG_DIR": filepath.Join(tempDir, "appgatectl_dir"),
+				"SDPCTL_CONFIG_DIR": filepath.Join(tempDir, "sdpctl_dir"),
 			},
-			output: filepath.Join(tempDir, "appgatectl_dir"),
+			output: filepath.Join(tempDir, "sdpctl_dir"),
 		},
 		{
 			name: "XDG_CONFIG_HOME specified",
 			env: map[string]string{
 				"XDG_CONFIG_HOME": tempDir,
 			},
-			output: filepath.Join(tempDir, "appgatectl"),
+			output: filepath.Join(tempDir, "sdpctl"),
 		},
 	}
 

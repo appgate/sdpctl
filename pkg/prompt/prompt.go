@@ -6,7 +6,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
-	"github.com/appgate/appgatectl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 )
 
 // AskConfirmation make sure user confirm action, otherwise abort.

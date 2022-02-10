@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	appliancepkg "github.com/appgate/appgatectl/pkg/appliance"
-	"github.com/appgate/appgatectl/pkg/configuration"
-	"github.com/appgate/appgatectl/pkg/factory"
-	"github.com/appgate/appgatectl/pkg/prompt"
-	"github.com/appgate/appgatectl/pkg/util"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/briandowns/spinner"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -48,13 +48,13 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 Install a prepared upgrade on the secondary partition
 and perform a reboot to make the second partition the primary.`,
 		Example: `# complete all pending upgrades
-$ appgatectl appliance upgrade complete
+$ sdpctl appliance upgrade complete
 
 # backup primary controller before completing
-$ appgatectl appliance upgrade complete --backup
+$ sdpctl appliance upgrade complete --backup
 
 # backup to custom directory when completing pending upgrade
-$ appgatectl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination`,
+$ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
@@ -197,7 +197,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		if !preV.Equal(currentPrimaryControllerVersion) {
-			return fmt.Errorf("version mismatch: run appgatectl configure signin")
+			return fmt.Errorf("version mismatch: run sdpctl configure signin")
 		}
 	}
 

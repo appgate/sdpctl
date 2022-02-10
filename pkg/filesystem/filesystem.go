@@ -7,19 +7,19 @@ import (
 )
 
 const (
-	AgConfigDir   = "APPGATECTL_CONFIG_DIR"
+	AgConfigDir   = "SDPCTL_CONFIG_DIR"
 	XdgConfigHome = "XDG_CONFIG_HOME"
 	AppData       = "AppData"
 )
 
 // ConfigDir path precedence
-// 1. APPGATECTL_CONFIG_DIR
+// 1. SDPCTL_CONFIG_DIR
 // 2. XDG_CONFIG_HOME
 // 3. AppData (windows only)
 // 4. HOME
 func ConfigDir() string {
 	var path string
-	name := "appgatectl"
+	name := "sdpctl"
 	if a := os.Getenv(AgConfigDir); a != "" {
 		path = a
 	} else if b := os.Getenv(XdgConfigHome); b != "" {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/appgatectl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/prompt"
 )
 
 func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[string]string) (string, error) {
