@@ -111,7 +111,10 @@ func resolveNameStatusRun(cmd *cobra.Command, args []string, opts *resolveNameSt
 	if err != nil {
 		return err
 	}
-	token := opts.Config.GetBearTokenHeaderValue()
+	token, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
 	ctx := context.Background()
 
 	result, response, err := client.AppliancesApi.AppliancesIdNameResolutionStatusGet(ctx, opts.applianceID).Authorization(token).Execute()

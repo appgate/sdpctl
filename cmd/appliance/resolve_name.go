@@ -107,7 +107,10 @@ func resolveNameRun(cmd *cobra.Command, args []string, opts *resolveNameOpts) er
 	if err != nil {
 		return err
 	}
-	token := opts.Config.GetBearTokenHeaderValue()
+	token, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
 
 	ctx := context.Background()
 	body := openapi.InlineObject4{

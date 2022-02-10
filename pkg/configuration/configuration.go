@@ -1,27 +1,16 @@
 package configuration
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
-	"path/filepath"
 	"regexp"
-	"runtime"
-	"strings"
 	"time"
 
+	"github.com/appgate/appgatectl/pkg/keyring"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-)
-
-const (
-	AgConfigDir   = "APPGATECTL_CONFIG_DIR"
-	XdgConfigHome = "XDG_CONFIG_HOME"
-	AppData       = "AppData"
 )
 
 type Config struct {
@@ -32,7 +21,6 @@ type Config struct {
 	Version                  int    `mapstructure:"api_version"` // api peer interface version
 	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
 	ExpiresAt                string `mapstructure:"expires_at"`
-	CredentialsFile          string `mapstructure:"credentials_file"`
 	DeviceID                 string `mapstructure:"device_id"`
 	PemFilePath              string `mapstructure:"pem_filepath"`
 	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
@@ -44,30 +32,21 @@ type Credentials struct {
 	Password string
 }
 
-func (c *Config) GetBearTokenHeaderValue() string {
-	return fmt.Sprintf("Bearer %s", c.BearerToken)
-}
-
-// ConfigDir path precedence
-// 1. APPGATECTL_CONFIG_DIR
-// 2. XDG_CONFIG_HOME
-// 3. AppData (windows only)
-// 4. HOME
-func ConfigDir() string {
-	var path string
-	name := "appgatectl"
-	if a := os.Getenv(AgConfigDir); a != "" {
-		path = a
-	} else if b := os.Getenv(XdgConfigHome); b != "" {
-		path = filepath.Join(b, name)
-	} else if c := os.Getenv(AppData); runtime.GOOS == "windows" && c != "" {
-		path = filepath.Join(c, name)
-	} else {
-		d, _ := os.UserHomeDir()
-		path = filepath.Join(d, ".config", name)
+func (c *Config) GetBearTokenHeaderValue() (string, error) {
+	// if the bearer token is in the config, we asume the current environment does not support a keyring, so we will use it.
+	// this will also include if the environment variable APPGATECTL_BEARER is being used.
+	if len(c.BearerToken) > 10 {
+		return fmt.Sprintf("Bearer %s", c.BearerToken), nil
 	}
-
-	return path
+	h, err := c.GetHost()
+	if err != nil {
+		return "", fmt.Errorf("could not retrieve token for current host configuration %w", err)
+	}
+	v, err := keyring.GetBearer(h)
+	if err != nil {
+		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'appgatectl configure login' or set APPGATECTL_BEARER %w", h, err)
+	}
+	return fmt.Sprintf("Bearer %s", v), nil
 }
 
 // DefaultDeviceID return a unique ID in UUID format.
@@ -137,13 +116,17 @@ func NormalizeURL(u string) (string, error) {
 }
 
 func (c *Config) CheckAuth() bool {
-	if len(c.BearerToken) < 1 {
-		return false
-	}
 	if len(c.URL) < 1 {
 		return false
 	}
 	if len(c.Provider) < 1 {
+		return false
+	}
+	t, err := c.GetBearTokenHeaderValue()
+	if err != nil {
+		return false
+	}
+	if len(t) < 10 {
 		return false
 	}
 	return c.ExpiredAtValid()
@@ -161,72 +144,34 @@ func (c *Config) ExpiredAtValid() bool {
 
 func (c *Config) LoadCredentials() (*Credentials, error) {
 	creds := &Credentials{}
-
-	// No file is set so we return empty credentials
-	if len(c.CredentialsFile) <= 0 {
-		return creds, nil
-	}
-
-	// File is set in the config, but does not exists, so we return empty credentials
-	info, err := os.Stat(c.CredentialsFile)
-	if err != nil && os.IsNotExist(err) {
-		return creds, nil
-	}
-
-	// Check file permissions
-	// If file exists, it should only be readable by the executing user
-	mode := info.Mode()
-	if mode&(1<<2) != 0 {
-		return nil, errors.New("invalid permissions on credentials file")
-	}
-
-	// Scan file for credentials
-	file, err := os.Open(c.CredentialsFile)
+	h, err := c.GetHost()
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		data := strings.Split(scanner.Text(), "=")
-		switch data[0] {
-		case "username":
-			creds.Username = data[1]
-		case "password":
-			creds.Password = data[1]
-		}
+	if v, err := keyring.GetUsername(h); err == nil && len(v) > 0 {
+		creds.Username = v
 	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	if v, err := keyring.GetPassword(h); err == nil && len(v) > 0 {
+		creds.Password = v
 	}
 
 	return creds, nil
 }
 
 func (c *Config) StoreCredentials(crd *Credentials) error {
-	joinStrings := []string{}
+	h, err := c.GetHost()
+	if err != nil {
+		return err
+	}
 	if len(crd.Username) > 0 {
-		joinStrings = append(joinStrings, fmt.Sprintf("username=%s", crd.Username))
+		if err := keyring.SetUsername(h, crd.Username); err != nil {
+			return fmt.Errorf("could not store username in keychain %s", err)
+		}
 	}
 	if len(crd.Password) > 0 {
-		joinStrings = append(joinStrings, fmt.Sprintf("password=%s", crd.Password))
-	}
-	b := []byte(strings.Join(joinStrings, "\n"))
-
-	path := filepath.FromSlash(c.CredentialsFile)
-	err := os.MkdirAll(filepath.Dir(path), 0700)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(path, b, 0600)
-	if err != nil {
-		return err
-	}
-
-	viper.Set("credentials_file", c.CredentialsFile)
-	err = viper.WriteConfig()
-	if err != nil {
-		return err
+		if err := keyring.SetPassword(h, crd.Password); err != nil {
+			return fmt.Errorf("could not store password in keychain %s", err)
+		}
 	}
 
 	return nil

@@ -15,6 +15,7 @@ import (
 	"github.com/appgate/appgatectl/pkg/cmdutil"
 	"github.com/appgate/appgatectl/pkg/configuration"
 	"github.com/appgate/appgatectl/pkg/factory"
+	"github.com/appgate/appgatectl/pkg/filesystem"
 	"github.com/appgate/appgatectl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,7 +34,7 @@ build date: %s`, version, commit, buildDate)
 )
 
 func initConfig() {
-	dir := configuration.ConfigDir()
+	dir := filesystem.ConfigDir()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		err := os.Mkdir(dir, os.ModePerm)
 		if err != nil {
@@ -176,9 +177,10 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			FullTimestamp:   true,
 			TimestampFormat: "2006-01-02 15:04:05",
 			PadLevelText:    true,
+			ForceColors:     true,
 		})
 
-		fName := fmt.Sprintf("%s/appgatectl.log", configuration.ConfigDir())
+		fName := fmt.Sprintf("%s/appgatectl.log", filesystem.ConfigDir())
 		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			log.Warn("Failed to open log file. Logging to stdout")

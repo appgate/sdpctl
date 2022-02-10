@@ -94,8 +94,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	if err != nil {
 		return backupIDs, err
 	}
-
-	backupEnabled, err := backupEnabled(ctx, app.APIClient, opts.Config.GetBearTokenHeaderValue(), opts.NoInteractive)
+	token, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return backupIDs, err
+	}
+	backupEnabled, err := backupEnabled(ctx, app.APIClient, token, opts.NoInteractive)
 	if err != nil {
 		if opts.NoInteractive {
 			log.WithError(err).Warn("Skipping backup due to error while --no-interactive flag is set")
@@ -271,7 +274,10 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	if err != nil {
 		return err
 	}
-
+	token, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
 	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
 	log.WithField("backup_ids", IDs).Info("Cleaning up...")
@@ -280,7 +286,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		backupID := bckID
 		g.Go(func() error {
 			entry := log.WithField("applianceID", ID).WithField("backupID", backupID)
-			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(opts.Config.GetBearTokenHeaderValue()).Execute()
+			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(token).Execute()
 			if err != nil {
 				return err
 			}

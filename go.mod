@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.2
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20211229102702-55d570847963
+	github.com/billgraziano/dpapi v0.4.0
 	github.com/briandowns/spinner v1.18.1
 	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/cheynewallace/tabby v1.1.1
@@ -24,6 +25,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
+	github.com/zalando/go-keyring v0.1.1
 	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220207234003-57398862261d // indirect
