@@ -173,16 +173,16 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if cfg.Debug {
 			log.SetLevel(log.DebugLevel)
 		}
-		log.SetFormatter(&log.TextFormatter{
-			FullTimestamp:   true,
-			TimestampFormat: "2006-01-02 15:04:05",
-			PadLevelText:    true,
-			ForceColors:     true,
-		})
 
 		fName := fmt.Sprintf("%s/appgatectl.log", filesystem.ConfigDir())
 		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
+			log.SetFormatter(&log.TextFormatter{
+				FullTimestamp:   true,
+				TimestampFormat: "2006-01-02 15:04:05",
+				PadLevelText:    true,
+				ForceColors:     true,
+			})
 			log.Warn("Failed to open log file. Logging to stdout")
 			log.SetOutput(f.IOOutWriter)
 		} else {
