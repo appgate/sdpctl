@@ -238,6 +238,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"appliance": controller.GetName()}
+		spin.Suffix = fmt.Sprintf(" Disabling controrller function on %s", controller.GetName())
 		log.WithFields(f).Info("Disabling controller function")
 		if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
 			log.WithFields(f).Error("Unable to disable controller")
@@ -316,9 +317,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				}
 				log.WithField("appliance", i.GetName()).Info("Performed UpgradeComplete")
 				select {
-				case upgradeChan <- i:
 				case <-ctx.Done():
 					return ctx.Err()
+				case upgradeChan <- i:
 				}
 				return nil
 			})
@@ -336,25 +337,27 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		return result, nil
 	}
-	spin.Suffix = " upgrading additional controllers"
+	spin.Suffix = " Checking status of additional controllers before proceeding with upgrade"
 	upgradedAdditionalControllers, err := batchUpgrade(ctx, addtitionalControllers, true)
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional controllers %w", err)
 	}
-
+	spin.Suffix = " Verfiying state of upgraded controllers"
 	// blocking function; waiting for upgrade status to be idle
 	if err := a.UpgradeStatusWorker.Wait(ctx, upgradedAdditionalControllers, appliancepkg.UpgradeStatusIdle); err != nil {
 		return err
 	}
+
 	log.Info("done waiting for additional controllers upgrade")
 	ctrlUpgradeState := "controller_ready"
 	if cfg.Version < 15 {
 		ctrlUpgradeState = "multi_controller_ready"
 	}
-	// re-enable additional controllers
+	// re-enable additional controllers sequentially, one at the time
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"controller": controller.GetName()}
 		log.WithFields(f).Info("Enabling controller function")
+		spin.Suffix = fmt.Sprintf(" Enabling controller function again on %s", controller.GetName())
 		if err := a.EnableController(ctx, controller.GetId(), controller); err != nil {
 			log.WithFields(f).WithError(err).Error("Failed to enable controller")
 			return err
@@ -364,7 +367,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 	}
-
+	spin.Suffix = " additional controllers done, continuing with additional appliances"
 	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
 		return err
@@ -372,7 +375,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	additionalAppliances := make([]openapi.Appliance, 0)
 	for id, result := range readyForUpgrade {
-
 		for _, appliance := range appliances {
 			if result.Status == appliancepkg.UpgradeStatusReady {
 				if id == appliance.GetId() {
@@ -388,6 +390,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional appliances %w", err)
 	}
+	spin.Suffix = " Waiting for appliances to reach desired state"
 	// blocking function; waiting for upgrade status to be idle
 	if err := a.UpgradeStatusWorker.Wait(ctx, upgradedAppliances, appliancepkg.UpgradeStatusSuccess); err != nil {
 		return err
@@ -435,6 +438,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 		}
 	}
+	spin.Suffix = " switch partition and applying upgrade on additional appliances"
 	switchedAppliances, err := switchBatch(ctx, switchAppliances)
 	if err != nil {
 		return fmt.Errorf("failed during switch partition of additional appliances %w", err)
@@ -443,6 +447,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithField("appliance", a.GetName()).Info("Switched partition")
 	}
 
+	spin.Suffix = " Confirming upgrade status is correct"
 	if err := a.UpgradeStatusWorker.Wait(ctx, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
 		return err
 	}
