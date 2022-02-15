@@ -77,7 +77,7 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 }
 
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
-	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("upgrade done\n"))
+	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("\n"))
 	spin.Writer = opts.Out
 	defer spin.Stop()
 	cfg := opts.Config
@@ -446,6 +446,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err := a.UpgradeStatusWorker.Wait(ctx, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
 		return err
 	}
-	log.Info("Upgrade finished")
+	spin.FinalMSG = "\nUpgrade finished\n"
 	return nil
 }
