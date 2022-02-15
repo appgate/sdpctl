@@ -31,6 +31,7 @@ type upgradeCompleteOptions struct {
 	backupDestination string
 	backupAll         string
 	NoInteractive     bool
+	Timeout           time.Duration
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -70,6 +71,7 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
+	flags.DurationVarP(&opts.Timeout, "timeout", "t", 25*time.Minute, "timeout limit for upgrade complete")
 
 	return upgradeCompleteCmd
 }
@@ -147,7 +149,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(10*time.Minute))
+	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
 	filter := util.ParseFilteringFlags(cmd.Flags())
 	rawAppliances, err := a.List(ctx, nil)
