@@ -16,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/briandowns/spinner"
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -360,6 +361,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		spin.Suffix = fmt.Sprintf(" Enabling controller function again on %s", controller.GetName())
 		if err := a.EnableController(ctx, controller.GetId(), controller); err != nil {
 			log.WithFields(f).WithError(err).Error("Failed to enable controller")
+			if merr, ok := err.(*multierror.Error); ok {
+				var mutliErr error
+				for _, e := range merr.Errors {
+					mutliErr = multierror.Append(e)
+				}
+				mutliErr = multierror.Append(fmt.Errorf("could not enable controller on %s", controller.GetName()))
+				return mutliErr
+			}
 			return err
 		}
 		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{controller}, ctrlUpgradeState); err != nil {
