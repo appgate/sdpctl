@@ -16,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/briandowns/spinner"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -359,12 +360,31 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if cfg.Version < 15 {
 		ctrlUpgradeState = "multi_controller_ready"
 	}
+	backoffEnableController := func(controller openapi.Appliance) error {
+		b := backoff.WithContext(&backoff.ExponentialBackOff{
+			InitialInterval: 10 * time.Second,
+			Multiplier:      1,
+			MaxInterval:     2 * time.Minute,
+			MaxElapsedTime:  15 * time.Minute,
+			Stop:            backoff.Stop,
+			Clock:           backoff.SystemClock,
+		}, ctx)
+
+		return backoff.Retry(func() error {
+			if err := a.EnableController(ctx, controller.GetId(), controller); err != nil {
+				log.Infof("Failed to enabled controller function on %s, will retry", controller.GetName())
+				return err
+			}
+			log.Infof("Enabled controller function OK on %s", controller.GetName())
+			return nil
+		}, b)
+	}
 	// re-enable additional controllers sequentially, one at the time
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"controller": controller.GetName()}
 		log.WithFields(f).Info("Enabling controller function")
 		spin.Suffix = fmt.Sprintf(" Enabling controller function again on %s", controller.GetName())
-		if err := a.EnableController(ctx, controller.GetId(), controller); err != nil {
+		if err := backoffEnableController(controller); err != nil {
 			log.WithFields(f).WithError(err).Error("Failed to enable controller")
 			if merr, ok := err.(*multierror.Error); ok {
 				var mutliErr error
