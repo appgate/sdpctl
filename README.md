@@ -111,6 +111,15 @@ $ sdpctl token revoke CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local
 More details on the token command can be found in [the token command documentation](./docs/token.md)
 
 ---
+## Other available commands
+
+### `sdpctl open`
+The open command will attempt to open the Appgate SDP Collective administration interface in the systems default browser.
+
+### `sdpctl help [command]`
+The help command will print the help page for any command that follows.
+
+---
 ## Global flags
 | Flag | Shorthand | Description |
 |---|---|---|
