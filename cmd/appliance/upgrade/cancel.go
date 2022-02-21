@@ -75,10 +75,15 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	}
 	ctx := context.Background()
 	filter := util.ParseFilteringFlags(cmd.Flags())
-	appliances, err := a.List(ctx, filter)
+	stats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
 	}
+	allAppliances, err := a.List(ctx, filter)
+	if err != nil {
+		return err
+	}
+	appliances, offline, _ := appliancepkg.FilterAvailable(allAppliances, stats.GetData())
 
 	noneIdleAppliances := make([]openapi.Appliance, 0)
 	for _, app := range appliances {
@@ -94,7 +99,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		log.Infof("did not find any appliances to perform cancel on.")
 		return nil
 	}
-	msg, err := showCancelList(noneIdleAppliances)
+	msg, err := showCancelList(noneIdleAppliances, offline)
 	if err != nil {
 		return err
 	}
@@ -166,15 +171,23 @@ cancelling upgrade on the following appliance:
 {{range .Appliances}}
   - {{.Name -}}
 {{end}}
+{{ if .Offline }}
+The following appliances are offline and will be excluded:
+{{range .Offline}}
+  - {{.Name -}}
+{{end}}
+{{end}}
 `
 
-func showCancelList(a []openapi.Appliance) (string, error) {
+func showCancelList(online, offline []openapi.Appliance) (string, error) {
 	type stub struct {
 		Appliances []openapi.Appliance
+		Offline    []openapi.Appliance
 	}
 
 	data := stub{
-		Appliances: a,
+		Appliances: online,
+		Offline:    offline,
 	}
 	t := template.Must(template.New("").Parse(cancelApplianceUpgrade))
 	var tpl bytes.Buffer
