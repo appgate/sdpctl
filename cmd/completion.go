@@ -16,15 +16,18 @@ func NewCmdCompletion() *cobra.Command {
 		Short: "Generate shell completion scripts",
 		Long: `To load completions:
 
+NOTE: You may get 'permission denied' error when trying to write the completion script to a file. In that case,
+you can execute the 'tee' command using 'sudo' privileges: 'sdpctl completion bash | sudo tee ...'
+
 Bash:
 
   $ source <(sdpctl completion bash)
 
   # To load completions for each session, execute once:
   # Linux:
-  $ sdpctl completion bash > /etc/bash_completion.d/sdpctl
+  $ sdpctl completion bash | tee /etc/bash_completion.d/sdpctl
   # macOS:
-  $ sdpctl completion bash > /usr/local/etc/bash_completion.d/sdpctl
+  $ sdpctl completion bash | tee /usr/local/etc/bash_completion.d/sdpctl
 
 Zsh:
 
@@ -36,9 +39,6 @@ Zsh:
   # To load completions for each session, execute once:
   $ sdpctl completion zsh | tee --output-error=exit "/usr/share/zsh/vendor-completions/_sdpctl"
 
-  # If you get a "permission denied" error, execute using sudo:
-  $ sdpctl completion zsh | sudo tee --output-error=exit "/usr/share/zsh/vendor-completions/_sdpctl"
-
   # You will need to start a new shell for this setup to take effect.
 
 fish:
@@ -46,7 +46,7 @@ fish:
   $ sdpctl completion fish | source
 
   # To load completions for each session, execute once:
-  $ sdpctl completion fish > ~/.config/fish/completions/sdpctl.fish
+  $ sdpctl completion fish | tee ~/.config/fish/completions/sdpctl.fish
 
 PowerShell:
 

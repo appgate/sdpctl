@@ -26,7 +26,11 @@ Ideally, you should install it somewhere in your PATH for easy use. /usr/local/b
 
 
 ## Shell completion
-TODO: description
+The `sdpctl` tool supports shell completions for `bash`, `zsh`, `fish` and `PowerShell`. See the completion help command for more information on shell completions:
+```
+$ sdpctl completion --help
+```
+
 ---
 # Usage
 ## Initial setup
