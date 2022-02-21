@@ -11,10 +11,11 @@ The `appliance` command is the base command in `sdpctl` for managing appliance r
 - [resolve-name-status](#name-resolving)
 
 ### Flags:
-| Flag | Description | Syntax | Default |
-|---|---|---|---|
-| `--filter` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: '--filter name=controller,site=<site-id> etc.'. Available keywords to filter on are: name, id, tags\|tag, version, hostname\|host, active\|activated, site\|site-id, function\|roles\|role | null |
-| `--exclude` | The opposite of the filter flag, but uses the same syntax | syntax description | null |
+| Flag | Shorthand | Description | Syntax | Default |
+|---|---|---|---|---|
+| `--filter` | `f` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: `--filter name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
+| `--exclude` | `-e` | The opposite of the filter flag, but uses the same syntax | Se syntax description on the `--filter` flag | null |
+| `--no-interactive` | none | Using this flag will attempt to skip all user interaction otherwise required by accepting the default values | `sdpctl appliance --no-interactive [action]` | null |
 
 ---
 ## Listing appliances
