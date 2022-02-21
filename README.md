@@ -96,7 +96,19 @@ $ sdpctl appliance upgrade complete
 
 ---
 ## The `token` command
+The token command let's you list and revoke device tokens according to the options specified. To revoke a single token, use these commands:
+```bash
+# List the current tokens
+$ sdpctl token list
+Distinguished Name                                     Device ID                             Last Token Issued At         Provider Name  Username
+------------------                                     ---------                             --------------------         -------------  --------
+CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local  8401189b-492f-4d76-b667-1a9ba03b4ce1  2022-02-21T07:22:12.375464Z  local          admin
 
+# Revoke the token
+$ sdpctl token revoke CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local
+```
+
+More details on the token command can be found in [the token command documentation](./docs/token.md)
 
 ---
 ## Global flags
@@ -104,7 +116,4 @@ $ sdpctl appliance upgrade complete
 |---|---|---|
 | `--api-version` | none | peer API version override |
 | `--debug` | none | Enable debug output and logging |
-| `--help` | `-h` | Help for sdpctl and any subcommand of it |
-| `--version` | `-v` | Current version of sdpctl |
-| `--no-verify` | none | don't verify TLS on for this particular command, overriding settings from config file. USE WITH CAUTION! |
-
+| `--no-verify` | none | Don't verify TLS on for this particular command, overriding settings from config file. USE WITH CAUTION! |
