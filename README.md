@@ -100,3 +100,11 @@ $ sdpctl appliance upgrade complete
 
 ---
 ## Global flags
+| Flag | Shorthand | Description |
+|---|---|---|
+| `--api-version` | none | peer API version override |
+| `--debug` | none | Enable debug output and logging |
+| `--help` | `-h` | Help for sdpctl and any subcommand of it |
+| `--version` | `-v` | Current version of sdpctl |
+| `--no-verify` | none | don't verify TLS on for this particular command, overriding settings from config file. USE WITH CAUTION! |
+
