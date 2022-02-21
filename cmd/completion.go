@@ -9,7 +9,7 @@ import (
 // NewCmdCompletion represents the completion command
 func NewCmdCompletion() *cobra.Command {
 	var completionCmd = &cobra.Command{
-		Use: "completion",
+		Use: "completion [bash|zsh|fish|powershell]",
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},

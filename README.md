@@ -9,10 +9,16 @@ sdpctl is a command line tool for managing your Appgate SDP collective.
 
 ## Linux
 **Debian based distributions:**
-Download the latest [debian package](https://github.com/appgate/sdpctl/releases/latest) from the releases.
+Download the latest [debian package](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install it:
+```bash
+$ sudo dpkg -i <path-to-downloaded-debian-package>
+```
 
 **Red Hat/Fedora:**
-
+Download the latest [rpm package](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install using this command:
+```bash
+$ sudo rpm -i <path-to-downloaded-rpm-package>
+```
 
 **Binary (Cross-platform)**
 Download the appropriate version for your platform from sdpctl [releases](https://github.com/appgate/sdpctl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
@@ -20,12 +26,31 @@ Download the appropriate version for your platform from sdpctl [releases](https:
 Ideally, you should install it somewhere in your PATH for easy use. /usr/local/bin is the most probable location.
 
 ## MacOS
+Download the latest [darwin binary](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install using the command line:
+```bash
+# Unpack the downloaded package in the current directory
+$ gunzip -c <path-to-downloaded-tar> | tar xopf -
 
+# Install the binary
+$ sudo mv <binary-path> /usr/local/bin/sdpctl
+$ sudo chown root:root /usr/local/bin/sdpctl
+```
 
 ## Windows
+Download the latest [windows build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Install using the command line:
+```powershell
+# Create a folder for the binary
+$ mkdir <folder-path>
 
+# Unzip the downloaded archive
+$ Expand-Archive <path-to-archive> -DestinationPath <folder-path>
 
-## Shell completion
+# Edit the PATH for your account
+$ setx PATH "%PATH;<folder-path>"
+```
+Then restart Powershell to make the changes take effect.
+
+# Shell completion
 The `sdpctl` tool supports shell completions for `bash`, `zsh`, `fish` and `PowerShell`. See the completion help command for more information on shell completions:
 ```
 $ sdpctl completion --help
