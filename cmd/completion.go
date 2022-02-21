@@ -33,11 +33,20 @@ Zsh:
 
   $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
-  # To load completions for each session, execute once (you may need to execute as 'sudo' user):
-  $ sdpctl completion zsh > "/usr/share/zsh/vendor-completions/_sdpctl"
+  # To load completions for each session, execute once:
+  $ sdpctl completion zsh | tee --output-error=exit "/usr/share/zsh/vendor-completions/_sdpctl"
+
+  # If you get a "permission denied" error, execute using sudo:
+  $ sdpctl completion zsh | sudo tee --output-error=exit "/usr/share/zsh/vendor-completions/_sdpctl"
 
   # You will need to start a new shell for this setup to take effect.
 
+fish:
+
+  $ sdpctl completion fish | source
+
+  # To load completions for each session, execute once:
+  $ sdpctl completion fish > ~/.config/fish/completions/sdpctl.fish
 
 PowerShell:
 
@@ -57,6 +66,8 @@ PowerShell:
 				cmd.Root().GenBashCompletion(os.Stdout)
 			case "zsh":
 				cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				cmd.Root().GenFishCompletion(os.Stdout, true)
 			case "powershell":
 				cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
 			}
