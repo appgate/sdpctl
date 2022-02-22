@@ -2,6 +2,9 @@
 # Make sure to check the documentation at https://goreleaser.com
 env:
   - RELEASE_VERSION={{ if index .Env "SDPCTL_VERSION" }}{{ .Env.SDPCTL_VERSION }}{{ else }}dev{{ end }}
+before:
+  hooks:
+    - make build/bash_completion
 builds:
   - main: ./main.go
     env:
@@ -37,6 +40,9 @@ nfpms:
     formats:
       - deb
       - rpm
+    contents:
+      - src: ./build/bash_completion
+        dst: /etc/bash_completion.d/sdpctl
 snapshot:
   name_template: "v{{ incpatch .Version }}"
 changelog:
