@@ -40,13 +40,13 @@ $ sudo chown root:root /usr/local/bin/sdpctl
 Download the latest [windows build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Install using the command line:
 ```powershell
 # Create a folder for the binary
-$ mkdir <folder-path>
+PS> mkdir <folder-path>
 
 # Unzip the downloaded archive
-$ Expand-Archive <path-to-archive> -DestinationPath <folder-path>
+PS> Expand-Archive <path-to-archive> -DestinationPath <folder-path>
 
-# Edit the PATH for your account
-$ setx PATH "%PATH;<folder-path>"
+# Edit the PATH
+PS> [Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";<folder-path>", [EnvironmentVariableTarget]::Machine)
 ```
 Then restart Powershell to make the changes take effect.
 

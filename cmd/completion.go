@@ -21,11 +21,14 @@ you can execute the 'tee' command using 'sudo' privileges: 'sdpctl completion ba
 
 Bash:
 
+  Note that if you installed sdpctl from a deb or rpm package, bash completion is already installed.
+
   $ source <(sdpctl completion bash)
 
   # To load completions for each session, execute once:
   # Linux:
-  $ sdpctl completion bash | tee /etc/bash_completion.d/sdpctl
+  $ mkdir -p ~/.local/share/bash-completion
+  $ sdpctl completion bash | tee ~/.local/share/bash-completion/sdpctl
   # macOS:
   $ sdpctl completion bash | tee /usr/local/etc/bash_completion.d/sdpctl
 
@@ -57,7 +60,7 @@ PowerShell:
   # and source this file from your PowerShell profile.
 `,
 		DisableFlagsInUseLine: true,
-		ValidArgs:             []string{"bash", "zsh", "powershell"},
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		Args:                  cobra.ExactValidArgs(1),
 		Example:               "sdpctl completion bash",
 		Run: func(cmd *cobra.Command, args []string) {
