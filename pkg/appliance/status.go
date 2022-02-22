@@ -3,12 +3,10 @@ package appliance
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,7 +38,6 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
 			if status.GetStatus() == UpgradeStatusFailed {
-				log.WithFields(fields).Errorf(status.GetDetails())
 				return backoff.Permanent(fmt.Errorf("Upgraded failed on %s - %s", appliance.GetName(), status.GetDetails()))
 			}
 		}
@@ -61,22 +58,18 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 }
 
 func (u *UpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
-	var wg sync.WaitGroup
-	var err error
-	for _, appliance := range appliances {
-		i := appliance
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := backoff.Retry(u.upgradeStatus(ctx, i, desiredStatus), defaultExponentialBackOff); err != nil {
-				log.WithField("appliance", i.GetName()).Warnf("never got %s %s", desiredStatus, err)
-				err = multierror.Append(err)
-			}
-		}()
+	for _, i := range appliances {
+		b := backoff.WithContext(defaultExponentialBackOff, ctx)
+		if err := backoff.Retry(u.upgradeStatus(ctx, i, desiredStatus), b); err != nil {
+			return err
+		}
 	}
-
-	wg.Wait()
-	return err
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		return nil
+	}
 }
 
 type WaitForApplianceStatus interface {
@@ -88,7 +81,7 @@ type ApplianceStatus struct {
 }
 
 func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi.Appliance, expectedState string) error {
-	b := &backoff.ExponentialBackOff{
+	b := backoff.WithContext(&backoff.ExponentialBackOff{
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
 		Multiplier:          2,
@@ -96,7 +89,7 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi
 		MaxElapsedTime:      10 * time.Minute,
 		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
-	}
+	}, ctx)
 	// initial sleep period
 	time.Sleep(5 * time.Second)
 	return backoff.Retry(func() error {

@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"sync/atomic"
 	"text/template"
 	"time"
 
@@ -347,7 +346,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		log.Infof("Remote file path for controller %s", remoteFilePath)
 		g, ctx := errgroup.WithContext(ctx)
 
-		applianceIds := make(chan openapi.Appliance)
+		applianceIds := make(chan openapi.Appliance, len(appliances))
 		// Produce, send all appliance Id to the Channel so we can consume them in a fixed rate.
 		g.Go(func() error {
 			for _, appliance := range appliances {
@@ -359,16 +358,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		// consume Prepare with nWorkers
 		nWorkers := 2
-		workers := int32(nWorkers)
 		finished := make(chan openapi.Appliance)
 		for i := 0; i < nWorkers; i++ {
 			g.Go(func() error {
-				defer func() {
-					// Last one out closes the channel
-					if atomic.AddInt32(&workers, -1) == 0 {
-						close(finished)
-					}
-				}()
 				for appliance := range applianceIds {
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
@@ -377,30 +369,36 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						return err
 					}
 					if err := a.UpgradeStatusWorker.Wait(ctx, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
-						log.WithFields(fields).Errorf("Never reached expected state %s", err)
 						return err
 					}
 					select {
+					case finished <- appliance:
 					case <-ctx.Done():
 						return ctx.Err()
-					case finished <- appliance:
 					}
 				}
 				return nil
 			})
 		}
+
+		go func() {
+			g.Wait()
+			close(finished)
+		}()
+
 		r := make([]openapi.Appliance, 0)
-		g.Go(func() error {
-			for appliance := range finished {
-				r = append(r, appliance)
-			}
-			return nil
-		})
-		return r, g.Wait()
+		for appliance := range finished {
+			r = append(r, appliance)
+		}
+
+		if err := g.Wait(); err != nil {
+			return nil, err
+		}
+		return r, nil
 	}
 	preparedAppliances, err := prepare(ctx, remoteFilePath, appliances)
 	if err != nil {
-		return fmt.Errorf("Preparation failed %s, run sdpctl appliance upgrade cancel", err)
+		return err
 	}
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.
