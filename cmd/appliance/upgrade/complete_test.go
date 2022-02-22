@@ -175,7 +175,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 			},
 			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`gateway never reached idle, got failed`),
+			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
 			wantErr:             true,
 		},
 		{
