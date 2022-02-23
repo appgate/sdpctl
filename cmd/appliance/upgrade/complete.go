@@ -240,7 +240,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	for _, controller := range addtitionalControllers {
 		f := log.Fields{"appliance": controller.GetName()}
-		spin.Suffix = fmt.Sprintf(" Disabling controrller function on %s", controller.GetName())
+		spin.Suffix = fmt.Sprintf(" Disabling controller function on %s", controller.GetName())
 		log.WithFields(f).Info("Disabling controller function")
 		if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
 			log.WithFields(f).Error("Unable to disable controller")
