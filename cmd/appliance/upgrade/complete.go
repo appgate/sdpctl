@@ -79,7 +79,7 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 }
 
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
-	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("\n"))
+	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond)
 	spin.Writer = opts.Out
 	defer spin.Stop()
 	cfg := opts.Config
