@@ -401,7 +401,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 	}
-	spin.Suffix = " additional controllers done, continuing with additional appliances"
+	spin.Suffix = " Additional controllers done, continuing with additional appliances"
 	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
 		return err
