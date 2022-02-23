@@ -67,8 +67,8 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test complete with filter role gateway",
-			cli:  "complete --backup=false --filter role=gateway --no-interactive",
+			name: "test complete with filter function gateway",
+			cli:  "complete --backup=false --filter function=gateway --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",

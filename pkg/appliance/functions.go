@@ -332,10 +332,10 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 						appendUnique(a)
 					}
 				}
-			case "function", "roles", "role":
-				roleList := strings.Split(s, FilterDelimiter)
-				for _, role := range roleList {
-					if functions := GetActiveFunctions(a); util.InSlice(role, functions) {
+			case "function":
+				functionList := strings.Split(s, FilterDelimiter)
+				for _, function := range functionList {
+					if functions := GetActiveFunctions(a); util.InSlice(function, functions) {
 						appendUnique(a)
 					}
 				}

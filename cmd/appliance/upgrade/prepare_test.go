@@ -132,7 +132,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "with gateway filter",
-			cli:  `upgrade prepare --filter role=gateway --image './testdata/appgate-5.5.1.img.zip'`,
+			cli:  `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1.img.zip'`,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage

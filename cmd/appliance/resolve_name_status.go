@@ -72,7 +72,7 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 			ctx := context.Background()
 			filter := map[string]map[string]string{
 				"filter": {
-					"role": "gateway",
+					"function": "gateway",
 				},
 			}
 			if len(args) != 1 {
