@@ -472,7 +472,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 		}
 	}
-	spin.Suffix = " switch partition and applying upgrade on additional appliances"
+	spin.Suffix = " Switch partition and applying upgrade on additional appliances"
 	switchedAppliances, err := switchBatch(ctx, switchAppliances)
 	if err != nil {
 		return fmt.Errorf("failed during switch partition of additional appliances %w", err)
