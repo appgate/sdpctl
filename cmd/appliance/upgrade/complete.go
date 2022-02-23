@@ -349,7 +349,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return fmt.Errorf("failed during upgrade of additional controllers %w", err)
 	}
-	spin.Suffix = " Verfiying state of upgraded controllers"
+	spin.Suffix = " Verifying state of upgraded controllers"
 	// blocking function; waiting for upgrade status to be idle
 	if err := a.UpgradeStatusWorker.Wait(ctx, upgradedAdditionalControllers, appliancepkg.UpgradeStatusIdle); err != nil {
 		return err
