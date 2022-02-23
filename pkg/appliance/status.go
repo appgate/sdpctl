@@ -85,8 +85,8 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
 		Multiplier:          2,
-		MaxInterval:         5 * time.Minute,
-		MaxElapsedTime:      10 * time.Minute,
+		MaxInterval:         20 * time.Second,
+		MaxElapsedTime:      20 * time.Minute,
 		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
 	}, ctx)
