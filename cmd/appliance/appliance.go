@@ -9,7 +9,7 @@ import (
 
 var (
 	filterHelp string = `Filter appliances using a comma seperated list of key-value pairs. Example: '--filter name=controller,site=<site-id> etc.'.
-Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function|roles|role`
+Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function`
 )
 
 // NewApplianceCmd return a new appliance command

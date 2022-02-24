@@ -50,7 +50,7 @@ Note that you can cancel upgrades on specific appliances by using the '--filter'
 $ sdpctl appliance upgrade cancel
 
 # Cancel upgrade on specific appliance, a gateway in this case
-$ sdpctl appliance upgrade cancel --filter=role=gateway`,
+$ sdpctl appliance upgrade cancel --filter=function=gateway`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCancelRun(c, args, &opts)
 		},

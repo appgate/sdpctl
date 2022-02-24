@@ -514,8 +514,6 @@ func TestFilterAndExclude(t *testing.T) {
 		"site":      "640039ab-8b13-494a-af9e-20a48846674a",
 		"site-id":   "640039ab-8b13-494a-af9e-20a48846674a",
 		"function":  "logserver",
-		"role":      "logserver",
-		"roles":     "logserver",
 	}
 	type testStruct struct {
 		name string
