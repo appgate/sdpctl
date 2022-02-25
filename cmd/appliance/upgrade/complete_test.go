@@ -2,11 +2,11 @@ package upgrade
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -19,13 +19,13 @@ import (
 
 type mockApplianceStatus struct{}
 
-func (u *mockApplianceStatus) WaitForState(ctx context.Context, appliances []openapi.Appliance, expectedState string) error {
+func (u *mockApplianceStatus) WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error {
 	return nil
 }
 
 type errApplianceStatus struct{}
 
-func (u *errApplianceStatus) WaitForState(ctx context.Context, appliances []openapi.Appliance, expectedState string) error {
+func (u *errApplianceStatus) WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error {
 	return fmt.Errorf("never reached expected state %s", expectedState)
 }
 

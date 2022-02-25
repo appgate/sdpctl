@@ -2,12 +2,12 @@ package upgrade
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/AlecAivazis/survey/v2/core"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -27,13 +27,13 @@ func init() {
 
 type mockUpgradeStatus struct{}
 
-func (u *mockUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
+func (u *mockUpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error {
 	return nil
 }
 
 type errorUpgradeStatus struct{}
 
-func (u *errorUpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
+func (u *errorUpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error {
 	return fmt.Errorf("gateway never reached %s, got failed", desiredStatus)
 }
 

@@ -397,7 +397,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(err)
 						return err
 					}
-					if err := a.UpgradeStatusWorker.Wait(appCtx, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(opts.timeout, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
 						appCancel()
 						errMsg := "Timeout exceeded when waiting for correct appliance upgrade state"
 						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(errMsg)
@@ -437,11 +437,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.
-	waitCtx, waitCancel := context.WithTimeout(ctx, opts.timeout)
-	defer waitCancel()
-	if err := a.UpgradeStatusWorker.Wait(waitCtx, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(opts.timeout, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {
 		errMsg := "Timeout exceeded while waiting for ready state"
-		log.WithError(err).WithContext(waitCtx).Error(errMsg)
+		log.WithError(err).Error(errMsg)
 		return fmt.Errorf("%s. See log for details", errMsg)
 	}
 
