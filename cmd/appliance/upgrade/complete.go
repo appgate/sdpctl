@@ -70,7 +70,7 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 				return err
 			}
 			if flagTimeout < minTimeout {
-				fmt.Printf("WARNING: timeout is less than the alloed minimum. Using default timeout instead: %s", opts.Timeout)
+				fmt.Printf("WARNING: timeout is less than the allowed minimum. Using default timeout instead: %s", opts.Timeout)
 			} else {
 				opts.Timeout = flagTimeout
 			}

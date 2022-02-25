@@ -95,7 +95,7 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 				return err
 			}
 			if flagTimeout < minTimeout {
-				fmt.Printf("WARNING: timeout is less than the alloed minimum. Using default timeout instead: %s", opts.timeout)
+				fmt.Printf("WARNING: timeout is less than the allowed minimum. Using default timeout instead: %s", opts.timeout)
 			} else {
 				opts.timeout = flagTimeout
 			}
