@@ -29,8 +29,8 @@ Additional subcommands included are:
 	upgradeCmd.AddCommand(NewUpgradeCompleteCmd(f))
 
 	flags := upgradeCmd.PersistentFlags()
-	flags.Duration("timeout", 10*time.Minute, "Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on.")
-	flags.Int("batch-size", 5, "Upgrade is done in batches. You can control the batch size using this flag.")
+	flags.DurationP("timeout", "t", 10*time.Minute, "Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on.")
+	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag.")
 
 	return upgradeCmd
 }

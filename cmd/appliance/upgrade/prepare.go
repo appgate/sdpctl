@@ -76,14 +76,14 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 				return errors.New("--image is mandatory")
 			}
 
-			workers, err := cmd.Flags().GetInt("batch-size")
+			workers, err := cmd.Flags().GetInt("throttle")
 			if err != nil {
-				errMsg := "Failed to parse batch-size flag."
+				errMsg := "Failed to parse throttle flag."
 				log.WithError(err).Error(errMsg)
 				return fmt.Errorf(errMsg)
 			}
 			if workers < 1 {
-				errMsg := "Prepare failed: batch-size too small"
+				errMsg := "Prepare failed: throttle too small"
 				log.Error(errMsg)
 				return fmt.Errorf("%s", errMsg)
 			}

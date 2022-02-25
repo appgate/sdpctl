@@ -34,6 +34,7 @@ type upgradeCompleteOptions struct {
 	backupAll         string
 	NoInteractive     bool
 	Timeout           time.Duration
+	workers           int
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -58,11 +59,31 @@ $ sdpctl appliance upgrade complete --backup
 
 # backup to custom directory when completing pending upgrade
 $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		Args: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
 				return err
 			}
+
+			defaultTimeout := 10 * time.Minute
+			minTimeout := 5 * time.Minute
+			opts.Timeout, err = cmd.Flags().GetDuration("timeout")
+			if err != nil {
+				return err
+			}
+			if opts.Timeout < minTimeout {
+				fmt.Printf("WARNING: timeout is less then the allowed minimum. Using default timeout instead: %s", defaultTimeout)
+				opts.Timeout = defaultTimeout
+			}
+
+			if opts.workers, err = cmd.Flags().GetInt("throttle"); err != nil {
+				return err
+			}
+			if opts.workers < 1 {
+				fmt.Printf("WARNING: throttle size is too small. Using default throttle instead: %d", 5)
+				opts.workers = 5
+			}
+
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -73,7 +94,6 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
-	flags.DurationVarP(&opts.Timeout, "timeout", "t", 25*time.Minute, "timeout limit for upgrade complete")
 
 	return upgradeCompleteCmd
 }

@@ -45,7 +45,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 	}{
 		{
 			name: "test complete multiple appliances",
-			cli:  "complete --backup=false",
+			cli:  "upgrade complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -68,7 +68,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "test complete with filter function gateway",
-			cli:  "complete --backup=false --filter function=gateway --no-interactive",
+			cli:  "upgrade complete --backup=false --filter function=gateway --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -91,7 +91,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "test complete multiple appliances",
-			cli:  "complete --backup=true --no-interactive=true",
+			cli:  "upgrade complete --backup=true --no-interactive=true",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -129,8 +129,14 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:       "upgrade workers error",
+			cli:        "upgrade complete --throttle invalid",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile("invalid syntax"),
+		},
+		{
 			name: "first controller failed",
-			cli:  "complete --backup=false",
+			cli:  "upgrade complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -155,7 +161,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "gateway failure",
-			cli:  "complete --backup=false",
+			cli:  "upgrade complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -180,7 +186,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "one offline controller",
-			cli:  "complete --backup=false",
+			cli:  "upgrade complete --backup=false",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -245,7 +251,9 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			}
 			// add parent command to allow us to include test with parent flags
 			cmd := NewApplianceCmd(f)
-			cmd.AddCommand(NewUpgradeCompleteCmd(f))
+			upgradeCmd := NewUpgradeCmd(f)
+			upgradeCmd.AddCommand(NewUpgradeCompleteCmd(f))
+			cmd.AddCommand(upgradeCmd)
 
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
@@ -272,7 +280,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			}
 			if err != nil && tt.wantErrOut != nil {
 				if !tt.wantErrOut.MatchString(err.Error()) {
-					t.Errorf("Expected output to match, got:\n%s\n expected: \n%s\n", tt.wantErrOut, err.Error())
+					t.Errorf("Expected output to match, expected:\n%s\n got: \n%s\n", tt.wantErrOut, err.Error())
 				}
 			}
 		})
