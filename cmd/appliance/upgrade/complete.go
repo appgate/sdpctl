@@ -64,15 +64,15 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 				return err
 			}
 
-			defaultTimeout := 10 * time.Minute
 			minTimeout := 5 * time.Minute
-			opts.Timeout, err = cmd.Flags().GetDuration("timeout")
+			flagTimeout, err := cmd.Flags().GetDuration("timeout")
 			if err != nil {
 				return err
 			}
-			if opts.Timeout < minTimeout {
-				fmt.Printf("WARNING: timeout is less then the allowed minimum. Using default timeout instead: %s\n", defaultTimeout)
-				opts.Timeout = defaultTimeout
+			if flagTimeout < minTimeout {
+				fmt.Printf("WARNING: timeout is less than the alloed minimum. Using default timeout instead: %s", opts.Timeout)
+			} else {
+				opts.Timeout = flagTimeout
 			}
 
 			return nil

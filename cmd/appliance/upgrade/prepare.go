@@ -89,8 +89,15 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 			}
 			opts.workers = workers
 
-			if opts.timeout, err = cmd.Flags().GetDuration("timeout"); err != nil {
+			minTimeout := 15 * time.Minute
+			flagTimeout, err := cmd.Flags().GetDuration("timeout")
+			if err != nil {
 				return err
+			}
+			if flagTimeout < minTimeout {
+				fmt.Printf("WARNING: timeout is less than the alloed minimum. Using default timeout instead: %s", opts.timeout)
+			} else {
+				opts.timeout = flagTimeout
 			}
 
 			// if the image is a local file, make sure its readable
