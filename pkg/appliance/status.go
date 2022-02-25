@@ -11,7 +11,7 @@ import (
 )
 
 type WaitForUpgradeStatus interface {
-	Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error
+	Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error
 }
 
 type UpgradeStatus struct {
@@ -57,12 +57,17 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	}
 }
 
-func (u *UpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance, desiredStatus string) error {
+func (u *UpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	for _, i := range appliances {
+		iCtx, iCancel := context.WithTimeout(ctx, timeout)
 		b := backoff.WithContext(defaultExponentialBackOff, ctx)
-		if err := backoff.Retry(u.upgradeStatus(ctx, i, desiredStatus), b); err != nil {
+		if err := backoff.Retry(u.upgradeStatus(iCtx, i, desiredStatus), b); err != nil {
+			iCancel()
 			return err
 		}
+		iCancel()
 	}
 	select {
 	case <-ctx.Done():
@@ -73,20 +78,22 @@ func (u *UpgradeStatus) Wait(ctx context.Context, appliances []openapi.Appliance
 }
 
 type WaitForApplianceStatus interface {
-	WaitForState(ctx context.Context, appliances []openapi.Appliance, expectedState string) error
+	WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
 }
 
-func (u *ApplianceStatus) WaitForState(ctx context.Context, appliances []openapi.Appliance, expectedState string) error {
+func (u *ApplianceStatus) WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 	b := backoff.WithContext(&backoff.ExponentialBackOff{
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
 		Multiplier:          2,
 		MaxInterval:         20 * time.Second,
-		MaxElapsedTime:      20 * time.Minute,
+		MaxElapsedTime:      timeout,
 		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
 	}, ctx)

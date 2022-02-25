@@ -42,6 +42,7 @@ type prepareUpgradeOptions struct {
 	remoteImage   bool
 	filename      string
 	workers       int
+	timeout       time.Duration
 }
 
 var spin = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("done\n"))
@@ -75,18 +76,29 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 				return errors.New("--image is mandatory")
 			}
 
-			workers, err := cmd.Flags().GetInt("batch-size")
+			workers, err := cmd.Flags().GetInt("throttle")
 			if err != nil {
-				errMsg := "Failed to parse batch-size flag."
+				errMsg := "Failed to parse throttle flag."
 				log.WithError(err).Error(errMsg)
 				return fmt.Errorf(errMsg)
 			}
 			if workers < 1 {
-				errMsg := "Prepare failed: batch-size too small"
+				errMsg := "Prepare failed: throttle too small"
 				log.Error(errMsg)
 				return fmt.Errorf("%s", errMsg)
 			}
 			opts.workers = workers
+
+			minTimeout := 15 * time.Minute
+			flagTimeout, err := cmd.Flags().GetDuration("timeout")
+			if err != nil {
+				return err
+			}
+			if flagTimeout < minTimeout {
+				fmt.Printf("WARNING: timeout is less than the allowed minimum. Using default timeout instead: %s", opts.timeout)
+			} else {
+				opts.timeout = flagTimeout
+			}
 
 			// if the image is a local file, make sure its readable
 			// make early return if not
@@ -162,12 +174,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	timeout, err := cmd.Flags().GetDuration("timeout")
-	if err != nil {
-		errMsg := "Failed parsing timeout flag."
-		log.WithError(err).Error(errMsg)
-		return fmt.Errorf(errMsg)
-	}
 	ctx := context.Background()
 	if a.UpgradeStatusWorker == nil {
 		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
@@ -180,7 +186,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
 	}
 	filter := util.ParseFilteringFlags(cmd.Flags())
-	listCtx, listCancel := context.WithTimeout(ctx, timeout)
+	listCtx, listCancel := context.WithTimeout(ctx, opts.timeout)
 	defer listCancel()
 	Allappliances, err := a.List(listCtx, nil)
 	if err != nil {
@@ -197,7 +203,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	statCtx, statCancel := context.WithTimeout(ctx, timeout)
+	statCtx, statCancel := context.WithTimeout(ctx, opts.timeout)
 	defer statCancel()
 	initialStats, _, err := a.Stats(statCtx)
 	if err != nil {
@@ -280,7 +286,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	// Step 1
 	shouldUpload := false
-	fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, timeout)
+	fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
 	defer fileStatusCancel()
 	existingFile, err := a.FileStatus(fileStatusCtx, opts.filename)
 	if err != nil {
@@ -390,16 +396,15 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		for i := 0; i < opts.workers; i++ {
 			g.Go(func() error {
 				for appliance := range applianceIds {
-					appCtx, appCancel := context.WithTimeout(context.Background(), timeout)
+					appCtx, appCancel := context.WithTimeout(context.Background(), opts.timeout)
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
 					if err := a.PrepareFileOn(appCtx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						appCancel()
-						errMsg := "Upgrade prepare file error"
-						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(errMsg)
-						return fmt.Errorf("%s. See log for details.", errMsg)
+						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(err)
+						return err
 					}
-					if err := a.UpgradeStatusWorker.Wait(appCtx, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(opts.timeout, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
 						appCancel()
 						errMsg := "Timeout exceeded when waiting for correct appliance upgrade state"
 						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(errMsg)
@@ -439,18 +444,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	// Blocking function that checks all appliances upgrade status to verify that
 	// everyone reach desired state of ready.
-	waitCtx, waitCancel := context.WithTimeout(ctx, timeout)
-	defer waitCancel()
-	if err := a.UpgradeStatusWorker.Wait(waitCtx, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(opts.timeout, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {
 		errMsg := "Timeout exceeded while waiting for ready state"
-		log.WithError(err).WithContext(waitCtx).Error(errMsg)
+		log.WithError(err).Error(errMsg)
 		return fmt.Errorf("%s. See log for details", errMsg)
 	}
 
 	if !opts.remoteImage {
 		// Step 3
 		log.Infof("3. Delete upgrade image %s from Controller", opts.filename)
-		deleteCtx, deleteCancel := context.WithTimeout(ctx, timeout)
+		deleteCtx, deleteCancel := context.WithTimeout(ctx, opts.timeout)
 		defer deleteCancel()
 		if err := a.DeleteFile(deleteCtx, opts.filename); err != nil {
 			log.Warnf("Failed to delete %s from controller %s", opts.filename, err)

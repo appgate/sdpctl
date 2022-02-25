@@ -58,11 +58,23 @@ $ sdpctl appliance upgrade complete --backup
 
 # backup to custom directory when completing pending upgrade
 $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		Args: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
 				return err
 			}
+
+			minTimeout := 5 * time.Minute
+			flagTimeout, err := cmd.Flags().GetDuration("timeout")
+			if err != nil {
+				return err
+			}
+			if flagTimeout < minTimeout {
+				fmt.Printf("WARNING: timeout is less than the allowed minimum. Using default timeout instead: %s", opts.Timeout)
+			} else {
+				opts.Timeout = flagTimeout
+			}
+
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -73,7 +85,6 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
-	flags.DurationVarP(&opts.Timeout, "timeout", "t", 25*time.Minute, "timeout limit for upgrade complete")
 
 	return upgradeCompleteCmd
 }
@@ -151,7 +162,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	filter := util.ParseFilteringFlags(cmd.Flags())
 	rawAppliances, err := a.List(ctx, nil)
@@ -246,7 +257,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithFields(f).Error("Unable to disable controller")
 			return err
 		}
-		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{controller}, "appliance_ready"); err != nil {
+		if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{controller}, "appliance_ready"); err != nil {
 			log.WithFields(f).Error("never reached desired state")
 			return err
 		}
@@ -256,7 +267,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if cfg.Version < 15 {
 		state = "single_controller_ready"
 	}
-	if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
+	if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{*primaryController}, state); err != nil {
 		return fmt.Errorf("primary controller %s", err)
 	}
 	log.Info("all controllers are in correct state")
@@ -302,7 +313,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		log.WithField("appliance", primaryController.GetName()).Infof("Waiting for primary controller to reach state %s", state)
-		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{*primaryController}, state); err != nil {
+		if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{*primaryController}, state); err != nil {
 			return err
 		}
 		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")
@@ -341,7 +352,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	spin.Suffix = " Checking status of additional controllers before proceeding with upgrade"
 	// blocking function; waiting for upgrade status to be idle
-	if err := a.UpgradeStatusWorker.Wait(ctx, addtitionalControllers, appliancepkg.UpgradeStatusReady); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(opts.Timeout, addtitionalControllers, appliancepkg.UpgradeStatusReady); err != nil {
 		return err
 	}
 	spin.Suffix = " Apply upgrade on additional controllers"
@@ -351,7 +362,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	spin.Suffix = " Verifying state of upgraded controllers"
 	// blocking function; waiting for upgrade status to be idle
-	if err := a.UpgradeStatusWorker.Wait(ctx, upgradedAdditionalControllers, appliancepkg.UpgradeStatusIdle); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(opts.Timeout, upgradedAdditionalControllers, appliancepkg.UpgradeStatusIdle); err != nil {
 		return err
 	}
 
@@ -396,7 +407,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 			return err
 		}
-		if err := a.ApplianceStats.WaitForState(ctx, []openapi.Appliance{controller}, ctrlUpgradeState); err != nil {
+		if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{controller}, ctrlUpgradeState); err != nil {
 			log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 			return err
 		}
@@ -426,7 +437,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	spin.Suffix = " Waiting for appliances to reach desired state"
 	// blocking function; waiting for upgrade status to be idle
-	if err := a.UpgradeStatusWorker.Wait(ctx, upgradedAppliances, appliancepkg.UpgradeStatusSuccess); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(opts.Timeout, upgradedAppliances, appliancepkg.UpgradeStatusSuccess); err != nil {
 		return err
 	}
 	switchBatch := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
@@ -482,7 +493,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	spin.Suffix = " Confirming upgrade status is correct"
-	if err := a.UpgradeStatusWorker.Wait(ctx, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
+	if err := a.UpgradeStatusWorker.Wait(opts.Timeout, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
 		return err
 	}
 	spin.FinalMSG = "\nUpgrade finished\n"
