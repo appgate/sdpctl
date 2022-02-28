@@ -61,12 +61,13 @@ func initConfig() {
 
 func NewCmdRoot() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use:           "sdpctl",
-		Short:         "sdpctl is a command line tool to control and handle Appgate SDP using the CLI",
-		Long:          longDescription,
-		Version:       versionOutput,
-		SilenceErrors: true,
-		SilenceUsage:  true,
+		Use:               "sdpctl",
+		Short:             "sdpctl is a command line tool to control and handle Appgate SDP using the CLI",
+		Long:              longDescription,
+		Version:           versionOutput,
+		SilenceErrors:     true,
+		SilenceUsage:      true,
+		DisableAutoGenTag: true,
 	}
 
 	cobra.OnInitialize(initConfig)
@@ -90,6 +91,7 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.AddCommand(NewOpenCmd(f))
+	rootCmd.AddCommand(generateCmd)
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
