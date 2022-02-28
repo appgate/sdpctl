@@ -132,6 +132,7 @@ func Execute() exitCode {
 	root := NewCmdRoot()
 	cmd, err := root.ExecuteC()
 	if err != nil {
+		log.WithError(err).Error("Caught error")
 		errorString := err.Error()
 		fmt.Fprintln(os.Stderr, errorString)
 		if errors.Is(err, ErrExitAuth) {
