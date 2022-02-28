@@ -141,13 +141,13 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	return result, offline, err
 }
 
-func GetPrimaryControllerVersion(primary openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
+func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
-		if s.GetId() == primary.GetId() {
+		if s.GetId() == appliance.GetId() {
 			return version.NewVersion(s.GetVersion())
 		}
 	}
-	return nil, fmt.Errorf("could not determine appliance version of the primary controller %s", primary.GetName())
+	return nil, fmt.Errorf("could not determine appliance version of the primary controller %s", appliance.GetName())
 }
 
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
@@ -355,4 +355,21 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	}
 
 	return filteredAppliances
+}
+
+func GetVersion(s string) (*version.Version, error) {
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+-\d+`)
+	match := regex.FindString(s)
+	vString := strings.ReplaceAll(match, "-", "+")
+	return version.NewVersion(vString)
+}
+
+func ShouldDisable(from, to *version.Version) bool {
+	compare, _ := version.NewVersion("5.4")
+
+	if from.LessThan(compare) {
+		return from.Segments()[1] < to.Segments()[1]
+	}
+
+	return false
 }

@@ -200,7 +200,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	spin.Start()
-	currentPrimaryControllerVersion, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, initialStats)
+	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, initialStats)
 	if err != nil {
 		return err
 	}
@@ -247,21 +247,34 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// 1. Disable Controller function on the following appliance
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
-	spin.Suffix = " disabling additional controllers"
 	addtitionalControllers := groups[appliancepkg.FunctionController]
-	for _, controller := range addtitionalControllers {
-		f := log.Fields{"appliance": controller.GetName()}
-		spin.Suffix = fmt.Sprintf(" Disabling controller function on %s", controller.GetName())
-		log.WithFields(f).Info("Disabling controller function")
-		if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
-			log.WithFields(f).Error("Unable to disable controller")
-			return err
-		}
-		if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{controller}, "appliance_ready"); err != nil {
-			log.WithFields(f).Error("never reached desired state")
-			return err
+	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
+		return err
+	}
+	newVersion, err := appliancepkg.GetVersion(primaryControllerUpgradeStatus.GetDetails())
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
+		return err
+	}
+	if appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion) {
+		spin.Suffix = " disabling additional controllers"
+		for _, controller := range addtitionalControllers {
+			f := log.Fields{"appliance": controller.GetName()}
+			spin.Suffix = fmt.Sprintf(" Disabling controller function on %s", controller.GetName())
+			log.WithFields(f).Info("Disabling controller function")
+			if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
+				log.WithFields(f).Error("Unable to disable controller")
+				return err
+			}
+			if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{controller}, "appliance_ready"); err != nil {
+				log.WithFields(f).Error("never reached desired state")
+				return err
+			}
 		}
 	}
+
 	// verify the state for all controller
 	state := "controller_ready"
 	if cfg.Version < 15 {
@@ -303,10 +316,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("one or more appliances are not ready for upgrade.")
 	}
 	spin.Suffix = " upgrading primary controller"
-	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
-	if err != nil {
-		return fmt.Errorf("Unable to retrieve primary controller upgrade status %w", err)
-	}
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
 		if err := a.UpgradeComplete(ctx, primaryController.GetId(), true); err != nil {

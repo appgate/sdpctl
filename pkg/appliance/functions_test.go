@@ -7,6 +7,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/go-version"
 )
 
 func TestFilterAvailable(t *testing.T) {
@@ -567,5 +568,51 @@ func TestFilterAndExclude(t *testing.T) {
 				t.Errorf("FilterAppliances() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestShouldDisable(t *testing.T) {
+	tests := []struct {
+		From, To string
+		Expect   bool
+	}{
+		{
+			From:   "5.3",
+			To:     "5.4",
+			Expect: true,
+		},
+		{
+			From:   "5.4",
+			To:     "5.5",
+			Expect: false,
+		},
+		{
+			From:   "5.2.1",
+			To:     "5.3.1",
+			Expect: true,
+		},
+		{
+			From:   "5.4.1",
+			To:     "5.4.2",
+			Expect: false,
+		},
+		{
+			From:   "5.5.1",
+			To:     "5.5.2",
+			Expect: false,
+		},
+		{
+			From:   "5.5",
+			To:     "6.0",
+			Expect: false,
+		},
+	}
+
+	for _, tt := range tests {
+		from, _ := version.NewVersion(tt.From)
+		to, _ := version.NewVersion(tt.To)
+		if res := ShouldDisable(from, to); res != tt.Expect {
+			t.Errorf("want: %v, got: %v", tt.Expect, res)
+		}
 	}
 }

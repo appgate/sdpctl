@@ -198,7 +198,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	if err != nil {
 		return err
 	}
-	v, err := appliancepkg.GetPrimaryControllerVersion(*primaryController, stats)
+	v, err := appliancepkg.GetApplianceVersion(*primaryController, stats)
 	if err != nil {
 		return err
 	}
