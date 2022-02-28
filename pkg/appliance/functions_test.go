@@ -606,6 +606,16 @@ func TestShouldDisable(t *testing.T) {
 			To:     "6.0",
 			Expect: false,
 		},
+		{
+			From:   "5.2.0",
+			To:     "5.4.1",
+			Expect: true,
+		},
+		{
+			From:   "4.5.2",
+			To:     "5.5.2",
+			Expect: true,
+		},
 	}
 
 	for _, tt := range tests {
