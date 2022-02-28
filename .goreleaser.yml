@@ -4,7 +4,7 @@ env:
   - RELEASE_VERSION={{ if index .Env "SDPCTL_VERSION" }}{{ .Env.SDPCTL_VERSION }}{{ else }}dev{{ end }}
 before:
   hooks:
-    - make build/bash_completion
+    - make deps
 builds:
   - main: ./main.go
     env:
@@ -43,6 +43,8 @@ nfpms:
     contents:
       - src: ./build/bash_completion
         dst: /etc/bash_completion.d/sdpctl
+      - src: ./build/man/*.gz
+        dst: /usr/share/man/man3/
 snapshot:
   name_template: "v{{ incpatch .Version }}"
 changelog:

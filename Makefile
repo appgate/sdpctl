@@ -7,9 +7,11 @@ bindir  := ${prefix}/bin
 build:
 	go build -o build/$(BIN_NAME)
 
-build/bash_completion:
+.PHONY: deps
+deps:
 	mkdir -p build
 	go run main.go completion bash > build/bash_completion
+	go run main.go generate man
 
 snapshot:
 	goreleaser release --snapshot --rm-dist
