@@ -368,7 +368,9 @@ func ShouldDisable(from, to *version.Version) bool {
 	compare, _ := version.NewVersion("5.4")
 
 	if from.LessThan(compare) {
-		return from.Segments()[0] < to.Segments()[0] || from.Segments()[1] < to.Segments()[1]
+		majorChange := from.Segments()[0] < to.Segments()[0]
+		minorChange := from.Segments()[1] < to.Segments()[1]
+		return majorChange || minorChange
 	}
 
 	return false
