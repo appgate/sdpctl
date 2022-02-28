@@ -358,7 +358,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 }
 
 func GetVersion(s string) (*version.Version, error) {
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+-\d+`)
+	regex := regexp.MustCompile(`\d+\.\d+\.\d+([-|\+]?\d+)?`)
 	match := regex.FindString(s)
 	vString := strings.ReplaceAll(match, "-", "+")
 	return version.NewVersion(vString)
