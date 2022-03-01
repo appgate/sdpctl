@@ -92,6 +92,7 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.AddCommand(NewOpenCmd(f))
 	rootCmd.AddCommand(generateCmd)
+	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
