@@ -17,11 +17,9 @@ Imagine you have the following file structure, where each directory represent a 
 ├── acme
 │  ├── ca-cert.pem
 │  ├── config.json
-│  └── credentials
 ├── daily-bugle
 │  ├── ca-cert.pem
 │  ├── config.json
-│  └── credentials
 ├── oscorp
 │  └── config.json
 └── stark-industries

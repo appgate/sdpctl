@@ -9,54 +9,52 @@ import (
 // NewCmdCompletion represents the completion command
 func NewCmdCompletion() *cobra.Command {
 	var completionCmd = &cobra.Command{
-		Use: "completion",
+		Use: "completion [bash|zsh|fish|powershell]",
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},
-		Short: "Generate shell completion scripts",
-		Long: `To load completions:
+		Short:                 "Generate shell completion scripts",
+		Long:                  `sdpctl provides a way to generate autocompletion scripts for your current shell. See examples for more details on your specific shell.`,
+		DisableFlagsInUseLine: true,
+		DisableFlagParsing:    true,
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.ExactValidArgs(1),
+		Example: `Bash:
+    # Note that if you installed sdpctl from deb or rpm package, bash completion is already included.
+    mkdir -p ~/.local/share/bash-completion
+    sdpctl completion bash | tee ~/.local/share/bash-completion/sdpctl
 
-Bash:
+ZSH:
+    # If shell completion is not already enabled in your environment,
+    # you will need to enable it.  You can execute the following once:
+    echo "autoload -U compinit; compinit" >> ~/.zshrc
 
-  $ source <(sdpctl completion bash)
+    # To load completions for each session, execute once:
+    sdpctl completion zsh | tee --output-error=exit "/usr/share/zsh/vendor-completions/_sdpctl"
 
-  # To load completions for each session, execute once:
-  # Linux:
-  $ sdpctl completion bash > /etc/bash_completion.d/sdpctl
-  # macOS:
-  $ sdpctl completion bash > /usr/local/etc/bash_completion.d/sdpctl
+Fish:
+    sdpctl completion fish | source
 
-Zsh:
-
-  # If shell completion is not already enabled in your environment,
-  # you will need to enable it.  You can execute the following once:
-
-  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
-
-  # To load completions for each session, execute once (you may need to execute as 'sudo' user):
-  $ sdpctl completion zsh > "/usr/share/zsh/vendor-completions/_sdpctl"
-
-  # You will need to start a new shell for this setup to take effect.
-
+    # To load completions for each session, execute once:
+    sdpctl completion fish | tee ~/.config/fish/completions/sdpctl.fish
 
 PowerShell:
+    sdpctl completion powershell | Out-String | Invoke-Expression
 
-  PS> sdpctl completion powershell | Out-String | Invoke-Expression
+    # To load completions for every new session, run:
+    # and source this file from your PowerShell profile.
+    sdpctl completion powershell > sdpctl.ps1
 
-  # To load completions for every new session, run:
-  PS> sdpctl completion powershell > sdpctl.ps1
-  # and source this file from your PowerShell profile.
-`,
-		DisableFlagsInUseLine: true,
-		ValidArgs:             []string{"bash", "zsh", "powershell"},
-		Args:                  cobra.ExactValidArgs(1),
-		Example:               "sdpctl completion bash",
+MacOS:
+    sdpctl completion bash | tee /usr/local/etc/bash_completion.d/sdpctl`,
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "bash":
 				cmd.Root().GenBashCompletion(os.Stdout)
 			case "zsh":
 				cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				cmd.Root().GenFishCompletion(os.Stdout, true)
 			case "powershell":
 				cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
 			}
