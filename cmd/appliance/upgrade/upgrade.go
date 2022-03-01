@@ -18,8 +18,8 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
   - complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.
 
 Additional subcommands included are:
- - status: view the current upgrade status on all appliances.
- - cancel: Cancel a prepared upgrade.
+  - status: view the current upgrade status on all appliances.
+  - cancel: Cancel a prepared upgrade.
 `,
 	}
 
