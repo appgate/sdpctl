@@ -1,0 +1,12 @@
+name: Test Flow
+
+on:
+  push:
+    branches:
+      - "*"
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+  lint:
+    uses: ./.github/workflows/lint.yml

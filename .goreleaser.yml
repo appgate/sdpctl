@@ -1,5 +1,3 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
 env:
   - RELEASE_VERSION={{ if index .Env "SDPCTL_VERSION" }}{{ .Env.SDPCTL_VERSION }}{{ else }}dev{{ end }}
 before:
