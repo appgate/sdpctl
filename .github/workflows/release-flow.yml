@@ -9,10 +9,10 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/test.yml@main
   lint:
-    uses: ./.github/workflows/lint.yml
+    uses: ./.github/workflows/lint.yml@main
   release:
     if: ${{ github.ref_type == "tag" }}
-    uses: ./.github/workflows/release.yml
+    uses: ./.github/workflows/release.yml@main
     needs: [test, lint]
