@@ -22,8 +22,19 @@ func TestShowDiskSpaceWarningMessage(t *testing.T) {
 			args: args{
 				stats: []openapi.StatsAppliancesListAllOfData{
 					{
-						Name: openapi.PtrString("controller"),
-						Disk: openapi.PtrFloat32(90),
+						Name:    openapi.PtrString("controller"),
+						Disk:    openapi.PtrFloat32(90),
+						Version: openapi.PtrString("5.5.4"),
+					},
+					{
+						Name:    openapi.PtrString("gateway"),
+						Disk:    openapi.PtrFloat32(4),
+						Version: openapi.PtrString("5.5.4"),
+					},
+					{
+						Name:    openapi.PtrString("controller2"),
+						Disk:    openapi.PtrFloat32(75),
+						Version: openapi.PtrString("5.5.4"),
 					},
 				},
 			},
@@ -31,7 +42,7 @@ func TestShowDiskSpaceWarningMessage(t *testing.T) {
 Some appliances have very little space available
 
   - controller  Disk usage: 90%
-
+  - controller2  Disk usage: 75%
 
 Upgrading requires the upload and decompression of big images.
 To avoid problems during the upgrade process it's recommended to

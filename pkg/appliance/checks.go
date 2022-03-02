@@ -15,7 +15,7 @@ const showDiskSpaceWarning = `
 Some appliances have very little space available
 {{range .Stats}}
   - {{ .Name }}  Disk usage: {{ .Disk -}}%
-{{end}}
+{{- end}}
 
 Upgrading requires the upload and decompression of big images.
 To avoid problems during the upgrade process it's recommended to
@@ -27,7 +27,12 @@ func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (
 		Stats []openapi.StatsAppliancesListAllOfData
 	}
 	data := stub{
-		Stats: stats,
+		Stats: []openapi.StatsAppliancesListAllOfData{},
+	}
+	for _, s := range stats {
+		if *s.Disk >= 75.0 {
+			data.Stats = append(data.Stats, s)
+		}
 	}
 	t := template.Must(template.New("").Parse(showDiskSpaceWarning))
 	var tpl bytes.Buffer
