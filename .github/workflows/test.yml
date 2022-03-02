@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    name: Test
+    name: Unit & Integration Tests
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.x
