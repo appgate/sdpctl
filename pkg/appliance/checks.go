@@ -30,7 +30,7 @@ func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (
 		Stats: []openapi.StatsAppliancesListAllOfData{},
 	}
 	for _, s := range stats {
-		if *s.Disk >= 75.0 {
+		if s.GetDisk() >= 75 {
 			data.Stats = append(data.Stats, s)
 		}
 	}
