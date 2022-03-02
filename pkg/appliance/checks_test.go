@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -24,11 +25,6 @@ func TestShowDiskSpaceWarningMessage(t *testing.T) {
 					{
 						Name:    openapi.PtrString("controller"),
 						Disk:    openapi.PtrFloat32(90),
-						Version: openapi.PtrString("5.5.4"),
-					},
-					{
-						Name:    openapi.PtrString("gateway"),
-						Disk:    openapi.PtrFloat32(4),
 						Version: openapi.PtrString("5.5.4"),
 					},
 					{
@@ -71,7 +67,7 @@ func TestHasLowDiskSpace(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
+		want []openapi.StatsAppliancesListAllOfData
 	}{
 		{
 			name: "with low disk space",
@@ -87,7 +83,12 @@ func TestHasLowDiskSpace(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			want: []openapi.StatsAppliancesListAllOfData{
+				{
+					Name: openapi.PtrString("controller"),
+					Disk: openapi.PtrFloat32(75),
+				},
+			},
 		},
 		{
 			name: "no low disk space",
@@ -103,12 +104,12 @@ func TestHasLowDiskSpace(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want: []openapi.StatsAppliancesListAllOfData{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := HasLowDiskSpace(tt.args.stats); got != tt.want {
+			if got := HasLowDiskSpace(tt.args.stats); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("HasLowDiskSpace() = %v, want %v", got, tt.want)
 			}
 		})

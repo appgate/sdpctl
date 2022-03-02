@@ -27,12 +27,7 @@ func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (
 		Stats []openapi.StatsAppliancesListAllOfData
 	}
 	data := stub{
-		Stats: []openapi.StatsAppliancesListAllOfData{},
-	}
-	for _, s := range stats {
-		if s.GetDisk() >= 75 {
-			data.Stats = append(data.Stats, s)
-		}
+		Stats: stats,
 	}
 	t := template.Must(template.New("").Parse(showDiskSpaceWarning))
 	var tpl bytes.Buffer
@@ -43,13 +38,14 @@ func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (
 	return tpl.String(), nil
 }
 
-func HasLowDiskSpace(stats []openapi.StatsAppliancesListAllOfData) bool {
+func HasLowDiskSpace(stats []openapi.StatsAppliancesListAllOfData) []openapi.StatsAppliancesListAllOfData {
+	result := []openapi.StatsAppliancesListAllOfData{}
 	for _, s := range stats {
 		if s.GetDisk() >= 75 {
-			return true
+			result = append(result, s)
 		}
 	}
-	return false
+	return result
 }
 
 func applianceGroupDescription(appliances []openapi.Appliance) string {
