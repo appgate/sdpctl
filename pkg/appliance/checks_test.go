@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"bytes"
 	"reflect"
 	"testing"
 
@@ -8,15 +9,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestShowDiskSpaceWarningMessage(t *testing.T) {
+func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 	type args struct {
 		stats []openapi.StatsAppliancesListAllOfData
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name string
+		args args
+		want string
 	}{
 		{
 			name: "warning",
@@ -35,10 +35,12 @@ func TestShowDiskSpaceWarningMessage(t *testing.T) {
 				},
 			},
 			want: `
-Some appliances have very little space available
+WARNING: Some appliances have very little space available
 
-  - controller  Disk usage: 90%
-  - controller2  Disk usage: 75%
+Name         Disk Usage
+----         ----------
+controller   90%
+controller2  75%
 
 Upgrading requires the upload and decompression of big images.
 To avoid problems during the upgrade process it's recommended to
@@ -48,13 +50,10 @@ increase the space on those appliances.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ShowDiskSpaceWarningMessage(tt.args.stats)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ShowDiskSpaceWarningMessage() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !cmp.Equal(got, tt.want) {
-				t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", got, tt.want)
+			var b bytes.Buffer
+			PrintDiskSpaceWarningMessage(&b, tt.args.stats)
+			if res := b.String(); res != tt.want {
+				t.Errorf("ShowDiskSpaceWarning() - want: %s, got: %s", tt.want, res)
 			}
 		})
 	}

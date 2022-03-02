@@ -3,6 +3,7 @@ package appliance
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 	"text/template"
@@ -11,31 +12,19 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 )
 
-const showDiskSpaceWarning = `
-Some appliances have very little space available
-{{range .Stats}}
-  - {{ .Name }}  Disk usage: {{ .Disk -}}%
-{{- end}}
+func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) {
+	p := util.NewPrinter(out)
+	p.AddHeader("Name", "Disk Usage")
+	for _, a := range stats {
+		p.AddLine(a.GetName(), fmt.Sprintf("%v%%", a.GetDisk()))
+	}
 
+	fmt.Fprint(out, "\nWARNING: Some appliances have very little space available\n\n")
+	p.Print()
+	fmt.Fprintln(out, `
 Upgrading requires the upload and decompression of big images.
 To avoid problems during the upgrade process it's recommended to
-increase the space on those appliances.
-`
-
-func ShowDiskSpaceWarningMessage(stats []openapi.StatsAppliancesListAllOfData) (string, error) {
-	type stub struct {
-		Stats []openapi.StatsAppliancesListAllOfData
-	}
-	data := stub{
-		Stats: stats,
-	}
-	t := template.Must(template.New("").Parse(showDiskSpaceWarning))
-	var tpl bytes.Buffer
-	if err := t.Execute(&tpl, data); err != nil {
-		return "", err
-	}
-
-	return tpl.String(), nil
+increase the space on those appliances.`)
 }
 
 func HasLowDiskSpace(stats []openapi.StatsAppliancesListAllOfData) []openapi.StatsAppliancesListAllOfData {
