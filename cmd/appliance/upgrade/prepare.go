@@ -75,7 +75,6 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
 			}
-
 			workers, err := cmd.Flags().GetInt("throttle")
 			if err != nil {
 				errMsg := "Failed to parse throttle flag."
@@ -99,20 +98,8 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 			} else {
 				opts.timeout = flagTimeout
 			}
-
-			// if the image is a local file, make sure its readable
-			// make early return if not
-			ok, err := util.FileExists(opts.image)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				return fmt.Errorf("Image file not found %q", opts.image)
-			}
-
-			opts.filename = path.Base(opts.image)
 			var errs error
-
+			opts.filename = path.Base(opts.image)
 			if err := checkImageFilename(opts.filename); err != nil {
 				errs = multierr.Append(errs, err)
 			}
@@ -120,15 +107,25 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 			// allow remote addr for image, such as aws s3 bucket
 			if util.IsValidURL(opts.image) {
 				opts.remoteImage = true
-				return errs
 			}
-
-			if ok {
-				_, err := zip.OpenReader(opts.image)
+			if !opts.remoteImage {
+				// if the image is a local file, make sure its readable
+				// make early return if not
+				ok, err := util.FileExists(opts.image)
 				if err != nil {
-					errs = multierr.Append(errs, err)
+					return err
+				}
+				if !ok {
+					errs = multierr.Append(errs, fmt.Errorf("Image file not found %q", opts.image))
+				}
+				if ok {
+					_, err := zip.OpenReader(opts.image)
+					if err != nil {
+						errs = multierr.Append(errs, err)
+					}
 				}
 			}
+
 			return errs
 		},
 		RunE: func(c *cobra.Command, args []string) error {
