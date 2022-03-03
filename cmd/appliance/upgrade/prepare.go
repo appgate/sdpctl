@@ -209,14 +209,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	if appliancepkg.HasLowDiskSpace(initialStats.GetData()) && !opts.NoInteractive {
-		msg, err := appliancepkg.ShowDiskSpaceWarningMessage(initialStats.GetData())
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(opts.Out, "\n%s\n", msg)
-		if err := prompt.AskConfirmation(); err != nil {
-			return err
+	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
+		appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace)
+		if !opts.NoInteractive {
+			if err := prompt.AskConfirmation(); err != nil {
+				return err
+			}
 		}
 	}
 	autoScalingWarning := false

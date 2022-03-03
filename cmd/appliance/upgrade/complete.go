@@ -186,12 +186,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.Warnf("%q is offline and will be excluded from upgrade.", o.GetName())
 	}
 
-	if appliancepkg.HasLowDiskSpace(initialStats.GetData()) {
-		msg, err := appliancepkg.ShowDiskSpaceWarningMessage(initialStats.GetData())
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(opts.Out, "\n%s\n", msg)
+	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
+		appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace)
 		if !opts.NoInteractive {
 			if err := prompt.AskConfirmation(); err != nil {
 				return err

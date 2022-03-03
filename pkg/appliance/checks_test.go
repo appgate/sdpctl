@@ -1,37 +1,46 @@
 package appliance
 
 import (
+	"bytes"
+	"reflect"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestShowDiskSpaceWarningMessage(t *testing.T) {
+func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 	type args struct {
 		stats []openapi.StatsAppliancesListAllOfData
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name string
+		args args
+		want string
 	}{
 		{
 			name: "warning",
 			args: args{
 				stats: []openapi.StatsAppliancesListAllOfData{
 					{
-						Name: openapi.PtrString("controller"),
-						Disk: openapi.PtrFloat32(90),
+						Name:    openapi.PtrString("controller"),
+						Disk:    openapi.PtrFloat32(90),
+						Version: openapi.PtrString("5.5.4"),
+					},
+					{
+						Name:    openapi.PtrString("controller2"),
+						Disk:    openapi.PtrFloat32(75),
+						Version: openapi.PtrString("5.5.4"),
 					},
 				},
 			},
 			want: `
-Some appliances have very little space available
+WARNING: Some appliances have very little space available
 
-  - controller  Disk usage: 90%
-
+Name         Disk Usage
+----         ----------
+controller   90%
+controller2  75%
 
 Upgrading requires the upload and decompression of big images.
 To avoid problems during the upgrade process it's recommended to
@@ -41,13 +50,10 @@ increase the space on those appliances.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ShowDiskSpaceWarningMessage(tt.args.stats)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ShowDiskSpaceWarningMessage() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !cmp.Equal(got, tt.want) {
-				t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", got, tt.want)
+			var b bytes.Buffer
+			PrintDiskSpaceWarningMessage(&b, tt.args.stats)
+			if res := b.String(); res != tt.want {
+				t.Errorf("ShowDiskSpaceWarning() - want: %s, got: %s", tt.want, res)
 			}
 		})
 	}
@@ -60,7 +66,7 @@ func TestHasLowDiskSpace(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
+		want []openapi.StatsAppliancesListAllOfData
 	}{
 		{
 			name: "with low disk space",
@@ -76,7 +82,12 @@ func TestHasLowDiskSpace(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			want: []openapi.StatsAppliancesListAllOfData{
+				{
+					Name: openapi.PtrString("controller"),
+					Disk: openapi.PtrFloat32(75),
+				},
+			},
 		},
 		{
 			name: "no low disk space",
@@ -92,12 +103,12 @@ func TestHasLowDiskSpace(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want: []openapi.StatsAppliancesListAllOfData{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := HasLowDiskSpace(tt.args.stats); got != tt.want {
+			if got := HasLowDiskSpace(tt.args.stats); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("HasLowDiskSpace() = %v, want %v", got, tt.want)
 			}
 		})
