@@ -254,7 +254,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	spin.Stop()
-	printCompleteSummary(opts.Out, append(appliances, *primaryController), offline, newVersion)
+	msg, err := printCompleteSummary(opts.Out, append(appliances, *primaryController), offline, newVersion)
+	if err != nil {
+		return err
+	}
+	fmt.Fprint(opts.Out, msg)
 	spin.Restart()
 
 	// 1. Disable Controller function on the following appliance
@@ -511,7 +515,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	return nil
 }
 
-func printCompleteSummary(out io.Writer, upgradeable, skipped []openapi.Appliance, toVersion *version.Version) error {
+func printCompleteSummary(out io.Writer, upgradeable, skipped []openapi.Appliance, toVersion *version.Version) (string, error) {
 	type tplStub struct {
 		Upgradeable []string
 		Skipped     []string
@@ -520,16 +524,15 @@ func printCompleteSummary(out io.Writer, upgradeable, skipped []openapi.Applianc
 	completeSummaryTpl := `
 UPGRADE COMPLETE SUMMARY
 The following appliances will be upgraded to version {{ .Version }}:
-{{- range $a := .Upgradeable }}
-  - {{ $a -}}
-{{ end }}
-
+{{- range .Upgradeable }}
+  - {{ . -}}
+{{- end }}
 {{ with .Skipped }}
 Appliances that will be skipped:
-{{- range $a := . }}
-  - {{ $a }}
-{{end}}{{end -}}
-`
+{{- range . }}
+  - {{ . -}}
+{{- end }}
+{{ end }}`
 	toUpgrade := []string{}
 	for _, a := range upgradeable {
 		toUpgrade = append(toUpgrade, a.GetName())
@@ -546,8 +549,7 @@ Appliances that will be skipped:
 	t := template.Must(template.New("").Parse(completeSummaryTpl))
 	var tpl bytes.Buffer
 	if err := t.Execute(&tpl, tplData); err != nil {
-		return err
+		return "", err
 	}
-	fmt.Fprint(out, tpl.String())
-	return nil
+	return tpl.String(), nil
 }
