@@ -1,7 +1,3 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
@@ -19,9 +15,12 @@ import (
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
-	Use:                   "generate",
-	Aliases:               []string{"gen"},
-	Hidden:                true,
+	Use:     "generate",
+	Aliases: []string{"gen"},
+	Hidden:  true,
+	Annotations: map[string]string{
+		"skipAuthCheck": "true",
+	},
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"man"},
 	Args:                  cobra.ExactValidArgs(1),

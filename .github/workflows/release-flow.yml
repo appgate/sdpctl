@@ -13,6 +13,6 @@ jobs:
   lint:
     uses: ./.github/workflows/lint.yml
   release:
-    if: ${{ github.ref_type == "tag" }}
+    if: ${{ github.ref_type == 'tag' }}
     uses: ./.github/workflows/release.yml
     needs: [test, lint]
