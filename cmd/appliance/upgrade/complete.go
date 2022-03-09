@@ -259,6 +259,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 	fmt.Fprint(opts.Out, msg)
+	if !opts.NoInteractive {
+		if err = prompt.AskConfirmation(); err != nil {
+			return err
+		}
+	}
 	spin.Restart()
 
 	// 1. Disable Controller function on the following appliance
