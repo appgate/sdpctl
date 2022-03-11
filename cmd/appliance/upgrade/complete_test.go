@@ -15,6 +15,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/google/shlex"
+	"github.com/hashicorp/go-version"
 )
 
 type mockApplianceStatus struct{}
@@ -46,6 +47,9 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		{
 			name: "test complete multiple appliances",
 			cli:  "upgrade complete --backup=false",
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(true)
+			},
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -136,7 +140,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "first controller failed",
-			cli:  "upgrade complete --backup=false",
+			cli:  "upgrade complete --backup=false --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -161,7 +165,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "gateway failure",
-			cli:  "upgrade complete --backup=false",
+			cli:  "upgrade complete --backup=false --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -186,7 +190,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name: "one offline controller",
-			cli:  "upgrade complete --backup=false",
+			cli:  "upgrade complete --backup=false --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -282,6 +286,79 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				if !tt.wantErrOut.MatchString(err.Error()) {
 					t.Errorf("Expected output to match, expected:\n%s\n got: \n%s\n", tt.wantErrOut, err.Error())
 				}
+			}
+		})
+	}
+}
+
+func TestPrintCompleteSummary(t *testing.T) {
+	tests := []struct {
+		name       string
+		upgradable []openapi.Appliance
+		skipped    []openapi.Appliance
+		toVersion  string
+		expect     string
+	}{
+		{
+			name: "all upgrade no skip",
+			upgradable: []openapi.Appliance{
+				{
+					Name: "primary-controller",
+				},
+				{
+					Name: "gateway",
+				},
+			},
+			toVersion: "5.5.4",
+			expect: `
+UPGRADE COMPLETE SUMMARY
+The following appliances will be upgraded to version 5.5.4:
+  - primary-controller
+  - gateway
+`,
+		},
+		{
+			name: "two upgrade two skipped",
+			upgradable: []openapi.Appliance{
+				{
+					Name: "primary-controller",
+				},
+				{
+					Name: "gateway",
+				},
+			},
+			skipped: []openapi.Appliance{
+				{
+					Name: "secondary-controller",
+				},
+				{
+					Name: "additional-controller",
+				},
+			},
+			toVersion: "5.5.4",
+			expect: `
+UPGRADE COMPLETE SUMMARY
+The following appliances will be upgraded to version 5.5.4:
+  - primary-controller
+  - gateway
+
+Appliances that will be skipped:
+  - secondary-controller
+  - additional-controller
+`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var b bytes.Buffer
+			version, _ := version.NewVersion(tt.toVersion)
+			res, err := printCompleteSummary(&b, tt.upgradable, tt.skipped, version)
+			if err != nil {
+				t.Errorf("printCompleteSummary() error - %s", err)
+			}
+			if res != tt.expect {
+				t.Errorf("printCompleteSummary() fail\nEXPECT:%s\nGOT:%s", tt.expect, res)
 			}
 		})
 	}

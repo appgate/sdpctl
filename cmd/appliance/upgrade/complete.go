@@ -1,11 +1,13 @@
 package upgrade
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -239,10 +241,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
-
-	// 1. Disable Controller function on the following appliance
-	// we will run this sequencelly, since this is a sensitive operation
-	// so that we can leave the collective gracefully.
 	addtitionalControllers := groups[appliancepkg.FunctionController]
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
@@ -254,6 +252,23 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 		return err
 	}
+
+	spin.Stop()
+	msg, err := printCompleteSummary(opts.Out, append(appliances, *primaryController), offline, newVersion)
+	if err != nil {
+		return err
+	}
+	fmt.Fprint(opts.Out, msg)
+	if !opts.NoInteractive {
+		if err = prompt.AskConfirmation(); err != nil {
+			return err
+		}
+	}
+	spin.Restart()
+
+	// 1. Disable Controller function on the following appliance
+	// we will run this sequencelly, since this is a sensitive operation
+	// so that we can leave the collective gracefully.
 	if appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion) {
 		spin.Suffix = " disabling additional controllers"
 		for _, controller := range addtitionalControllers {
@@ -503,4 +518,43 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	spin.FinalMSG = "\nUpgrade finished\n"
 	return nil
+}
+
+func printCompleteSummary(out io.Writer, upgradeable, skipped []openapi.Appliance, toVersion *version.Version) (string, error) {
+	type tplStub struct {
+		Upgradeable []string
+		Skipped     []string
+		Version     string
+	}
+	completeSummaryTpl := `
+UPGRADE COMPLETE SUMMARY
+The following appliances will be upgraded to version {{ .Version }}:
+{{- range .Upgradeable }}
+  - {{ . -}}
+{{- end }}
+{{ with .Skipped }}
+Appliances that will be skipped:
+{{- range . }}
+  - {{ . -}}
+{{- end }}
+{{ end }}`
+	toUpgrade := []string{}
+	for _, a := range upgradeable {
+		toUpgrade = append(toUpgrade, a.GetName())
+	}
+	toSkip := []string{}
+	for _, a := range skipped {
+		toSkip = append(toSkip, a.GetName())
+	}
+	tplData := tplStub{
+		Version:     toVersion.String(),
+		Upgradeable: toUpgrade,
+		Skipped:     toSkip,
+	}
+	t := template.Must(template.New("").Parse(completeSummaryTpl))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, tplData); err != nil {
+		return "", err
+	}
+	return tpl.String(), nil
 }
