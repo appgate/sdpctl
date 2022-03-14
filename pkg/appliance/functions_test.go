@@ -468,8 +468,8 @@ func TestFilterAndExclude(t *testing.T) {
 			},
 			Version: openapi.PtrInt32(16),
 		},
-		"slaveController": {
-			Name: "slave controller",
+		"secondaryController": {
+			Name: "secondary controller",
 			Id:   "6090fd66-6e21-4ef5-87d0-36c7a1b04a80",
 			Controller: &openapi.ApplianceAllOfController{
 				Enabled: openapi.PtrBool(true),
@@ -480,7 +480,7 @@ func TestFilterAndExclude(t *testing.T) {
 			Site:      openapi.PtrString("3976e914-ccf4-4704-80e1-18b7de87ff07"),
 			Activated: openapi.PtrBool(false),
 			Tags: &[]string{
-				"slave",
+				"secondary",
 				"crap",
 			},
 			Version: openapi.PtrInt32(15),
@@ -528,7 +528,7 @@ func TestFilterAndExclude(t *testing.T) {
 			args: args{
 				appliances: []openapi.Appliance{
 					mockControllers["primaryController"],
-					mockControllers["slaveController"],
+					mockControllers["secondaryController"],
 					mockControllers["gateway"],
 				},
 				filter: map[string]map[string]string{
@@ -546,7 +546,7 @@ func TestFilterAndExclude(t *testing.T) {
 			args: args{
 				appliances: []openapi.Appliance{
 					mockControllers["primaryController"],
-					mockControllers["slaveController"],
+					mockControllers["secondaryController"],
 					mockControllers["gateway"],
 				},
 				filter: map[string]map[string]string{
@@ -556,7 +556,7 @@ func TestFilterAndExclude(t *testing.T) {
 				},
 			},
 			want: []openapi.Appliance{
-				mockControllers["slaveController"],
+				mockControllers["secondaryController"],
 				mockControllers["gateway"],
 			},
 		})
