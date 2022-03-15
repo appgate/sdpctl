@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
@@ -139,6 +141,47 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 		}
 	}
 	return result, offline, err
+}
+
+// SplitAppliancesByGroup return a map of slices of appliances based on their active function and site.
+// e.g All active gateways in the same site are grouped together.
+func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Appliance {
+	result := make(map[int][]openapi.Appliance)
+	for _, a := range appliances {
+		groupID := applianceGroupHash(a)
+		result[groupID] = append(result[groupID], a)
+	}
+	return result
+}
+
+// applianceGroupHash return a unique id hash based on the active function of the appliance and their site ID.
+func applianceGroupHash(appliance openapi.Appliance) int {
+	var buf bytes.Buffer
+	if v, ok := appliance.GetControllerOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "controller-", v.GetEnabled()))
+		// we want to group all controllers to the same group
+		return hashcode.String(buf.String())
+	}
+	if len(appliance.GetSite()) > 0 {
+		buf.WriteString(appliance.GetSite())
+	}
+	if v, ok := appliance.GetLogForwarderOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "log_forwarder-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetLogServerOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "log_server-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetGatewayOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "gateway-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetConnectorOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "connector-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetPortalOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "portal-", v.GetEnabled()))
+	}
+
+	return hashcode.String(buf.String())
 }
 
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {

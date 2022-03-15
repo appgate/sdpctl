@@ -626,3 +626,367 @@ func TestShouldDisable(t *testing.T) {
 		}
 	}
 }
+
+func TestSplitAppliancesByGroup(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+	}
+	sites := map[string]*string{
+		"A": openapi.PtrString("d9fd012a-212a-4b90-9a63-63fef93a834b"),
+		"B": openapi.PtrString("aa01780b-3e3c-408f-80b4-59eb5c1d4b4a"),
+		"C": openapi.PtrString("23b2ca4b-cfa8-4d20-a6b3-219952cc4468"),
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[int][]openapi.Appliance
+	}{
+		{
+			name: "split appliance by site group",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "c1",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "c1.devops",
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "g1",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g1.devops",
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "g2",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g2.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "g3",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g3.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "c2",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "c2.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "g4",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g4.devops",
+						},
+						Site: nil,
+					},
+					{
+						Name: "g5",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(false),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g5.devops",
+						},
+						Site: nil,
+					},
+					{
+						Name: "cc1",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "cc11.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "lf1",
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "lf1.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "lf2",
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "lf2.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "lf3",
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "lf3.devops",
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "cc2",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "cc2.devops",
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "g6",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g6.devops",
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "g7",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g7.devops",
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "c3",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "c3.devops",
+						},
+						Site: sites["C"],
+					},
+				},
+			},
+			want: map[int][]openapi.Appliance{
+				276419119: {
+					// all controllers
+					{
+						Name: "c1",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "c1.devops",
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "c2",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "c2.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "c3",
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "c3.devops",
+						},
+						Site: sites["C"],
+					},
+				},
+				// gateway site A
+				2441219521: {
+					{
+						Name: "g1",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g1.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+				// disabled gateway no site assigned
+				4179922720: {
+					{
+						Name: "g5",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(false),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g5.devops",
+						},
+						Site: nil,
+					},
+				},
+				// logforwader site A
+				1406505277: {
+					{
+						Name: "lf3",
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "lf3.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+				// connector site C
+				735744990: {
+					{
+						Name: "cc2",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "cc2.devops",
+						},
+						Site: sites["C"],
+					},
+				},
+				// gateways site B
+				675122154: {
+					{
+						Name: "g2",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g2.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "g3",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g3.devops",
+						},
+						Site: sites["B"],
+					},
+				},
+				// Enabled gateway no site
+				429826475: {
+					{
+						Name: "g4",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g4.devops",
+						},
+						Site: nil,
+					},
+				},
+				// connector site B
+				3280859746: {
+					{
+						Name: "cc1",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "cc11.devops",
+						},
+						Site: sites["B"],
+					},
+				},
+				// logforwaders site B
+				2407971497: {
+					{
+						Name: "lf1",
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "lf1.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "lf2",
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "lf2.devops",
+						},
+						Site: sites["B"],
+					},
+				},
+				// enabled gateways site C
+				1218635433: {
+					{
+						Name: "g6",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g6.devops",
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "g7",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g7.devops",
+						},
+						Site: sites["C"],
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SplitAppliancesByGroup(tt.args.appliances)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SplitAppliancesByGroup() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
