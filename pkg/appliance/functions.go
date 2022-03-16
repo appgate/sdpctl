@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -152,6 +153,92 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 		result[groupID] = append(result[groupID], a)
 	}
 	return result
+}
+
+// maxInnerChunkSize represent how many appliance can be in each chunk
+// this value is derived to how many goroutines is used when upgrading appliances simultaneously
+const maxInnerChunkSize = 4
+
+// ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
+// functions and site configuration
+func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
+	// var chunks [][]openapi.Appliance
+	chunks := make([][]openapi.Appliance, chunkSize)
+	for i := range chunks {
+		chunks[i] = make([]openapi.Appliance, 0)
+	}
+	// for consistency, we need to sort all input and output slices to generate a consistent result
+	for id := range applianceGroups {
+		sort.Slice(applianceGroups[id], func(i, j int) bool {
+			return applianceGroups[id][i].GetName() < applianceGroups[id][j].GetName()
+		})
+	}
+
+	keys := make([]int, 0, len(applianceGroups))
+	for k := range applianceGroups {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	count := 0
+	for _, slice := range applianceGroups {
+		for range slice {
+			count += 1
+		}
+	}
+
+	for i := 0; i <= count; i++ {
+		// select which initial slice we are going to put the appliance in
+		// the appliance may be moved later if the slice ends up to big.
+		index := i % chunkSize
+		chunk := chunks[index]
+		for _, groupID := range keys {
+			slice := applianceGroups[groupID]
+			if len(slice) > 0 {
+				item, slice := slice[len(slice)-1], slice[:len(slice)-1]
+				applianceGroups[groupID] = slice
+				temp := make([]openapi.Appliance, 0)
+				temp = append(temp, item)
+				chunk = append(chunk, temp...)
+			}
+		}
+		chunks[index] = chunk
+	}
+
+	// make sure we sort each slice for a consistent output and remove any empty slices.
+	var r [][]openapi.Appliance
+	for index := range chunks {
+		sort.Slice(chunks[index], func(i, j int) bool {
+			return chunks[index][i].GetName() < chunks[index][j].GetName()
+		})
+
+		if len(chunks[index]) > maxInnerChunkSize {
+			r = append(r, chunkApplianceSlice(chunks[index], maxInnerChunkSize)...)
+		} else if len(chunks[index]) > 0 {
+			r = append(r, chunks[index])
+		}
+	}
+	return r
+}
+
+func chunkApplianceSlice(slice []openapi.Appliance, chunkSize int) [][]openapi.Appliance {
+	var chunks [][]openapi.Appliance
+	for {
+		if len(slice) == 0 {
+			break
+		}
+
+		// necessary check to avoid slicing beyond
+		// slice capacity
+		if len(slice) < chunkSize {
+			chunkSize = len(slice)
+		}
+
+		chunks = append(chunks, slice[0:chunkSize])
+		slice = slice[chunkSize:]
+	}
+
+	return chunks
 }
 
 // applianceGroupHash return a unique id hash based on the active function of the appliance and their site ID.
