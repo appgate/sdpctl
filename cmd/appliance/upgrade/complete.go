@@ -430,6 +430,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 			return err
 		}
+		if cfg.Version >= 15 {
+			_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
+			if err != nil {
+				return err
+			}
+			log.WithFields(f).Info("Disabled maintenance mode")
+		}
 	}
 	spin.Suffix = " Additional controllers done, continuing with additional appliances"
 	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
