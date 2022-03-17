@@ -250,7 +250,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	newVersion, err := appliancepkg.GetVersion(primaryControllerUpgradeStatus.GetDetails())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
-		return err
 	}
 
 	spin.Stop()
@@ -528,7 +527,9 @@ func printCompleteSummary(out io.Writer, upgradeable, skipped []openapi.Applianc
 	}
 	completeSummaryTpl := `
 UPGRADE COMPLETE SUMMARY
+{{- if .Version}}
 The following appliances will be upgraded to version {{ .Version }}:
+{{- end}}
 {{- range .Upgradeable }}
   - {{ . -}}
 {{- end }}
@@ -547,9 +548,11 @@ Appliances that will be skipped:
 		toSkip = append(toSkip, a.GetName())
 	}
 	tplData := tplStub{
-		Version:     toVersion.String(),
 		Upgradeable: toUpgrade,
 		Skipped:     toSkip,
+	}
+	if toVersion != nil {
+		tplData.Version = toVersion.String()
 	}
 	t := template.Must(template.New("").Parse(completeSummaryTpl))
 	var tpl bytes.Buffer
