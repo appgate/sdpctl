@@ -271,6 +271,18 @@ func applianceGroupHash(appliance openapi.Appliance) int {
 	return hashcode.String(buf.String())
 }
 
+func ActiveSitesInAppliances(slice []openapi.Appliance) int {
+	keys := make(map[string]bool)
+	for _, a := range slice {
+		if v, ok := a.GetSiteOk(); ok {
+			if _, ok := keys[*v]; !ok {
+				keys[*v] = true
+			}
+		}
+	}
+	return len(keys)
+}
+
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == appliance.GetId() {
