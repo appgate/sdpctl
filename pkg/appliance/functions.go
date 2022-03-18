@@ -162,6 +162,9 @@ const maxInnerChunkSize = 4
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
+	if chunkSize == 0 {
+		chunkSize = 2
+	}
 	// var chunks [][]openapi.Appliance
 	chunks := make([][]openapi.Appliance, chunkSize)
 	for i := range chunks {
