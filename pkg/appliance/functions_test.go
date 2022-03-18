@@ -643,7 +643,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 		want map[int][]openapi.Appliance
 	}{
 		{
-			name: "gateway diffrent sites",
+			name: "gateway different sites",
 			args: args{
 				appliances: []openapi.Appliance{
 					{

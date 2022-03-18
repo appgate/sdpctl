@@ -33,7 +33,7 @@ type Credentials struct {
 }
 
 func (c *Config) GetBearTokenHeaderValue() (string, error) {
-	// if the bearer token is in the config, we asume the current environment does not support a keyring, so we will use it.
+	// if the bearer token is in the config, we assume the current environment does not support a keyring, so we will use it.
 	// this will also include if the environment variable SDPCTL_BEARER is being used.
 	if len(c.BearerToken) > 10 {
 		return fmt.Sprintf("Bearer %s", c.BearerToken), nil
