@@ -155,10 +155,6 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 	return result
 }
 
-// maxInnerChunkSize represent how many appliance can be in each chunk
-// this value is derived to how many goroutines is used when upgrading appliances simultaneously
-const maxInnerChunkSize = 4
-
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
@@ -215,33 +211,11 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 			return chunks[index][i].GetName() < chunks[index][j].GetName()
 		})
 
-		if len(chunks[index]) > maxInnerChunkSize {
-			r = append(r, chunkApplianceSlice(chunks[index], maxInnerChunkSize)...)
-		} else if len(chunks[index]) > 0 {
+		if len(chunks[index]) > 0 {
 			r = append(r, chunks[index])
 		}
 	}
 	return r
-}
-
-func chunkApplianceSlice(slice []openapi.Appliance, chunkSize int) [][]openapi.Appliance {
-	var chunks [][]openapi.Appliance
-	for {
-		if len(slice) == 0 {
-			break
-		}
-
-		// necessary check to avoid slicing beyond
-		// slice capacity
-		if len(slice) < chunkSize {
-			chunkSize = len(slice)
-		}
-
-		chunks = append(chunks, slice[0:chunkSize])
-		slice = slice[chunkSize:]
-	}
-
-	return chunks
 }
 
 // applianceGroupHash return a unique id hash based on the active function of the appliance and their site ID.

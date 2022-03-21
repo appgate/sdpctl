@@ -1527,9 +1527,6 @@ func TestChunkApplianceGroup(t *testing.T) {
 						},
 						Site: sites["A"],
 					},
-				},
-				// index 1
-				{
 					{
 						Name: "g3",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -1570,9 +1567,6 @@ func TestChunkApplianceGroup(t *testing.T) {
 						},
 						Site: sites["C"],
 					},
-				},
-				// index 2
-				{
 					{
 						Name: "lf2",
 						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
@@ -1594,7 +1588,7 @@ func TestChunkApplianceGroup(t *testing.T) {
 						Site: sites["A"],
 					},
 				},
-				// index 3
+				// index 1
 				{
 					{
 						Name: "c2",
@@ -1637,7 +1631,7 @@ func TestChunkApplianceGroup(t *testing.T) {
 						Site: sites["B"],
 					},
 				},
-				// index 4
+				// index 2
 				{
 					{
 						Name: "c1",
