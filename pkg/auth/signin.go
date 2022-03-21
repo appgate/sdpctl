@@ -98,7 +98,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 
 	if remember {
 		if err := rememberCredentials(cfg, credentials); err != nil {
-			return fmt.Errorf("Failed to store credentials: %+v", err)
+			return fmt.Errorf("Failed to store credentials: %w", err)
 		}
 	}
 	loginOpts.Username = openapi.PtrString(credentials.Username)

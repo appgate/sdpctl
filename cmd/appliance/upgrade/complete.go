@@ -181,7 +181,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	appliances, offline, err := appliancepkg.FilterAvailable(allAppliances, initialStats.GetData())
 	if err != nil {
-		return fmt.Errorf("Could not complete upgrade operation %s", err)
+		return fmt.Errorf("Could not complete upgrade operation %w", err)
 	}
 	for _, o := range offline {
 		log.Warnf("%q is offline and will be excluded from upgrade.", o.GetName())
@@ -291,7 +291,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		state = "single_controller_ready"
 	}
 	if err := a.ApplianceStats.WaitForState(opts.Timeout, []openapi.Appliance{*primaryController}, state); err != nil {
-		return fmt.Errorf("primary controller %s", err)
+		return fmt.Errorf("primary controller %w", err)
 	}
 	log.Info("all controllers are in correct state")
 
