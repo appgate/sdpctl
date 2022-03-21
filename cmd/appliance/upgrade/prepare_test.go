@@ -550,14 +550,14 @@ func TestCheckImageFilename(t *testing.T) {
 		{
 			name: "test url with get variables",
 			args: args{
-				i: "https://downlad.com/release-5.5/artifact/appgate-5.5.3-27278-release.img.zip?is-build-type-id",
+				i: "https://download.com/release-5.5/artifact/appgate-5.5.3-27278-release.img.zip?is-build-type-id",
 			},
 			wantErr: false,
 		},
 		{
 			name: "test url with get variables key value",
 			args: args{
-				i: "https://downlad.com/release-5.5/artifact/appgate-5.5.3-27278-release.img.zip?foo=bar",
+				i: "https://download.com/release-5.5/artifact/appgate-5.5.3-27278-release.img.zip?foo=bar",
 			},
 			wantErr: false,
 		},

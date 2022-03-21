@@ -76,7 +76,6 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 			} else {
 				opts.Timeout = flagTimeout
 			}
-
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -226,6 +225,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			appliances = append(appliances[:i], appliances[i+1:]...)
 		}
 	}
+
 	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
 		return err
@@ -250,7 +250,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	newVersion, err := appliancepkg.GetVersion(primaryControllerUpgradeStatus.GetDetails())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
-		return err
 	}
 
 	spin.Stop()
@@ -431,6 +430,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 			return err
 		}
+		if cfg.Version >= 15 {
+			_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
+			if err != nil {
+				return err
+			}
+			log.WithFields(f).Info("Disabled maintenance mode")
+		}
 	}
 	spin.Suffix = " Additional controllers done, continuing with additional appliances"
 	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
@@ -438,28 +444,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 
-	additionalAppliances := make([]openapi.Appliance, 0)
-	for id, result := range readyForUpgrade {
-		for _, appliance := range appliances {
-			if result.Status == appliancepkg.UpgradeStatusReady {
-				if id == appliance.GetId() {
-					additionalAppliances = append(additionalAppliances, appliance)
-				}
-			}
-		}
-
-	}
-
-	spin.Suffix = fmt.Sprintf(" upgrading %d additional appliances", len(additionalAppliances))
-	upgradedAppliances, err := batchUpgrade(ctx, additionalAppliances, false)
-	if err != nil {
-		return fmt.Errorf("failed during upgrade of additional appliances %w", err)
-	}
-	spin.Suffix = " Waiting for appliances to reach desired state"
-	// blocking function; waiting for upgrade status to be idle
-	if err := a.UpgradeStatusWorker.Wait(opts.Timeout, upgradedAppliances, appliancepkg.UpgradeStatusSuccess); err != nil {
-		return err
-	}
 	switchBatch := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		g, ctx := errgroup.WithContext(context.Background())
 		switchChan := make(chan openapi.Appliance, len(appliances))
@@ -488,34 +472,85 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		return result, g.Wait()
 	}
-	readyForSwitch, err := a.UpgradeStatusMap(ctx, appliances)
-	if err != nil {
-		return err
-	}
 
-	switchAppliances := make([]openapi.Appliance, 0)
-	for id, result := range readyForSwitch {
-		if result.Status == appliancepkg.UpgradeStatusSuccess {
-			for _, appliance := range appliances {
+	additionalAppliances := make([]openapi.Appliance, 0)
+	for id, result := range readyForUpgrade {
+		for _, appliance := range appliances {
+			if result.Status == appliancepkg.UpgradeStatusReady {
 				if id == appliance.GetId() {
-					switchAppliances = append(switchAppliances, appliance)
+					additionalAppliances = append(additionalAppliances, appliance)
 				}
 			}
 		}
 	}
-	spin.Suffix = " Switch partition and applying upgrade on additional appliances"
-	switchedAppliances, err := switchBatch(ctx, switchAppliances)
-	if err != nil {
-		return fmt.Errorf("failed during switch partition of additional appliances %w", err)
-	}
-	for _, a := range switchedAppliances {
-		log.WithField("appliance", a.GetName()).Info("Switched partition")
+
+	// chunks include slices of slices, divided in chunkSize,
+	// the chunkSize represent the number of goroutines used
+	// for pararell upgrades, each chunk the slice has tried to split
+	// the appliances based on site and function to avoid downtime
+	// the chunkSize is determined by the number of active sites.
+	chunkSize := appliancepkg.ActiveSitesInAppliances(additionalAppliances)
+	chunks := appliancepkg.ChunkApplianceGroup(chunkSize, appliancepkg.SplitAppliancesByGroup(additionalAppliances))
+
+	// log the appliance names of the appliances that are being upgraded simultaneously.
+	for index, slice := range chunks {
+		var names []string
+		for _, a := range slice {
+			names = append(names, a.GetName())
+		}
+		log.Infof("[%d] Appliance Upgrade chunk includes %v", index, strings.Join(names, ", "))
 	}
 
-	spin.Suffix = " Confirming upgrade status is correct"
-	if err := a.UpgradeStatusWorker.Wait(opts.Timeout, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
-		return err
+	chunksLength := len(chunks)
+	for index, slice := range chunks {
+		var names []string
+		for _, a := range slice {
+			names = append(names, a.GetName())
+		}
+		spin.Suffix = fmt.Sprintf(" [%d/%d] upgrading %s", index+1, chunksLength, strings.Join(names, ", "))
+
+		upgradedAppliances, err := batchUpgrade(ctx, slice, false)
+		if err != nil {
+			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
+		}
+
+		spin.Suffix = fmt.Sprintf(" [%d/%d] Waiting for appliances to reach desired state %s", index+1, chunksLength, strings.Join(names, ", "))
+		if err := a.UpgradeStatusWorker.Wait(opts.Timeout, upgradedAppliances, appliancepkg.UpgradeStatusSuccess); err != nil {
+			return err
+		}
+
+		readyForSwitch, err := a.UpgradeStatusMap(ctx, appliances)
+		if err != nil {
+			return err
+		}
+
+		switchAppliances := make([]openapi.Appliance, 0)
+		for id, result := range readyForSwitch {
+			if result.Status == appliancepkg.UpgradeStatusSuccess {
+				for _, appliance := range appliances {
+					if id == appliance.GetId() {
+						switchAppliances = append(switchAppliances, appliance)
+					}
+				}
+			}
+		}
+
+		spin.Suffix = fmt.Sprintf(" [%d/%d] Switch partition and applying upgrade on additional appliances %s", index+1, chunksLength, strings.Join(names, ", "))
+
+		switchedAppliances, err := switchBatch(ctx, switchAppliances)
+		if err != nil {
+			return fmt.Errorf("failed during switch partition of additional appliances %w", err)
+		}
+		for _, a := range switchedAppliances {
+			log.WithField("appliance", a.GetName()).Info("Switched partition")
+		}
+
+		spin.Suffix = fmt.Sprintf(" [%d/%d] Confirming upgrade status is correct %s", index+1, chunksLength, strings.Join(names, ", "))
+		if err := a.UpgradeStatusWorker.Wait(opts.Timeout, switchedAppliances, appliancepkg.UpgradeStatusIdle); err != nil {
+			return err
+		}
 	}
+
 	spin.FinalMSG = "\nUpgrade finished\n"
 	return nil
 }
@@ -528,7 +563,9 @@ func printCompleteSummary(out io.Writer, upgradeable, skipped []openapi.Applianc
 	}
 	completeSummaryTpl := `
 UPGRADE COMPLETE SUMMARY
+{{- if .Version}}
 The following appliances will be upgraded to version {{ .Version }}:
+{{- end}}
 {{- range .Upgradeable }}
   - {{ . -}}
 {{- end }}
@@ -547,9 +584,11 @@ Appliances that will be skipped:
 		toSkip = append(toSkip, a.GetName())
 	}
 	tplData := tplStub{
-		Version:     toVersion.String(),
 		Upgradeable: toUpgrade,
 		Skipped:     toSkip,
+	}
+	if toVersion != nil {
+		tplData.Version = toVersion.String()
 	}
 	t := template.Must(template.New("").Parse(completeSummaryTpl))
 	var tpl bytes.Buffer

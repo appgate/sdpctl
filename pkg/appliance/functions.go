@@ -1,13 +1,16 @@
 package appliance
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
@@ -139,6 +142,122 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 		}
 	}
 	return result, offline, err
+}
+
+// SplitAppliancesByGroup return a map of slices of appliances based on their active function and site.
+// e.g All active gateways in the same site are grouped together.
+func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Appliance {
+	result := make(map[int][]openapi.Appliance)
+	for _, a := range appliances {
+		groupID := applianceGroupHash(a)
+		result[groupID] = append(result[groupID], a)
+	}
+	return result
+}
+
+// ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
+// functions and site configuration
+func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
+	if chunkSize == 0 {
+		chunkSize = 2
+	}
+	// var chunks [][]openapi.Appliance
+	chunks := make([][]openapi.Appliance, chunkSize)
+	for i := range chunks {
+		chunks[i] = make([]openapi.Appliance, 0)
+	}
+	// for consistency, we need to sort all input and output slices to generate a consistent result
+	for id := range applianceGroups {
+		sort.Slice(applianceGroups[id], func(i, j int) bool {
+			return applianceGroups[id][i].GetName() < applianceGroups[id][j].GetName()
+		})
+	}
+
+	keys := make([]int, 0, len(applianceGroups))
+	for k := range applianceGroups {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	count := 0
+	for _, slice := range applianceGroups {
+		for range slice {
+			count += 1
+		}
+	}
+
+	for i := 0; i <= count; i++ {
+		// select which initial slice we are going to put the appliance in
+		// the appliance may be moved later if the slice ends up to big.
+		index := i % chunkSize
+		chunk := chunks[index]
+		for _, groupID := range keys {
+			slice := applianceGroups[groupID]
+			if len(slice) > 0 {
+				item, slice := slice[len(slice)-1], slice[:len(slice)-1]
+				applianceGroups[groupID] = slice
+				temp := make([]openapi.Appliance, 0)
+				temp = append(temp, item)
+				chunk = append(chunk, temp...)
+			}
+		}
+		chunks[index] = chunk
+	}
+
+	// make sure we sort each slice for a consistent output and remove any empty slices.
+	var r [][]openapi.Appliance
+	for index := range chunks {
+		sort.Slice(chunks[index], func(i, j int) bool {
+			return chunks[index][i].GetName() < chunks[index][j].GetName()
+		})
+
+		if len(chunks[index]) > 0 {
+			r = append(r, chunks[index])
+		}
+	}
+	return r
+}
+
+// applianceGroupHash return a unique id hash based on the active function of the appliance and their site ID.
+func applianceGroupHash(appliance openapi.Appliance) int {
+	var buf bytes.Buffer
+	if v, ok := appliance.GetControllerOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "controller-", v.GetEnabled()))
+		// we want to group all controllers to the same group
+		return hashcode.String(buf.String())
+	}
+	if len(appliance.GetSite()) > 0 {
+		buf.WriteString(appliance.GetSite())
+	}
+	if v, ok := appliance.GetLogForwarderOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "log_forwarder-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetLogServerOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "log_server-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetGatewayOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "gateway-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetConnectorOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "connector-", v.GetEnabled()))
+	}
+	if v, ok := appliance.GetPortalOk(); ok {
+		buf.WriteString(fmt.Sprintf("%s-%t", "portal-", v.GetEnabled()))
+	}
+
+	return hashcode.String(buf.String())
+}
+
+func ActiveSitesInAppliances(slice []openapi.Appliance) int {
+	keys := make(map[string]bool)
+	for _, a := range slice {
+		if v, ok := a.GetSiteOk(); ok {
+			if _, ok := keys[*v]; !ok {
+				keys[*v] = true
+			}
+		}
+	}
+	return len(keys)
 }
 
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
