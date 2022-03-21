@@ -165,12 +165,12 @@ func (c *Config) StoreCredentials(crd *Credentials) error {
 	}
 	if len(crd.Username) > 0 {
 		if err := keyring.SetUsername(h, crd.Username); err != nil {
-			return fmt.Errorf("could not store username in keychain %s", err)
+			return fmt.Errorf("could not store username in keychain %w", err)
 		}
 	}
 	if len(crd.Password) > 0 {
 		if err := keyring.SetPassword(h, crd.Password); err != nil {
-			return fmt.Errorf("could not store password in keychain %s", err)
+			return fmt.Errorf("could not store password in keychain %w", err)
 		}
 	}
 

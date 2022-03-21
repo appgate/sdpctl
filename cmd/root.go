@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/appgate/sdpctl/cmd/token"
+	"github.com/hashicorp/go-multierror"
 
 	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
 	cfgcmd "github.com/appgate/sdpctl/cmd/configure"
@@ -135,9 +137,20 @@ func Execute() exitCode {
 	root := NewCmdRoot()
 	cmd, err := root.ExecuteC()
 	if err != nil {
+		var result error
 		log.WithError(err).Error("Caught error")
 		errorString := err.Error()
-		fmt.Fprintln(os.Stderr, errorString)
+		result = multierror.Append(result, err)
+
+		// if we during any request get a SSL error, (un-truested certificate) error, prompt the user to import the pem file.
+		var sslErr x509.UnknownAuthorityError
+		if errors.As(err, &sslErr) {
+			result = multierror.Append(result, errors.New("Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'"))
+		}
+
+		// print all multierrors to stderr, then return correct exitcode based on error type
+		fmt.Fprintln(os.Stderr, result)
+
 		if errors.Is(err, ErrExitAuth) {
 			return exitAuth
 		}
@@ -193,21 +206,21 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetOutput(file)
 		}
 
+		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			if err := auth.Signin(f, false, false); err != nil {
-				fmt.Fprintln(os.Stderr, "sdpctl authentication err")
-				fmt.Fprintln(os.Stderr)
-				fmt.Fprintln(os.Stderr, err)
-				return ErrExitAuth
+				var result error
+				result = multierror.Append(result, err)
+				return result
 			}
 		}
 
 		// require that the user is authenticated before running most commands
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
-			fmt.Fprintln(os.Stderr, "sdpctl err")
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, "To authenticate, please run `sdpctl configure signin`.")
-			return ErrExitAuth
+			var result error
+			result = multierror.Append(result, errors.New("To authenticate, please run `sdpctl configure signin`."))
+			result = multierror.Append(result, ErrExitAuth)
+			return result
 		}
 
 		return nil
