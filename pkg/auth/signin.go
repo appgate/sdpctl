@@ -2,10 +2,8 @@ package auth
 
 import (
 	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -59,11 +57,6 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	// to compute the correct peerVersion used in the selected appgate sdp collective.
 	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
 	if err != nil && minMax == nil {
-		if err, ok := errors.Unwrap(err).(*url.Error); ok {
-			if err, ok := err.Unwrap().(x509.UnknownAuthorityError); ok {
-				return fmt.Errorf("%w. Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'", err)
-			}
-		}
 		return fmt.Errorf("invalid credentials %w", err)
 	}
 	if minMax != nil {
