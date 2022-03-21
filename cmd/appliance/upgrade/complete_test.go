@@ -2,11 +2,12 @@ package upgrade
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
+	"net/http"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -20,13 +21,13 @@ import (
 
 type mockApplianceStatus struct{}
 
-func (u *mockApplianceStatus) WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error {
+func (u *mockApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error {
 	return nil
 }
 
 type errApplianceStatus struct{}
 
-func (u *errApplianceStatus) WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error {
+func (u *errApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error {
 	return fmt.Errorf("never reached expected state %s", expectedState)
 }
 
@@ -67,6 +68,22 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
 			},
 			wantErr: false,
 		},
@@ -89,6 +106,22 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
 				},
 			},
 			wantErr: false,
@@ -128,6 +161,22 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
 				},
 			},
 			wantErr: false,
@@ -176,16 +225,32 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
+				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_failed.json"),
 				},
 			},
 			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
+			wantErrOut:          regexp.MustCompile(`gateway never reached idle, got failed`),
 			wantErr:             true,
 		},
 		{
@@ -296,6 +361,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 		name       string
 		upgradable []openapi.Appliance
 		skipped    []openapi.Appliance
+		backup     []openapi.Appliance
 		toVersion  string
 		expect     string
 	}{
@@ -312,9 +378,25 @@ func TestPrintCompleteSummary(t *testing.T) {
 			toVersion: "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
+
+Upgrade will be completed in a few ordered steps:
+
+ 1. The primary controller will be upgraded.
+    This will result in the API being unreachable while completing the primary controller upgrade.
+
+ 2. Additional controllers will be upgraded.
+    In some cases, the controller function on additional controllers will need to be disabled
+    before proceeding with the upgrade. The disabled controllers will then be re-enabled once
+    the upgrade is completed.
+    This step will also reboot the upgraded controllers for the upgrade to take effect.
+
+ 3. The remaining appliances will be upgraded.
+    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
+
 The following appliances will be upgraded to version 5.5.4:
-  - primary-controller
-  - gateway
+ - primary-controller
+ - gateway
+
 `,
 		},
 		{
@@ -335,16 +417,40 @@ The following appliances will be upgraded to version 5.5.4:
 					Name: "additional-controller",
 				},
 			},
+			backup: []openapi.Appliance{
+				{
+					Name: "primary-controller",
+				},
+			},
 			toVersion: "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
+
+Upgrade will be completed in a few ordered steps:
+
+ 1. The primary controller will be upgraded.
+    This will result in the API being unreachable while completing the primary controller upgrade.
+
+ 2. Additional controllers will be upgraded.
+    In some cases, the controller function on additional controllers will need to be disabled
+    before proceeding with the upgrade. The disabled controllers will then be re-enabled once
+    the upgrade is completed.
+    This step will also reboot the upgraded controllers for the upgrade to take effect.
+
+ 3. The remaining appliances will be upgraded.
+    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
+
 The following appliances will be upgraded to version 5.5.4:
-  - primary-controller
-  - gateway
+ - primary-controller
+ - gateway
 
 Appliances that will be skipped:
-  - secondary-controller
-  - additional-controller
+ - secondary-controller
+ - additional-controller
+
+Appliances that will be backed up before completing upgrade:
+ - primary-controller
+
 `,
 		},
 	}
@@ -353,7 +459,7 @@ Appliances that will be skipped:
 		t.Run(tt.name, func(t *testing.T) {
 			var b bytes.Buffer
 			version, _ := version.NewVersion(tt.toVersion)
-			res, err := printCompleteSummary(&b, tt.upgradable, tt.skipped, version)
+			res, err := printCompleteSummary(&b, tt.upgradable, tt.skipped, tt.backup, version)
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}

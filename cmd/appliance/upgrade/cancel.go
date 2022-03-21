@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"text/template"
-	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -14,9 +13,9 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -64,10 +63,6 @@ $ sdpctl appliance upgrade cancel --filter=function=gateway`,
 }
 
 func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOptions) error {
-	spin := spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("ok\n"))
-	spin.Writer = opts.Out
-	spin.Suffix = " cancelling"
-	defer spin.Stop()
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
@@ -109,21 +104,25 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			return err
 		}
 	}
-	spin.Start()
 
 	cancel := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		g, ctx := errgroup.WithContext(ctx)
 		cancelChan := make(chan openapi.Appliance, len(appliances))
+		p := mpb.New(mpb.WithWidth(1), mpb.WithOutput(opts.Out))
 		for _, appliance := range noneIdleAppliances {
 			i := appliance
 			g.Go(func() error {
+				spinner := util.AddDefaultSpinner(p, i.GetName(), "cancelling", "cancelled")
 				log.Infof("Cancel upgrade on %s - %s", i.GetId(), i.GetName())
 				if err := a.UpgradeCancel(ctx, i.GetId()); err != nil {
+					spinner.Abort(true)
 					return err
 				}
 				select {
 				case cancelChan <- i:
+					spinner.Increment()
 				case <-ctx.Done():
+					spinner.Abort(true)
 					return ctx.Err()
 				}
 				return nil
@@ -140,6 +139,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		if err := g.Wait(); err != nil {
 			return nil, err
 		}
+		p.Wait()
 		return result, nil
 	}
 	fmt.Fprint(opts.Out, "Cancelling pending upgrades...")

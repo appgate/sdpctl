@@ -2,12 +2,12 @@ package upgrade
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/AlecAivazis/survey/v2/core"
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v7"
 )
 
 func init() {
@@ -27,14 +28,20 @@ func init() {
 
 type mockUpgradeStatus struct{}
 
-func (u *mockUpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error {
+func (u *mockUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error {
 	return nil
+}
+
+func (u *mockUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
 }
 
 type errorUpgradeStatus struct{}
 
-func (u *errorUpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error {
+func (u *errorUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error {
 	return fmt.Errorf("gateway never reached %s, got failed", desiredStatus)
+}
+
+func (u *errorUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
 }
 
 func NewApplianceCmd(f *factory.Factory) *cobra.Command {
@@ -208,7 +215,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name:                "error upgrade status",
 			cli:                 "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
 			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`Timeout exceeded when waiting for correct appliance upgrade state. See log for details`),
+			wantErrOut:          regexp.MustCompile(`gateway never reached downloading, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
@@ -347,8 +354,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					},
 				},
 			},
-			wantErr:    true,
-			wantErrOut: regexp.MustCompile("context deadline exceeded"),
+			wantErr:    false,
+			wantErrOut: regexp.MustCompile("WARNING: timeout is less than the allowed minimum. Using default timeout instead: 30m0s"),
 		},
 		{
 			name: "disagree with peer warning",

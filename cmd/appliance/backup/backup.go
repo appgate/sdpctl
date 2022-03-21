@@ -81,6 +81,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.CurrentFlag, "current", false, "backup current peer controller")
 	flags.StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
+	flags.BoolVar(&opts.Quiet, "quiet", false, "backup summary will not be printed if setting this flag")
 
 	cmd.AddCommand(NewBackupAPICmd(f))
 

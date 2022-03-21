@@ -1,15 +1,20 @@
 package appliance
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	mpb "github.com/vbauerster/mpb/v7"
+	decor "github.com/vbauerster/mpb/v7/decor"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -127,25 +132,68 @@ func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.Fi
 }
 
 // UploadFile directly to the current Controller. Note that the File is stored only on the current Controller, not synced between Controllers.
-func (a *Appliance) UploadFile(ctx context.Context, r io.ReadCloser, headers map[string]string) error {
+func (a *Appliance) UploadFile(ctx context.Context, file *os.File) error {
+	fileStat, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	fs := fileStat.Size()
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", fileStat.Name())
+	if err != nil {
+		return err
+	}
+	part.Write(content)
+	if err = writer.Close(); err != nil {
+		return err
+	}
+
+	limitReader := io.LimitReader(body, int64(body.Len()))
+	p := mpb.New(mpb.WithWidth(50))
+	bar := p.AddBar(fs,
+		mpb.BarFillerOnComplete("uploaded"),
+		mpb.PrependDecorators(
+			decor.OnComplete(decor.Name(" uploading"), " ✓"),
+			decor.Name(fileStat.Name(), decor.WC{W: len(fileStat.Name()) + 1}),
+		),
+		mpb.AppendDecorators(
+			decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
+			decor.OnComplete(decor.Name(" | "), ""),
+			decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+		),
+	)
+	proxyReader := bar.ProxyReader(limitReader)
+	defer proxyReader.Close()
+
 	httpClient := a.HTTPClient
 	cfg := a.APIClient.GetConfig()
 	url, err := cfg.ServerURLWithContext(ctx, "ApplianceUpgradeApiService.FilesPut")
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPut, url+"/files", r)
+	req, err := http.NewRequest(http.MethodPut, url+"/files", proxyReader)
 	if err != nil {
 		return err
 	}
 	for k, v := range cfg.DefaultHeader {
 		req.Header.Add(k, v)
 	}
+	headers := map[string]string{
+		"Content-Type":        writer.FormDataContentType(),
+		"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 	req.Header.Set("Authorization", a.Token)
 	response, err := httpClient.Do(req)
+	p.Wait()
 	if err != nil {
 		if response == nil {
 			return fmt.Errorf("no response during upload %w", err)

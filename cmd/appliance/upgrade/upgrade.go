@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	DefaultTimeout = 30 * time.Minute
+)
+
 // NewUpgradeCmd return a new upgrade command
 func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 	var upgradeCmd = &cobra.Command{

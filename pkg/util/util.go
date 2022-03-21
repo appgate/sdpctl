@@ -8,6 +8,8 @@ import (
 	"sort"
 
 	"github.com/spf13/pflag"
+	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 // Getenv returns environment variable value, if it does not exist, return fallback
@@ -90,4 +92,17 @@ func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
 	}
 
 	return result
+}
+
+func AddDefaultSpinner(p *mpb.Progress, name string, stage string, cmsg string, opts ...mpb.BarOption) *mpb.Bar {
+	options := []mpb.BarOption{
+		mpb.BarFillerOnComplete("✓"),
+		mpb.AppendDecorators(
+			decor.Name(name, decor.WCSyncWidthR),
+			decor.Name(":", decor.WC{W: 2, C: decor.DidentRight}),
+			decor.OnComplete(decor.Name(stage), cmsg),
+		),
+	}
+	options = append(options, opts...)
+	return p.AddSpinner(1, options...)
 }
