@@ -125,7 +125,7 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 			}
 		}
 		log.WithFields(log.Fields{
-			"appliance":     appliance,
+			"appliance":     appliance.GetName(),
 			"current_state": expectedState,
 		}).Info("reached desired state")
 		return nil
