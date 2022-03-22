@@ -338,7 +338,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return nil
 		})
 
-		p := mpb.New(mpb.WithWidth(1), mpb.WithOutput(opts.Out))
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		// consume Prepare with nWorkers
 		finished := make(chan openapi.Appliance)
 		for i := 0; i < opts.workers; i++ {

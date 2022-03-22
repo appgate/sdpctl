@@ -288,7 +288,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
 		fmt.Fprint(opts.Out, "\nDisabling controllers:\n")
-		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		for _, controller := range addtitionalControllers {
 			spinner := util.AddDefaultSpinner(p, controller.GetName(), "disabling", "disabled")
 			f := log.Fields{"appliance": controller.GetName()}
@@ -308,7 +308,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// verify the state for all controller
-	p := mpb.New(mpb.WithWidth(1), mpb.WithOutput(opts.Out))
+	p := mpb.New(mpb.WithOutput(opts.Out))
 	spinner := util.AddDefaultSpinner(p, "verifying initial states", "waiting", "ready")
 	state := "controller_ready"
 	if cfg.Version < 15 {
@@ -355,7 +355,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
-		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		statusReport := make(chan string)
 		a.UpgradeStatusWorker.Watch(pctx, p, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
@@ -377,7 +377,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool, batchNr int) error {
 		g, ctx := errgroup.WithContext(ctx)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
-		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		for _, appliance := range appliances {
 			ctx, cancel = context.WithTimeout(ctx, opts.Timeout)

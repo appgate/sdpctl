@@ -202,7 +202,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	backupCount := len(toBackup)
-	p := mpb.NewWithContext(ctx, mpb.WithWidth(1))
+	p := mpb.NewWithContext(ctx)
 	log.Infof("Starting backup on %d appliances", backupCount)
 	bIDChan := make(chan map[string]string, backupCount)
 	for _, a := range toBackup {

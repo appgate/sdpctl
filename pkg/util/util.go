@@ -97,10 +97,11 @@ func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
 func AddDefaultSpinner(p *mpb.Progress, name string, stage string, cmsg string, opts ...mpb.BarOption) *mpb.Bar {
 	options := []mpb.BarOption{
 		mpb.BarFillerOnComplete("✓"),
+		mpb.BarWidth(1),
 		mpb.AppendDecorators(
 			decor.Name(name, decor.WCSyncWidthR),
 			decor.Name(":", decor.WC{W: 2, C: decor.DidentRight}),
-			decor.OnComplete(decor.Name(stage), cmsg),
+			decor.OnAbort(decor.OnComplete(decor.Name(stage), cmsg), "failed"),
 		),
 	}
 	options = append(options, opts...)

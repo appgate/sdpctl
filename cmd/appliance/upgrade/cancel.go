@@ -108,7 +108,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	cancel := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		g, ctx := errgroup.WithContext(ctx)
 		cancelChan := make(chan openapi.Appliance, len(appliances))
-		p := mpb.New(mpb.WithWidth(1), mpb.WithOutput(opts.Out))
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		for _, appliance := range noneIdleAppliances {
 			i := appliance
 			g.Go(func() error {

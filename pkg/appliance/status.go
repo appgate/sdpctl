@@ -140,6 +140,10 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
 		for status := range current {
 			if status != previous {
+				if status == UpgradeStatusFailed {
+					spinner.Abort(true)
+					break
+				}
 				spinner.Increment()
 				old := spinner
 				spinner = util.AddDefaultSpinner(p, name, status, endMsg, mpb.BarQueueAfter(old, false))
