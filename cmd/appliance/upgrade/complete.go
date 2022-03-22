@@ -378,6 +378,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		g, ctx := errgroup.WithContext(ctx)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
+		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		for _, appliance := range appliances {
 			ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
 			defer cancel()
@@ -387,9 +388,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				statusReport := make(chan string)
 				defer close(statusReport)
 				a.UpgradeStatusWorker.Watch(ctx, p, i, appliancepkg.UpgradeStatusIdle, statusReport)
-				if err := a.UpgradeStatusWorker.Wait(ctx, i, appliancepkg.UpgradeStatusReady, statusReport); err != nil {
-					return err
-				}
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
 				}
@@ -401,7 +399,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					if err != nil {
 						return err
 					}
-					regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 					if regex.MatchString(status.GetDetails()) {
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
 							return err
@@ -506,7 +503,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	additionalAppliances := make([]openapi.Appliance, 0)
 	for id, result := range readyForUpgrade {
 		for _, appliance := range appliances {
-			if result.Status == appliancepkg.UpgradeStatusReady {
+			if result.Status == appliancepkg.UpgradeStatusReady || result.Status == appliancepkg.UpgradeStatusSuccess {
 				if id == appliance.GetId() {
 					additionalAppliances = append(additionalAppliances, appliance)
 				}
