@@ -370,7 +370,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		p.Wait()
 	}
 
-	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) error {
+	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool, batchNr int) error {
 		ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
 		defer cancel()
 		g, ctx := errgroup.WithContext(ctx)
@@ -429,7 +429,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if len(addtitionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
-		if err := batchUpgrade(ctx, addtitionalControllers, true); err != nil {
+		if err := batchUpgrade(ctx, addtitionalControllers, true, 0); err != nil {
 			return fmt.Errorf("failed during upgrade of additional controllers %w", err)
 		}
 		log.Info("done waiting for additional controllers upgrade")
@@ -462,13 +462,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// re-enable additional controllers sequentially, one at the time
 	if disableAdditionalControllers {
 		fmt.Fprint(opts.Out, "\nRe-enabling controllers:\n")
-		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
 		for _, controller := range addtitionalControllers {
-			spinner := util.AddDefaultSpinner(p, controller.GetName(), "enabling", "enabled")
 			f := log.Fields{"controller": controller.GetName()}
 			log.WithFields(f).Info("Enabling controller function")
 			if err := backoffEnableController(controller); err != nil {
-				spinner.Abort(true)
 				log.WithFields(f).WithError(err).Error("Failed to enable controller")
 				if merr, ok := err.(*multierror.Error); ok {
 					var mutliErr error
@@ -481,20 +478,20 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 			if err := a.ApplianceStats.WaitForState(ctx, controller, ctrlUpgradeState); err != nil {
-				spinner.Abort(true)
 				log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 				return err
 			}
-			if cfg.Version >= 15 {
-				_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
-				if err != nil {
-					return err
-				}
-				log.WithFields(f).Info("Disabled maintenance mode")
-			}
-			spinner.Increment()
 		}
-		p.Wait()
+	}
+
+	if cfg.Version >= 15 {
+		for _, controller := range addtitionalControllers {
+			_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
+			if err != nil {
+				return err
+			}
+			log.WithFields(f).Info("Disabled maintenance mode")
+		}
 	}
 
 	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
@@ -511,17 +508,24 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				}
 			}
 		}
-
 	}
 
-	if len(additionalAppliances) > 0 {
-		fmt.Fprint(opts.Out, "\nUpgrading additional appliances:\n")
+	// chunks include slices of slices, divided in chunkSize,
+	// the chunkSize represent the number of goroutines used
+	// for pararell upgrades, each chunk the slice has tried to split
+	// the appliances based on site and function to avoid downtime
+	// the chunkSize is determined by the number of active sites.
+	chunkSize := appliancepkg.ActiveSitesInAppliances(additionalAppliances)
+	chunks := appliancepkg.ChunkApplianceGroup(chunkSize, appliancepkg.SplitAppliancesByGroup(additionalAppliances))
+	chunkLength := len(chunks)
 
-		if err := batchUpgrade(ctx, additionalAppliances, false); err != nil {
+	for index, chunk := range chunks {
+		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
+		if err := batchUpgrade(ctx, chunk, false, index+1); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
 		}
 	}
-	fmt.Fprint(opts.Out, "Upgrade complete!\n")
+	fmt.Fprint(opts.Out, "\nUpgrade complete!\n")
 
 	return nil
 }
@@ -547,7 +551,8 @@ Upgrade will be completed in a few ordered steps:
     the upgrade is completed.
     This step will also reboot the upgraded controllers for the upgrade to take effect.
 
- 3. The remaining appliances will be upgraded.
+ 3. The remaining appliances will be upgraded. The additional appliances will be split into
+    batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
 {{ if .Version -}}

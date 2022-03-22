@@ -390,7 +390,8 @@ Upgrade will be completed in a few ordered steps:
     the upgrade is completed.
     This step will also reboot the upgraded controllers for the upgrade to take effect.
 
- 3. The remaining appliances will be upgraded.
+ 3. The remaining appliances will be upgraded. The additional appliances will be split into
+    batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
 The following appliances will be upgraded to version 5.5.4:
@@ -437,7 +438,8 @@ Upgrade will be completed in a few ordered steps:
     the upgrade is completed.
     This step will also reboot the upgraded controllers for the upgrade to take effect.
 
- 3. The remaining appliances will be upgraded.
+ 3. The remaining appliances will be upgraded. The additional appliances will be split into
+    batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
 The following appliances will be upgraded to version 5.5.4:
