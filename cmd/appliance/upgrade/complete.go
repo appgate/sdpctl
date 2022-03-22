@@ -374,7 +374,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		p.Wait()
 	}
 
-	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool, batchNr int) error {
+	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) error {
 		g, ctx := errgroup.WithContext(ctx)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		p := mpb.New(mpb.WithOutput(opts.Out))
@@ -430,7 +430,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if len(addtitionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
-		if err := batchUpgrade(ctx, addtitionalControllers, true, 0); err != nil {
+		if err := batchUpgrade(ctx, addtitionalControllers, true); err != nil {
 			return fmt.Errorf("failed during upgrade of additional controllers %w", err)
 		}
 		log.Info("done waiting for additional controllers upgrade")
@@ -521,8 +521,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	chunkLength := len(chunks)
 
 	for index, chunk := range chunks {
+		batchAppliances := []string{}
+		for _, bapp := range chunk {
+			batchAppliances = append(batchAppliances, bapp.GetName())
+		}
+		log.Infof("[%d] Appliance upgrade chunk includes %v", index, strings.Join(batchAppliances, ", "))
 		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
-		if err := batchUpgrade(ctx, chunk, false, index+1); err != nil {
+		if err := batchUpgrade(ctx, chunk, false); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
 		}
 	}
