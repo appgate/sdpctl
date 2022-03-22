@@ -353,30 +353,34 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("one or more appliances are not ready for upgrade.")
 	}
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
+		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
 		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
 		statusReport := make(chan string)
-		a.UpgradeStatusWorker.Watch(ctx, p, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport)
+		a.UpgradeStatusWorker.Watch(pctx, p, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
-		if err := a.UpgradeComplete(ctx, primaryController.GetId(), true); err != nil {
+		if err := a.UpgradeComplete(pctx, primaryController.GetId(), true); err != nil {
+			pcancel()
 			return err
 		}
 		log.WithField("appliance", primaryController.GetName()).Infof("Waiting for primary controller to reach state %s", state)
-		if err := a.UpgradeStatusWorker.Wait(ctx, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+		if err := a.UpgradeStatusWorker.Wait(pctx, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+			pcancel()
 			return err
 		}
 		close(statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")
+		pcancel()
 		p.Wait()
 	}
 
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool, batchNr int) error {
-		ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
-		defer cancel()
 		g, ctx := errgroup.WithContext(ctx)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		p := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWidth(1))
 		for _, appliance := range appliances {
+			ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
+			defer cancel()
 			i := appliance
 			g.Go(func() error {
 				log.WithField("appliance", i.GetName()).Info("checking if ready")
