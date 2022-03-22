@@ -3,7 +3,7 @@ module github.com/appgate/sdpctl
 go 1.16
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.2
+	github.com/AlecAivazis/survey/v2 v2.3.3
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20211229102702-55d570847963
 	github.com/billgraziano/dpapi v0.4.0
 	github.com/briandowns/spinner v1.18.1
