@@ -186,7 +186,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	appliances := appliancepkg.FilterAppliances(Allappliances, filter)
+	filteredAppliances := appliancepkg.FilterAppliances(Allappliances, filter)
 
 	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host)
 	if err != nil {
@@ -197,6 +197,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	appliances, _, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
+
 	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
 		appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace)
 		if !opts.NoInteractive {
