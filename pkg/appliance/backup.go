@@ -20,15 +20,15 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v7"
+	decor "github.com/vbauerster/mpb/v7/decor"
 	"golang.org/x/sync/errgroup"
 )
 
 var (
 	DefaultBackupDestination = "$HOME/Downloads/appgate/backup"
-	spin                     = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("backup done\n"))
 )
 
 type BackupOpts struct {
@@ -43,6 +43,8 @@ type BackupOpts struct {
 	CurrentFlag   bool
 	Timeout       time.Duration
 	NoInteractive bool
+	FilterFlag    map[string]map[string]string
+	Quiet         bool
 }
 
 type backupHTTPResponse struct {
@@ -51,9 +53,6 @@ type backupHTTPResponse struct {
 }
 
 func PrepareBackup(opts *BackupOpts) error {
-	spin.Writer = opts.Out
-	spin.Suffix = " preparing"
-
 	log.WithField("destination", opts.Destination).Info("Preparing backup")
 
 	if IsOnAppliance() {
@@ -128,7 +127,9 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			"filter":  {},
 			"exclude": {},
 		}
-		filter := util.ParseFilteringFlags(cmd.Flags())
+		if reflect.DeepEqual(opts.FilterFlag, nullFilter) || opts.FilterFlag == nil {
+			opts.FilterFlag = util.ParseFilteringFlags(cmd.Flags())
+		}
 
 		if opts.PrimaryFlag || opts.NoInteractive {
 			pc, err := FindPrimaryController(appliances, hostname)
@@ -136,11 +137,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				log.Warn("failed to determine primary controller")
 			} else {
 				idFilter := []string{}
-				if len(filter["filter"]["id"]) > 0 {
-					idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+				if len(opts.FilterFlag["filter"]["id"]) > 0 {
+					idFilter = strings.Split(opts.FilterFlag["filter"]["id"], FilterDelimiter)
 				}
 				idFilter = append(idFilter, pc.GetId())
-				filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+				opts.FilterFlag["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 			}
 		}
 
@@ -150,30 +151,30 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				log.Warn("failed to determine current controller")
 			} else {
 				idFilter := []string{}
-				if len(filter["filter"]["id"]) > 0 {
-					idFilter = strings.Split(filter["filter"]["id"], FilterDelimiter)
+				if len(opts.FilterFlag["filter"]["id"]) > 0 {
+					idFilter = strings.Split(opts.FilterFlag["filter"]["id"], FilterDelimiter)
 				}
 				idFilter = append(idFilter, cc.GetId())
-				filter["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+				opts.FilterFlag["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
 			}
 		}
 
 		if len(args) > 0 {
 			fInclude := []string{}
-			if len(filter["filter"]["name"]) > 0 {
-				fInclude = strings.Split(filter["filter"]["name"], FilterDelimiter)
+			if len(opts.FilterFlag["filter"]["name"]) > 0 {
+				fInclude = strings.Split(opts.FilterFlag["filter"]["name"], FilterDelimiter)
 			}
 			fInclude = append(fInclude, args...)
-			filter["filter"]["name"] = strings.Join(fInclude, FilterDelimiter)
+			opts.FilterFlag["filter"]["name"] = strings.Join(fInclude, FilterDelimiter)
 		}
 
-		if !reflect.DeepEqual(nullFilter, filter) {
-			toBackup = append(toBackup, FilterAppliances(appliances, filter)...)
+		if !reflect.DeepEqual(nullFilter, opts.FilterFlag) {
+			toBackup = append(toBackup, FilterAppliances(appliances, opts.FilterFlag)...)
 		}
 	}
 
 	if len(toBackup) <= 0 {
-		toBackup, err = backupPrompt(appliances)
+		toBackup, err = BackupPrompt(appliances)
 		if err != nil {
 			return nil, err
 		}
@@ -192,23 +193,27 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 	}
 
-	msg, err := showPrepareSummary(opts.Destination, toBackup)
-	if err != nil {
-		return nil, err
+	if !opts.Quiet {
+		msg, err := showBackupSummary(opts.Destination, toBackup)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Fprintf(opts.Out, "%s\n", msg)
 	}
-	fmt.Fprintf(opts.Out, "%s\n", msg)
 	g, ctx := errgroup.WithContext(ctx)
 	backupCount := len(toBackup)
+	p := mpb.NewWithContext(ctx)
 	log.Infof("Starting backup on %d appliances", backupCount)
-	spin.Start()
-	spin.Suffix = fmt.Sprintf(" Backing up %d appliances...", backupCount)
+	bIDChan := make(chan map[string]string, backupCount)
 	for _, a := range toBackup {
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
+			spinner := util.AddDefaultSpinner(p, appliance.GetName(), "preparing backup", "")
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
+				spinner.Abort(true)
 				respBody := backupHTTPResponse{}
 				decodeErr := json.NewDecoder(httpresponse.Body).Decode(&respBody)
 				if decodeErr != nil {
@@ -218,23 +223,33 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				return err
 			}
 			backupID := res.GetId()
-			backupIDs[appliance.GetId()] = backupID
+			bIDChan <- map[string]string{appliance.GetId(): backupID}
 
 			var status string
 			backoff := 1 * time.Second
 			for status != "done" {
-				status, err = getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
-				if err != nil {
-					return err
-				}
-				// Exponential backoff to not hammer API
-				if backoff > opts.Timeout {
-					return errors.New("Failed backup. Backup status exceeded timeout.")
-				}
 				time.Sleep(backoff)
 				backoff *= 2
+				currentStatus, err := getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
+				if err != nil {
+					spinner.Abort(true)
+					return err
+				}
+				if currentStatus != status {
+					old := spinner
+					old.Increment()
+					spinner = util.AddDefaultSpinner(p, appliance.GetName(), currentStatus, "", mpb.BarQueueAfter(old, false))
+				}
+				status = currentStatus
+				// Exponential backoff to not hammer API
+				if backoff > opts.Timeout {
+					spinner.Abort(true)
+					return errors.New("Failed backup. Backup status exceeded timeout.")
+				}
 			}
-
+			old := spinner
+			old.Increment()
+			spinner = util.AddDefaultSpinner(p, appliance.GetName(), "preparing download", "", mpb.BarQueueAfter(old, false))
 			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
@@ -242,34 +257,64 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				return err
 			}
 			defer file.Close()
+			fileStat, err := file.Stat()
+			if err != nil {
+				return err
+			}
 			dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405")))
 			if err != nil {
 				return err
 			}
 			defer dst.Close()
 
-			_, err = io.Copy(dst, file)
+			spinner.Increment()
+			limitReader := io.LimitReader(file, fileStat.Size())
+			name := filepath.Base(dst.Name())
+			bar := p.AddBar(fileStat.Size(), mpb.BarQueueAfter(spinner, false), mpb.BarWidth(50),
+				mpb.BarFillerOnComplete("downloaded"),
+				mpb.PrependDecorators(
+					decor.OnComplete(decor.Name(" downloading "), " ✓ "),
+					decor.Name(name, decor.WCSyncWidthR),
+				),
+				mpb.AppendDecorators(
+					decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
+					decor.OnComplete(decor.Name(" | "), ""),
+					decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+				),
+			)
+			proxyReader := bar.ProxyReader(limitReader)
+			defer proxyReader.Close()
+
+			_, err = io.Copy(dst, proxyReader)
 			if err != nil {
 				return err
 			}
 
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
-			backupCount--
-			spin.Suffix = fmt.Sprintf(" Backing up %d appliances...", backupCount)
 
 			return nil
 		})
 	}
 
+	go func() {
+		g.Wait()
+		close(bIDChan)
+	}()
+
 	if err := g.Wait(); err != nil {
 		return backupIDs, err
 	}
 
+	for bID := range bIDChan {
+		for key, id := range bID {
+			backupIDs[key] = id
+		}
+	}
+	p.Wait()
 	return backupIDs, nil
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
-	spin.Suffix = " Cleaning up"
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
@@ -295,12 +340,12 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		})
 	}
 	log.Info("Finished cleanup")
+	fmt.Fprint(opts.Out, "Backup complete!\n\n")
 
-	spin.Stop()
 	return g.Wait()
 }
 
-func backupPrompt(appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+func BackupPrompt(appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	names := []string{}
 
 	for _, a := range appliances {
@@ -377,7 +422,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	return enabled, nil
 }
 
-func showPrepareSummary(dest string, appliances []openapi.Appliance) (string, error) {
+func showBackupSummary(dest string, appliances []openapi.Appliance) (string, error) {
 	type ApplianceStub struct {
 		Name string
 		ID   string
@@ -389,10 +434,13 @@ func showPrepareSummary(dest string, appliances []openapi.Appliance) (string, er
 
 	const message = `
 Will perform backup on the following appliances:
-{{ range .Appliances -}}
-    - {{ .Name }}
+
+{{- range .Appliances }}
+ - {{ .Name -}}
 {{ end }}
-Backup destination is {{ .Destination }}`
+
+Backup destination is {{ .Destination }}
+`
 
 	data := SummaryStub{Destination: dest}
 	for _, app := range appliances {

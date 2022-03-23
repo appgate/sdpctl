@@ -6,12 +6,15 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
+	"github.com/vbauerster/mpb/v7"
 )
 
 type WaitForUpgradeStatus interface {
-	Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error
+	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error
+	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string)
 }
 
 type UpgradeStatus struct {
@@ -19,24 +22,29 @@ type UpgradeStatus struct {
 }
 
 var defaultExponentialBackOff = &backoff.ExponentialBackOff{
-	InitialInterval: 10 * time.Second,
-	Multiplier:      1,
-	MaxInterval:     1 * time.Minute,
-	MaxElapsedTime:  10 * time.Minute,
-	Stop:            backoff.Stop,
-	Clock:           backoff.SystemClock,
+	InitialInterval:     1 * time.Second,
+	Multiplier:          2,
+	RandomizationFactor: 0.7,
+	MaxInterval:         10 * time.Second,
+	MaxElapsedTime:      10 * time.Minute,
+	Stop:                backoff.Stop,
+	Clock:               backoff.SystemClock,
 }
 
-func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatus string) backoff.Operation {
+func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatus string, currentStatus chan<- string) backoff.Operation {
 	fields := log.Fields{"appliance": appliance.GetName()}
 	return func() error {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
+			currentStatus <- "rebooting, waiting for appliance to come back online"
 			return err
 		}
 		var s string
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
+			currentStatus <- s
 			if status.GetStatus() == UpgradeStatusFailed {
 				return backoff.Permanent(fmt.Errorf("Upgraded failed on %s - %s", appliance.GetName(), status.GetDetails()))
 			}
@@ -57,17 +65,10 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	}
 }
 
-func (u *UpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Appliance, desiredStatus string) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	for _, i := range appliances {
-		iCtx, iCancel := context.WithTimeout(ctx, timeout)
-		b := backoff.WithContext(defaultExponentialBackOff, ctx)
-		if err := backoff.Retry(u.upgradeStatus(iCtx, i, desiredStatus), b); err != nil {
-			iCancel()
-			return err
-		}
-		iCancel()
+func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error {
+	b := backoff.WithContext(defaultExponentialBackOff, ctx)
+	if err := backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatus, current), b); err != nil {
+		return err
 	}
 	select {
 	case <-ctx.Done():
@@ -78,60 +79,79 @@ func (u *UpgradeStatus) Wait(timeout time.Duration, appliances []openapi.Applian
 }
 
 type WaitForApplianceStatus interface {
-	WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error
+	WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
 }
 
-func (u *ApplianceStatus) WaitForState(timeout time.Duration, appliances []openapi.Appliance, expectedState string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error {
 	b := backoff.WithContext(&backoff.ExponentialBackOff{
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
 		Multiplier:          2,
 		MaxInterval:         20 * time.Second,
-		MaxElapsedTime:      timeout,
+		MaxElapsedTime:      10 * time.Minute,
 		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
 	}, ctx)
 	// initial sleep period
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 	return backoff.Retry(func() error {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
 		stats, _, err := u.Appliance.Stats(ctx)
 		if err != nil {
 			return err
 		}
-		result := make(map[string]int)
-		candidates := make([]openapi.StatsAppliancesListAllOfData, 0)
 
 		for _, stat := range stats.GetData() {
-			for _, appliance := range appliances {
-				if stat.GetId() == appliance.GetId() {
-					candidates = append(candidates, stat)
+			if stat.GetId() == appliance.GetId() {
+				state := stat.GetState()
+				fields := log.Fields{
+					"status":        stat.GetStatus(),
+					"current_state": state,
+					"appliance":     stat.GetName(),
+				}
+				log.WithFields(fields).Infof(
+					"Waiting for state %q",
+					state,
+				)
+				if state != expectedState {
+					log.WithFields(fields).Errorf("never reached desired state")
+					return fmt.Errorf("never reached desired state %s", expectedState)
 				}
 			}
 		}
-		for _, stat := range candidates {
-			fields := log.Fields{
-				"status":        stat.GetStatus(),
-				"current_state": stat.GetState(),
-				"appliance":     stat.GetName(),
-			}
-			log.WithFields(fields).Infof(
-				"Waiting for state %q",
-				stat.GetState(),
-			)
-			if stat.GetState() == expectedState {
-				result[stat.GetId()] = 1
-			}
-		}
-		if len(result) == len(appliances) {
-			log.Infof("reached desired %q on %d appliances", expectedState, len(appliances))
-			return nil
-		}
-		return fmt.Errorf("never reached desired state %s", expectedState)
+		log.WithFields(log.Fields{
+			"appliance":     appliance.GetName(),
+			"current_state": expectedState,
+		}).Info("reached desired state")
+		return nil
 	}, b)
+}
+
+func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
+	go func() {
+		endMsg := "completed"
+		previous := ""
+		name := appliance.GetName()
+		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
+		for status := range current {
+			if status != previous {
+				if status == UpgradeStatusFailed {
+					spinner.Abort(true)
+					break
+				}
+				spinner.Increment()
+				old := spinner
+				spinner = util.AddDefaultSpinner(p, name, status, endMsg, mpb.BarQueueAfter(old, false))
+				if status == endState {
+					spinner.Increment()
+				}
+				previous = status
+			}
+		}
+	}()
 }

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"os"
 	"path"
 	"regexp"
@@ -21,12 +20,11 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/briandowns/spinner"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
-	"github.com/mitchellh/ioprogress"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -45,8 +43,6 @@ type prepareUpgradeOptions struct {
 	timeout       time.Duration
 }
 
-var spin = spinner.New(spinner.CharSets[33], 100*time.Millisecond, spinner.WithFinalMSG("done\n"))
-
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	f.Config.Timeout = 300
@@ -55,6 +51,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		timeout:   DefaultTimeout,
 	}
 	var prepareCmd = &cobra.Command{
 		Use:   "prepare",
@@ -159,10 +156,6 @@ const (
 var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run sdpctl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
-	spin.Writer = opts.Out
-	spin.Suffix = " preparing image"
-	defer spin.Stop()
-
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
@@ -171,7 +164,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	if a.UpgradeStatusWorker == nil {
 		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
 			Appliance: a,
@@ -183,9 +177,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
 	}
 	filter := util.ParseFilteringFlags(cmd.Flags())
-	listCtx, listCancel := context.WithTimeout(ctx, opts.timeout)
-	defer listCancel()
-	Allappliances, err := a.List(listCtx, nil)
+	Allappliances, err := a.List(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -200,9 +192,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	statCtx, statCancel := context.WithTimeout(ctx, opts.timeout)
-	defer statCancel()
-	initialStats, _, err := a.Stats(statCtx)
+	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
 	}
@@ -277,7 +267,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	spin.Start()
 
 	// Step 1
 	shouldUpload := false
@@ -305,46 +294,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
-		fileStat, err := imageFile.Stat()
-		if err != nil {
+		if err := a.UploadFile(ctx, imageFile); err != nil {
 			return err
 		}
-		content, err := io.ReadAll(imageFile)
-		if err != nil {
-			return err
-		}
-
-		fs := fileStat.Size()
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", fileStat.Name())
-		if err != nil {
-			return err
-		}
-		part.Write(content)
-		if err = writer.Close(); err != nil {
-			return err
-		}
-		spin.Lock()
-		fmt.Print("\r")
-		input := io.NopCloser(&ioprogress.Reader{
-			Reader: body,
-			Size:   fs,
-			DrawFunc: ioprogress.DrawTerminalf(opts.Out, func(p, t int64) string {
-				return fmt.Sprintf(
-					"Uploading %s: %s",
-					imageFile.Name(),
-					ioprogress.DrawTextFormatBytes(p, t))
-			}),
-		})
-		headers := map[string]string{
-			"Content-Type":        writer.FormDataContentType(),
-			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
-		}
-		if err := a.UploadFile(ctx, input, headers); err != nil {
-			return err
-		}
-		spin.Unlock()
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
@@ -386,6 +338,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return nil
 		})
 
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		// consume Prepare with nWorkers
 		finished := make(chan openapi.Appliance)
 		for i := 0; i < opts.workers; i++ {
@@ -394,16 +347,24 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					appCtx, appCancel := context.WithTimeout(context.Background(), opts.timeout)
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
+					statusReport := make(chan string)
+					a.UpgradeStatusWorker.Watch(ctx, p, appliance, appliancepkg.UpgradeStatusReady, statusReport)
 					if err := a.PrepareFileOn(appCtx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						appCancel()
 						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(err)
 						return err
 					}
-					if err := a.UpgradeStatusWorker.Wait(opts.timeout, []openapi.Appliance{appliance}, appliancepkg.UpgradeStatusReady); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusDownloading, statusReport); err != nil {
 						appCancel()
-						errMsg := "Timeout exceeded when waiting for correct appliance upgrade state"
-						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(errMsg)
-						return fmt.Errorf("%s. See log for details", errMsg)
+						return err
+					}
+					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusVerifying, statusReport); err != nil {
+						appCancel()
+						return err
+					}
+					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusReady, statusReport); err != nil {
+						appCancel()
+						return err
 					}
 					select {
 					case finished <- appliance:
@@ -411,6 +372,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						appCancel()
 						return appCtx.Err()
 					}
+					close(statusReport)
 					appCancel()
 				}
 
@@ -431,18 +393,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := g.Wait(); err != nil {
 			return nil, err
 		}
+		p.Wait()
 		return r, nil
 	}
-	preparedAppliances, err := prepare(ctx, remoteFilePath, appliances)
-	if err != nil {
+
+	fmt.Fprint(opts.Out, "\nPreparing image on appliances:\n")
+	if _, err := prepare(ctx, remoteFilePath, appliances); err != nil {
 		return err
-	}
-	// Blocking function that checks all appliances upgrade status to verify that
-	// everyone reach desired state of ready.
-	if err := a.UpgradeStatusWorker.Wait(opts.timeout, preparedAppliances, appliancepkg.UpgradeStatusReady); err != nil {
-		errMsg := "Timeout exceeded while waiting for ready state"
-		log.WithError(err).Error(errMsg)
-		return fmt.Errorf("%s. See log for details", errMsg)
 	}
 
 	if !opts.remoteImage {

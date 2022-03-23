@@ -215,6 +215,15 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 			r = append(r, chunks[index])
 		}
 	}
+
+	for i, c := range r {
+		batchAppliances := []string{}
+		for _, bapp := range c {
+			batchAppliances = append(batchAppliances, bapp.GetName())
+		}
+		logrus.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
+	}
+
 	return r
 }
 
@@ -266,7 +275,7 @@ func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsApplian
 			return version.NewVersion(s.GetVersion())
 		}
 	}
-	return nil, fmt.Errorf("could not determine appliance version of the primary controller %s", appliance.GetName())
+	return nil, fmt.Errorf("could not determine appliance version %s", appliance.GetName())
 }
 
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
