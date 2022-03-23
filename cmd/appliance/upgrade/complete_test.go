@@ -358,23 +358,36 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 
 func TestPrintCompleteSummary(t *testing.T) {
 	tests := []struct {
-		name       string
-		upgradable []openapi.Appliance
-		skipped    []openapi.Appliance
-		backup     []openapi.Appliance
-		toVersion  string
-		expect     string
+		name                  string
+		primaryController     *openapi.Appliance
+		additionalControllers []openapi.Appliance
+		chunks                [][]openapi.Appliance
+		skipped               []openapi.Appliance
+		backup                []openapi.Appliance
+		toVersion             string
+		expect                string
 	}{
 		{
 			name: "all upgrade no skip",
-			upgradable: []openapi.Appliance{
+			primaryController: &openapi.Appliance{
+				Name: "primary-controller",
+			},
+			additionalControllers: []openapi.Appliance{
 				{
-					Name: "primary-controller",
-				},
-				{
-					Name: "gateway",
+					Name: "secondary-controller",
 				},
 			},
+			chunks: [][]openapi.Appliance{
+				{
+					{
+						Name: "gateway",
+					},
+					{
+						Name: "gateway-2",
+					},
+				},
+			},
+			skipped:   []openapi.Appliance{},
 			toVersion: "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
@@ -395,19 +408,33 @@ Upgrade will be completed in a few ordered steps:
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
 The following appliances will be upgraded to version 5.5.4:
- - primary-controller
- - gateway
+  Primary Controller: primary-controller
+
+  Additional Controllers:
+  - secondary-controller
+
+  Additional Appliances:
+    Batch #1:
+    - gateway
+    - gateway-2
+
 
 `,
 		},
 		{
 			name: "two upgrade two skipped",
-			upgradable: []openapi.Appliance{
+			primaryController: &openapi.Appliance{
+				Name: "primary-controller",
+			},
+			additionalControllers: []openapi.Appliance{},
+			chunks: [][]openapi.Appliance{
 				{
-					Name: "primary-controller",
-				},
-				{
-					Name: "gateway",
+					{
+						Name: "gateway",
+					},
+					{
+						Name: "gateway-2",
+					},
 				},
 			},
 			skipped: []openapi.Appliance{
@@ -443,15 +470,19 @@ Upgrade will be completed in a few ordered steps:
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
 The following appliances will be upgraded to version 5.5.4:
- - primary-controller
- - gateway
+  Primary Controller: primary-controller
+
+  Additional Appliances:
+    Batch #1:
+    - gateway
+    - gateway-2
 
 Appliances that will be skipped:
- - secondary-controller
- - additional-controller
+  - secondary-controller
+  - additional-controller
 
 Appliances that will be backed up before completing upgrade:
- - primary-controller
+  - primary-controller
 
 `,
 		},
@@ -461,7 +492,7 @@ Appliances that will be backed up before completing upgrade:
 		t.Run(tt.name, func(t *testing.T) {
 			var b bytes.Buffer
 			version, _ := version.NewVersion(tt.toVersion)
-			res, err := printCompleteSummary(&b, tt.upgradable, tt.skipped, tt.backup, version)
+			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.chunks, tt.skipped, tt.backup, version)
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}

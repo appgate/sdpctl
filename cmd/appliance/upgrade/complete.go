@@ -222,7 +222,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
-	addtitionalControllers := groups[appliancepkg.FunctionController]
+	additionalControllers := []openapi.Appliance{}
+	additionalAppliances := []openapi.Appliance{}
+	for function, appliances := range groups {
+		if function == appliancepkg.FunctionController {
+			additionalControllers = appliances
+			continue
+		}
+		additionalAppliances = appliances
+	}
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
@@ -232,14 +240,27 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
-	toUpgrade := appliances
-	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
-		toUpgrade = append(toUpgrade, *primaryController)
-	}
 
-	msg, err := printCompleteSummary(opts.Out, toUpgrade, offline, toBackup, newVersion)
-	if err != nil {
-		return err
+	// chunks include slices of slices, divided in chunkSize,
+	// the chunkSize represent the number of goroutines used
+	// for pararell upgrades, each chunk the slice has tried to split
+	// the appliances based on site and function to avoid downtime
+	// the chunkSize is determined by the number of active sites.
+	chunkSize := appliancepkg.ActiveSitesInAppliances(additionalAppliances)
+	chunks := appliancepkg.ChunkApplianceGroup(chunkSize, appliancepkg.SplitAppliancesByGroup(additionalAppliances))
+	chunkLength := len(chunks)
+
+	msg := ""
+	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
+		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, chunks, offline, toBackup, newVersion)
+		if err != nil {
+			return err
+		}
+	} else {
+		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, chunks, offline, toBackup, newVersion)
+		if err != nil {
+			return err
+		}
 	}
 	fmt.Fprint(opts.Out, msg)
 	if !opts.NoInteractive {
@@ -293,7 +314,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if disableAdditionalControllers {
 		fmt.Fprint(opts.Out, "\nDisabling controllers:\n")
 		p := mpb.New(mpb.WithOutput(opts.Out))
-		for _, controller := range addtitionalControllers {
+		for _, controller := range additionalControllers {
 			spinner := util.AddDefaultSpinner(p, controller.GetName(), "disabling", "disabled")
 			f := log.Fields{"appliance": controller.GetName()}
 			log.WithFields(f).Info("Disabling controller function")
@@ -326,8 +347,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	log.Info("all controllers are in correct state")
 	p.Wait()
 
-	if cfg.Version >= 15 && len(addtitionalControllers) > 0 {
-		for _, controller := range addtitionalControllers {
+	if cfg.Version >= 15 && len(additionalControllers) > 0 {
+		for _, controller := range additionalControllers {
 			f := log.Fields{"controller": controller.GetName()}
 			log.WithFields(f).Info("enabling maintenance mode")
 			id, err := a.EnableMaintenanceMode(ctx, controller.GetId())
@@ -432,9 +453,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return nil
 	}
 
-	if len(addtitionalControllers) > 0 {
+	if len(additionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
-		if err := batchUpgrade(ctx, addtitionalControllers, true); err != nil {
+		if err := batchUpgrade(ctx, additionalControllers, true); err != nil {
 			return fmt.Errorf("failed during upgrade of additional controllers %w", err)
 		}
 		log.Info("done waiting for additional controllers upgrade")
@@ -467,7 +488,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// re-enable additional controllers sequentially, one at the time
 	if disableAdditionalControllers {
 		fmt.Fprint(opts.Out, "\nRe-enabling controllers:\n")
-		for _, controller := range addtitionalControllers {
+		for _, controller := range additionalControllers {
 			f := log.Fields{"controller": controller.GetName()}
 			log.WithFields(f).Info("Enabling controller function")
 			if err := backoffEnableController(controller); err != nil {
@@ -490,7 +511,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	if cfg.Version >= 15 {
-		for _, controller := range addtitionalControllers {
+		for _, controller := range additionalControllers {
 			_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
 			if err != nil {
 				return err
@@ -499,37 +520,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	readyForUpgrade, err := a.UpgradeStatusMap(ctx, appliances)
-	if err != nil {
-		return err
-	}
-
-	additionalAppliances := make([]openapi.Appliance, 0)
-	for id, result := range readyForUpgrade {
-		for _, appliance := range appliances {
-			if result.Status == appliancepkg.UpgradeStatusReady || result.Status == appliancepkg.UpgradeStatusSuccess {
-				if id == appliance.GetId() {
-					additionalAppliances = append(additionalAppliances, appliance)
-				}
-			}
-		}
-	}
-
-	// chunks include slices of slices, divided in chunkSize,
-	// the chunkSize represent the number of goroutines used
-	// for pararell upgrades, each chunk the slice has tried to split
-	// the appliances based on site and function to avoid downtime
-	// the chunkSize is determined by the number of active sites.
-	chunkSize := appliancepkg.ActiveSitesInAppliances(additionalAppliances)
-	chunks := appliancepkg.ChunkApplianceGroup(chunkSize, appliancepkg.SplitAppliancesByGroup(additionalAppliances))
-	chunkLength := len(chunks)
-
 	for index, chunk := range chunks {
-		batchAppliances := []string{}
-		for _, bapp := range chunk {
-			batchAppliances = append(batchAppliances, bapp.GetName())
-		}
-		log.Infof("[%d] Appliance upgrade chunk includes %v", index, strings.Join(batchAppliances, ", "))
 		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunk, false); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
@@ -540,12 +531,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	return nil
 }
 
-func printCompleteSummary(out io.Writer, upgradeable, skipped, backup []openapi.Appliance, toVersion *version.Version) (string, error) {
+func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers []openapi.Appliance, chunks [][]openapi.Appliance, skipped, backup []openapi.Appliance, toVersion *version.Version) (string, error) {
 	type tplStub struct {
-		Upgradeable []string
-		Skipped     []string
-		Backup      []string
-		Version     string
+		PrimaryController     string
+		AdditionalControllers []string
+		Chunks                map[int][]string
+		Skipped               []string
+		Backup                []string
+		Version               string
 	}
 	completeSummaryTpl := `
 UPGRADE COMPLETE SUMMARY
@@ -565,28 +558,40 @@ Upgrade will be completed in a few ordered steps:
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
-{{ if .Version -}}
-The following appliances will be upgraded to version {{ .Version }}:
-{{- end}}
-{{- range .Upgradeable }}
- - {{ . -}}
+{{ if .Version -}}The following appliances will be upgraded to version {{ .Version }}:{{ else }}The following appliances will be upgraded:{{ end }}
+{{- with .PrimaryController }}
+  Primary Controller: {{ . }}
 {{ end }}
-{{ with .Skipped }}
-Appliances that will be skipped:
-{{- range . }}
- - {{ . -}}
-{{- end }}
-{{ end -}}
-{{ with .Backup }}
-Appliances that will be backed up before completing upgrade:
-{{- range . }}
- - {{ . -}}
-{{- end }}
+{{- with .AdditionalControllers }}
+  Additional Controllers:{{ range . }}
+  - {{ . }}{{ end }}
+{{ end }}
+{{- if .Chunks }}
+  Additional Appliances:{{ range $i, $v := .Chunks }}
+    Batch #{{$i}}:{{ range $v }}
+    - {{.}}{{end}}{{ end }}
+{{ end }}
+{{- with .Skipped }}
+Appliances that will be skipped:{{ range . }}
+  - {{ . }}{{ end }}
+{{ end }}
+{{ with .Backup -}}
+Appliances that will be backed up before completing upgrade:{{ range . }}
+  - {{ . }}{{ end }}
 {{ end }}
 `
-	toUpgrade := []string{}
-	for _, a := range upgradeable {
-		toUpgrade = append(toUpgrade, a.GetName())
+	additionalControllerNames := []string{}
+	for _, a := range additionalControllers {
+		additionalControllerNames = append(additionalControllerNames, a.GetName())
+	}
+	upgradeChunks := map[int][]string{}
+	for i, chunk := range chunks {
+		chunkSlice := []string{}
+		for _, a := range chunk {
+			chunkSlice = append(chunkSlice, a.GetName())
+		}
+		index := i + 1
+		upgradeChunks[index] = chunkSlice
 	}
 	toSkip := []string{}
 	for _, a := range skipped {
@@ -597,9 +602,13 @@ Appliances that will be backed up before completing upgrade:
 		toBackup = append(toBackup, a.GetName())
 	}
 	tplData := tplStub{
-		Upgradeable: toUpgrade,
-		Skipped:     toSkip,
-		Backup:      toBackup,
+		AdditionalControllers: additionalControllerNames,
+		Chunks:                upgradeChunks,
+		Skipped:               toSkip,
+		Backup:                toBackup,
+	}
+	if primaryController != nil {
+		tplData.PrimaryController = primaryController.GetName()
 	}
 	if toVersion != nil {
 		tplData.Version = toVersion.String()

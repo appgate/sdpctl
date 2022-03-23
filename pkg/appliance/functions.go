@@ -215,6 +215,15 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 			r = append(r, chunks[index])
 		}
 	}
+
+	for i, c := range r {
+		batchAppliances := []string{}
+		for _, bapp := range c {
+			batchAppliances = append(batchAppliances, bapp.GetName())
+		}
+		logrus.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
+	}
+
 	return r
 }
 
