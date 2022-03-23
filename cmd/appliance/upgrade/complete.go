@@ -520,6 +520,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
+	// log the appliance names of the appliances that are being upgraded simultaneously.
+	for index, slice := range chunks {
+		var names []string
+		for _, a := range slice {
+			names = append(names, a.GetName())
+		}
+		log.Infof("[%d] Appliance Upgrade chunk includes %v", index+1, strings.Join(names, ", "))
+	}
+
 	for index, chunk := range chunks {
 		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunk, false); err != nil {
