@@ -182,12 +182,6 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:       "upgrade workers error",
-			cli:        "upgrade complete --throttle invalid",
-			wantErr:    true,
-			wantErrOut: regexp.MustCompile("invalid syntax"),
-		},
-		{
 			name: "first controller failed",
 			cli:  "upgrade complete --backup=false --no-interactive",
 			httpStubs: []httpmock.Stub{
