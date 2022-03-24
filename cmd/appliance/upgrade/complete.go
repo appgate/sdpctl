@@ -328,6 +328,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				log.WithFields(f).Error("never reached desired state")
 				return err
 			}
+			spinner.Increment()
 		}
 		p.Wait()
 	}
