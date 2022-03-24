@@ -235,9 +235,11 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 func applianceGroupHash(appliance openapi.Appliance) int {
 	var buf bytes.Buffer
 	if v, ok := appliance.GetControllerOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "controller-", v.GetEnabled()))
-		// we want to group all controllers to the same group
-		return hashcode.String(buf.String())
+		if enabled := v.GetEnabled(); enabled {
+			buf.WriteString(fmt.Sprintf("%s-%t", "controller-", enabled))
+			// we want to group all controllers to the same group
+			return hashcode.String(buf.String())
+		}
 	}
 	if len(appliance.GetSite()) > 0 {
 		buf.WriteString(appliance.GetSite())
