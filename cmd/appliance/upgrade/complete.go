@@ -229,7 +229,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			additionalControllers = appliances
 			continue
 		}
-		additionalAppliances = appliances
+		additionalAppliances = append(additionalAppliances, appliances...)
 	}
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
