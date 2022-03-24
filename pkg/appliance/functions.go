@@ -158,6 +158,10 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
+	logrus.WithFields(logrus.Fields{
+		"chunkSize":       chunkSize,
+		"applianceGroups": applianceGroups,
+	}).Infof("Group input log")
 	if chunkSize == 0 {
 		chunkSize = 2
 	}
