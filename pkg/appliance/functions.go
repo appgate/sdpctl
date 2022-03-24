@@ -161,7 +161,7 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 	logrus.WithFields(logrus.Fields{
 		"chunkSize":       chunkSize,
 		"applianceGroups": applianceGroups,
-	}).Infof("Group input log")
+	}).Debug("Group input log")
 	if chunkSize == 0 {
 		chunkSize = 2
 	}
