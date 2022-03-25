@@ -1111,12 +1111,15 @@ func TestApplianceGroupHash(t *testing.T) {
 				Connector: &openapi.ApplianceAllOfConnector{
 					Enabled: openapi.PtrBool(false),
 				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
 				Controller: &openapi.ApplianceAllOfController{
 					Enabled: openapi.PtrBool(false),
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=false&connector=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=false&connector=false&portal=false")),
 		},
 		{
 			name: "log server enabled",
@@ -1133,12 +1136,15 @@ func TestApplianceGroupHash(t *testing.T) {
 				Connector: &openapi.ApplianceAllOfConnector{
 					Enabled: openapi.PtrBool(false),
 				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
 				Controller: &openapi.ApplianceAllOfController{
 					Enabled: openapi.PtrBool(false),
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=true&gateway=false&connector=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=true&gateway=false&connector=false&portal=false")),
 		},
 		{
 			name: "gateway enabled",
@@ -1155,12 +1161,15 @@ func TestApplianceGroupHash(t *testing.T) {
 				Connector: &openapi.ApplianceAllOfConnector{
 					Enabled: openapi.PtrBool(false),
 				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
 				Controller: &openapi.ApplianceAllOfController{
 					Enabled: openapi.PtrBool(false),
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=true&connector=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=true&connector=false&portal=false")),
 		},
 		{
 			name: "connector enabled",
@@ -1177,12 +1186,65 @@ func TestApplianceGroupHash(t *testing.T) {
 				Connector: &openapi.ApplianceAllOfConnector{
 					Enabled: openapi.PtrBool(true),
 				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
 				Controller: &openapi.ApplianceAllOfController{
 					Enabled: openapi.PtrBool(false),
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=true")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=true&portal=false")),
+		},
+		{
+			name: "portal enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(false),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(true),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=false&portal=true")),
+		},
+		{
+			name: "gateway and log_forwarder enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(true),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(true),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=true&connector=false&portal=false")),
 		},
 		{
 			name: "controller enabled",
@@ -1197,6 +1259,9 @@ func TestApplianceGroupHash(t *testing.T) {
 					Enabled: openapi.PtrBool(false),
 				},
 				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
 					Enabled: openapi.PtrBool(false),
 				},
 				Controller: &openapi.ApplianceAllOfController{
