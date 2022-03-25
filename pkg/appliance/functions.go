@@ -158,6 +158,10 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
+	logrus.WithFields(logrus.Fields{
+		"chunkSize":       chunkSize,
+		"applianceGroups": applianceGroups,
+	}).Debug("Group input log")
 	if chunkSize == 0 {
 		chunkSize = 2
 	}
@@ -231,30 +235,38 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 func applianceGroupHash(appliance openapi.Appliance) int {
 	var buf bytes.Buffer
 	if v, ok := appliance.GetControllerOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "controller-", v.GetEnabled()))
-		// we want to group all controllers to the same group
-		return hashcode.String(buf.String())
+		if enabled := v.GetEnabled(); enabled {
+			buf.WriteString(fmt.Sprintf("%s=%t", "controller", enabled))
+			// we want to group all controllers to the same group
+			return hashcode.String(buf.String())
+		}
 	}
 	if len(appliance.GetSite()) > 0 {
 		buf.WriteString(appliance.GetSite())
 	}
 	if v, ok := appliance.GetLogForwarderOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "log_forwarder-", v.GetEnabled()))
+		buf.WriteString(fmt.Sprintf("%s=%t", "&log_forwarder", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetLogServerOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "log_server-", v.GetEnabled()))
+		buf.WriteString(fmt.Sprintf("%s=%t", "&log_server", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetGatewayOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "gateway-", v.GetEnabled()))
+		buf.WriteString(fmt.Sprintf("%s=%t", "&gateway", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetConnectorOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "connector-", v.GetEnabled()))
+		buf.WriteString(fmt.Sprintf("%s=%t", "&connector", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetPortalOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s-%t", "portal-", v.GetEnabled()))
+		buf.WriteString(fmt.Sprintf("%s=%t", "&portal", v.GetEnabled()))
 	}
 
-	return hashcode.String(buf.String())
+	str := buf.String()
+	hash := hashcode.String(str)
+	logrus.WithFields(logrus.Fields{
+		"string":   str,
+		"hashcode": hash,
+	}).Debug("generated hash group")
+	return hash
 }
 
 func ActiveSitesInAppliances(slice []openapi.Appliance) int {

@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 )
 
@@ -689,7 +691,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 				},
 			},
 			want: map[int][]openapi.Appliance{
-				2441219521: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=true")): {
 					{
 						Name: "g1",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -701,7 +703,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 						Site: sites["A"],
 					},
 				},
-				675122154: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["B"], "&gateway=true")): {
 					{
 						Name: "g2",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -713,7 +715,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 						Site: sites["B"],
 					},
 				},
-				1218635433: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["C"], "&gateway=true")): {
 					{
 						Name: "g3",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -894,7 +896,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 				},
 			},
 			want: map[int][]openapi.Appliance{
-				276419119: {
+				hashcode.String("controller=true"): {
 					// all controllers
 					{
 						Name: "c1",
@@ -928,7 +930,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// gateway site A
-				2441219521: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=true")): {
 					{
 						Name: "g1",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -941,7 +943,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// disabled gateway no site assigned
-				4179922720: {
+				hashcode.String(fmt.Sprintf("%s%s", "", "&gateway=false")): {
 					{
 						Name: "g5",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -954,7 +956,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// logforwader site A
-				1406505277: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&log_forwarder=true")): {
 					{
 						Name: "lf3",
 						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
@@ -967,7 +969,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// connector site C
-				735744990: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["C"], "&connector=true")): {
 					{
 						Name: "cc2",
 						Connector: &openapi.ApplianceAllOfConnector{
@@ -980,7 +982,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// gateways site B
-				675122154: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["B"], "&gateway=true")): {
 					{
 						Name: "g2",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -1003,7 +1005,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// Enabled gateway no site
-				429826475: {
+				hashcode.String(fmt.Sprintf("%s%s", "", "&gateway=true")): {
 					{
 						Name: "g4",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -1016,7 +1018,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// connector site B
-				3280859746: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["B"], "&connector=true")): {
 					{
 						Name: "cc1",
 						Connector: &openapi.ApplianceAllOfConnector{
@@ -1029,7 +1031,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// logforwaders site B
-				2407971497: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["B"], "&log_forwarder=true")): {
 					{
 						Name: "lf1",
 						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
@@ -1052,7 +1054,7 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					},
 				},
 				// enabled gateways site C
-				1218635433: {
+				hashcode.String(fmt.Sprintf("%s%s", *sites["C"], "&gateway=true")): {
 					{
 						Name: "g6",
 						Gateway: &openapi.ApplianceAllOfGateway{
@@ -1082,6 +1084,220 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 			got := SplitAppliancesByGroup(tt.args.appliances)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SplitAppliancesByGroup() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestApplianceGroupHash(t *testing.T) {
+	site := openapi.PtrString(uuid.New().String())
+	tests := []struct {
+		name      string
+		appliance openapi.Appliance
+		expect    int
+	}{
+		{
+			name: "log forwarder enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(true),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(false),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=false&connector=false&portal=false")),
+		},
+		{
+			name: "log server enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(true),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(false),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=true&gateway=false&connector=false&portal=false")),
+		},
+		{
+			name: "gateway enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(true),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=true&connector=false&portal=false")),
+		},
+		{
+			name: "connector enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(false),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(true),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=true&portal=false")),
+		},
+		{
+			name: "portal enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(false),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(true),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=false&portal=true")),
+		},
+		{
+			name: "gateway and log_forwarder enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(true),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(true),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(false),
+				},
+				Site: site,
+			},
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=true&connector=false&portal=false")),
+		},
+		{
+			name: "controller enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(false),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Portal: &openapi.Portal{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(true),
+				},
+				Site: site,
+			},
+			expect: hashcode.String("controller=true"),
+		},
+		{
+			name: "controller and gateway enabled",
+			appliance: openapi.Appliance{
+				LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+					Enabled: openapi.PtrBool(false),
+				},
+				LogServer: &openapi.ApplianceAllOfLogServer{
+					Enabled: openapi.PtrBool(false),
+				},
+				Gateway: &openapi.ApplianceAllOfGateway{
+					Enabled: openapi.PtrBool(true),
+				},
+				Connector: &openapi.ApplianceAllOfConnector{
+					Enabled: openapi.PtrBool(false),
+				},
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(true),
+				},
+				Site: site,
+			},
+			expect: hashcode.String("controller=true"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if result := applianceGroupHash(tt.appliance); result != tt.expect {
+				t.Errorf("FAILED! Expected: %d, Got: %d", tt.expect, result)
 			}
 		})
 	}

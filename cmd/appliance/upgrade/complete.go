@@ -229,7 +229,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			additionalControllers = appliances
 			continue
 		}
-		additionalAppliances = appliances
+		additionalAppliances = append(additionalAppliances, appliances...)
+	}
+	for _, ctrl := range additionalControllers {
+		for i, app := range additionalAppliances {
+			if app.GetId() == ctrl.GetId() {
+				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
+			}
+		}
 	}
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
@@ -263,6 +270,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	fmt.Fprint(opts.Out, msg)
+
 	if !opts.NoInteractive {
 		if err = prompt.AskConfirmation(); err != nil {
 			return err
@@ -328,6 +336,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				log.WithFields(f).Error("never reached desired state")
 				return err
 			}
+			spinner.Increment()
 		}
 		p.Wait()
 	}

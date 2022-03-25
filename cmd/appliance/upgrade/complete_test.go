@@ -62,11 +62,11 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
