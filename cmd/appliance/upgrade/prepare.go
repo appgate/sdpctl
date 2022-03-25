@@ -354,28 +354,23 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					a.UpgradeStatusWorker.Watch(ctx, p, appliance, appliancepkg.UpgradeStatusReady, statusReport)
 					if err := a.PrepareFileOn(appCtx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						appCancel()
+						close(statusReport)
 						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(err)
-						return err
-					}
-					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusDownloading, statusReport); err != nil {
-						appCancel()
-						return err
-					}
-					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusVerifying, statusReport); err != nil {
-						appCancel()
 						return err
 					}
 					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusReady, statusReport); err != nil {
 						appCancel()
+						close(statusReport)
 						return err
 					}
 					select {
 					case finished <- appliance:
+						close(statusReport)
 					case <-appCtx.Done():
 						appCancel()
+						close(statusReport)
 						return appCtx.Err()
 					}
-					close(statusReport)
 					appCancel()
 				}
 
