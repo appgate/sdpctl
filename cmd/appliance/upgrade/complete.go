@@ -394,11 +394,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		a.UpgradeStatusWorker.Watch(pctx, p, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
 		if err := a.UpgradeComplete(pctx, primaryController.GetId(), true); err != nil {
+			close(statusReport)
 			pcancel()
 			return err
 		}
 		log.WithField("appliance", primaryController.GetName()).Infof("Waiting for primary controller to reach state %s", state)
 		if err := a.UpgradeStatusWorker.Wait(pctx, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+			close(statusReport)
 			pcancel()
 			return err
 		}
