@@ -231,6 +231,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		additionalAppliances = append(additionalAppliances, appliances...)
 	}
+	for _, ctrl := range additionalControllers {
+		for i, app := range additionalAppliances {
+			if app.GetId() == ctrl.GetId() {
+				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
+			}
+		}
+	}
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
@@ -263,6 +270,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	fmt.Fprint(opts.Out, msg)
+
 	if !opts.NoInteractive {
 		if err = prompt.AskConfirmation(); err != nil {
 			return err
