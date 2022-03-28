@@ -222,18 +222,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
-	additionalControllers := []openapi.Appliance{}
-	additionalAppliances := []openapi.Appliance{}
-	for function, appliances := range groups {
-		if function == appliancepkg.FunctionController {
-			additionalControllers = appliances
-			continue
-		}
-		additionalAppliances = append(additionalAppliances, appliances...)
-	}
-	for _, ctrl := range additionalControllers {
+	additionalControllers := groups[appliancepkg.FunctionController]
+	additionalAppliances := appliances
+	for _, ctrls := range additionalControllers {
 		for i, app := range additionalAppliances {
-			if app.GetId() == ctrl.GetId() {
+			if ctrls.GetId() == app.GetId() {
 				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
 			}
 		}
