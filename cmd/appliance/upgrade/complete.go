@@ -459,8 +459,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if len(additionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
-		if err := batchUpgrade(ctx, additionalControllers, true); err != nil {
-			return fmt.Errorf("failed during upgrade of additional controllers %w", err)
+		for _, ctrl := range additionalControllers {
+			if err := batchUpgrade(ctx, []openapi.Appliance{ctrl}, true); err != nil {
+				return fmt.Errorf("failed during upgrade of additional controllers %w", err)
+			}
 		}
 		log.Info("done waiting for additional controllers upgrade")
 	}
