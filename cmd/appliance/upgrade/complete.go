@@ -121,6 +121,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 
+	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, host)
+	if err != nil {
+		return err
+	}
+	currentController, err := appliancepkg.FindCurrentController(rawAppliances, host)
+	if err != nil {
+		return err
+	}
+
 	// if backup is default value (false) and user hasn't explicitly stated the flag, ask if user wants to backup
 	flagIsChanged := cmd.Flags().Changed("backup")
 	toBackup := []openapi.Appliance{}
@@ -145,17 +154,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 
-			toBackup, err = appliancepkg.BackupPrompt(rawAppliances)
+			toBackup, err = appliancepkg.BackupPrompt(rawAppliances, []openapi.Appliance{*currentController})
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, host)
-	if err != nil {
-		return err
-	}
 	allAppliances := appliancepkg.FilterAppliances(rawAppliances, filter)
 	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
