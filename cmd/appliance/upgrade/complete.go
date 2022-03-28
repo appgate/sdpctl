@@ -222,18 +222,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
-	additionalControllers := []openapi.Appliance{}
-	additionalAppliances := []openapi.Appliance{}
-	for function, appliances := range groups {
-		if function == appliancepkg.FunctionController {
-			additionalControllers = appliances
-			continue
-		}
-		additionalAppliances = append(additionalAppliances, appliances...)
-	}
-	for _, ctrl := range additionalControllers {
+	additionalControllers := groups[appliancepkg.FunctionController]
+	additionalAppliances := appliances
+	for _, ctrls := range additionalControllers {
 		for i, app := range additionalAppliances {
-			if app.GetId() == ctrl.GetId() {
+			if ctrls.GetId() == app.GetId() {
 				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
 			}
 		}
@@ -466,8 +459,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if len(additionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
-		if err := batchUpgrade(ctx, additionalControllers, true); err != nil {
-			return fmt.Errorf("failed during upgrade of additional controllers %w", err)
+		for _, ctrl := range additionalControllers {
+			if err := batchUpgrade(ctx, []openapi.Appliance{ctrl}, true); err != nil {
+				return fmt.Errorf("failed during upgrade of additional controllers %w", err)
+			}
 		}
 		log.Info("done waiting for additional controllers upgrade")
 	}
