@@ -145,7 +145,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 
-			toBackup, err = appliancepkg.BackupPrompt(rawAppliances)
+			toBackup, err = appliancepkg.BackupPrompt(rawAppliances, []openapi.Appliance{})
 			if err != nil {
 				return err
 			}
@@ -239,6 +239,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	newVersion, err := appliancepkg.GetVersion(primaryControllerUpgradeStatus.GetDetails())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
+	}
+
+	if primaryControllerUpgradeStatus.GetStatus() != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
+		return fmt.Errorf("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
 	}
 
 	// chunks include slices of slices, divided in chunkSize,

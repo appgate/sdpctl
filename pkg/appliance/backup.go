@@ -174,7 +174,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 
 	if len(toBackup) <= 0 {
-		toBackup, err = BackupPrompt(appliances)
+		toBackup, err = BackupPrompt(appliances, []openapi.Appliance{})
 		if err != nil {
 			return nil, err
 		}
@@ -345,17 +345,22 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	return g.Wait()
 }
 
-func BackupPrompt(appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Appliance) ([]openapi.Appliance, error) {
 	names := []string{}
+	preSelectNames := []string{}
 
 	for _, a := range appliances {
 		names = append(names, a.GetName())
+	}
+	for _, a := range preSelected {
+		preSelectNames = append(preSelectNames, a.GetName())
 	}
 
 	qs := &survey.MultiSelect{
 		PageSize: len(appliances),
 		Message:  "select appliances to backup:",
 		Options:  names,
+		Default:  preSelectNames,
 	}
 	var selected []string
 	if err := prompt.SurveyAskOne(qs, &selected); err != nil {

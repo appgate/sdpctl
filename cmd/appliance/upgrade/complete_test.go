@@ -88,6 +88,30 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "test no appliances ready",
+			cli:  "upgrade complete --no-interactive",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+				},
+				{
+					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade`),
+		},
+		{
 			name: "test complete with filter function gateway",
 			cli:  "upgrade complete --backup=false --filter function=gateway --no-interactive",
 			httpStubs: []httpmock.Stub{
@@ -101,11 +125,11 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
@@ -156,11 +180,11 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
@@ -195,11 +219,11 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
 					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 			},
 			upgradeApplianeStatusWorker: &errApplianceStatus{},
@@ -282,7 +306,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug:                    false,
-					URL:                      fmt.Sprintf("http://localhost:%d", registry.Port),
+					URL:                      fmt.Sprintf("http://controller.devops:%d", registry.Port),
 					PrimaryControllerVersion: "5.3.4-24950",
 				},
 				IOOutWriter: stdout,
