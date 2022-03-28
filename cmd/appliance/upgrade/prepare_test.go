@@ -215,7 +215,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name:                "error upgrade status",
 			cli:                 "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
 			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`gateway never reached downloading, got failed`),
+			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
