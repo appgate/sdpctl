@@ -145,7 +145,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 
-			toBackup, err = appliancepkg.BackupPrompt(rawAppliances)
+			toBackup, err = appliancepkg.BackupPrompt(rawAppliances, []openapi.Appliance{})
 			if err != nil {
 				return err
 			}
