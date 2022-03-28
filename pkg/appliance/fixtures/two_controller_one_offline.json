@@ -31,7 +31,7 @@
                 ]
             },
             "peerInterface": {
-                "hostname": "localhost",
+                "hostname": "controller.devops",
                 "httpsPort": 444,
                 "allowSources": [
                     {
@@ -235,7 +235,7 @@
                 ]
             },
             "peerInterface": {
-                "hostname": "localhost",
+                "hostname": "secondcontroller.devops",
                 "httpsPort": 444,
                 "allowSources": [
                     {

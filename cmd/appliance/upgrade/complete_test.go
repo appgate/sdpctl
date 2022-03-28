@@ -306,7 +306,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug:                    false,
-					URL:                      fmt.Sprintf("http://localhost:%d", registry.Port),
+					URL:                      fmt.Sprintf("http://controller.devops:%d", registry.Port),
 					PrimaryControllerVersion: "5.3.4-24950",
 				},
 				IOOutWriter: stdout,
