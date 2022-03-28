@@ -241,6 +241,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
 
+	if primaryControllerUpgradeStatus.GetStatus() != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
+		return fmt.Errorf("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
+	}
+
 	// chunks include slices of slices, divided in chunkSize,
 	// the chunkSize represent the number of goroutines used
 	// for pararell upgrades, each chunk the slice has tried to split
