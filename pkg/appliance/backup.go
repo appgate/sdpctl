@@ -273,7 +273,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			bar := p.AddBar(fileStat.Size(), mpb.BarQueueAfter(spinner, false), mpb.BarWidth(50),
 				mpb.BarFillerOnComplete("downloaded"),
 				mpb.PrependDecorators(
-					decor.OnComplete(decor.Name(" downloading "), " ✓ "),
+					decor.OnComplete(decor.OnAbort(decor.Name(" downloading "), " failed "), " ✓ "),
 					decor.Name(name, decor.WCSyncWidthR),
 				),
 				mpb.AppendDecorators(
@@ -287,9 +287,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 			_, err = io.Copy(dst, proxyReader)
 			if err != nil {
+				bar.Abort(false)
 				return err
 			}
 
+			bar.Wait()
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
 
 			return nil
