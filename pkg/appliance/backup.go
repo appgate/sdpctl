@@ -213,7 +213,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
-				spinner.Abort(true)
+				spinner.Abort(false)
 				respBody := backupHTTPResponse{}
 				decodeErr := json.NewDecoder(httpresponse.Body).Decode(&respBody)
 				if decodeErr != nil {
@@ -232,7 +232,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				backoff *= 2
 				currentStatus, err := getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
 				if err != nil {
-					spinner.Abort(true)
+					spinner.Abort(false)
 					return err
 				}
 				if currentStatus != status {
@@ -243,7 +243,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				status = currentStatus
 				// Exponential backoff to not hammer API
 				if backoff > opts.Timeout {
-					spinner.Abort(true)
+					spinner.Abort(false)
 					return errors.New("Failed backup. Backup status exceeded timeout.")
 				}
 			}
