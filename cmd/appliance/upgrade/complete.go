@@ -315,43 +315,39 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// 1. Disable Controller function on the following appliance
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
+	fmt.Fprint(opts.Out, "\nInitializing upgrade:\n")
+	p := mpb.New(mpb.WithOutput(opts.Out))
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
-		fmt.Fprint(opts.Out, "\nDisabling controllers:\n")
-		p := mpb.New(mpb.WithOutput(opts.Out))
 		for _, controller := range additionalControllers {
 			spinner := util.AddDefaultSpinner(p, controller.GetName(), "disabling", "disabled")
 			f := log.Fields{"appliance": controller.GetName()}
 			log.WithFields(f).Info("Disabling controller function")
 			if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
-				spinner.Abort(true)
+				spinner.Abort(false)
 				log.WithFields(f).Error("Unable to disable controller")
 				return err
 			}
 			if err := a.ApplianceStats.WaitForState(ctx, controller, "appliance_ready"); err != nil {
-				spinner.Abort(true)
+				spinner.Abort(false)
 				log.WithFields(f).Error("never reached desired state")
 				return err
 			}
 			spinner.Increment()
 		}
-		p.Wait()
 	}
 
 	// verify the state for all controller
-	p := mpb.New(mpb.WithOutput(opts.Out))
-	spinner := util.AddDefaultSpinner(p, "verifying initial states", "waiting", "ready")
+	verifyingSpinner := util.AddDefaultSpinner(p, "verifying states", "verifying", "ready")
 	state := "controller_ready"
 	if cfg.Version < 15 {
 		state = "single_controller_ready"
 	}
 	if err := a.ApplianceStats.WaitForState(ctx, *primaryController, state); err != nil {
-		spinner.Abort(true)
+		verifyingSpinner.Abort(false)
 		return fmt.Errorf("primary controller %s", err)
 	}
-	spinner.Increment()
 	log.Info("all controllers are in correct state")
-	p.Wait()
 
 	if cfg.Version >= 15 && len(additionalControllers) > 0 {
 		for _, controller := range additionalControllers {
@@ -380,9 +376,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	if len(notReady) > 0 {
+		verifyingSpinner.Abort(false)
 		log.Errorf("appliance %s is not ready for upgrade", strings.Join(notReady, ", "))
 		return fmt.Errorf("one or more appliances are not ready for upgrade.")
 	}
+	verifyingSpinner.Increment()
+	p.Wait()
+
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
@@ -455,6 +455,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			close(upgradeChan)
 		}()
 		if err := g.Wait(); err != nil {
+			log.WithError(err).Error(err.Error())
 			return fmt.Errorf("Error during upgrade of an appliance %w", err)
 		}
 		p.Wait()
@@ -498,10 +499,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// re-enable additional controllers sequentially, one at the time
 	if disableAdditionalControllers {
 		fmt.Fprint(opts.Out, "\nRe-enabling controllers:\n")
+		pEnable := mpb.New(mpb.WithOutput(opts.Out))
 		for _, controller := range additionalControllers {
+			enableSpinner := util.AddDefaultSpinner(pEnable, controller.GetName(), "enabling", "enabled")
 			f := log.Fields{"controller": controller.GetName()}
 			log.WithFields(f).Info("Enabling controller function")
 			if err := backoffEnableController(controller); err != nil {
+				enableSpinner.Abort(false)
 				log.WithFields(f).WithError(err).Error("Failed to enable controller")
 				if merr, ok := err.(*multierror.Error); ok {
 					var mutliErr error
@@ -514,10 +518,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 			if err := a.ApplianceStats.WaitForState(ctx, controller, ctrlUpgradeState); err != nil {
+				enableSpinner.Abort(false)
 				log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 				return err
 			}
+			enableSpinner.Increment()
 		}
+		pEnable.Wait()
 	}
 
 	if cfg.Version >= 15 {
