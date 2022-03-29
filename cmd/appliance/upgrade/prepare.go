@@ -272,6 +272,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 1
+	p := mpb.New()
 	shouldUpload := false
 	fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
 	defer fileStatusCancel()
@@ -297,7 +298,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
-		if err := a.UploadFile(ctx, imageFile); err != nil {
+		if err := a.UploadFile(ctx, imageFile, p); err != nil {
 			return err
 		}
 
@@ -310,6 +311,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
 	}
+	p.Wait()
 
 	// Step 2
 	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryController.GetHostname(), opts.filename)

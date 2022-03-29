@@ -13,6 +13,8 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/sirupsen/logrus"
 	mpb "github.com/vbauerster/mpb/v7"
 	decor "github.com/vbauerster/mpb/v7/decor"
 	"golang.org/x/sync/errgroup"
@@ -132,7 +134,7 @@ func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.Fi
 }
 
 // UploadFile directly to the current Controller. Note that the File is stored only on the current Controller, not synced between Controllers.
-func (a *Appliance) UploadFile(ctx context.Context, file *os.File) error {
+func (a *Appliance) UploadFile(ctx context.Context, file *os.File, p *mpb.Progress) error {
 	fileStat, err := file.Stat()
 	if err != nil {
 		return err
@@ -155,8 +157,8 @@ func (a *Appliance) UploadFile(ctx context.Context, file *os.File) error {
 	}
 
 	limitReader := io.LimitReader(body, int64(body.Len()))
-	p := mpb.New(mpb.WithWidth(50))
 	bar := p.AddBar(fs,
+		mpb.BarWidth(50),
 		mpb.BarFillerOnComplete("uploaded"),
 		mpb.PrependDecorators(
 			decor.OnComplete(decor.Name(" uploading"), " ✓"),
@@ -168,6 +170,7 @@ func (a *Appliance) UploadFile(ctx context.Context, file *os.File) error {
 			decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
 		),
 	)
+	waitSpinner := util.AddDefaultSpinner(p, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
 	proxyReader := bar.ProxyReader(limitReader)
 	defer proxyReader.Close()
 
@@ -192,9 +195,14 @@ func (a *Appliance) UploadFile(ctx context.Context, file *os.File) error {
 		req.Header.Set(k, v)
 	}
 	req.Header.Set("Authorization", a.Token)
+	logrus.WithFields(logrus.Fields{
+		"file":    fileStat.Name(),
+		"headers": req.Header,
+	}).Debug("upload file")
 	response, err := httpClient.Do(req)
-	p.Wait()
 	if err != nil {
+		bar.Abort(false)
+		waitSpinner.Abort(true)
 		if response == nil {
 			return fmt.Errorf("no response during upload %w", err)
 		}
@@ -214,7 +222,10 @@ func (a *Appliance) UploadFile(ctx context.Context, file *os.File) error {
 		}
 		return err
 	}
-	response.Body.Close()
+	waitSpinner.Increment()
+	defer response.Body.Close()
+	bar.Wait()
+	waitSpinner.Wait()
 	return nil
 }
 
