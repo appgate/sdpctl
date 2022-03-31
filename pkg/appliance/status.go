@@ -80,14 +80,14 @@ func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, d
 }
 
 type WaitForApplianceStatus interface {
-	WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error
+	WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
 }
 
-func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error {
+func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
 	b := backoff.WithContext(&backoff.ExponentialBackOff{
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
@@ -119,6 +119,9 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 					"Waiting for state %q",
 					state,
 				)
+				if status != nil {
+					status <- state
+				}
 				if state != expectedState {
 					log.WithFields(fields).Errorf("never reached desired state")
 					return fmt.Errorf("never reached desired state %s", expectedState)

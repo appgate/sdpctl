@@ -21,13 +21,13 @@ import (
 
 type mockApplianceStatus struct{}
 
-func (u *mockApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error {
+func (u *mockApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
 	return nil
 }
 
 type errApplianceStatus struct{}
 
-func (u *errApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string) error {
+func (u *errApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
 	return fmt.Errorf("never reached expected state %s", expectedState)
 }
 
