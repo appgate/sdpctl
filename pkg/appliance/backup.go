@@ -213,7 +213,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
-				spinner.Abort(true)
+				spinner.Abort(false)
 				respBody := backupHTTPResponse{}
 				decodeErr := json.NewDecoder(httpresponse.Body).Decode(&respBody)
 				if decodeErr != nil {
@@ -232,7 +232,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				backoff *= 2
 				currentStatus, err := getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
 				if err != nil {
-					spinner.Abort(true)
+					spinner.Abort(false)
 					return err
 				}
 				if currentStatus != status {
@@ -243,7 +243,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				status = currentStatus
 				// Exponential backoff to not hammer API
 				if backoff > opts.Timeout {
-					spinner.Abort(true)
+					spinner.Abort(false)
 					return errors.New("Failed backup. Backup status exceeded timeout.")
 				}
 			}
@@ -273,7 +273,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			bar := p.AddBar(fileStat.Size(), mpb.BarQueueAfter(spinner, false), mpb.BarWidth(50),
 				mpb.BarFillerOnComplete("downloaded"),
 				mpb.PrependDecorators(
-					decor.OnComplete(decor.Name(" downloading "), " ✓ "),
+					decor.OnComplete(decor.OnAbort(decor.Name(" downloading "), " failed "), " ✓ "),
 					decor.Name(name, decor.WCSyncWidthR),
 				),
 				mpb.AppendDecorators(
@@ -287,9 +287,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 			_, err = io.Copy(dst, proxyReader)
 			if err != nil {
+				bar.Abort(false)
 				return err
 			}
 
+			bar.Wait()
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
 
 			return nil

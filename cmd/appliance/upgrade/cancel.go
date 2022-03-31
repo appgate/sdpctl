@@ -115,14 +115,14 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 				spinner := util.AddDefaultSpinner(p, i.GetName(), "cancelling", "cancelled")
 				log.Infof("Cancel upgrade on %s - %s", i.GetId(), i.GetName())
 				if err := a.UpgradeCancel(ctx, i.GetId()); err != nil {
-					spinner.Abort(true)
+					spinner.Abort(false)
 					return err
 				}
 				select {
 				case cancelChan <- i:
 					spinner.Increment()
 				case <-ctx.Done():
-					spinner.Abort(true)
+					spinner.Abort(false)
 					return ctx.Err()
 				}
 				return nil

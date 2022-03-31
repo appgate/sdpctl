@@ -44,9 +44,10 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		var s string
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			currentStatus <- s
-			if status.GetStatus() == UpgradeStatusFailed {
-				return backoff.Permanent(fmt.Errorf("Upgraded failed on %s - %s", appliance.GetName(), status.GetDetails()))
+			responseStatus := status.GetStatus()
+			currentStatus <- responseStatus
+			if responseStatus == UpgradeStatusFailed {
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", appliance.GetName(), status.GetDetails()))
 			}
 		}
 		fields["image"] = status.GetDetails()
@@ -134,24 +135,46 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 
 func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
 	go func() {
+		log.WithField("appliance", appliance.GetName()).Info("Watching for appliance state")
 		endMsg := "completed"
 		previous := ""
 		name := appliance.GetName()
 		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
 		for status := range current {
-			if status == endState {
+			log.WithFields(log.Fields{
+				"appliance": appliance.GetName(),
+				"current":   status,
+				"want":      endState,
+			}).Debug("state update")
+			switch status {
+			case endState:
 				spinner.Increment()
-				break
-			}
-			if status == UpgradeStatusFailed {
-				spinner.Abort(true)
-				break
-			}
-			if status != previous {
-				spinner.Increment()
-				old := spinner
-				spinner = util.AddDefaultSpinner(p, name, status, endMsg, mpb.BarQueueAfter(old, false))
-				previous = status
+				log.WithFields(log.Fields{
+					"appliance":        appliance.GetName(),
+					"status":           status,
+					"spinnerCompleted": spinner.Completed(),
+				}).Debug("Completing spinner")
+			case UpgradeStatusFailed:
+				spinner.Abort(false)
+				log.WithFields(log.Fields{
+					"appliance":      appliance.GetName(),
+					"status":         status,
+					"spinnerAborted": spinner.Aborted(),
+				}).Debug("Aborting spinner")
+			default:
+				if status != previous {
+					spinner.Increment()
+					old := spinner
+					spinner = util.AddDefaultSpinner(p, name, status, endMsg, mpb.BarQueueAfter(old, false))
+					log.WithFields(log.Fields{
+						"appliance":          appliance.GetName(),
+						"current":            previous,
+						"new":                status,
+						"oldSpinnerComplete": old.Completed(),
+						"newSpinnerComplete": spinner.Completed(),
+					}).Debug("Updating current state")
+					previous = status
+				}
 			}
 		}
 	}()
