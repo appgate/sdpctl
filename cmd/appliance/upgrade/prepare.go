@@ -353,14 +353,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
 					statusReport := make(chan string)
-					a.UpgradeStatusWorker.Watch(ctx, p, appliance, appliancepkg.UpgradeStatusReady, statusReport)
+					a.UpgradeStatusWorker.Watch(appCtx, p, appliance, appliancepkg.UpgradeStatusReady, statusReport)
 					if err := a.PrepareFileOn(appCtx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						appCancel()
 						close(statusReport)
 						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(err)
 						return err
 					}
-					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, appliancepkg.UpgradeStatusReady, statusReport); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(appCtx, appliance, appliancepkg.UpgradeStatusReady, statusReport); err != nil {
 						appCancel()
 						close(statusReport)
 						return err
