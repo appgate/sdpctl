@@ -34,7 +34,6 @@ type upgradeCompleteOptions struct {
 	debug             bool
 	backup            bool
 	backupDestination string
-	backupAll         string
 	NoInteractive     bool
 	Timeout           time.Duration
 }
@@ -156,6 +155,22 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
+
+	bOpts := appliancepkg.BackupOpts{
+		Config:        opts.Config,
+		Appliance:     opts.Appliance,
+		Destination:   opts.backupDestination,
+		AllFlag:       false,
+		PrimaryFlag:   opts.backup,
+		Timeout:       5 * time.Minute,
+		Out:           opts.Out,
+		NoInteractive: opts.NoInteractive,
+		Quiet:         true,
+	}
+	if bOpts.PrimaryFlag {
+		toBackup = append(toBackup, *primaryController)
+	}
+
 	allAppliances := appliancepkg.FilterAppliances(rawAppliances, filter)
 	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
@@ -275,19 +290,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	if opts.backup {
-		bOpts := appliancepkg.BackupOpts{
-			Config:        opts.Config,
-			Appliance:     opts.Appliance,
-			Destination:   opts.backupDestination,
-			AllFlag:       false,
-			Timeout:       5 * time.Minute,
-			Out:           opts.Out,
-			NoInteractive: opts.NoInteractive,
-			Quiet:         true,
-		}
-		if opts.backupAll == "all" {
-			bOpts.AllFlag = true
-		}
 		if len(toBackup) > 0 {
 			ids := []string{}
 			for _, t := range toBackup {
