@@ -386,8 +386,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	initP.Wait()
 
 	ctrlUpgradeState := "controller_ready"
+	additionalCtrlUpgradeState := ctrlUpgradeState
 	if cfg.Version < 15 {
 		ctrlUpgradeState = "multi_controller_ready"
+		additionalCtrlUpgradeState = ctrlUpgradeState
+		if disableAdditionalControllers {
+			ctrlUpgradeState = "single_controller_ready"
+			additionalCtrlUpgradeState = "appliance_ready"
+		}
 	}
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
@@ -501,7 +507,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
 		for _, ctrl := range additionalControllers {
 			ctrlP := mpb.New(mpb.WithOutput(opts.Out))
-			if err := batchUpgrade(ctx, ctrlP, []openapi.Appliance{ctrl}, true, ctrlUpgradeState); err != nil {
+			if err := batchUpgrade(ctx, ctrlP, []openapi.Appliance{ctrl}, true, additionalCtrlUpgradeState); err != nil {
 				return fmt.Errorf("failed during upgrade of additional controllers %w", err)
 			}
 			if disableAdditionalControllers {
@@ -517,7 +523,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					}
 					return err
 				}
-				if err := a.ApplianceStats.WaitForState(ctx, ctrl, ctrlUpgradeState, nil); err != nil {
+				if err := a.ApplianceStats.WaitForState(ctx, ctrl, additionalCtrlUpgradeState, nil); err != nil {
 					log.WithFields(f).WithError(err).Error("Controller never reached desired state")
 					return err
 				}
