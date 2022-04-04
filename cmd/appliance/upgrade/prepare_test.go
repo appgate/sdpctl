@@ -465,7 +465,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				Config: &configuration.Config{
 					Debug:                    false,
 					URL:                      fmt.Sprintf("http://controller.devops:%d", registry.Port),
-					PrimaryControllerVersion: "5.3.4-24950",
+					PrimaryControllerVersion: "5.3.4+24950",
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,
