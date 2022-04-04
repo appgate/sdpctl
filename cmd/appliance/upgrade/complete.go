@@ -252,7 +252,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
 		return err
 	}
-	newVersion, err := appliancepkg.GetVersion(primaryControllerUpgradeStatus.GetDetails())
+	newVersion, err := appliancepkg.NormalizeVersion(primaryControllerUpgradeStatus.GetDetails())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
@@ -423,19 +423,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			pcancel()
 			return err
 		}
-		if newVersion != nil && newVersion.GreaterThan(currentPrimaryControllerVersion) {
-			cfg.PrimaryControllerVersion = newVersion.String()
-			cfg.Version = newPeerAPIVersion
-			viper.Set("primary_controller_version", newVersion.String())
-			viper.Set("api_version", newPeerAPIVersion)
-			if err := viper.WriteConfig(); err != nil {
-				log.WithFields(log.Fields{
-					"primary_controller_version": newVersion.String(),
-					"api_version":                newPeerAPIVersion,
-				}).Warn("failed to write config file")
-				fmt.Fprintln(opts.Out, "WARNING: Failed to write to config file. Please run 'sdpctl configure signin' to reconfigure.")
-			}
-		}
 		close(statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")
 		pcancel()
@@ -566,6 +553,21 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		chunkP.Wait()
 	}
+
+	if newVersion != nil && newVersion.GreaterThan(currentPrimaryControllerVersion) {
+		cfg.PrimaryControllerVersion = newVersion.String()
+		cfg.Version = newPeerAPIVersion
+		viper.Set("primary_controller_version", newVersion.String())
+		viper.Set("api_version", newPeerAPIVersion)
+		if err := viper.WriteConfig(); err != nil {
+			log.WithFields(log.Fields{
+				"primary_controller_version": newVersion.String(),
+				"api_version":                newPeerAPIVersion,
+			}).Warn("failed to write config file")
+			fmt.Fprintln(opts.Out, "WARNING: Failed to write to config file. Please run 'sdpctl configure signin' to reconfigure.")
+		}
+	}
+
 	fmt.Fprint(opts.Out, "\nUpgrade complete!\n")
 
 	return nil

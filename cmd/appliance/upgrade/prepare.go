@@ -439,9 +439,10 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, stats []
 	for _, a := range appliance {
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
+				version, _ := appliancepkg.NormalizeVersion(stat.GetVersion())
 				i := applianceData{
 					Name:           a.GetName(),
-					CurrentVersion: stat.GetVersion(),
+					CurrentVersion: version.String(),
 					Online:         "Offline ⨯",
 				}
 

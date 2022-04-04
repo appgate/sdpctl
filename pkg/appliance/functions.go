@@ -284,7 +284,7 @@ func ActiveSitesInAppliances(slice []openapi.Appliance) int {
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == appliance.GetId() {
-			return version.NewVersion(s.GetVersion())
+			return NormalizeVersion(s.GetVersion())
 		}
 	}
 	return nil, fmt.Errorf("could not determine appliance version %s", appliance.GetName())
@@ -497,7 +497,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	return filteredAppliances
 }
 
-func GetVersion(s string) (*version.Version, error) {
+func NormalizeVersion(s string) (*version.Version, error) {
 	regex := regexp.MustCompile(`\d+\.\d+\.\d+([-|\+]?\d+)?`)
 	match := regex.FindString(s)
 	vString := strings.ReplaceAll(match, "-", "+")
