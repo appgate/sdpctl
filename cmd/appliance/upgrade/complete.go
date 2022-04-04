@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/sync/errgroup"
 )
@@ -255,6 +256,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
+	var newPeerAPIVersion int
+	if newVersion != nil {
+		newPeerAPIVersion = a.GetPeerAPIVersion(newVersion)
+	}
 
 	if primaryControllerUpgradeStatus.GetStatus() != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
 		return fmt.Errorf("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
@@ -417,6 +422,19 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			close(statusReport)
 			pcancel()
 			return err
+		}
+		if newVersion != nil && newVersion.GreaterThan(currentPrimaryControllerVersion) {
+			cfg.PrimaryControllerVersion = newVersion.String()
+			cfg.Version = newPeerAPIVersion
+			viper.Set("primary_controller_version", newVersion.String())
+			viper.Set("api_version", newPeerAPIVersion)
+			if err := viper.WriteConfig(); err != nil {
+				log.WithFields(log.Fields{
+					"primary_controller_version": newVersion.String(),
+					"api_version":                newPeerAPIVersion,
+				}).Warn("failed to write config file")
+				fmt.Fprintln(opts.Out, "WARNING: Failed to write to config file. Please run 'sdpctl configure signin' to reconfigure.")
+			}
 		}
 		close(statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")

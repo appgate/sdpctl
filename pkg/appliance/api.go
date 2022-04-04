@@ -323,24 +323,23 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 	return nil
 }
 
-func (a *Appliance) GetPeerAPIVersion(applianceVersion *version.Version) *version.Version {
-	versionMap := map[string]string{
-		"5.1": "12",
-		"5.2": "13",
-		"5.3": "14",
-		"5.4": "15",
-		"5.5": "16",
-		"6.0": "17",
-		"6.1": "18",
+func (a *Appliance) GetPeerAPIVersion(applianceVersion *version.Version) int {
+	versionMap := map[string]int{
+		"5.1": 12,
+		"5.2": 13,
+		"5.3": 14,
+		"5.4": 15,
+		"5.5": 16,
+		"6.0": 17,
+		"6.1": 18,
 	}
 
-	candidate := &version.Version{}
+	var candidate int
 	for k, v := range versionMap {
 		av, _ := version.NewVersion(k)
-		pv, _ := version.NewVersion(v)
 
-		if applianceVersion.GreaterThanOrEqual(av) && pv.GreaterThan(candidate) {
-			candidate = pv
+		if applianceVersion.GreaterThanOrEqual(av) && v > candidate {
+			candidate = v
 		}
 	}
 	return candidate
