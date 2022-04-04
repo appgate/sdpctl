@@ -162,13 +162,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		Appliance:     opts.Appliance,
 		Destination:   opts.backupDestination,
 		AllFlag:       false,
-		PrimaryFlag:   opts.backup,
+		PrimaryFlag:   false,
 		Timeout:       5 * time.Minute,
 		Out:           opts.Out,
 		NoInteractive: opts.NoInteractive,
 		Quiet:         true,
 	}
-	if bOpts.PrimaryFlag {
+	if opts.backup && len(toBackup) <= 0 {
 		toBackup = append(toBackup, *primaryController)
 	}
 
@@ -391,13 +391,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	initP.Wait()
 
 	ctrlUpgradeState := "controller_ready"
-	additionalCtrlUpgradeState := ctrlUpgradeState
 	if cfg.Version < 15 {
 		ctrlUpgradeState = "multi_controller_ready"
-		additionalCtrlUpgradeState = ctrlUpgradeState
 		if disableAdditionalControllers {
 			ctrlUpgradeState = "single_controller_ready"
-			additionalCtrlUpgradeState = "appliance_ready"
 		}
 	}
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
@@ -511,9 +508,24 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if len(additionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
 		for _, ctrl := range additionalControllers {
+			ctrlCtx, ctrlCancel := context.WithTimeout(ctx, opts.Timeout)
 			ctrlP := mpb.New(mpb.WithOutput(opts.Out))
-			if err := batchUpgrade(ctx, ctrlP, []openapi.Appliance{ctrl}, true, additionalCtrlUpgradeState); err != nil {
-				return fmt.Errorf("failed during upgrade of additional controllers %w", err)
+			finalState := "controller_ready"
+			if cfg.Version < 15 {
+				finalState = "multi_controller_ready"
+			}
+			statusReport := make(chan string)
+			defer close(statusReport)
+			a.UpgradeStatusWorker.Watch(ctx, ctrlP, ctrl, finalState, statusReport)
+			if err := a.UpgradeComplete(ctx, ctrl.GetId(), true); err != nil {
+				close(statusReport)
+				ctrlCancel()
+				return err
+			}
+			if err := a.UpgradeStatusWorker.Wait(ctrlCtx, ctrl, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+				ctrlCancel()
+				close(statusReport)
+				return err
 			}
 			if disableAdditionalControllers {
 				if err := backoffEnableController(ctrl); err != nil {
@@ -524,23 +536,31 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 							mutliErr = multierror.Append(e)
 						}
 						mutliErr = multierror.Append(fmt.Errorf("could not enable controller on %s", ctrl.GetName()))
+						ctrlCancel()
+						close(statusReport)
 						return mutliErr
 					}
+					close(statusReport)
+					ctrlCancel()
 					return err
 				}
-				if err := a.ApplianceStats.WaitForState(ctx, ctrl, additionalCtrlUpgradeState, nil); err != nil {
-					log.WithFields(f).WithError(err).Error("Controller never reached desired state")
-					return err
-				}
+			}
+			if err := a.ApplianceStats.WaitForState(ctx, ctrl, finalState, statusReport); err != nil {
+				log.WithFields(f).WithError(err).Error("Controller never reached desired state")
+				close(statusReport)
+				ctrlCancel()
+				return err
 			}
 			if cfg.Version >= 15 {
 				_, err := a.DisableMaintenanceMode(ctx, ctrl.GetId())
 				if err != nil {
+					ctrlCancel()
 					return err
 				}
 				log.WithFields(f).Info("Disabled maintenance mode")
 			}
 			ctrlP.Wait()
+			ctrlCancel()
 		}
 		log.Info("done waiting for additional controllers upgrade")
 	}
