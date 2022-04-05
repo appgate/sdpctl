@@ -117,7 +117,7 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 				}
 				log.WithFields(fields).Infof(
 					"Waiting for state %q",
-					state,
+					expectedState,
 				)
 				if status != nil {
 					status <- state
