@@ -431,44 +431,48 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		for _, appliance := range appliances {
-			ctx, cancel = context.WithTimeout(ctx, opts.Timeout)
-			defer cancel()
+			bctx, bcancel := context.WithTimeout(ctx, opts.Timeout)
 			i := appliance
 			g.Go(func() error {
+				defer bcancel()
 				log.WithField("appliance", i.GetName()).Info("checking if ready")
 				statusReport := make(chan string)
 				defer close(statusReport)
-				a.UpgradeStatusWorker.Watch(ctx, p, i, finalState, statusReport)
-				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
+				a.UpgradeStatusWorker.Watch(bctx, p, i, finalState, statusReport)
+				if err := a.UpgradeComplete(bctx, i.GetId(), SwitchPartition); err != nil {
+					close(statusReport)
 					return err
 				}
 				if !SwitchPartition {
-					if err := a.UpgradeStatusWorker.Wait(ctx, i, appliancepkg.UpgradeStatusSuccess, statusReport); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(bctx, i, appliancepkg.UpgradeStatusSuccess, statusReport); err != nil {
+						close(statusReport)
 						return err
 					}
-					status, err := a.UpgradeStatus(ctx, i.GetId())
+					status, err := a.UpgradeStatus(bctx, i.GetId())
 					if err != nil {
+						close(statusReport)
 						return err
 					}
 					if regex.MatchString(status.GetDetails()) {
-						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
+						if err := a.UpgradeSwitchPartition(bctx, i.GetId()); err != nil {
+							close(statusReport)
 							return err
 						}
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
-				if err := a.UpgradeStatusWorker.Wait(ctx, i, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.Wait(bctx, i, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
 					close(statusReport)
 					return err
 				}
-				if err := a.ApplianceStats.WaitForState(ctx, i, finalState, statusReport); err != nil {
+				if err := a.ApplianceStats.WaitForState(bctx, i, finalState, statusReport); err != nil {
 					close(statusReport)
 					return err
 				}
 				select {
-				case <-ctx.Done():
+				case <-bctx.Done():
 					close(statusReport)
-					return ctx.Err()
+					return bctx.Err()
 				case upgradeChan <- i:
 				}
 				return nil
