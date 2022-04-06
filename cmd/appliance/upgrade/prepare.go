@@ -52,6 +52,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 		timeout:   DefaultTimeout,
+		workers:   int(^uint(0) >> 1),
 	}
 	var prepareCmd = &cobra.Command{
 		Use:   "prepare",
@@ -78,12 +79,9 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 				log.WithError(err).Error(errMsg)
 				return fmt.Errorf(errMsg)
 			}
-			if workers < 1 {
-				errMsg := "Prepare failed: throttle too small"
-				log.Error(errMsg)
-				return fmt.Errorf("%s", errMsg)
+			if workers > 0 {
+				opts.workers = workers
 			}
-			opts.workers = workers
 
 			minTimeout := 15 * time.Minute
 			flagTimeout, err := cmd.Flags().GetDuration("timeout")
