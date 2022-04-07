@@ -22,8 +22,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v7"
-	decor "github.com/vbauerster/mpb/v7/decor"
+	mpb "github.com/vbauerster/mpb/v7"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -209,7 +208,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		appliance := a
 		apiClient := app.APIClient
 		g.Go(func() error {
-			spinner := util.AddDefaultSpinner(p, appliance.GetName(), "preparing backup", "")
+			spinner := util.AddDefaultSpinner(p, appliance.GetName(), "backing up", "completed")
+			log.WithField("appliance", appliance.GetName()).Info("backing up")
 			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
 			res, httpresponse, err := run.Execute()
 			if err != nil {
@@ -223,11 +223,13 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				return err
 			}
 			backupID := res.GetId()
+			log.WithField("backup_id", backupID).Info("recieved backup id")
 			bIDChan <- map[string]string{appliance.GetId(): backupID}
 
 			var status string
 			var backoff float32 = 1
 			now := time.Now()
+			log.WithField("appliance", appliance.GetName()).Info("waiting for backup to be ready")
 			for status != "done" {
 				time.Sleep(time.Duration(backoff) * time.Second)
 				if backoff < 5 {
@@ -236,68 +238,39 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				log.WithField("backoff", backoff).Debug("backoff request")
 				currentStatus, err := getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
 				if err != nil {
-					spinner.Abort(false)
 					return err
-				}
-				if currentStatus != status {
-					old := spinner
-					old.Increment()
-					spinner = util.AddDefaultSpinner(p, appliance.GetName(), currentStatus, "", mpb.BarQueueAfter(old, false))
 				}
 				status = currentStatus
 				// Exponential backoff to not hammer API
 				if time.Since(now) > opts.Timeout {
-					spinner.Abort(false)
 					return errors.New("Failed backup. Backup status exceeded timeout.")
 				}
 			}
-			old := spinner
-			old.Increment()
-			spinner = util.AddDefaultSpinner(p, appliance.GetName(), "preparing download", "", mpb.BarQueueAfter(old, false))
+			log.WithField("backup_id", backupID).Info("recieved backup")
 			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
 			if err != nil {
+				spinner.Abort(false)
 				log.WithError(err).WithField("response", inlineRes).Debug(err)
 				return err
 			}
 			defer file.Close()
-			fileStat, err := file.Stat()
-			if err != nil {
-				return err
-			}
 			dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405")))
 			if err != nil {
+				spinner.Abort(false)
 				return err
 			}
 			defer dst.Close()
 
-			spinner.Increment()
-			limitReader := io.LimitReader(file, fileStat.Size())
-			name := filepath.Base(dst.Name())
-			bar := p.AddBar(fileStat.Size(), mpb.BarQueueAfter(spinner, false), mpb.BarWidth(50),
-				mpb.BarFillerOnComplete("downloaded"),
-				mpb.PrependDecorators(
-					decor.OnComplete(decor.OnAbort(decor.Name(" downloading "), " failed "), " ✓ "),
-					decor.Name(name, decor.WCSyncWidthR),
-				),
-				mpb.AppendDecorators(
-					decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
-					decor.OnComplete(decor.Name(" | "), ""),
-					decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
-				),
-			)
-			proxyReader := bar.ProxyReader(limitReader)
-			defer proxyReader.Close()
-
-			_, err = io.Copy(dst, proxyReader)
+			_, err = io.Copy(dst, file)
 			if err != nil {
-				bar.Abort(false)
+				spinner.Abort(false)
 				return err
 			}
 
-			bar.Wait()
 			log.WithField("file", dst.Name()).Info("Wrote backup file")
-
+			spinner.Increment()
+			spinner.Wait()
 			return nil
 		})
 	}
@@ -404,7 +377,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 		log.Warn("Backup API is disabled on the appliance.")
 		var shouldEnable bool
 		q := &survey.Confirm{
-			Message: "Do you want to enable it now?",
+			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",
 			Default: true,
 		}
 		if err := survey.AskOne(q, &shouldEnable, survey.WithValidator(survey.Required)); err != nil {

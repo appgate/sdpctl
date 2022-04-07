@@ -14,6 +14,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	mpb "github.com/vbauerster/mpb/v7"
 	decor "github.com/vbauerster/mpb/v7/decor"
@@ -320,4 +321,26 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
+}
+
+func (a *Appliance) GetPeerAPIVersion(applianceVersion *version.Version) int {
+	versionMap := map[string]int{
+		"5.1": 12,
+		"5.2": 13,
+		"5.3": 14,
+		"5.4": 15,
+		"5.5": 16,
+		"6.0": 17,
+		"6.1": 18,
+	}
+
+	var candidate int
+	for k, v := range versionMap {
+		av, _ := version.NewVersion(k)
+
+		if applianceVersion.GreaterThanOrEqual(av) && v > candidate {
+			candidate = v
+		}
+	}
+	return candidate
 }
