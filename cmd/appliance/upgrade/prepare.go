@@ -39,7 +39,6 @@ type prepareUpgradeOptions struct {
 	DevKeyring    bool
 	remoteImage   bool
 	filename      string
-	workers       int
 	timeout       time.Duration
 }
 
@@ -72,19 +71,6 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
 			}
-			workers, err := cmd.Flags().GetInt("throttle")
-			if err != nil {
-				errMsg := "Failed to parse throttle flag."
-				log.WithError(err).Error(errMsg)
-				return fmt.Errorf(errMsg)
-			}
-			if workers < 1 {
-				errMsg := "Prepare failed: throttle too small"
-				log.Error(errMsg)
-				return fmt.Errorf("%s", errMsg)
-			}
-			opts.workers = workers
-
 			minTimeout := 15 * time.Minute
 			flagTimeout, err := cmd.Flags().GetDuration("timeout")
 			if err != nil {
@@ -343,10 +329,20 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return nil
 		})
 
+		workers, err := cmd.Flags().GetInt("throttle")
+		if err != nil {
+			errMsg := "Failed to parse throttle flag."
+			log.WithError(err).Error(errMsg)
+			return nil, fmt.Errorf(errMsg)
+		}
+		if workers <= 0 {
+			workers = len(appliances)
+		}
+
 		p := mpb.New(mpb.WithOutput(opts.Out))
 		// consume Prepare with nWorkers
 		finished := make(chan openapi.Appliance)
-		for i := 0; i < opts.workers; i++ {
+		for i := 0; i < workers; i++ {
 			g.Go(func() error {
 				for appliance := range applianceIds {
 					appCtx, appCancel := context.WithTimeout(context.Background(), opts.timeout)
