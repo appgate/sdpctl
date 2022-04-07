@@ -125,7 +125,7 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	for _, a := range appliances {
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
-				if stat.GetOnline() {
+				if StatsIsOnline(stat) {
 					result = append(result, a)
 				} else {
 					offline = append(offline, a)
@@ -495,6 +495,30 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	}
 
 	return filteredAppliances
+}
+
+const (
+	// https://github.com/appgate/sdp-api-specification/blob/94d8f7970cd025c8cf92b4560c1a9a0595d66133/dashboard.yml#L477-L483
+	statsHealthy      string = "healthy"
+	statsBusy         string = "busy"
+	statsWarning      string = "warning"
+	statsError        string = "error"
+	statsNotAvailable string = "n/a"
+	statsOffline      string = "offline"
+)
+
+// StatsIsOnline will return true if the controller reports the appliance to be online in a valid status
+func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
+	// from appliance 6.0, 'online' field has been removed in favour for status
+	// we will keep GetOnline() for backwards compatibility.
+	if s.GetOnline() {
+		return true
+	}
+	if util.InSlice(s.GetStatus(), []string{statsNotAvailable, statsOffline}) {
+		return false
+	}
+	// unkown or empty status will report appliance as offline.
+	return util.InSlice(s.GetStatus(), []string{statsHealthy, statsBusy, statsWarning, statsError})
 }
 
 func NormalizeVersion(s string) (*version.Version, error) {

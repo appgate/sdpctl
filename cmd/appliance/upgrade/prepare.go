@@ -442,7 +442,7 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, stats []
 					Online:         "Offline ⨯",
 				}
 
-				if stat.GetOnline() {
+				if appliancepkg.StatsIsOnline(stat) {
 					i.Online = "Online ✓"
 				}
 				data.Appliances = append(data.Appliances, i)

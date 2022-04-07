@@ -1970,3 +1970,121 @@ func TestActiveSitesInAppliances(t *testing.T) {
 		})
 	}
 }
+
+func TestStatsIsOnline(t *testing.T) {
+	type args struct {
+		s openapi.StatsAppliancesListAllOfData
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "pre 6.0 online",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Online: openapi.PtrBool(true),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "online nil value",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Online: nil,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "pre 6.0 offline",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Online: openapi.PtrBool(false),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "status nil",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: nil,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "status offline",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("offline"),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "status healthy",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("healthy"),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "status warning",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("warning"),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "status busy",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("busy"),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "status error",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("error"),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "status not available",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("n/a"),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "status unknown",
+			args: args{
+				s: openapi.StatsAppliancesListAllOfData{
+					Status: openapi.PtrString("abc123"),
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := StatsIsOnline(tt.args.s); got != tt.want {
+				t.Errorf("StatsIsOnline() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
