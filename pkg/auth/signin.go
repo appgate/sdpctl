@@ -13,6 +13,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
@@ -70,7 +71,13 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	if err != nil {
 		return err
 	}
-	if len(providers) > 1 {
+	if len(providers) == 1 && len(loginOpts.ProviderName) <= 0 {
+		loginOpts.ProviderName = providers[0]
+	}
+	if len(loginOpts.ProviderName) > 0 && !util.InSlice(loginOpts.ProviderName, providers) {
+		return fmt.Errorf("invalid provider '%s'", loginOpts.ProviderName)
+	}
+	if len(providers) > 1 && len(loginOpts.ProviderName) <= 0 {
 		qs := &survey.Select{
 			Message: "Choose a provider:",
 			Options: providers,
