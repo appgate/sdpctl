@@ -22,8 +22,10 @@ fmtcheck:
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
+# Run go test twice, since -race don't catch all edge cases
 test:
-	go test ./... -race -covermode=atomic -coverprofile=cover.out
+	go test ./... -count 1 -timeout 30s
+	go test ./... -race -covermode=atomic -coverprofile=cover.out -timeout 60s
 
 cover: test
 	go tool cover -func cover.out
