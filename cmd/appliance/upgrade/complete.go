@@ -37,6 +37,7 @@ type upgradeCompleteOptions struct {
 	backupDestination string
 	NoInteractive     bool
 	Timeout           time.Duration
+	actualHostname    string
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -78,6 +79,15 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 			} else {
 				opts.Timeout = flagTimeout
 			}
+
+			actualHostname, err := cmd.Flags().GetString("actual-hostname")
+			if err != nil {
+				return err
+			}
+			if len(actualHostname) > 0 {
+				opts.actualHostname = actualHostname
+			}
+
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -88,6 +98,7 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
+	flags.String("actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the real hostname.")
 
 	return upgradeCompleteCmd
 }
@@ -109,10 +120,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			Appliance: a,
 		}
 	}
-	host, err := opts.Config.GetHost()
-	if err != nil {
-		return err
-	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	filter := util.ParseFilteringFlags(cmd.Flags())
@@ -152,8 +160,19 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
+	host, err := opts.Config.GetHost()
+	if err != nil {
+		return err
+	}
 	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, host)
 	if err != nil {
+		return err
+	}
+	controlHost := host
+	if len(opts.actualHostname) > 0 {
+		controlHost = opts.actualHostname
+	}
+	if err := appliancepkg.ValidateHostname(*primaryController, controlHost); err != nil {
 		return err
 	}
 

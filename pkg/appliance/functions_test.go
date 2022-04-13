@@ -3,6 +3,7 @@ package appliance
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -1968,6 +1969,67 @@ func TestActiveSitesInAppliances(t *testing.T) {
 				t.Errorf("ActiveSitesInAppliances() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestValidateHostname(t *testing.T) {
+	tests := []struct {
+		name          string
+		hostname      string
+		adminHostName string
+		wantErr       bool
+		want          regexp.Regexp
+	}{
+		{
+			name:          "valid hostname",
+			hostname:      "appgate.com",
+			adminHostName: "appgate.com",
+			wantErr:       false,
+		},
+		{
+			name:          "not unique hostname",
+			hostname:      "play.google.com",
+			adminHostName: "play.google.com",
+			wantErr:       true,
+			want:          *regexp.MustCompile(fmt.Sprintf(`The given hostname %s does not resolve to a unique IP.`, "play.google.com")),
+		},
+		{
+			name:          "admin interface not hostname",
+			hostname:      "controller.devops",
+			adminHostName: "admin.controller.devops",
+			wantErr:       true,
+			want:          *regexp.MustCompile(`Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname`),
+		},
+	}
+
+	for _, tt := range tests {
+		ctrl := openapi.Appliance{
+			Id:        uuid.New().String(),
+			Name:      "controller",
+			Activated: openapi.PtrBool(true),
+			Hostname:  openapi.PtrString(tt.hostname),
+			PeerInterface: openapi.ApplianceAllOfPeerInterface{
+				Hostname:  tt.adminHostName,
+				HttpsPort: openapi.PtrInt32(444),
+			},
+			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+				Hostname:  tt.adminHostName,
+				HttpsPort: openapi.PtrInt32(8443),
+			},
+			Controller: &openapi.ApplianceAllOfController{
+				Enabled: openapi.PtrBool(true),
+			},
+		}
+		err := ValidateHostname(ctrl, tt.adminHostName)
+		if err != nil {
+			if tt.wantErr {
+				if !tt.want.MatchString(err.Error()) {
+					t.Fatalf("RES: %s\nEXP: %s", err.Error(), tt.want.String())
+				}
+				return
+			}
+			t.Fatalf("WANT: PASS, GOT ERROR: %s", err.Error())
+		}
 	}
 }
 
