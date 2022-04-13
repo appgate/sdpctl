@@ -192,6 +192,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 	}
 
+	if len(toBackup) <= 0 {
+		fmt.Fprintln(opts.Out, "No appliances to backup. Either no appliance was selected or the selected appliances are offline.")
+		return nil, nil
+	}
+
 	if !opts.Quiet {
 		msg, err := showBackupSummary(opts.Destination, toBackup)
 		if err != nil {
@@ -294,6 +299,9 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
+	if IDs == nil {
+		return nil
+	}
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err

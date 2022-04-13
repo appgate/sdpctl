@@ -346,8 +346,17 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 }
 
 func FindCurrentController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
+	l := strings.ToLower(hostname)
 	for _, a := range appliances {
-		if a.GetHostname() == hostname {
+		hostnames := []string{}
+		hostnames = append(hostnames, strings.ToLower(a.GetHostname()))
+		if v, ok := a.GetAdminInterfaceOk(); ok {
+			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
+		}
+		if v, ok := a.GetPeerInterfaceOk(); ok {
+			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
+		}
+		if util.InSlice(l, hostnames) {
 			return &a, nil
 		}
 	}
