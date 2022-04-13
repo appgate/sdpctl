@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.4
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20211229102702-55d570847963
 	github.com/billgraziano/dpapi v0.4.0
-	github.com/cenkalti/backoff/v4 v4.1.2
+	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cheynewallace/tabby v1.1.1
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/google/go-cmp v0.5.7
