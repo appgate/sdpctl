@@ -339,6 +339,9 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 		)
 	}
 	if candidate != nil {
+		if err := ValidateHostname(*candidate, hostname); err != nil {
+			return nil, err
+		}
 		return candidate, nil
 	}
 	return nil, fmt.Errorf(
@@ -348,15 +351,18 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 }
 
 func ValidateHostname(controller openapi.Appliance, hostname string) error {
-	ai, ok := controller.GetPeerInterfaceOk()
-	if !ok {
-		return fmt.Errorf("no admin interface on appliance")
+	var h string
+	if ai, ok := controller.GetAdminInterfaceOk(); ok {
+		h = ai.GetHostname()
 	}
-	h, ok := ai.GetHostnameOk()
-	if !ok {
-		return fmt.Errorf("failed to get admin interface hostname on appliance")
+	if pi, ok := controller.GetPeerInterfaceOk(); ok && len(h) <= 0 {
+		h = pi.GetHostname()
 	}
-	cHost := strings.ToLower(*h)
+	if len(h) <= 0 {
+		return fmt.Errorf("failed to determine hostname for controller admin interface")
+	}
+
+	cHost := strings.ToLower(h)
 	nHost := strings.ToLower(hostname)
 	if cHost != nHost {
 		logrus.WithFields(logrus.Fields{
