@@ -15,11 +15,12 @@ import (
 )
 
 type upgradeStatusOptions struct {
-	Config    *configuration.Config
-	Out       io.Writer
-	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug     bool
-	json      bool
+	Config        *configuration.Config
+	Out           io.Writer
+	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug         bool
+	json          bool
+	defaultFilter map[string]map[string]string
 }
 
 // NewUpgradeStatusCmd return a new upgrade status command
@@ -29,6 +30,12 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		defaultFilter: map[string]map[string]string{
+			"filter": {},
+			"exclude": {
+				"active": "false",
+			},
+		},
 	}
 	var upgradeStatusCmd = &cobra.Command{
 		Use:   "status",
@@ -69,7 +76,7 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return err
 	}
 	ctx := context.Background()
-	filter := util.ParseFilteringFlags(cmd.Flags())
+	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

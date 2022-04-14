@@ -12,11 +12,12 @@ import (
 )
 
 type listOptions struct {
-	Config    *configuration.Config
-	Out       io.Writer
-	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug     bool
-	json      bool
+	Config        *configuration.Config
+	Out           io.Writer
+	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug         bool
+	json          bool
+	defaultFilter map[string]map[string]string
 }
 
 // NewListCmd return a new appliance list command
@@ -26,6 +27,10 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		defaultFilter: map[string]map[string]string{
+			"filter":  {},
+			"exclude": {},
+		},
 	}
 	var listCmd = &cobra.Command{
 		Use:   "list",
@@ -52,7 +57,7 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	filter := util.ParseFilteringFlags(cmd.Flags())
+	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	allAppliances, err := a.List(ctx, filter)
 	if err != nil {
 		return err

@@ -40,6 +40,7 @@ type prepareUpgradeOptions struct {
 	remoteImage   bool
 	filename      string
 	timeout       time.Duration
+	defaultFilter map[string]map[string]string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -51,6 +52,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 		timeout:   DefaultTimeout,
+		defaultFilter: map[string]map[string]string{
+			"filter": {},
+			"exclude": {
+				"active": "false",
+			},
+		},
 	}
 	var prepareCmd = &cobra.Command{
 		Use:   "prepare",
@@ -163,7 +170,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
 	}
-	filter := util.ParseFilteringFlags(cmd.Flags())
+	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	Allappliances, err := a.List(ctx, nil)
 	if err != nil {
 		return err

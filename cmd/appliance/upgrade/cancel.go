@@ -26,6 +26,7 @@ type upgradeCancelOptions struct {
 	debug         bool
 	delete        bool
 	NoInteractive bool
+	defaultfilter map[string]map[string]string
 }
 
 // NewUpgradeCancelCmd return a new upgrade status command
@@ -35,6 +36,12 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		defaultfilter: map[string]map[string]string{
+			"filter": {},
+			"exclude": {
+				"active": "false",
+			},
+		},
 	}
 	var upgradeCancelCmd = &cobra.Command{
 		Use:   "cancel",
@@ -69,7 +76,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		return err
 	}
 	ctx := context.Background()
-	filter := util.ParseFilteringFlags(cmd.Flags())
+	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
 	stats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
