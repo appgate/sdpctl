@@ -3,6 +3,7 @@ package appliance
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
@@ -144,6 +145,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 		name := appliance.GetName()
 		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
 		for status := range current {
+			status = strings.ReplaceAll(status, "_", " ")
 			log.WithFields(log.Fields{
 				"appliance": appliance.GetName(),
 				"current":   status,
