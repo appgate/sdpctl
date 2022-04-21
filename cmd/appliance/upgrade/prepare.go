@@ -261,7 +261,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 1
-	p := mpb.New()
+
 	shouldUpload := false
 	fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
 	defer fileStatusCancel()
@@ -287,6 +287,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		if err := a.UploadFile(ctx, imageFile, p); err != nil {
 			return err
 		}
@@ -299,6 +300,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
+		p.Wait()
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
@@ -306,11 +308,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err != nil {
 			return err
 		}
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
 			return err
 		}
+		p.Wait()
 	}
-	p.Wait()
 
 	// Step 2
 	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryController.GetHostname(), opts.filename)
