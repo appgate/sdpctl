@@ -23,14 +23,11 @@ type listOptions struct {
 // NewListCmd return a new appliance list command
 func NewListCmd(f *factory.Factory) *cobra.Command {
 	opts := listOptions{
-		Config:    f.Config,
-		Appliance: f.Appliance,
-		debug:     f.Config.Debug,
-		Out:       f.IOOutWriter,
-		defaultFilter: map[string]map[string]string{
-			"filter":  {},
-			"exclude": {},
-		},
+		Config:        f.Config,
+		Appliance:     f.Appliance,
+		debug:         f.Config.Debug,
+		Out:           f.IOOutWriter,
+		defaultFilter: appliancepkg.DefaultCommandFilter,
 	}
 	var listCmd = &cobra.Command{
 		Use:   "list",

@@ -428,6 +428,11 @@ func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []
 	return template, r
 }
 
+var DefaultCommandFilter = map[string]map[string]string{
+	"filter":  {},
+	"exclude": {},
+}
+
 func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
 	// apply normal filter
 	if len(filter["filter"]) > 0 {
