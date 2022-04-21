@@ -98,7 +98,7 @@ $ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custo
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
-	flags.String("actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the real hostname.")
+	flags.String("actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
 
 	return upgradeCompleteCmd
 }
