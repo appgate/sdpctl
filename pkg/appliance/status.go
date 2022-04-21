@@ -64,7 +64,7 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
 			appliance.GetName(),
-			desiredStatuses,
+			strings.Join(desiredStatuses, ", "),
 			s,
 			status.GetDetails(),
 		)
@@ -97,7 +97,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
 			appliance.GetName(),
-			desiredStatuses,
+			strings.Join(desiredStatuses, ", "),
 			s,
 			status.GetDetails(),
 		)

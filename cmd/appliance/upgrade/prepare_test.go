@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2/core"
@@ -28,7 +29,10 @@ func init() {
 
 type mockUpgradeStatus struct{}
 
-func (u *mockUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error {
+func (u *mockUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error {
+	return nil
+}
+func (u *mockUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error {
 	return nil
 }
 
@@ -37,8 +41,11 @@ func (u *mockUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, applianc
 
 type errorUpgradeStatus struct{}
 
-func (u *errorUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error {
-	return fmt.Errorf("gateway never reached %s, got failed", desiredStatus)
+func (u *errorUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error {
+	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
+}
+func (u *errorUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error {
+	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
 }
 
 func (u *errorUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
@@ -209,7 +216,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name:                "error upgrade status",
 			cli:                 "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
 			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`gateway never reached ready, got failed`),
+			wantErrOut:          regexp.MustCompile(`gateway never reached verifying, ready, failed, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage

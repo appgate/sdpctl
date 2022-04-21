@@ -433,7 +433,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return err
 		}
 		log.WithField("appliance", primaryController.GetName()).Infof("Waiting for primary controller to reach state %s", state)
-		if err := a.UpgradeStatusWorker.Wait(pctx, *primaryController, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+		if err := a.UpgradeStatusWorker.Subscribe(pctx, *primaryController, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
 			close(statusReport)
 			pcancel()
 			return err
@@ -467,7 +467,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 				if !SwitchPartition {
-					if err := a.UpgradeStatusWorker.Wait(bctx, i, appliancepkg.UpgradeStatusSuccess, statusReport); err != nil {
+					if err := a.UpgradeStatusWorker.Subscribe(bctx, i, []string{appliancepkg.UpgradeStatusSuccess}, statusReport); err != nil {
 						close(statusReport)
 						return err
 					}
@@ -484,7 +484,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
-				if err := a.UpgradeStatusWorker.Wait(bctx, i, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.Subscribe(bctx, i, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
 					close(statusReport)
 					return err
 				}
@@ -549,7 +549,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				ctrlCancel()
 				return err
 			}
-			if err := a.UpgradeStatusWorker.Wait(ctrlCtx, ctrl, appliancepkg.UpgradeStatusIdle, statusReport); err != nil {
+			if err := a.UpgradeStatusWorker.Subscribe(ctrlCtx, ctrl, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
 				ctrlCancel()
 				close(statusReport)
 				return err
