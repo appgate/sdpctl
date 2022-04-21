@@ -144,6 +144,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 		previous := ""
 		name := appliance.GetName()
 		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
+		endState = strings.ReplaceAll(endState, "_", " ")
 		for status := range current {
 			status = strings.ReplaceAll(status, "_", " ")
 			log.WithFields(log.Fields{
