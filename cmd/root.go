@@ -138,7 +138,6 @@ func Execute() exitCode {
 	cmd, err := root.ExecuteC()
 	if err != nil {
 		var result error
-		log.WithError(err).Error("Caught error")
 		errorString := err.Error()
 		result = multierror.Append(result, err)
 
