@@ -144,9 +144,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 		previous := ""
 		name := appliance.GetName()
 		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
-		endState = strings.ReplaceAll(endState, "_", " ")
 		for status := range current {
-			status = strings.ReplaceAll(status, "_", " ")
 			log.WithFields(log.Fields{
 				"appliance": appliance.GetName(),
 				"current":   status,
@@ -171,7 +169,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 				if status != previous {
 					spinner.Increment()
 					old := spinner
-					spinner = util.AddDefaultSpinner(p, name, status, endMsg, mpb.BarQueueAfter(old, false))
+					spinner = util.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
 					log.WithFields(log.Fields{
 						"appliance":          appliance.GetName(),
 						"current":            previous,
