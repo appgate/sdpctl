@@ -356,6 +356,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		for _, ap := range appliances {
 			appliance := ap
+			qw.Push(appliance)
 			statusReport := make(chan string)
 			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 
@@ -365,10 +366,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					close(statusReport)
 				}
 			}(appliance)
-		}
-
-		for _, appliance := range appliances {
-			qw.Push(appliance)
 		}
 
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
