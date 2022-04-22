@@ -570,6 +570,14 @@ const (
 	statsOffline      string = "offline"
 )
 
+var NotBusyStatus = []string{
+	statsHealthy,
+	statsWarning,
+	statsError,
+	statsNotAvailable,
+	statsOffline,
+}
+
 // StatsIsOnline will return true if the controller reports the appliance to be online in a valid status
 func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	// from appliance 6.0, 'online' field has been removed in favour for status

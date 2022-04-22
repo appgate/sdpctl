@@ -24,11 +24,17 @@ type mockApplianceStatus struct{}
 func (u *mockApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
 	return nil
 }
+func (u *mockApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+	return nil
+}
 
 type errApplianceStatus struct{}
 
 func (u *errApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
 	return fmt.Errorf("never reached expected state %s", expectedState)
+}
+func (u *errApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+	return fmt.Errorf("Never reached expected status %s", want)
 }
 
 func TestUpgradeCompleteCommand(t *testing.T) {

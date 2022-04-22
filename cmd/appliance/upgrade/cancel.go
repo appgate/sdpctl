@@ -5,7 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"text/template"
+	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -13,11 +15,12 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb/v7"
-	"golang.org/x/sync/errgroup"
 )
 
 type upgradeCancelOptions struct {
@@ -28,6 +31,7 @@ type upgradeCancelOptions struct {
 	delete        bool
 	NoInteractive bool
 	defaultfilter map[string]map[string]string
+	timeout       time.Duration
 }
 
 // NewUpgradeCancelCmd return a new upgrade status command
@@ -37,6 +41,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		timeout:   DefaultTimeout,
 		defaultfilter: map[string]map[string]string{
 			"filter": {},
 			"exclude": {
@@ -67,6 +72,17 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	if err != nil {
 		return err
 	}
+	if a.ApplianceStats == nil {
+		a.ApplianceStats = &appliancepkg.ApplianceStatus{
+			Appliance: a,
+		}
+	}
+	if a.UpgradeStatusWorker == nil {
+		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
+			Appliance: a,
+		}
+	}
+
 	ctx := context.Background()
 	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
 	stats, _, err := a.Stats(ctx)
@@ -104,50 +120,68 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 	}
 
-	fmt.Fprint(opts.Out, "Cancelling prepared upgrades:\n")
-	cancel := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
-		g, ctx := errgroup.WithContext(ctx)
-		cancelChan := make(chan openapi.Appliance, len(appliances))
-		p := mpb.New(mpb.WithOutput(opts.Out))
-		for _, appliance := range noneIdleAppliances {
-			i := appliance
-			g.Go(func() error {
-				spinner := util.AddDefaultSpinner(p, i.GetName(), "cancelling", "cancelled")
-				log.Infof("Cancel upgrade on %s - %s", i.GetId(), i.GetName())
-				if err := a.UpgradeCancel(ctx, i.GetId()); err != nil {
-					spinner.Abort(false)
-					return err
+	cancel := func(ctx context.Context, appliances []openapi.Appliance, workers int) error {
+		var (
+			count = len(appliances)
+			// qw is the FIFO queue that will run Upgrade cancel concurrently on number of workers.
+			qw = queue.New(count, workers)
+			// wantedStatus is the desired state for the queued jobs, we need to limit these jobs, and run them in order
+			wantedStatus = []string{
+				appliancepkg.UpgradeStatusIdle,
+				appliancepkg.UpgradeStatusFailed,
+			}
+			// wg is the wait group for the progressbars
+			wg sync.WaitGroup
+		)
+		cancelProgressBars := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWaitGroup(&wg))
+		wg.Add(count)
+		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
+			return backoff.Retry(func() error {
+				return a.UpgradeCancel(ctx, appliance.GetId())
+			}, backoff.NewExponentialBackOff())
+		}
+
+		for _, ap := range appliances {
+			appliance := ap
+			qw.Push(appliance)
+			statusReport := make(chan string)
+			a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, appliancepkg.UpgradeStatusIdle, appliancepkg.UpgradeStatusFailed, statusReport)
+
+			go func(appliance openapi.Appliance) {
+				defer wg.Done()
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, statusReport); err != nil {
+					close(statusReport)
 				}
-				select {
-				case cancelChan <- i:
-					spinner.Increment()
-				case <-ctx.Done():
-					spinner.Abort(false)
-					return ctx.Err()
-				}
-				return nil
-			})
+			}(appliance)
 		}
-		go func() {
-			g.Wait()
-			close(cancelChan)
-		}()
-		result := make([]openapi.Appliance, 0)
-		for r := range cancelChan {
-			result = append(result, r)
+		err := qw.Work(func(v interface{}) error {
+			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
+			defer cancel()
+			// When cancling upgrade on a appliance, we will verified that both the upgrade status is OK,
+			// and that the apppliance is not busy to avoid race condition When running to many operations
+			// on mulitple appliances at once.
+			appliance := v.(openapi.Appliance)
+			if err := retryCancel(ctx, appliance); err != nil {
+				return fmt.Errorf("Upgrade cancel for %s failed, %w", appliance.GetName(), err)
+			}
+			if err := a.ApplianceStats.WaitForStatus(ctx, appliance, appliancepkg.NotBusyStatus); err != nil {
+				log.Warn(err)
+			}
+			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
+		})
+		if err != nil {
+			return err
 		}
-		if err := g.Wait(); err != nil {
-			return nil, err
-		}
-		p.Wait()
-		return result, nil
+		cancelProgressBars.Wait()
+
+		return nil
 	}
 	fmt.Fprint(opts.Out, "Cancelling pending upgrades...")
-	cancelled, err := cancel(ctx, noneIdleAppliances)
-	if err != nil {
+	// workers is intentionally a fixed value of 2
+	// because otherwise its a high risk of triggering failure from 1 or more appliances
+	if err := cancel(ctx, noneIdleAppliances, 2); err != nil {
 		return err
 	}
-	log.Infof("Upgrade cancelled on %d/%d appliances", len(cancelled), len(noneIdleAppliances))
 
 	if opts.delete {
 		files, err := a.ListFiles(context.Background())
