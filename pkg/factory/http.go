@@ -27,7 +27,7 @@ type Factory struct {
 	Config      *configuration.Config
 	IOOutWriter io.Writer
 	Stdin       io.Reader
-	StdErr      io.Reader
+	StdErr      io.Writer
 }
 
 func New(appVersion string, config *configuration.Config) *Factory {
@@ -39,6 +39,7 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.Token = tokenFunc(f, appVersion)         // depends on config
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
+	f.StdErr = os.Stderr
 	return f
 }
 

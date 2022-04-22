@@ -44,6 +44,7 @@ SDPCTL_CONFIG_DIR=<path/to/config/dir sdpctl configure`,
 	cmd.Flags().StringVar(&opts.PEM, "pem", "", "Path to PEM file to use for request certificate validation")
 
 	cmd.AddCommand(NewSigninCmd(f))
+	cmd.AddCommand(NewConfigGetCmd(f))
 
 	return cmd
 }
