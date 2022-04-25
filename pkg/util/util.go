@@ -78,16 +78,16 @@ func IsValidURL(addr string) bool {
 	return true
 }
 
-func ParseFilteringFlags(flags *pflag.FlagSet) map[string]map[string]string {
-	result := map[string]map[string]string{
-		"filter":  {},
-		"exclude": {},
-	}
+func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[string]string) map[string]map[string]string {
+	result := defaultFilter
 
 	for v := range result {
-		arg, err := flags.GetStringToString(v)
-		if err == nil {
-			result[v] = arg
+		if arg, err := flags.GetStringToString(v); err == nil {
+			if len(arg) > 0 {
+				for f, value := range arg {
+					result[v][f] = value
+				}
+			}
 		}
 	}
 

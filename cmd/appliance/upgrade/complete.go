@@ -38,6 +38,7 @@ type upgradeCompleteOptions struct {
 	NoInteractive     bool
 	Timeout           time.Duration
 	actualHostname    string
+	defaultFilter     map[string]map[string]string
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -48,6 +49,12 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 		Timeout:   DefaultTimeout,
+		defaultFilter: map[string]map[string]string{
+			"filter": {},
+			"exclude": {
+				"active": "false",
+			},
+		},
 	}
 	var upgradeCompleteCmd = &cobra.Command{
 		Use:   "complete",
@@ -123,7 +130,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	filter := util.ParseFilteringFlags(cmd.Flags())
+	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	rawAppliances, err := a.List(ctx, nil)
 	if err != nil {
 		return err

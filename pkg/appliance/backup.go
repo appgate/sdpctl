@@ -127,7 +127,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			"exclude": {},
 		}
 		if reflect.DeepEqual(opts.FilterFlag, nullFilter) || opts.FilterFlag == nil {
-			opts.FilterFlag = util.ParseFilteringFlags(cmd.Flags())
+			opts.FilterFlag = util.ParseFilteringFlags(cmd.Flags(), DefaultCommandFilter)
 		}
 
 		if opts.PrimaryFlag || opts.NoInteractive {
