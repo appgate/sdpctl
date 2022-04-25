@@ -29,18 +29,19 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config        *configuration.Config
-	Out           io.Writer
-	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug         bool
-	insecure      bool
-	NoInteractive bool
-	image         string
-	DevKeyring    bool
-	remoteImage   bool
-	filename      string
-	timeout       time.Duration
-	defaultFilter map[string]map[string]string
+	Config           *configuration.Config
+	Out              io.Writer
+	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug            bool
+	insecure         bool
+	NoInteractive    bool
+	image            string
+	DevKeyring       bool
+	remoteImage      bool
+	filename         string
+	timeout          time.Duration
+	defaultFilter    map[string]map[string]string
+	hostOnController bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -129,6 +130,7 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 	flags.StringVarP(&opts.image, "image", "", "", "Upgrade image file or URL")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag.")
+	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use primary controller as image host when uploading from remote source.")
 
 	return prepareCmd
 }
@@ -140,12 +142,6 @@ func checkImageFilename(i string) error {
 	}
 	return nil
 }
-
-const (
-	fileInProgress = "InProgress"
-	fileReady      = "Ready"
-	fileFailed     = "Failed"
-)
 
 var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run sdpctl configure signin")
 
@@ -278,11 +274,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 	}
-	if !shouldUpload && existingFile.GetStatus() != fileReady {
+	if !shouldUpload && existingFile.GetStatus() != appliancepkg.FileReady {
 		log.WithField("file", opts.filename).Infof("Remote file already exist, but is in status %s, overriding it", existingFile.GetStatus())
 		shouldUpload = true
 	}
-	if existingFile.GetStatus() == fileReady {
+	if existingFile.GetStatus() == appliancepkg.FileReady {
 		log.WithField("file", existingFile.GetName()).Info("File already exists, using it as is")
 	}
 	if shouldUpload && !opts.remoteImage {
@@ -299,10 +295,20 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err != nil {
 			return err
 		}
-		if remoteFile.GetStatus() != fileReady {
+		if remoteFile.GetStatus() != appliancepkg.FileReady {
 			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
+	}
+	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
+		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
+		token, err := opts.Config.GetBearTokenHeaderValue()
+		if err != nil {
+			return err
+		}
+		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
+			return err
+		}
 	}
 	p.Wait()
 
@@ -317,9 +323,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	if opts.remoteImage {
+	if opts.remoteImage && !opts.hostOnController {
 		remoteFilePath = opts.image
 	}
+
 	// prepare the image on the appliances,
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
 	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
@@ -356,7 +363,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					fields := log.Fields{"appliance": appliance.GetName()}
 					log.WithFields(fields).Info("Preparing upgrade")
 					statusReport := make(chan string)
-					a.UpgradeStatusWorker.Watch(appCtx, p, appliance, appliancepkg.UpgradeStatusReady, statusReport)
+					a.UpgradeStatusWorker.Watch(appCtx, p, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 					if err := a.PrepareFileOn(appCtx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 						appCancel()
 						close(statusReport)
@@ -405,7 +412,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	if !opts.remoteImage {
+	if !opts.remoteImage || opts.hostOnController {
 		// Step 3
 		log.Infof("3. Delete upgrade image %s from Controller", opts.filename)
 		deleteCtx, deleteCancel := context.WithTimeout(ctx, opts.timeout)

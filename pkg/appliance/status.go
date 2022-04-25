@@ -15,7 +15,7 @@ import (
 
 type WaitForUpgradeStatus interface {
 	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatus string, current chan<- string) error
-	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string)
+	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string)
 }
 
 type UpgradeStatus struct {
@@ -137,7 +137,7 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 	}, b)
 }
 
-func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
+func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
 	go func() {
 		log.WithField("appliance", appliance.GetName()).Info("Watching for appliance state")
 		endMsg := "completed"
@@ -158,7 +158,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 					"status":           status,
 					"spinnerCompleted": spinner.Completed(),
 				}).Debug("Completing spinner")
-			case UpgradeStatusFailed:
+			case failState:
 				spinner.Abort(false)
 				log.WithFields(log.Fields{
 					"appliance":      appliance.GetName(),
