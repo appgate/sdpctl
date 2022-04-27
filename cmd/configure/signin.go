@@ -29,10 +29,10 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 		Short:   "Sign in and authenticate to Appgate SDP Collective",
 		Long: `Sign in to the Appgate SDP Collective using the configuration file created by the 'sdpctl configure' command.
 This will fetch a token on valid authentication which will be valid for 24 hours and stored in the configuration.`,
-		Example: `# Default sign in
+		Example: `// Default sign in
 $ sdpctl configure signin
 
-# Remember credentials on sign in
+// Remember credentials on sign in
 $ sdpctl configure signin --remember-me`,
 		RunE: func(c *cobra.Command, args []string) error {
 			return signinRun(c, args, &opts)
@@ -41,7 +41,7 @@ $ sdpctl configure signin --remember-me`,
 
 	flags := signinCmd.Flags()
 
-	flags.BoolVar(&opts.remember, "remember-me", false, "remember sign in credentials")
+	flags.BoolVar(&opts.remember, "remember-me", false, "Remember sign in credentials. This will remove any existing, stored credentials.")
 
 	return signinCmd
 }

@@ -6,8 +6,6 @@ package keyring
 import (
 	"os"
 	"strings"
-
-	"github.com/hashicorp/go-multierror"
 )
 
 const (
@@ -16,14 +14,10 @@ const (
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
 
-func ClearCredentials(prefix string) error {
-	var errs error
+func ClearCredentials(prefix string) {
 	for _, k := range []string{username, password, bearer} {
-		if err := deleteSecret(format(prefix, k)); err != nil {
-			errs = multierror.Append(err)
-		}
+		deleteSecret(format(prefix, k))
 	}
-	return errs
 }
 
 func GetPassword(prefix string) (string, error) {

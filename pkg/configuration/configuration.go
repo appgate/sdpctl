@@ -163,9 +163,7 @@ func (c *Config) ClearCredentials() error {
 	if err != nil {
 		return err
 	}
-	if err := keyring.ClearCredentials(h); err != nil {
-		return err
-	}
+	keyring.ClearCredentials(h)
 	c.BearerToken = ""
 	c.ExpiresAt = ""
 	return nil
