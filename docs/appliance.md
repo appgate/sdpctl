@@ -7,8 +7,6 @@ The `appliance` command is the base command in `sdpctl` for managing appliance r
 - [upgrade](#upgrading-appliances)
 - [metric](#monitoring-appliances)
 - [stats](#monitoring-appliances)
-- [resolve-name](#name-resolving)
-- [resolve-name-status](#name-resolving)
 
 ### Flags:
 | Flag | Shorthand | Description | Syntax | Default |
@@ -122,8 +120,3 @@ gateway-site1                 healthy        gateway                       0.3% 
 ```
 
 The `stats` command also accepts a `--json` flag, which will print out a more detailed information view in json format.
-
-TODO: Add description for metrics command
-
-## Name resolving
-
