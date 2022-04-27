@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -231,5 +232,38 @@ func TestNormalizeURL(t *testing.T) {
 				t.Fatalf("FAILED! EXPECTED: %s, GOT: %s", tt.want, result)
 			}
 		})
+	}
+}
+
+func TestClearCredentials(t *testing.T) {
+	zkeyring.MockInit()
+	var (
+		prefix   = "test-unit.devops"
+		username = "user"
+		password = "password"
+		bearer   = "somebearer"
+	)
+	cfg := Config{
+		URL:         fmt.Sprintf("https://%s", prefix),
+		BearerToken: bearer,
+	}
+	if err := keyring.SetUsername(prefix, username); err != nil {
+		t.Error("TEST FAIL: failed to set username", err)
+	}
+	if err := keyring.SetPassword(prefix, password); err != nil {
+		t.Error("TEST FAIL: failed to set password", err)
+	}
+	if err := keyring.SetBearer(prefix, bearer); err != nil {
+		t.Error("TEST FAIL: failed to set bearer", err)
+	}
+	cfg.ClearCredentials()
+	if _, err := keyring.GetUsername(prefix); err == nil {
+		t.Error("TEST FAIL: failed to remove username")
+	}
+	if _, err := keyring.GetPassword(prefix); err == nil {
+		t.Error("TEST FAIL: failed to remove password")
+	}
+	if _, err := keyring.GetBearer(prefix); err == nil {
+		t.Error("TEST FAIL: failed to remove bearer")
 	}
 }
