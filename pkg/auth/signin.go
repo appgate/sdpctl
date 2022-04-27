@@ -43,6 +43,10 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	authenticator := NewAuth(client)
 	// Get credentials from credentials file
 	// Overwrite credentials with values set through environment variables
+    // Clear old credentials if remember me flag is provided
+	if remember {
+		cfg.ClearCredentials()
+	}
 	credentials, err := cfg.LoadCredentials()
 	if err != nil {
 		return err

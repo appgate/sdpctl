@@ -158,6 +158,12 @@ func (c *Config) LoadCredentials() (*Credentials, error) {
 	return creds, nil
 }
 
+func (c *Config) ClearCredentials() {
+	if h, err := c.GetHost(); err == nil {
+		keyring.ClearCredentials(h)
+	}
+}
+
 func (c *Config) StoreCredentials(crd *Credentials) error {
 	h, err := c.GetHost()
 	if err != nil {

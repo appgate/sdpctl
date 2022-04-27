@@ -6,6 +6,8 @@ package keyring
 import (
 	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,6 +15,13 @@ const (
 	// without X (grapgical interface, for example a server environment)
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
+
+func ClearCredentials(prefix string) {
+	for _, k := range []string{username, password, bearer} {
+		err := deleteSecret(format(prefix, k))
+        logrus.Info(err)
+	}
+}
 
 func GetPassword(prefix string) (string, error) {
 	if v, ok := os.LookupEnv("SDPCTL_PASSWORD"); ok {
