@@ -425,7 +425,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
 		primaryP := mpb.New(mpb.WithOutput(opts.Out))
 		statusReport := make(chan string)
-		a.UpgradeStatusWorker.Watch(pctx, primaryP, *primaryController, ctrlUpgradeState, statusReport)
+		a.UpgradeStatusWorker.Watch(pctx, primaryP, *primaryController, ctrlUpgradeState, appliancepkg.UpgradeStatusFailed, statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
 		if err := a.UpgradeComplete(pctx, primaryController.GetId(), true); err != nil {
 			close(statusReport)
@@ -461,7 +461,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				log.WithField("appliance", i.GetName()).Info("checking if ready")
 				statusReport := make(chan string)
 				defer close(statusReport)
-				a.UpgradeStatusWorker.Watch(bctx, p, i, finalState, statusReport)
+				a.UpgradeStatusWorker.Watch(bctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
 				if err := a.UpgradeComplete(bctx, i.GetId(), SwitchPartition); err != nil {
 					close(statusReport)
 					return err
@@ -543,7 +543,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 			statusReport := make(chan string)
 			defer close(statusReport)
-			a.UpgradeStatusWorker.Watch(ctx, ctrlP, ctrl, finalState, statusReport)
+			a.UpgradeStatusWorker.Watch(ctx, ctrlP, ctrl, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
 			if err := a.UpgradeComplete(ctx, ctrl.GetId(), true); err != nil {
 				close(statusReport)
 				ctrlCancel()

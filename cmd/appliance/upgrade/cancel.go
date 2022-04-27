@@ -112,6 +112,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 	}
 
+	fmt.Fprint(opts.Out, "Cancelling prepared upgrades:\n")
 	cancel := func(ctx context.Context, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 		g, ctx := errgroup.WithContext(ctx)
 		cancelChan := make(chan openapi.Appliance, len(appliances))

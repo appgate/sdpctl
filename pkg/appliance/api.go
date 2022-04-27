@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
@@ -51,6 +52,9 @@ const (
 	UpgradeStatusInstalling  = "installing"
 	UpgradeStatusSuccess     = "success"
 	UpgradeStatusFailed      = "failed"
+	fileInProgress           = "InProgress"
+	FileReady                = "Ready"
+	FileFailed               = "Failed"
 )
 
 func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (openapi.InlineResponse2006, error) {
@@ -227,6 +231,59 @@ func (a *Appliance) UploadFile(ctx context.Context, file *os.File, p *mpb.Progre
 	defer response.Body.Close()
 	bar.Wait()
 	waitSpinner.Wait()
+	return nil
+}
+
+func (a *Appliance) UploadToController(ctx context.Context, controller openapi.Appliance, p *mpb.Progress, token, url, filename string) error {
+	response, err := a.APIClient.ApplianceUpgradeApi.FilesPost(ctx).Authorization(token).InlineObject12(openapi.InlineObject12{
+		Url:      url,
+		Filename: filename,
+	}).Execute()
+	if err != nil {
+		if response == nil {
+			return fmt.Errorf("no response during upload %w", err)
+		}
+		if response.StatusCode == http.StatusConflict {
+			return fmt.Errorf("already exists %w", err)
+		}
+		if response.StatusCode > 400 {
+			responseBody, errRead := io.ReadAll(response.Body)
+			if errRead != nil {
+				return err
+			}
+			errBody := api.GenericErrorResponse{}
+			if err := json.Unmarshal(responseBody, &errBody); err != nil {
+				return err
+			}
+			return fmt.Errorf("%s %v", errBody.Message, errBody.Errors)
+		}
+		return err
+	}
+
+	status := ""
+	statusChan := make(chan string)
+	a.UpgradeStatusWorker.Watch(ctx, p, controller, FileReady, FileFailed, statusChan)
+	for status != FileReady {
+		remoteFile, err := a.FileStatus(ctx, filename)
+		if err != nil {
+			close(statusChan)
+			return err
+		}
+		status = remoteFile.GetStatus()
+		statusChan <- status
+		if status == FileReady {
+			close(statusChan)
+			break
+		}
+		if status == FileFailed {
+			close(statusChan)
+			reason := errors.New(remoteFile.GetFailureReason())
+			return fmt.Errorf("Upload to controller failed: %w", reason)
+		}
+		// Arbitrary sleep for not polling file status from the API too much
+		time.Sleep(time.Second * 2)
+	}
+
 	return nil
 }
 

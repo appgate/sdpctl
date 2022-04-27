@@ -32,7 +32,7 @@ func (u *mockUpgradeStatus) Wait(ctx context.Context, appliance openapi.Applianc
 	return nil
 }
 
-func (u *mockUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
+func (u *mockUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
 }
 
 type errorUpgradeStatus struct{}
@@ -41,7 +41,7 @@ func (u *errorUpgradeStatus) Wait(ctx context.Context, appliance openapi.Applian
 	return fmt.Errorf("gateway never reached %s, got failed", desiredStatus)
 }
 
-func (u *errorUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, current <-chan string) {
+func (u *errorUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
 }
 
 func NewApplianceCmd(f *factory.Factory) *cobra.Command {
