@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"github.com/hashicorp/go-multierror"
 )
 
 const (
@@ -16,11 +16,14 @@ const (
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
 
-func ClearCredentials(prefix string) {
+func ClearCredentials(prefix string) error {
+	var errs error
 	for _, k := range []string{username, password, bearer} {
-		err := deleteSecret(format(prefix, k))
-        logrus.Info(err)
+		if err := deleteSecret(format(prefix, k)); err != nil {
+			errs = multierror.Append(err)
+		}
 	}
+	return errs
 }
 
 func GetPassword(prefix string) (string, error) {

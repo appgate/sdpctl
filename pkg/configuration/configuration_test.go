@@ -256,7 +256,11 @@ func TestClearCredentials(t *testing.T) {
 	if err := keyring.SetBearer(prefix, bearer); err != nil {
 		t.Error("TEST FAIL: failed to set bearer", err)
 	}
-	cfg.ClearCredentials()
+
+	if err := cfg.ClearCredentials(); err != nil {
+		t.Error("TEST FAIL: ClearCredentials() failed:", err)
+	}
+
 	if _, err := keyring.GetUsername(prefix); err == nil {
 		t.Error("TEST FAIL: failed to remove username")
 	}

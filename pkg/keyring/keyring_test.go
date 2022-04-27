@@ -52,7 +52,11 @@ func TestClearCredentials(t *testing.T) {
 	if err := SetBearer(prefix, bearer); err != nil {
 		t.Error("TEST FAIL: failed to set bearer", err)
 	}
-	ClearCredentials(prefix)
+
+	if err := ClearCredentials(prefix); err != nil {
+		t.Error("TEST FAIL: ClearCredentials() error:", err)
+	}
+
 	if _, err := GetUsername(prefix); err == nil {
 		t.Error("TEST FAIL: failed to remove username", err)
 	}
