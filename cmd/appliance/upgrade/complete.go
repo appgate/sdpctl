@@ -15,6 +15,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -57,19 +58,10 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	var upgradeCompleteCmd = &cobra.Command{
-		Use:   "complete",
-		Short: "upgrade complete",
-		Long: `Complete a prepared upgrade.
-Install a prepared upgrade on the secondary partition
-and perform a reboot to make the second partition the primary.`,
-		Example: `# complete all pending upgrades
-$ sdpctl appliance upgrade complete
-
-# backup primary controller before completing
-$ sdpctl appliance upgrade complete --backup
-
-# backup to custom directory when completing pending upgrade
-$ sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination`,
+		Use:     "complete",
+		Short:   docs.ApplianceUpgradeCompleteDoc.Short,
+		Long:    docs.ApplianceUpgradeCompleteDoc.Long,
+		Example: docs.ApplianceUpgradeCompleteDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {

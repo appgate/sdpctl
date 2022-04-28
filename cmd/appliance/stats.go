@@ -11,6 +11,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
@@ -32,14 +33,10 @@ func NewStatsCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var listCmd = &cobra.Command{
-		Use:   "stats",
-		Short: `show Appgate SDP Appliance stats`,
-		Long: `Show current stats, such as current system resource consumption, Appliance version etc, for the Appgate SDP Appliances.
-Using the '--json' flag will return a more detailed list of stats in json format.
-
-NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
-		Example: `sdpctl appliance stats
-sdpctl appliance stats --json`,
+		Use:     "stats",
+		Short:   docs.ApplianceStatsDocs.Short,
+		Long:    docs.ApplianceStatsDocs.Long,
+		Example: docs.ApplianceStatsDocs.ExampleString(),
 		Aliases: []string{"status"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return statsRun(c, args, &opts)

@@ -10,6 +10,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -44,19 +45,10 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	var upgradeCancelCmd = &cobra.Command{
-		Use:   "cancel",
-		Short: `Cancel a prepared upgrade`,
-		Long: `Cancel a prepared upgrade. The command will attempt to cancel upgrades on
-Appliances that are not in the 'idle' upgrade state. Cancelling will remove the uploaded
-upgrade image from the Appliance.
-
-Note that you can cancel upgrades on specific appliances by using the '--filter' and/or
-'--exclude' flags in combination with this command.`,
-		Example: `# Cancel upgrade on all Appgate SDP Appliances
-$ sdpctl appliance upgrade cancel
-
-# Cancel upgrade on specific appliance, a gateway in this case
-$ sdpctl appliance upgrade cancel --filter=function=gateway`,
+		Use:     "cancel",
+		Short:   docs.ApplianceUpgradeCancelDoc.Short,
+		Long:    docs.ApplianceUpgradeCancelDoc.Long,
+		Example: docs.ApplianceUpgradeCancelDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeCancelRun(c, args, &opts)
 		},

@@ -4,40 +4,11 @@ import (
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
-)
-
-const (
-	longDescription string = `The backup script will request a backup from the API and download them to a destination directory. The script requires the backup API to be enabled in
-the Appgate SDP Collective. In case the backup API is not enabled when executing the backup command, you will be prompted to activate it.
-
-There are multiple options for selecting which Appgate SDP Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
-the Appgate SDP Appliance you want to take a backup of.
-
-The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an 'appgate' directory
-will be created there if it doesn't already exist and the backups will be downloaded to that. In case custom destination directory is specified by using the
-'--destination' flag, the extra 'appgate' directory will not be created. The user also has to have write privileges on the specified directory.
-
-For more information on the backup process, go to: https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html`
-
-	example string = `# backup with no arguments or flags will prompt for appliance
-$ sdpctl appliance backup
-
-# download backups to a custom directory
-$ sdpctl appliance backup --destination=path/to/backup/destination
-
-# backup only primary controller using flag
-$ sdpctl appliance backup --primary
-
-# backup all Appgate SDP Appliances
-$ sdpctl appliance backup --all
-
-# backup using '--filter' and '--exclude' flags
-$ sdpctl appliance backup --filter=function=controller --exclude=tag=secondary
-`
 )
 
 func NewCmdBackup(f *factory.Factory) *cobra.Command {
@@ -50,9 +21,9 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "backup",
-		Short:   "Perform backup of the Appgate SDP Collective",
-		Long:    longDescription,
-		Example: example,
+		Short:   docs.ApplianceBackupDoc.Short,
+		Long:    docs.ApplianceBackupDoc.Long,
+		Example: docs.ApplianceBackupDoc.ExampleString(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
