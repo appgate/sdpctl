@@ -11,12 +11,6 @@ type ExampleDoc struct {
 	Output      string
 }
 
-type CommandDoc struct {
-	Long     string
-	Short    string
-	Examples []ExampleDoc
-}
-
 // String formats each example to a single string and returns
 func (e *ExampleDoc) String() string {
 	exampleStrings := []string{}
@@ -29,7 +23,7 @@ func (e *ExampleDoc) String() string {
 	if len(e.Command) > 0 {
 		cmdLines := strings.Split(e.Command, "\n")
 		for _, l := range cmdLines {
-			exampleStrings = append(exampleStrings, fmt.Sprintf("  $ %s", l))
+			exampleStrings = append(exampleStrings, fmt.Sprintf("  > %s", l))
 		}
 	}
 	if len(e.Output) > 0 {
@@ -39,6 +33,12 @@ func (e *ExampleDoc) String() string {
 		}
 	}
 	return strings.Join(exampleStrings, "\n")
+}
+
+type CommandDoc struct {
+	Long     string
+	Short    string
+	Examples []ExampleDoc
 }
 
 // ExampleString generates a single string from multiple entries of ExampleDoc for printing in the command specifications
