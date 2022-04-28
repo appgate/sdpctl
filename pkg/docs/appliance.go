@@ -15,6 +15,10 @@ list view in json format. The list command can also be combined with the global 
 			{
 				Description: "Default list command",
 				Command:     "sdpctl appliance list",
+				Output: `Name                                                   ID                                    Hostname                 Site          Activated
+----                                                   --                                    --------                 ----          ---------
+controller                                             67f7ee0c-924c-4253-8b78-0882ff0665ab  controller.dev           Default Site  true
+gateway                                                ec3b6270-ad7e-447a-a6e6-8f4ae816cab5  gateway.dev              Default Site  true`,
 			},
 			{
 				Description: "Print list of appliances in json format",
@@ -27,7 +31,7 @@ list view in json format. The list command can also be combined with the global 
 		},
 	}
 	ApplianceBackupDoc = CommandDoc{
-		Short: "Perform backup of the Appgate SDP Collective",
+		Short: "Perform backup of the Appgate SDP Collective appliances",
 		Long: `The backup script will request a backup from the API and download them to a destination directory. The script requires the backup API to be enabled in
 the Appgate SDP Collective. In case the backup API is not enabled when executing the backup command, you will be prompted to activate it.
 
@@ -43,6 +47,12 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 			{
 				Description: "Backup with no arguments or flags will prompt for appliance",
 				Command:     "sdpctl appliance backup",
+				Output: `? Backup API is disabled on the appliance. Do you want to enable it now? Yes
+? The passphrase to encrypt Appliance Backups when backup API is used: <password> # only shows if backup API is not enabled
+? Confirm your passphrase: <password> # only shows if backup API is not enabled
+? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
+> [ ]  controller
+  [ ]  gateway`,
 			},
 			{
 				Description: "download backups to a custom directory",

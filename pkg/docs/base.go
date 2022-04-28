@@ -17,6 +17,7 @@ type CommandDoc struct {
 	Examples []ExampleDoc
 }
 
+// String formats each example to a single string and returns
 func (e *ExampleDoc) String() string {
 	exampleStrings := []string{}
 	if len(e.Description) > 0 {
@@ -40,6 +41,7 @@ func (e *ExampleDoc) String() string {
 	return strings.Join(exampleStrings, "\n")
 }
 
+// ExampleString generates a single string from multiple entries of ExampleDoc for printing in the command specifications
 func (c *CommandDoc) ExampleString() string {
 	examples := []string{}
 	for _, e := range c.Examples {
