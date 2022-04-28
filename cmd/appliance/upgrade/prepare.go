@@ -372,10 +372,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		// once it has past the 'downloading' stage, we will go to the next item in the queue.
 		err := qw.Work(func(v interface{}) error {
 			appliance := v.(openapi.Appliance)
+			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
+			defer cancel()
 			if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 				return err
 			}
-			return a.UpgradeStatusWorker.Wait(context.Background(), appliance, wantedStatus)
+			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
 		})
 
 		if err != nil {
