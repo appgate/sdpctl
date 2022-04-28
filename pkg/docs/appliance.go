@@ -193,4 +193,88 @@ and perform a reboot to make the second partition the primary.`,
 			},
 		},
 	}
+	ApplianceMetricsDoc = CommandDoc{
+		Short: "Get all the Prometheus metrics for the given Appgate SDP Appliance",
+		Long: `The 'metric' command will return a list of all the available metrics provided by an Appgate SDP Appliance for use in Prometheus.
+If no Appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. The '--metric-name' flag can be used
+to get a specific metric name. This needs to be an exact match.
+
+NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
+		Examples: []ExampleDoc{
+			{
+				Description: "list all available appliance metrics",
+				Command:     "sdpctl appliance metric",
+			},
+			{
+				Description: "list metrics for a particular appliance",
+				Command:     "sdpctl appliance metric <appliance-id>",
+			},
+			{
+				Description: "get a particular metric from an appliance",
+				Command:     "sdpctl appliance metric <appliance-id> --metric-name=<some_metric_name>",
+			},
+		},
+	}
+	ApplianceResolveNameDoc = CommandDoc{
+		Short: "Test a resolver name on a Gateway",
+		Long: `Test a resolver name on a Gateway. Name resolvers are used by the Gateways on a Site resolve
+the IPs in the specific network or set of protected resources.`,
+		Examples: []ExampleDoc{
+			{
+				Description: "with a specific gateway appliance id",
+				Command:     "sdpctl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se",
+			},
+			{
+				Description: "If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.",
+				Command:     "sdpctl appliance resolve-name --resource-name dns://google.se",
+				Output: `? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
+142.251.36.3
+2a00:1450:400e:80f::2003`,
+			},
+		},
+	}
+	ApplianceResolveNameStatusDoc = CommandDoc{
+		Short: "Get the status of name resolution on a Gateway.",
+		Long: `Get the status of name resolution on a Gateway. It lists all the subscribed resource names from all the connected
+Clients and shows the resolution results.`,
+		Examples: []ExampleDoc{
+			{
+				Description: "with a specific gateway appliance id",
+				Command:     "sdpctl appliance resolve-name-status 7f340572-0cd3-416b-7755-9f5c4e546391 --json",
+				Output: `{
+    "resolutions": {
+        "aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev": {
+            "partial": false,
+            "finals": [
+                "3.120.51.78",
+                "35.156.237.184"
+            ],
+            "partials": [
+                "dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com",
+                "dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com"
+            ],
+            "errors": []
+        }
+    }
+}`,
+			},
+		},
+	}
+	ApplianceStatsDocs = CommandDoc{
+		Short: "show Appgate SDP Appliance stats",
+		Long: `Show current stats, such as current system resource consumption, Appliance version etc, for the Appgate SDP Appliances.
+Using the '--json' flag will return a more detailed list of stats in json format.
+
+NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
+		Examples: []ExampleDoc{
+			{
+				Description: "default listing of stats",
+				Command:     "sdpctl appliance stats",
+			},
+			{
+				Description: "print stats in JSON format",
+				Command:     "sdpctl appliance stats --json",
+			},
+		},
+	}
 )

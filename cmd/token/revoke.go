@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -70,20 +71,10 @@ func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 	}
 
 	var revokeCmd = &cobra.Command{
-		Use:   "revoke [<distinguished-name> | --by-token-type <type>]",
-		Short: "revoke entitlement tokens by distinguished name or token-type",
-		Long: `Revoke tokens by distinguished name or token type.
-
-Valid token types are:
-  - administration
-  - adminclaims
-  - entitlements
-  - claims`,
-		Example: `# revoke by distinguished name
-$ sdpctl token revoke <distinguished-name>
-
-# revoke by token type
-$ sdpctl token revoke --token-type=claims`,
+		Use:     "revoke [<distinguished-name> | --by-token-type <type>]",
+		Short:   docs.TokenRevokeDoc.Short,
+		Long:    docs.TokenRevokeDoc.Long,
+		Example: docs.TokenRevokeDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			if (len(args) != 0 && len(args) != 1) || (len(args) == 0 && opts.ByTokenType == "") {
 				return errors.New("must set either <distinghuished-name> or --by-token-type <type>")
