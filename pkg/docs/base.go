@@ -20,10 +20,16 @@ type CommandDoc struct {
 func (e *ExampleDoc) String() string {
 	exampleStrings := []string{}
 	if len(e.Description) > 0 {
-		exampleStrings = append(exampleStrings, fmt.Sprintf("  # %s", e.Description))
+		eStrings := strings.Split(e.Description, "\n")
+		for _, e := range eStrings {
+			exampleStrings = append(exampleStrings, fmt.Sprintf("  # %s", e))
+		}
 	}
 	if len(e.Command) > 0 {
-		exampleStrings = append(exampleStrings, fmt.Sprintf("  $ %s", e.Command))
+		cmdLines := strings.Split(e.Command, "\n")
+		for _, l := range cmdLines {
+			exampleStrings = append(exampleStrings, fmt.Sprintf("  $ %s", l))
+		}
 	}
 	if len(e.Output) > 0 {
 		outString := strings.Split(e.Output, "\n")
