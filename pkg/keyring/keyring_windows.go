@@ -18,6 +18,12 @@ import (
 	"github.com/billgraziano/dpapi"
 )
 
+func ClearCredentials(prefix string) {
+	for _, k := range []string{username, password, bearer} {
+		deleteSecret(format(prefix, k))
+	}
+}
+
 func GetPassword(prefix string) (string, error) {
 	if v, ok := os.LookupEnv("SDPCTL_PASSWORD"); ok {
 		return v, nil

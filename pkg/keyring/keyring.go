@@ -10,7 +10,7 @@ import (
 
 const (
 	// Error string if org.freedesktop.secrets does not exists, for example a environment
-	// without X (grapgical interface, for example a server environment)
+	// without X (graphical interface, for example a server environment)
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
 
