@@ -35,6 +35,12 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	if err != nil {
 		return err
 	}
+	// Clear old credentials if remember me flag is provided
+	if remember {
+		if err := cfg.ClearCredentials(); err != nil {
+			return err
+		}
+	}
 	// if we already have a valid bearer token, we will continue without
 	// without any additional checks.
 	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 && !saveConfig {

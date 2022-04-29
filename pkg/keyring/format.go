@@ -25,3 +25,7 @@ func getSecret(key string) (string, error) {
 func setSecret(key, value string) error {
 	return zkeyring.Set(keyringService, key, value)
 }
+
+func deleteSecret(key string) error {
+	return zkeyring.Delete(keyringService, key)
+}

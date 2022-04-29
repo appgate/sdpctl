@@ -10,9 +10,15 @@ import (
 
 const (
 	// Error string if org.freedesktop.secrets does not exists, for example a environment
-	// without X (grapgical interface, for example a server environment)
+	// without X (graphical interface, for example a server environment)
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
+
+func ClearCredentials(prefix string) {
+	for _, k := range []string{username, password, bearer} {
+		deleteSecret(format(prefix, k))
+	}
+}
 
 func GetPassword(prefix string) (string, error) {
 	if v, ok := os.LookupEnv("SDPCTL_PASSWORD"); ok {
