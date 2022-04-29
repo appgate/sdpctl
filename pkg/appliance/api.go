@@ -16,7 +16,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-version"
-	"github.com/sirupsen/logrus"
 	mpb "github.com/vbauerster/mpb/v7"
 	decor "github.com/vbauerster/mpb/v7/decor"
 	"golang.org/x/sync/errgroup"
@@ -200,10 +199,6 @@ func (a *Appliance) UploadFile(ctx context.Context, file *os.File, p *mpb.Progre
 		req.Header.Set(k, v)
 	}
 	req.Header.Set("Authorization", a.Token)
-	logrus.WithFields(logrus.Fields{
-		"file":    fileStat.Name(),
-		"headers": req.Header,
-	}).Debug("upload file")
 	response, err := httpClient.Do(req)
 	if err != nil {
 		bar.Abort(false)
