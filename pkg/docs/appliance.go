@@ -32,7 +32,7 @@ gateway                                                ec3b6270-ad7e-447a-a6e6-8
 	}
 	ApplianceBackupDoc = CommandDoc{
 		Short: "Perform backup of the Appgate SDP Collective appliances",
-		Long: `The backup script will request a backup from the API and download them to a destination directory. The script requires the backup API to be enabled in
+		Long: `The backup command will request a backup from the API and download them to a destination directory. The command requires the backup API to be enabled in
 the Appgate SDP Collective. In case the backup API is not enabled when executing the backup command, you will be prompted to activate it.
 
 There are multiple options for selecting which Appgate SDP Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
