@@ -236,7 +236,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 					"spinnerAborted": spinner.Aborted(),
 				}).Debug("Aborting spinner")
 			default:
-				if status != previous {
+				if len(status) > 0 && status != previous {
 					spinner.Increment()
 					old := spinner
 					spinner = util.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
