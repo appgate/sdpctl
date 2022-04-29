@@ -1,8 +1,6 @@
 package queue
 
 import (
-	"context"
-
 	"github.com/enriquebris/goconcurrentqueue"
 	"golang.org/x/sync/errgroup"
 )
@@ -35,23 +33,17 @@ func (qw *QueueWorker) Push(v interface{}) error {
 }
 
 // Work starts N coroutines based on QueueWorker.workers
-// The queue will stop at first failure if any
+// The queue will stop at first failure if any.
+// The workers expect the queue to be populated before any work is started.
 func (qw *QueueWorker) Work(closure Closure) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	g, ctx := errgroup.WithContext(ctx)
+	g := new(errgroup.Group)
 	for i := 0; i < qw.workers; i++ {
 		g.Go(func() error {
 			for qw.queue.GetLen() > 0 {
-				value, err := qw.queue.DequeueOrWaitForNextElementContext(ctx)
-				if err != nil {
-					return err
-				}
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				default:
-				}
+				// we will explicitly suppress any Dequeue errors
+				// since our queue implementation will not support
+				// concurrently push to the queue while we are working it.
+				value, _ := qw.queue.Dequeue()
 				if err := closure(value); err != nil {
 					return err
 				}
