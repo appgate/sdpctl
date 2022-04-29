@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -141,7 +142,12 @@ func Execute() exitCode {
 		errorString := err.Error()
 		result = multierror.Append(result, err)
 
-		// if we during any request get a SSL error, (un-truested certificate) error, prompt the user to import the pem file.
+		// if error is DeadlineExceeded, add custom ErrCommandTimeout
+		if errors.As(err, &context.DeadlineExceeded) {
+			result = multierror.Append(result, cmdutil.ErrCommandTimeout)
+		}
+
+		// if we during any request get a SSL error, (un-trusted certificate) error, prompt the user to import the pem file.
 		var sslErr x509.UnknownAuthorityError
 		if errors.As(err, &sslErr) {
 			result = multierror.Append(result, errors.New("Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'"))
