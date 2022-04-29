@@ -42,7 +42,7 @@ var generateCmd = &cobra.Command{
 			}
 			return errs
 		default:
-			return fmt.Errorf("Invalid argument")
+			return errors.New("Invalid argument")
 		}
 	},
 }
