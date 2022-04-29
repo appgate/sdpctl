@@ -77,7 +77,6 @@ func NewCmdRoot() *cobra.Command {
 	cfg := &configuration.Config{}
 
 	viper.SetDefault("debug", false)
-	viper.SetDefault("provider", "local")
 
 	pFlags := rootCmd.PersistentFlags()
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
