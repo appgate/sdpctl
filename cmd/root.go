@@ -143,7 +143,7 @@ func Execute() exitCode {
 		result = multierror.Append(result, err)
 
 		// if error is DeadlineExceeded, add custom ErrCommandTimeout
-		if errors.As(err, &context.DeadlineExceeded) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			result = multierror.Append(result, cmdutil.ErrCommandTimeout)
 		}
 
