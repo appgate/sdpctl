@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"sync"
 	"text/template"
 	"time"
 
@@ -19,13 +20,13 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/util"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb/v7"
-	"golang.org/x/sync/errgroup"
 )
 
 type prepareUpgradeOptions struct {
@@ -261,7 +262,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 1
-	p := mpb.New()
+
 	shouldUpload := false
 	fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
 	defer fileStatusCancel()
@@ -287,6 +288,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		if err := a.UploadFile(ctx, imageFile, p); err != nil {
 			return err
 		}
@@ -299,6 +301,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
+		p.Wait()
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
@@ -306,11 +309,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err != nil {
 			return err
 		}
+		p := mpb.New(mpb.WithOutput(opts.Out))
 		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
 			return err
 		}
+		p.Wait()
 	}
-	p.Wait()
 
 	// Step 2
 	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryController.GetHostname(), opts.filename)
@@ -329,86 +333,70 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	// prepare the image on the appliances,
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
-	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance, workers int) error {
 		log.Infof("Remote file path for controller %s", remoteFilePath)
-		g, _ := errgroup.WithContext(ctx)
-
-		applianceIds := make(chan openapi.Appliance, len(appliances))
-		// Produce, send all appliance Id to the Channel so we can consume them in a fixed rate.
-		g.Go(func() error {
-			for _, appliance := range appliances {
-				applianceIds <- appliance
+		var (
+			count = len(appliances)
+			// qw is the FIFO queue that will run Upgrade concurrently on number of workers.
+			qw = queue.New(count, workers)
+			// wantedStatus is the desired state for the queued jobs, we need to limit these jobs, and run them in order
+			wantedStatus = []string{
+				appliancepkg.UpgradeStatusVerifying,
+				appliancepkg.UpgradeStatusReady,
+				appliancepkg.UpgradeStatusFailed,
 			}
-			close(applianceIds)
-			return nil
+			// prepareReady is used for the status bars to mark them as ready if everything is successful.
+			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
+			// wg is the wait group for the progressbars
+			wg sync.WaitGroup
+		)
+
+		updateProgressBars := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWaitGroup(&wg))
+		wg.Add(count)
+
+		for _, ap := range appliances {
+			appliance := ap
+			qw.Push(appliance)
+			statusReport := make(chan string)
+			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
+
+			go func(appliance openapi.Appliance) {
+				defer wg.Done()
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
+					close(statusReport)
+				}
+			}(appliance)
+		}
+
+		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
+		// once it has past the 'downloading' stage, we will go to the next item in the queue.
+		err := qw.Work(func(v interface{}) error {
+			appliance := v.(openapi.Appliance)
+			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
+			defer cancel()
+			if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
+				return err
+			}
+			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
 		})
 
-		workers, err := cmd.Flags().GetInt("throttle")
 		if err != nil {
-			errMsg := "Failed to parse throttle flag."
-			log.WithError(err).Error(errMsg)
-			return nil, fmt.Errorf(errMsg)
-		}
-		if workers <= 0 {
-			workers = len(appliances)
+			return err
 		}
 
-		p := mpb.New(mpb.WithOutput(opts.Out))
-		// consume Prepare with nWorkers
-		finished := make(chan openapi.Appliance)
-		for i := 0; i < workers; i++ {
-			g.Go(func() error {
-				for appliance := range applianceIds {
-					appCtx, appCancel := context.WithTimeout(context.Background(), opts.timeout)
-					fields := log.Fields{"appliance": appliance.GetName()}
-					log.WithFields(fields).Info("Preparing upgrade")
-					statusReport := make(chan string)
-					a.UpgradeStatusWorker.Watch(appCtx, p, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
-					if err := a.PrepareFileOn(appCtx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
-						appCancel()
-						close(statusReport)
-						log.WithFields(fields).WithError(err).WithContext(appCtx).Error(err)
-						return err
-					}
-					if err := a.UpgradeStatusWorker.Wait(appCtx, appliance, appliancepkg.UpgradeStatusReady, statusReport); err != nil {
-						appCancel()
-						close(statusReport)
-						return err
-					}
-					select {
-					case finished <- appliance:
-						close(statusReport)
-					case <-appCtx.Done():
-						appCancel()
-						close(statusReport)
-						return appCtx.Err()
-					}
-					appCancel()
-				}
-
-				return nil
-			})
-		}
-
-		go func() {
-			g.Wait()
-			close(finished)
-		}()
-
-		r := make([]openapi.Appliance, 0)
-		for appliance := range finished {
-			r = append(r, appliance)
-		}
-
-		if err := g.Wait(); err != nil {
-			return nil, err
-		}
-		p.Wait()
-		return r, nil
+		updateProgressBars.Wait()
+		return err
 	}
 
+	workers, err := cmd.Flags().GetInt("throttle")
+	if err != nil {
+		return err
+	}
+	if workers <= 0 {
+		workers = len(appliances)
+	}
 	fmt.Fprint(opts.Out, "\nPreparing image on appliances:\n")
-	if _, err := prepare(ctx, remoteFilePath, appliances); err != nil {
+	if err := prepare(ctx, remoteFilePath, appliances, workers); err != nil {
 		return err
 	}
 
