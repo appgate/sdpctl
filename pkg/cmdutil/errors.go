@@ -7,4 +7,6 @@ var (
 	ErrExecutedOnAppliance = errors.New("This should not be executed on an appliance")
 	// ErrExecutionCanceledByUser signals user-initiated cancellation
 	ErrExecutionCanceledByUser = errors.New("Cancelled by user")
+	// ErrCommandTimeout is used instead of the default 'Context exceeded deadline' when command times out
+	ErrCommandTimeout = errors.New("Command timed out")
 )
