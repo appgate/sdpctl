@@ -19,7 +19,7 @@ func New(capacity, workers int) *QueueWorker {
 	q := goconcurrentqueue.NewFixedFIFO(capacity)
 	// dont allow more workers then there are items in the queue
 	if workers > q.GetCap() {
-		workers = q.GetCap() - 1
+		workers = q.GetCap()
 	}
 	return &QueueWorker{
 		queue:   q,
