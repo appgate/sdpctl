@@ -132,10 +132,30 @@ func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, d
 
 type WaitForApplianceStatus interface {
 	WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error
+	// WaitForStatus tries appliance stats until the appliance has want status or it reaches the timeout
+	WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
+}
+
+func (u *ApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+	return backoff.Retry(func() error {
+		stats, _, err := u.Appliance.Stats(ctx)
+		if err != nil {
+			return err
+		}
+		for _, stat := range stats.GetData() {
+			if stat.GetId() == appliance.GetId() {
+				if !util.InSlice(stat.GetStatus(), want) {
+					return fmt.Errorf("Want status %s, got %s", want, stat.GetStatus())
+				}
+			}
+		}
+		return nil
+
+	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 }
 
 func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
@@ -216,7 +236,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 					"spinnerAborted": spinner.Aborted(),
 				}).Debug("Aborting spinner")
 			default:
-				if status != previous {
+				if len(status) > 0 && status != previous {
 					spinner.Increment()
 					old := spinner
 					spinner = util.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))

@@ -61,14 +61,6 @@ func TestUpgradeCancelCommand(t *testing.T) {
 					URL:       "/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
-				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
-				},
-				{
-					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
-				},
 			},
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(false) // confirm cancel
@@ -132,6 +124,8 @@ func TestUpgradeCancelCommand(t *testing.T) {
 					HTTPClient: api.GetConfig().HTTPClient,
 					Token:      "",
 				}
+				a.ApplianceStats = new(mockApplianceStatus)
+				a.UpgradeStatusWorker = new(mockUpgradeStatus)
 				return a, nil
 			}
 			cmd := NewUpgradeCancelCmd(f)
