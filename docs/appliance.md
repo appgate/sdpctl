@@ -7,13 +7,11 @@ The `appliance` command is the base command in `sdpctl` for managing appliance r
 - [upgrade](#upgrading-appliances)
 - [metric](#monitoring-appliances)
 - [stats](#monitoring-appliances)
-- [resolve-name](#name-resolving)
-- [resolve-name-status](#name-resolving)
 
 ### Flags:
 | Flag | Shorthand | Description | Syntax | Default |
 |---|---|---|---|---|
-| `--filter` | `f` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: `--filter name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
+| `--filter` | `-f` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: `--filter name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
 | `--exclude` | `-e` | The opposite of the filter flag, but uses the same syntax | Se syntax description on the `--filter` flag | null |
 | `--no-interactive` | none | Using this flag will attempt to skip all user interaction otherwise required by accepting the default values | `sdpctl appliance --no-interactive [action]` | null |
 
@@ -84,11 +82,19 @@ ID                                          Name                    Status      
 15786382-501a-4185-6713-d6a57e8f1448        gateway-site1           online        idle
 ```
 
+### Preparing an upgrade
 Once you have an image to upgrade your appliances with, you upload it using the `upgrade prepare` command. The `prepare` command has a mandatory `--image` flag where you will specify the path to the image you want to upload.
 ```bash
 $ sdpctl appliance upgrade prepare --image /path/to/image-5.5.3.img.zip
 ```
-> Note: The image path could either be a local file path to a downloaded image or a URL.<br />
+Aternatively, you can specify an URL from where appliances can download the upgrade image. In case a URL is specified, you also have the option to let the primary controller host the upgrade image for the other appliances by using the `--host-on-controller` flag during prepare. In this case, the upgrade image will only be downloaded by the primary controller from the specified URL. The primary controller will then host the upgrade image from its repository for the other appliances to download from.
+```bash
+$ # using an URL for the prepare command
+$ sdpctl appliance upgrade prepare --image https://url.to/image-5.5.3.img.zip
+
+$ # using the --host-on-controller flag
+$ sdpctl appliance upgrade prepare --image https://url.to/image-5.5.3.img.zip --host-on-controller
+```
 > If the path is a URL, make sure the URL is accessible so that the appliances can download it.
 
 Once the `upgrade prepare` command is completed, the upgrade status of the appliances should now be 'ready' and the 'Details' column should have the filename on the uploaded file:
@@ -99,16 +105,49 @@ ID                                          Name                    Status      
 47e9e708-0a9b-484d-b356-0b8f38cb13ec        controller2-site1       online        ready                 image-5.5.3.img.zip
 15786382-501a-4185-6713-d6a57e8f1448        gateway-site1           online        ready                 image-5.5.3.img.zip
 ```
+### Cancelling a prepared upgrade
+Once an upgrade is prepared, you can choose to abort the upgrade using the `upgrade cancel` command. Running the `cancel` command will remove the uploaded upgrade image and return the appliances to the 'idle' state.
 
-At this point, you can choose to abort the upgrade using the `upgrade cancel` command. Running the `cancel` command will remove the uploaded upgrade image and return the appliances to the 'idle' state.
+The `--filter` and `--exclude` can be used to control wether to cancel upgrades on a specified set of appliances.
 
-If you wish to continue upgrading, the upgrade is completed using the `upgrade complete` command.
+In case there are upgrade images uploaded to the primary controller file repository (such as when using the `--host-on-controller` flag while preparing), specifying the `--delete` flag when cancelling will remove all lingering images from the repository as well.
+
+```bash
+$ # default cancel command
+$ sdpctl appliance upgrade cancel
+
+$ # using the delete flag
+$ sdpctl appliance upgrade cancel --delete
+
+$ # using filter when cancelling will only cancel upgrades on appliances that matches the filter
+$ # in this example, the upgrade will only be cancelles on the gateway appliance
+$ sdpctl appliance upgrade cancel --filter name=gateway-site1
+
+$ # the --exclude works the same as the filter, but in reverse
+$ # this example will cancel upgrades on all appliances except the gateway appliance
+$ sdpctl appliance upgrade cancel --exclude name=gateway-site1
+```
+
+### Completing an upgrade
+Once there's one or more appliances prepared for upgrade, the `upgrade complete` command is used for completing them.
 ```bash
 $ sdpctl appliance upgrade complete
 ```
 At this point, you will be prompted if you want to do a backup before proceeding to complete the upgrade. If you want more backup options than provided in the prompt, it's recommended to use the standalone `appliance backup` command, since more options are available there.
 
-The `upgrade complete` command will run until all appliances that are part of the upgrade reaches the desired state of 'idle'.
+The `upgrade complete` command will run until all appliances that are part of the upgrade reaches the desired state of 'idle'. The upgrade process is completed in three stages. If any of the stages fails, the upgrade will be aborted even if there are remaining stages left.
+1. The primary controller will be upgraded first. This stage will make the API, which sdpctl uses, to be unavailable for most of the upgrade completion
+2. Any additional controllers will be upgraded one at a time. If there are no additional controllers in the SDP Collective, this step will be skipped.
+3. Any remaining appliances will be upgraded. The remaining appliances will be split up into batches to ensure high availability during the upgrade process. The number of batches depends on how many appliances are left to upgrade and the size of each batch depends on how many sites are set up in the collective. Each appliance in a batch will need to be completed before the next batch is going to be processed.
+
+As with the other upgrade commands, the `--filter` and `--exclude` flags can be used to gain further control of the upgrade completion.
+```bash
+$ # upgrade only controllers
+$ sdpctl appliance upgrade complete --filter function=controller
+
+$ # upgrade all other appliances except controllers
+$ sdpctl appliance upgrade complete --exclude function=controller
+```
 
 ## Monitoring appliances
 There are two commands in `sdpctl` to help monitoring appliances: `metric` and `stats`.
@@ -122,8 +161,3 @@ gateway-site1                 healthy        gateway                       0.3% 
 ```
 
 The `stats` command also accepts a `--json` flag, which will print out a more detailed information view in json format.
-
-TODO: Add description for metrics command
-
-## Name resolving
-

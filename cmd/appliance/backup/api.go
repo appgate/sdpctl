@@ -8,6 +8,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/spf13/cobra"
@@ -30,16 +31,10 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var cmd = &cobra.Command{
-		Use:   "api",
-		Short: `Controls the state of the backup API.`,
-		Long: `This command controls the state of the backup API on the Appgate SDP Collective.
-You will be prompted for a passphrase for the backups when enabling the backup API using this command.
-The passphrase is required.`,
-		Example: `# enable the backup API
-$ appgate appliance backup api
-
-# disable the backup API
-$ sdpctl appliance backup api --disable`,
+		Use:     "api",
+		Short:   docs.ApplianceBackupAPIDoc.Short,
+		Long:    docs.ApplianceBackupAPIDoc.Long,
+		Example: docs.ApplianceBackupAPIDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return backupAPIrun(c, args, &opts)
 		},

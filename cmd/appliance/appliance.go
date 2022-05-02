@@ -3,6 +3,7 @@ package appliance
 import (
 	"github.com/appgate/sdpctl/cmd/appliance/backup"
 	"github.com/appgate/sdpctl/cmd/appliance/upgrade"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
@@ -15,10 +16,9 @@ Available keywords to filter on are: name, id, tags|tag, version, hostname|host,
 // NewApplianceCmd return a new appliance command
 func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "appliance",
-		Short: "interact with Appgate SDP Appliances",
-		Long: `The base command to access and interact with your Appgate SDP Appliances. This command does not do anything by itself, it is
-used together with one of the available sub-commands listed below.`,
+		Use:              "appliance",
+		Short:            docs.ApplianceRootDoc.Short,
+		Long:             docs.ApplianceRootDoc.Long,
 		Aliases:          []string{"app", "a"},
 		TraverseChildren: true,
 	}

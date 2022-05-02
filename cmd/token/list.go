@@ -3,17 +3,17 @@ package token
 import (
 	"context"
 
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
 func NewTokenListCmd(opts *TokenOptions) *cobra.Command {
 	var listCmd = &cobra.Command{
-		Use:   "list",
-		Short: "list distinguished names of active devices",
-		Long:  `List distinguished names of active tokens, either in table format or JSON format using the '--json' flag`,
-		Example: `$ sdpctl token list
-$ sdpctl token list --json`,
+		Use:     "list",
+		Short:   docs.TokenListDoc.Short,
+		Long:    docs.TokenListDoc.Long,
+		Example: docs.TokenListDoc.ExampleString(),
 		Aliases: []string{"ls"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return tokenListRun(opts)

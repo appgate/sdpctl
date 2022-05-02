@@ -6,6 +6,7 @@ import (
 
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -30,14 +31,10 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 		defaultFilter: appliancepkg.DefaultCommandFilter,
 	}
 	var listCmd = &cobra.Command{
-		Use:   "list",
-		Short: `List all Appgate SDP Appliances`,
-		Long: `List all Appliances in the Appgate SDP Collective. The appliances will be listed in no particular order. Using without arguments
-will print a table view with a limited set of information. Using the command with the provided '--json' flag will print out a more detailed
-list view in json format. The list command can also be combined with the global '--filter' and '--exclude' flags`,
-		Example: `sdpctl appliance list
-sdpctl appliance list --json
-sdpctl appliance list --filter=<key>=<value>`,
+		Use:     "list",
+		Short:   docs.ApplianceListDoc.Short,
+		Long:    docs.ApplianceListDoc.Short,
+		Example: docs.ApplianceListDoc.ExampleString(),
 		Aliases: []string{"ls"},
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, &opts)

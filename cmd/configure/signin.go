@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appgate/sdpctl/pkg/auth"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -26,14 +27,9 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 			"skipAuthCheck": "true",
 		},
 		Aliases: []string{"login"},
-		Short:   "Sign in and authenticate to Appgate SDP Collective",
-		Long: `Sign in to the Appgate SDP Collective using the configuration file created by the 'sdpctl configure' command.
-This will fetch a token on valid authentication which will be valid for 24 hours and stored in the configuration.`,
-		Example: `// Default sign in
-$ sdpctl configure signin
-
-// Remember credentials on sign in
-$ sdpctl configure signin --remember-me`,
+		Short:   docs.ConfigureSigninDocs.Short,
+		Long:    docs.ConfigureSigninDocs.Long,
+		Example: docs.ConfigureSigninDocs.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return signinRun(c, args, &opts)
 		},

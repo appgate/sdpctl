@@ -9,6 +9,7 @@ import (
 
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -38,26 +39,10 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	var upgradeStatusCmd = &cobra.Command{
-		Use:   "status",
-		Short: `Display the upgrade status of Appgate SDP Appliances`,
-		Long: `Display the upgrade status of Appgate SDP Appliances in either table or json format.
-Upgrade statuses:
-- idle:         No upgrade is initiated
-- started:      Upgrade process has started
-- downloading:  Appliance is downloading the upgrade image
-- verifying:    Upgrade image download is completed and the image is being verified
-- ready:        Image is verified and ready to be applied
-- installing:   Appliance is installing the upgrade image
-- success:      Upgrade successful
-- failed:       Upgrade failed for some reason during the process`,
-		Example: `# View in table format
-$ sdpctl appliance upgrade status
-
-# View in JSON format
-$ sdpctl appliance upgrade status --json
-
-# Filter appliances
-$ sdpctl appliance upgrade status --filter=name=controller`,
+		Use:     "status",
+		Short:   docs.ApplianceUpgradeStatusDoc.Short,
+		Long:    docs.ApplianceUpgradeStatusDoc.Long,
+		Example: docs.ApplianceUpgradeStatusDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return upgradeStatusRun(c, args, &opts)
 		},

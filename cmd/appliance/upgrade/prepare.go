@@ -18,6 +18,7 @@ import (
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
@@ -62,20 +63,10 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	var prepareCmd = &cobra.Command{
-		Use:   "prepare",
-		Short: "prepare upgrade",
-		Long: `Prepare an upgrade but do NOT install it.
-This means the upgrade file will be downloaded/uploaded to all the appliances,
-the signature verified as well as any other preconditions applicable at this point.
-
-There are initial checks on the filename before attempting to upload it to the Appliances.
-A valid filename ends with '.img.zip' and also needs to have a semver included somewhere
-in the name, eg. 'upgrade.img.zip' will not not be valid, but 'upgrade5.5.3.img.zip' is
-considered valid.
-
-Note that the '--image' flag also accepts URL:s. The Appliances will then attempt to download
-the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.`,
-		Example: `$ sdpctl appliance upgrade prepare --image=/path/to/upgrade-5.5.3.img.zip`,
+		Use:     "prepare",
+		Short:   docs.ApplianceUpgradePrepareDoc.Short,
+		Long:    docs.ApplianceUpgradePrepareDoc.Long,
+		Example: docs.ApplianceUpgradePrepareDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")

@@ -8,6 +8,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/google/uuid"
@@ -25,32 +26,6 @@ type resolveNameStatusOpts struct {
 	applianceID string
 }
 
-const (
-	resolveNameStatusLong = `
-    Get the status of name resolution on a Gateway. It lists all the subscribed resource names from all the connected Clients and shows the resolution results.
-    `
-	resolveNameStatusExample = `
-    # with a specific gateway appliance id:
-    appliance resolve-name-status 7f340572-0cd3-416b-7755-9f5c4e546391 --json
-    {
-        "resolutions": {
-          "aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev": {
-            "partial": false,
-            "finals": [
-              "3.120.51.78",
-              "35.156.237.184"
-            ],
-            "partials": [
-              "dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com",
-              "dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com"
-            ],
-            "errors": []
-          }
-        }
-    }
-    `
-)
-
 func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 	opts := resolveNameStatusOpts{
 		Config:    f.Config,
@@ -61,9 +36,9 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 	}
 	var cmd = &cobra.Command{
 		Use:     "resolve-name-status [<appliance-id>]",
-		Short:   `Get the status of name resolution on a Gateway.`,
-		Long:    resolveNameStatusLong,
-		Example: resolveNameStatusExample,
+		Short:   docs.ApplianceResolveNameStatusDoc.Short,
+		Long:    docs.ApplianceResolveNameStatusDoc.Long,
+		Example: docs.ApplianceResolveNameStatusDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			a, err := opts.Appliance(opts.Config)
 			if err != nil {
