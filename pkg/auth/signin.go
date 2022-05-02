@@ -92,6 +92,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 			return err
 		}
 	}
+	cfg.Provider = loginOpts.ProviderName
 	if len(credentials.Username) <= 0 {
 		err := prompt.SurveyAskOne(&survey.Input{
 			Message: "Username:",
@@ -185,6 +186,7 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 		return fmt.Errorf("could not store token in keychain %w", err)
 	}
 
+	viper.Set("provider", cfg.Provider)
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
 

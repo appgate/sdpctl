@@ -73,7 +73,7 @@ $ sdpctl configure
 $ sdpctl configure signin
 ```
 
-You can also manage multiple Appgate SDP collectives using `sdpctl`. See the [authentication documentation](./docs/auth.md) for more information.
+You can also manage multiple Appgate SDP collectives using `sdpctl`. See the [authentication documentation](./docs/configure.md#working-with-multiple-appgate-sdp-collectives) for more information.
 
 ---
 ## The `appliance` command
