@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 )
 

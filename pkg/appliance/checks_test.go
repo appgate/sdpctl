@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/google/go-cmp/cmp"
 )
 
