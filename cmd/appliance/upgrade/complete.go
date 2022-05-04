@@ -455,38 +455,31 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				defer close(statusReport)
 				a.UpgradeStatusWorker.Watch(bctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
 				if err := a.UpgradeComplete(bctx, i.GetId(), SwitchPartition); err != nil {
-					close(statusReport)
 					return err
 				}
 				if !SwitchPartition {
 					if err := a.UpgradeStatusWorker.Subscribe(bctx, i, []string{appliancepkg.UpgradeStatusSuccess}, statusReport); err != nil {
-						close(statusReport)
 						return err
 					}
 					status, err := a.UpgradeStatus(bctx, i.GetId())
 					if err != nil {
-						close(statusReport)
 						return err
 					}
 					if regex.MatchString(status.GetDetails()) {
 						if err := a.UpgradeSwitchPartition(bctx, i.GetId()); err != nil {
-							close(statusReport)
 							return err
 						}
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
 				if err := a.UpgradeStatusWorker.Subscribe(bctx, i, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
-					close(statusReport)
 					return err
 				}
 				if err := a.ApplianceStats.WaitForState(bctx, i, finalState, statusReport); err != nil {
-					close(statusReport)
 					return err
 				}
 				select {
 				case <-bctx.Done():
-					close(statusReport)
 					return bctx.Err()
 				case upgradeChan <- i:
 				}
@@ -602,7 +595,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithFields(log.Fields{
 				"primary_controller_version": newVersion.String(),
 				"api_version":                newPeerAPIVersion,
-			}).Warn("failed to write config file")
+			}).WithError(err).Warn("failed to write config file")
 			fmt.Fprintln(opts.Out, "WARNING: Failed to write to config file. Please run 'sdpctl configure signin' to reconfigure.")
 		}
 	}
