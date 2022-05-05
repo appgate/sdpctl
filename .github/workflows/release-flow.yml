@@ -2,17 +2,17 @@ name: Release Flow
 
 on:
   push:
-    branches:
-      - main
     tags:
       - v*
 
 jobs:
   test:
+    if: ${{ github.event.base_ref == 'refs/heads/main' }}
     uses: ./.github/workflows/test.yml
   lint:
+    if: ${{ github.event.base_ref == 'refs/heads/main' }}
     uses: ./.github/workflows/lint.yml
   release:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.event.base_ref == 'refs/heads/main' }}
     uses: ./.github/workflows/release.yml
     needs: [test, lint]
