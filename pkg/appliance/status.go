@@ -13,6 +13,8 @@ import (
 	"github.com/vbauerster/mpb/v7"
 )
 
+const DefaultTimeout = time.Minute * 30
+
 type WaitForUpgradeStatus interface {
 	// Wait does expodential backoff retries on upgrade status and return nil if it reaches any of the desiredStatuses
 	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error
@@ -31,7 +33,7 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 	Multiplier:          2,
 	RandomizationFactor: 0.7,
 	MaxInterval:         10 * time.Second,
-	MaxElapsedTime:      10 * time.Minute,
+	MaxElapsedTime:      DefaultTimeout,
 	Stop:                backoff.Stop,
 	Clock:               backoff.SystemClock,
 }
