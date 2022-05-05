@@ -27,7 +27,7 @@ func NewUpgradeCmd(f *factory.Factory) *cobra.Command {
 	upgradeCmd.AddCommand(NewUpgradeCompleteCmd(f))
 
 	flags := upgradeCmd.PersistentFlags()
-	flags.DurationP("timeout", "t", 30*time.Minute, "Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on.")
+	flags.DurationP("timeout", "t", DefaultTimeout, "Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on.")
 
 	return upgradeCmd
 }
