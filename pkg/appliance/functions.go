@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"

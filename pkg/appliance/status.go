@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"

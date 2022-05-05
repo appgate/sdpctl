@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/appgate/sdp-api-client-go/api/v16/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
