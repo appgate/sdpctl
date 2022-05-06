@@ -50,7 +50,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.AllFlag, "all", false, "backup all Appliances in the Appgate SDP Collective")
 	flags.BoolVar(&opts.PrimaryFlag, "primary", false, "backup primary controller")
 	flags.BoolVar(&opts.CurrentFlag, "current", false, "backup current peer controller")
-	flags.StringSliceVarP(&opts.Include, "include", "i", []string{}, "include extra data in backup (audit,logs)")
+	flags.StringSliceVar(&opts.Include, "with", []string{}, "include extra data in backup (audit,logs)")
 	flags.DurationVarP(&opts.Timeout, "timeout", "t", 5*time.Minute, "time out for status check on the backups")
 	flags.BoolVar(&opts.Quiet, "quiet", false, "backup summary will not be printed if setting this flag")
 

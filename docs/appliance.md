@@ -11,8 +11,8 @@ The `appliance` command is the base command in `sdpctl` for managing appliance r
 ### Flags:
 | Flag | Shorthand | Description | Syntax | Default |
 |---|---|---|---|---|
-| `--filter` | `-f` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: `--filter name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
-| `--exclude` | `-e` | The opposite of the filter flag, but uses the same syntax | Se syntax description on the `--filter` flag | null |
+| `--include` | `-f` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: `--include name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
+| `--exclude` | `-e` | The opposite of the filter flag, but uses the same syntax | Se syntax description on the `--include` flag | null |
 | `--no-interactive` | none | Using this flag will attempt to skip all user interaction otherwise required by accepting the default values | `sdpctl appliance --no-interactive [action]` | null |
 
 ---
@@ -56,10 +56,10 @@ $ sdpctl appliance backup controller-site1 gateway-site1
 
 There are also flags to help select what appliances to backup. The `--primary` flag will find the primary controller in the collective and perform a backup of that. Similarly, the `--current` flag performs a backup of the appliance which sdpctl is currently connected to. The `--all` flag will perform a backup of all appliances in the collective.
 
-You can also select appliances to backup using the global `--filter` flag and the backup will be performed only on the appliances that match the filter query. On the opposite, if you'd want to exclude some specific appliances from the backup, you can use the `--exclude` flag. The exclude flag uses the same syntax as the global filter flag. When both the `--filter` and `--exclude` flags are used combined, the exclusion will apply after the filtering. In other words, the exclusion will apply to the list of appliances that matches the filtering rules.
+You can also select appliances to backup using the global `--include` flag and the backup will be performed only on the appliances that match the filter query. On the opposite, if you'd want to exclude some specific appliances from the backup, you can use the `--exclude` flag. The exclude flag uses the same syntax as the global filter flag. When both the `--include` and `--exclude` flags are used combined, the exclusion will apply after the filtering. In other words, the exclusion will apply to the list of appliances that matches the filtering rules.
 ```bash
 # given that our list of appliances is the same as provided in the list command example, this command will only backup the controller-site1 appliance
-$ sdpctl appliance backup --filter function=controller --exclude name=controller2
+$ sdpctl appliance backup --include function=controller --exclude name=controller2
 ```
 
 The backups will be downloaded to a provided destination on your filesystem. The default destination is in the `Download` folder of the user home directory, eg. `$HOME/Downloads/appgate/backups`. You can define a custom destination for downloading the backups by providing the `--destination` flag when running the backup command. The user executing the script will need permission to write to that folder.
@@ -71,7 +71,7 @@ $ sdpctl appliance backup --destination /your/custom/backup/destination
 ## Upgrading appliances
 You can use `sdpctl` for upgrading your Appgate SDP appliances using the `upgrade` action command. Upgrading is a two step process where you first need to upload an image of the newer version which you want to upgrade to. You can find all supported Appgate SDP images available on [Appgate SDP support page](https://www.appgate.com/support/software-defined-perimeter-support).
 
-> Note: You can use the `upgrade` command along with the `--filter` and/or `--exclude` flags. This will upgrade only the appliances matching the filter or exclude query.
+> Note: You can use the `upgrade` command along with the `--include` and/or `--exclude` flags. This will upgrade only the appliances matching the filter or exclude query.
 
 You can view the current status of an upgrade by running `upgrade status`. If no upgrade is in progress, the upgrade status should be 'idle':
 ```bash
@@ -108,7 +108,7 @@ ID                                          Name                    Status      
 ### Cancelling a prepared upgrade
 Once an upgrade is prepared, you can choose to abort the upgrade using the `upgrade cancel` command. Running the `cancel` command will remove the uploaded upgrade image and return the appliances to the 'idle' state.
 
-The `--filter` and `--exclude` can be used to control wether to cancel upgrades on a specified set of appliances.
+The `--include` and `--exclude` can be used to control wether to cancel upgrades on a specified set of appliances.
 
 In case there are upgrade images uploaded to the primary controller file repository (such as when using the `--host-on-controller` flag while preparing), specifying the `--delete` flag when cancelling will remove all lingering images from the repository as well.
 
@@ -121,7 +121,7 @@ $ sdpctl appliance upgrade cancel --delete
 
 $ # using filter when cancelling will only cancel upgrades on appliances that matches the filter
 $ # in this example, the upgrade will only be cancelles on the gateway appliance
-$ sdpctl appliance upgrade cancel --filter name=gateway-site1
+$ sdpctl appliance upgrade cancel --include name=gateway-site1
 
 $ # the --exclude works the same as the filter, but in reverse
 $ # this example will cancel upgrades on all appliances except the gateway appliance
@@ -140,10 +140,10 @@ The `upgrade complete` command will run until all appliances that are part of th
 2. Any additional controllers will be upgraded one at a time. If there are no additional controllers in the SDP Collective, this step will be skipped.
 3. Any remaining appliances will be upgraded. The remaining appliances will be split up into batches to ensure high availability during the upgrade process. The number of batches depends on how many appliances are left to upgrade and the size of each batch depends on how many sites are set up in the collective. Each appliance in a batch will need to be completed before the next batch is going to be processed.
 
-As with the other upgrade commands, the `--filter` and `--exclude` flags can be used to gain further control of the upgrade completion.
+As with the other upgrade commands, the `--include` and `--exclude` flags can be used to gain further control of the upgrade completion.
 ```bash
 $ # upgrade only controllers
-$ sdpctl appliance upgrade complete --filter function=controller
+$ sdpctl appliance upgrade complete --include function=controller
 
 $ # upgrade all other appliances except controllers
 $ sdpctl appliance upgrade complete --exclude function=controller
