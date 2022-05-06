@@ -286,7 +286,7 @@ func ActiveSitesInAppliances(slice []openapi.Appliance) int {
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == appliance.GetId() {
-			return NormalizeVersion(s.GetVersion())
+			return ParseVersionString(s.GetVersion())
 		}
 	}
 	return nil, fmt.Errorf("could not determine appliance version %s", appliance.GetName())
@@ -590,13 +590,6 @@ func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	}
 	// unkown or empty status will report appliance as offline.
 	return util.InSlice(s.GetStatus(), []string{statsHealthy, statsBusy, statsWarning, statsError})
-}
-
-func NormalizeVersion(s string) (*version.Version, error) {
-	regex := regexp.MustCompile(`\d+\.\d+\.\d+([-|\+]?\d+)?`)
-	match := regex.FindString(s)
-	vString := strings.ReplaceAll(match, "-", "+")
-	return version.NewVersion(vString)
 }
 
 func ShouldDisable(from, to *version.Version) bool {

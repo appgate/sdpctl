@@ -1,8 +1,8 @@
 package appliance
 
 import (
+	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/hashicorp/go-version"
 )
@@ -19,25 +19,22 @@ For more documentation on the backup process, go to:
 )
 
 var (
-	versionRegex = regexp.MustCompile(`(\d+[.]\d+[.]\d+)-(\d+)-(\w+)`)
+	versionRegex = regexp.MustCompile(`(\d+[.]\d+[.]\d+)-?(\d+)?-?(\w+)?`)
 )
 
-// GuessVersion tries to determine appliance version based on the input filename,
+// ParseVersionString tries to determine appliance version based on the input filename,
 // It assumes the file is has the standard naming convention of
 // appgate-5.4.4-26245-release.img.zip
 // where 5.4.4 is the semver of the appliance.
-func GuessVersion(input string) (*version.Version, error) {
-	if versionRegex.MatchString(input) {
-		edges := versionRegex.Split(input, 2)
-		if len(edges) == 2 &&
-			strings.HasPrefix(input, edges[0]) &&
-			strings.HasSuffix(input, edges[1]) {
-			v := strings.TrimSuffix(
-				strings.TrimPrefix(input, edges[0]),
-				edges[1],
-			)
-			// Correctly parse semver metadata with + instead of -
-			return version.NewVersion(strings.Replace(v, "-", "+", 1))
+func ParseVersionString(input string) (*version.Version, error) {
+	m := versionRegex.FindStringSubmatch(input)
+	if len(m) > 0 {
+		input = m[1]
+		if len(m[3]) > 0 && m[3] != "release" {
+			input = fmt.Sprintf("%s-%s", input, m[3])
+		}
+		if len(m[2]) > 0 {
+			input = fmt.Sprintf("%s+%s", input, m[2])
 		}
 	}
 	return version.NewVersion(input)
