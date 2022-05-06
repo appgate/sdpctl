@@ -56,7 +56,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 		timeout:   DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
-			"filter": {},
+			"include": {},
 			"exclude": {
 				"active": "false",
 			},

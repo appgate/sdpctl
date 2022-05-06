@@ -429,14 +429,14 @@ func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []
 }
 
 var DefaultCommandFilter = map[string]map[string]string{
-	"filter":  {},
+	"include": {},
 	"exclude": {},
 }
 
 func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
 	// apply normal filter
-	if len(filter["filter"]) > 0 {
-		appliances = applyApplianceFilter(appliances, filter["filter"])
+	if len(filter["include"]) > 0 {
+		appliances = applyApplianceFilter(appliances, filter["include"])
 	}
 
 	// apply exclusion filter

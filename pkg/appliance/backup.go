@@ -36,7 +36,7 @@ type BackupOpts struct {
 	Out           io.Writer
 	Destination   string
 	NotifyURL     string
-	Include       []string
+	With          []string
 	AllFlag       bool
 	PrimaryFlag   bool
 	CurrentFlag   bool
@@ -76,8 +76,8 @@ func PrepareBackup(opts *BackupOpts) error {
 func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	backupIDs := make(map[string]string)
 	ctx := context.Background()
-	aud := util.InSlice("audit", opts.Include)
-	logs := util.InSlice("logs", opts.Include)
+	aud := util.InSlice("audit", opts.With)
+	logs := util.InSlice("logs", opts.With)
 
 	iObj := *openapi.NewInlineObject()
 	iObj.Audit = &aud
@@ -123,7 +123,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	} else {
 		hostname, _ := opts.Config.GetHost()
 		nullFilter := map[string]map[string]string{
-			"filter":  {},
+			"include": {},
 			"exclude": {},
 		}
 		if reflect.DeepEqual(opts.FilterFlag, nullFilter) || opts.FilterFlag == nil {
@@ -136,11 +136,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				log.Warn("failed to determine primary controller")
 			} else {
 				idFilter := []string{}
-				if len(opts.FilterFlag["filter"]["id"]) > 0 {
-					idFilter = strings.Split(opts.FilterFlag["filter"]["id"], FilterDelimiter)
+				if len(opts.FilterFlag["include"]["id"]) > 0 {
+					idFilter = strings.Split(opts.FilterFlag["include"]["id"], FilterDelimiter)
 				}
 				idFilter = append(idFilter, pc.GetId())
-				opts.FilterFlag["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+				opts.FilterFlag["include"]["id"] = strings.Join(idFilter, FilterDelimiter)
 			}
 		}
 
@@ -150,21 +150,21 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				log.Warn("failed to determine current controller")
 			} else {
 				idFilter := []string{}
-				if len(opts.FilterFlag["filter"]["id"]) > 0 {
-					idFilter = strings.Split(opts.FilterFlag["filter"]["id"], FilterDelimiter)
+				if len(opts.FilterFlag["include"]["id"]) > 0 {
+					idFilter = strings.Split(opts.FilterFlag["include"]["id"], FilterDelimiter)
 				}
 				idFilter = append(idFilter, cc.GetId())
-				opts.FilterFlag["filter"]["id"] = strings.Join(idFilter, FilterDelimiter)
+				opts.FilterFlag["include"]["id"] = strings.Join(idFilter, FilterDelimiter)
 			}
 		}
 
 		if len(args) > 0 {
 			fInclude := []string{}
-			if len(opts.FilterFlag["filter"]["name"]) > 0 {
-				fInclude = strings.Split(opts.FilterFlag["filter"]["name"], FilterDelimiter)
+			if len(opts.FilterFlag["include"]["name"]) > 0 {
+				fInclude = strings.Split(opts.FilterFlag["include"]["name"], FilterDelimiter)
 			}
 			fInclude = append(fInclude, args...)
-			opts.FilterFlag["filter"]["name"] = strings.Join(fInclude, FilterDelimiter)
+			opts.FilterFlag["include"]["name"] = strings.Join(fInclude, FilterDelimiter)
 		}
 
 		if !reflect.DeepEqual(nullFilter, opts.FilterFlag) {
@@ -356,7 +356,7 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	log.WithField("appliances", selected)
 
 	result := FilterAppliances(appliances, map[string]map[string]string{
-		"filter": {
+		"include": {
 			"name": strings.Join(selected, FilterDelimiter),
 		},
 	})

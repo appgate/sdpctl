@@ -51,7 +51,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 		Timeout:   DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
-			"filter": {},
+			"include": {},
 			"exclude": {
 				"active": "false",
 			},
@@ -316,7 +316,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				ids = append(ids, t.GetId())
 			}
 			bOpts.FilterFlag = map[string]map[string]string{
-				"filter": {
+				"include": {
 					"id": strings.Join(ids, appliancepkg.FilterDelimiter),
 				},
 			}
