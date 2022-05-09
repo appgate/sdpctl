@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	DefaultBackupDestination = fmt.Sprintf("%s/appgate/backup", filesystem.DownloadDir())
+	DefaultBackupDestination = filepath.Join(filesystem.DownloadDir(), "appgate", "backup")
 )
 
 type BackupOpts struct {
