@@ -1,9 +1,13 @@
 package filesystem
 
 import (
+	"bufio"
 	"os"
 	"path/filepath"
-	"runtime"
+	"regexp"
+
+	"github.com/adrg/xdg"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -13,23 +17,47 @@ const (
 )
 
 // ConfigDir path precedence
-// 1. SDPCTL_CONFIG_DIR
-// 2. XDG_CONFIG_HOME
-// 3. AppData (windows only)
-// 4. HOME
 func ConfigDir() string {
-	var path string
-	name := "sdpctl"
-	if a := os.Getenv(AgConfigDir); a != "" {
-		path = a
-	} else if b := os.Getenv(XdgConfigHome); b != "" {
-		path = filepath.Join(b, name)
-	} else if c := os.Getenv(AppData); runtime.GOOS == "windows" && c != "" {
-		path = filepath.Join(c, name)
-	} else {
-		d, _ := os.UserHomeDir()
-		path = filepath.Join(d, ".config", name)
+	if path := os.Getenv(AgConfigDir); len(path) > 0 {
+		return path
+	}
+	if path := os.Getenv(XdgConfigHome); len(path) > 0 {
+		return filepath.Join(path, "sdpctl")
+	}
+	return filepath.Join(xdg.ConfigHome, "sdpctl")
+}
+
+func DownloadDir() string {
+	// xdg library does not currently parse the user-dirs.dirs file (see https://github.com/adrg/xdg/issues/29)
+	// we'll do it manually for now
+	ud := parseUsersDirs()
+	if dlDir, ok := ud["DOWNLOAD"]; ok {
+		return dlDir
+	}
+	return xdg.UserDirs.Download
+}
+
+func parseUsersDirs() map[string]string {
+	res := map[string]string{}
+	file, err := os.Open(filepath.Join(xdg.ConfigHome, "user-dirs.dirs"))
+	if err != nil {
+		logrus.WithError(err).Warn("failed to open user-dirs.dirs")
+		return res
+	}
+	defer file.Close()
+
+	regex := regexp.MustCompile(`^XDG_(.+)_DIR="(.*)"$`)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		txt := scanner.Text()
+		if m := regex.FindStringSubmatch(txt); len(m) > 0 {
+			res[m[1]] = os.ExpandEnv(m[2])
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		logrus.WithError(err).Warn("failed to read user-dirs.dirs")
+		return res
 	}
 
-	return path
+	return res
 }

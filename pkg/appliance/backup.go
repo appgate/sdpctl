@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -27,7 +28,7 @@ import (
 )
 
 var (
-	DefaultBackupDestination = "$HOME/Downloads/appgate/backup"
+	DefaultBackupDestination = fmt.Sprintf("%s/appgate/backup", filesystem.DownloadDir())
 )
 
 type BackupOpts struct {

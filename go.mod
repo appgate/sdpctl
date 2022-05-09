@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.4
+	github.com/adrg/xdg v0.4.0
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20220502093424-6e14652717a2
 	github.com/billgraziano/dpapi v0.4.0
 	github.com/cenkalti/backoff/v4 v4.1.3
@@ -27,5 +28,6 @@ require (
 	github.com/vbauerster/mpb/v7 v7.4.1
 	github.com/zalando/go-keyring v0.2.1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
