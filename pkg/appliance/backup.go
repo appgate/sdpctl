@@ -294,8 +294,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
-	if IDs == nil {
-		return nil
+	if IDs == nil || len(IDs) <= 0 {
+		return errors.New("Command finished, but no appliances were backed up. See log for more details")
 	}
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
