@@ -45,8 +45,28 @@ var (
                 }`))
 			}
 		}}
+	unauthorizedResponse = httpmock.Stub{
+		URL: "/authentication",
+		Responder: func(w http.ResponseWriter, r *http.Request) {
+			if v, ok := r.Header["Accept"]; ok && v[0] == "application/vnd.appgate.peer-v5+json" {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusNotAcceptable)
+				fmt.Fprint(w, string(`{
+                    "id": "string",
+                    "message": "string",
+                    "minSupportedVersion": 7,
+                    "maxSupportedVersion": 15
+                  }`))
+				return
+			}
 
-	identityProviderNnames = httpmock.Stub{
+			if r.Method == http.MethodPost {
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprint(w, string(`{"id":"unauthorized","message":"Invalid username or password.","failureType":"Login"}`))
+			}
+		},
+	}
+	identityProviderNames = httpmock.Stub{
 		URL: "/identity-providers/names",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
@@ -105,8 +125,9 @@ var (
 func TestSignin(t *testing.T) {
 	keyring.MockInit()
 	type args struct {
-		remember   bool
-		saveConfig bool
+		remember      bool
+		saveConfig    bool
+		noInteractive bool
 	}
 	tests := []struct {
 		name                 string
@@ -128,7 +149,7 @@ func TestSignin(t *testing.T) {
 			},
 			httpStubs: []httpmock.Stub{
 				authenticationResponse,
-				identityProviderNnames,
+				identityProviderNames,
 				authorizationGET,
 				{
 					URL:       "/appliances",
@@ -149,7 +170,7 @@ func TestSignin(t *testing.T) {
 
 			httpStubs: []httpmock.Stub{
 				authenticationResponse,
-				identityProviderNnames,
+				identityProviderNames,
 				authorizationGET,
 				{
 					URL:       "/appliances",
@@ -174,7 +195,7 @@ func TestSignin(t *testing.T) {
 
 			httpStubs: []httpmock.Stub{
 				authenticationResponse,
-				identityProviderNnames,
+				identityProviderNames,
 				{
 					URL: "/authorization",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
@@ -262,6 +283,19 @@ func TestSignin(t *testing.T) {
 				s.StubOne("123456") // OTP
 			},
 		},
+		{
+			name: "no auth no-interactive",
+			args: args{
+				remember:      false,
+				saveConfig:    false,
+				noInteractive: true,
+			},
+			wantErr: true,
+			httpStubs: []httpmock.Stub{
+				unauthorizedResponse,
+				identityProviderNames,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -308,7 +342,7 @@ func TestSignin(t *testing.T) {
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
 			}
-			if err := Signin(f, tt.args.remember, tt.args.saveConfig); (err != nil) != tt.wantErr {
+			if err := Signin(f, tt.args.remember, tt.args.saveConfig, tt.args.noInteractive); (err != nil) != tt.wantErr {
 				t.Errorf("Signin() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

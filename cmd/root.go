@@ -82,6 +82,7 @@ func NewCmdRoot() *cobra.Command {
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
+	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	initConfig()
 	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
@@ -212,7 +213,11 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
-			if err := auth.Signin(f, false, false); err != nil {
+			noInteractive, err := cmd.Flags().GetBool("no-interactive")
+			if err != nil {
+				return err
+			}
+			if err := auth.Signin(f, false, false, noInteractive); err != nil {
 				var result error
 				result = multierror.Append(result, err)
 				return result

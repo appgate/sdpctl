@@ -43,7 +43,11 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 }
 
 func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
-	if err := auth.Signin(opts.f, opts.remember, true); err != nil {
+	noInteractive, err := cmd.Flags().GetBool("no-interactive")
+	if err != nil {
+		return err
+	}
+	if err := auth.Signin(opts.f, opts.remember, true, noInteractive); err != nil {
 		return err
 	}
 	log.WithField("config file", viper.ConfigFileUsed()).Info("Sign in event")
