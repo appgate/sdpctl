@@ -260,20 +260,15 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				return err
 			}
 			defer file.Close()
-			dst, err := os.Create(fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405")))
-			if err != nil {
-				spinner.Abort(false)
-				return err
-			}
-			defer dst.Close()
+			dst := fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405"))
 
-			_, err = io.Copy(dst, file)
+			err = os.Rename(file.Name(), dst)
 			if err != nil {
 				spinner.Abort(false)
 				return err
 			}
 
-			log.WithField("file", dst.Name()).Info("Wrote backup file")
+			log.WithField("file", dst).Info("Wrote backup file")
 			spinner.Increment()
 			spinner.Wait()
 			return nil
