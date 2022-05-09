@@ -16,7 +16,6 @@ const (
 	AppData       = "AppData"
 )
 
-// ConfigDir path precedence
 func ConfigDir() string {
 	if path := os.Getenv(AgConfigDir); len(path) > 0 {
 		return path
@@ -30,19 +29,22 @@ func ConfigDir() string {
 func DownloadDir() string {
 	// xdg library does not currently parse the user-dirs.dirs file (see https://github.com/adrg/xdg/issues/29)
 	// we'll do it manually for now
-	ud := parseUsersDirs()
+	ud, err := parseUsersDirs()
+	if err != nil {
+		// Not a fatal error here, since we have some fallback below
+		logrus.WithError(err).Error("failed to read localized user directories from user-dirs.dirs")
+	}
 	if dlDir, ok := ud["DOWNLOAD"]; ok {
 		return dlDir
 	}
 	return xdg.UserDirs.Download
 }
 
-func parseUsersDirs() map[string]string {
+func parseUsersDirs() (map[string]string, error) {
 	res := map[string]string{}
 	file, err := os.Open(filepath.Join(xdg.ConfigHome, "user-dirs.dirs"))
 	if err != nil {
-		logrus.WithError(err).Warn("failed to open user-dirs.dirs")
-		return res
+		return nil, err
 	}
 	defer file.Close()
 
@@ -55,9 +57,8 @@ func parseUsersDirs() map[string]string {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		logrus.WithError(err).Warn("failed to read user-dirs.dirs")
-		return res
+		return nil, err
 	}
 
-	return res
+	return res, nil
 }
