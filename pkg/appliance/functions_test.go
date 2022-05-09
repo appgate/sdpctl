@@ -536,7 +536,7 @@ func TestFilterAndExclude(t *testing.T) {
 					mockControllers["gateway"],
 				},
 				filter: map[string]map[string]string{
-					"filter": {
+					"include": {
 						word: value,
 					},
 				},

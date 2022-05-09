@@ -43,7 +43,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 		timeout:   DefaultTimeout,
 		defaultfilter: map[string]map[string]string{
-			"filter": {},
+			"include": {},
 			"exclude": {
 				"active": "false",
 			},

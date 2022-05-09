@@ -10,7 +10,7 @@ used together with one of the available sub-commands listed below.`,
 		Short: "List all Appgate SDP Appliances",
 		Long: `List all Appliances in the Appgate SDP Collective. The appliances will be listed in no particular order. Using without arguments
 will print a table view with a limited set of information. Using the command with the provided '--json' flag will print out a more detailed
-list view in json format. The list command can also be combined with the global '--filter' and '--exclude' flags`,
+list view in json format. The list command can also be combined with the global '--include' and '--exclude' flags`,
 		Examples: []ExampleDoc{
 			{
 				Description: "Default list command",
@@ -26,7 +26,7 @@ gateway                                                ec3b6270-ad7e-447a-a6e6-8
 			},
 			{
 				Description: "Print a filtered list of appliances",
-				Command:     "sdpctl appliance list --filter=<key>=<value>",
+				Command:     "sdpctl appliance list --include=<key>=<value>",
 			},
 		},
 	}
@@ -67,8 +67,8 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 				Command:     "sdpctl appliance backup --all",
 			},
 			{
-				Description: "backup using '--filter' and '--exclude' flags",
-				Command:     "sdpctl appliance backup --filter=function=controller --exclude=tag=secondary",
+				Description: "backup using '--include' and '--exclude' flags",
+				Command:     "sdpctl appliance backup --include=function=controller --exclude=tag=secondary",
 			},
 		},
 	}
@@ -122,7 +122,7 @@ Upgrade statuses:
 			},
 			{
 				Description: "filtered appliance status list",
-				Command:     "sdpctl appliance upgrade status --filter=name=controller",
+				Command:     "sdpctl appliance upgrade status --include=name=controller",
 			},
 		},
 	}
@@ -154,7 +154,7 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 			},
 			{
 				Description: "prepare only certain appliances based on a filter",
-				Command:     "sdpctl appliance upgrade prepare --image=/path/to/image-5.5.3.img.zip --filter function=controller",
+				Command:     "sdpctl appliance upgrade prepare --image=/path/to/image-5.5.3.img.zip --include function=controller",
 			},
 		},
 	}
@@ -166,7 +166,7 @@ upgrade image from the Appliance, though it will not remove images hosted in the
 controller file repository (such as when using the '--host-on-controller' flag) by default.
 To remove them as well, you can use the '--delete' flag.
 
-Note that you can cancel upgrades on specific appliances by using the '--filter' and/or
+Note that you can cancel upgrades on specific appliances by using the '--include' and/or
 '--exclude' flags in combination with this command.`,
 		Examples: []ExampleDoc{
 			{
@@ -175,7 +175,7 @@ Note that you can cancel upgrades on specific appliances by using the '--filter'
 			},
 			{
 				Description: "cancel upgrade on selected Appgate SDP Appliances",
-				Command:     "sdpctl appliance upgrade cancel --filter function=gateway",
+				Command:     "sdpctl appliance upgrade cancel --include function=gateway",
 			},
 			{
 				Description: "cancel upgrade and delete all dangling upgrade images",
@@ -209,7 +209,7 @@ and perform a reboot to make the second partition the primary.`,
 If no Appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. The '--metric-name' flag can be used
 to get a specific metric name. This needs to be an exact match.
 
-NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
+NOTE: Although the '--include' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
 		Examples: []ExampleDoc{
 			{
 				Description: "list all available appliance metrics",
@@ -275,7 +275,7 @@ Clients and shows the resolution results.`,
 		Long: `Show current stats, such as current system resource consumption, Appliance version etc, for the Appgate SDP Appliances.
 Using the '--json' flag will return a more detailed list of stats in json format.
 
-NOTE: Although the '--filter' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
+NOTE: Although the '--include' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
 		Examples: []ExampleDoc{
 			{
 				Description: "default listing of stats",
