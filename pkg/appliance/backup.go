@@ -59,14 +59,6 @@ func PrepareBackup(opts *BackupOpts) error {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
-	if opts.Destination == DefaultBackupDestination {
-		homedir, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		opts.Destination = filepath.FromSlash(fmt.Sprintf("%s/Downloads/appgate/backup", homedir))
-	}
-
 	if err := os.MkdirAll(opts.Destination, 0700); err != nil {
 		return err
 	}
