@@ -267,7 +267,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
 		return err
 	}
-	newVersion, err := appliancepkg.NormalizeVersion(primaryControllerUpgradeStatus.GetDetails())
+	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.GetDetails())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}

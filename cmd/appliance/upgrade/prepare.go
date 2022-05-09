@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"sync"
 	"text/template"
 	"time"
@@ -154,7 +155,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	targetVersion, err := appliancepkg.GuessVersion(opts.filename)
+	targetVersion, err := appliancepkg.ParseVersionString(opts.filename)
 	if err != nil {
 		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
 	}
@@ -190,7 +191,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	autoScalingWarning := false
 	if targetVersion != nil {
-		constraints, _ := version.NewConstraint(">= 5.5.0")
+		constraints, _ := version.NewConstraint(">= 5.5.0-*")
 		if constraints.Check(targetVersion) {
 			autoScalingWarning = true
 		}
@@ -225,6 +226,19 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+
+	// Check if trying to prepare a lower version than current
+	// build number check is to make sure even pre-release versions are included if the build number is higher than current
+	targetBuild, _ := strconv.ParseInt(targetVersion.Metadata(), 10, 64)
+	primaryControllerBuild, _ := strconv.ParseInt(currentPrimaryControllerVersion.Metadata(), 10, 64)
+	if targetVersion.LessThan(currentPrimaryControllerVersion) && targetBuild < primaryControllerBuild {
+		log.WithFields(log.Fields{
+			"currentPrimaryControllerVersion": currentPrimaryControllerVersion.String(),
+			"targetVersion":                   targetVersion.String(),
+		}).Error("invalid upgrade version")
+		return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
+	}
+
 	// if we have an existing config with the primary controller version, check if we need to re-authenticate
 	// before we continue with the upgrade to update the peer API version.
 	if len(opts.Config.PrimaryControllerVersion) > 0 {
@@ -325,6 +339,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	// prepare the image on the appliances,
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
 	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance, workers int) error {
+		var errs error
 		log.Infof("Remote file path for controller %s", remoteFilePath)
 		var (
 			count = len(appliances)
@@ -347,6 +362,37 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		for _, ap := range appliances {
 			appliance := ap
+
+			// Check if same or older image is already prepared for the appliance
+			status, err := a.UpgradeStatus(ctx, appliance.GetId())
+			if err != nil {
+				log.WithError(err).WithField("applianceID", appliance.GetId()).Debug("Failed to determine current upgrade status")
+			}
+			preparedVersion, err := appliancepkg.ParseVersionString(status.GetDetails())
+			if err != nil {
+				log.WithError(err).Warn("Failed to determine currently prepared version")
+			}
+			uploadVersion, _ := appliancepkg.ParseVersionString(opts.image)
+
+			if preparedVersion != nil && uploadVersion != nil {
+				// Cancel current prepared version if the one uploaded is equal or newer
+				preparedBuildNr, _ := strconv.ParseInt(preparedVersion.Metadata(), 10, 64)
+				uploadBuildNr, _ := strconv.ParseInt(uploadVersion.Metadata(), 10, 64)
+				if preparedVersion.LessThanOrEqual(uploadVersion) && uploadBuildNr < preparedBuildNr {
+					log.WithFields(log.Fields{
+						"uploadVersion":   uploadVersion.String(),
+						"preparedVersion": preparedVersion.String(),
+						"appliance":       appliance.GetName(),
+					}).Info("an older version is already prepared on the appliance. cancelling before proceeding")
+					if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
+						errs = multierr.Append(errs, err)
+					}
+					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}); err != nil {
+						errs = multierr.Append(errs, err)
+					}
+				}
+			}
+
 			qw.Push(appliance)
 			statusReport := make(chan string)
 			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
@@ -370,13 +416,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
 		})
-
 		if err != nil {
-			return err
+			errs = multierr.Append(errs, err)
 		}
 
 		updateProgressBars.Wait()
-		return err
+		return errs
 	}
 
 	workers, err := cmd.Flags().GetInt("throttle")
@@ -428,7 +473,7 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, stats []
 	for _, a := range appliance {
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
-				version, _ := appliancepkg.NormalizeVersion(stat.GetVersion())
+				version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
 				i := applianceData{
 					Name:           a.GetName(),
 					CurrentVersion: version.String(),
