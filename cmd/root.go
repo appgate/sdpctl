@@ -39,7 +39,7 @@ build date: %s`, version, commit, buildDate)
 func initConfig() {
 	dir := filesystem.ConfigDir()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Mkdir(dir, os.ModePerm)
+		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			fmt.Printf("Can't create config dir: %s %s\n", dir, err)
 			os.Exit(1)
