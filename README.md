@@ -77,7 +77,7 @@ You can also manage multiple Appgate SDP Collectives using `sdpctl`. See the [au
 
 ---
 ## The `appliance` command
-The `appliance` command is the command in `sdpctl` for managing appliance management tasks, such as backing up or upgrading appliances. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
+The `appliance` command in `sdpctl` is used for appliance management tasks, such as backing up or upgrading appliances. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
 
 See the [appliance command documentation](./docs/appliance.md) for a more detailed description
 
