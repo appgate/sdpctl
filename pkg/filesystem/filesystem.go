@@ -26,6 +26,15 @@ func ConfigDir() string {
 	return filepath.Join(xdg.ConfigHome, "sdpctl")
 }
 
+func DataDir() string {
+	path := filepath.Join(xdg.DataHome, "sdpctl")
+	// Create the directory if not exist
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.MkdirAll(path, 0700)
+	}
+	return path
+}
+
 func DownloadDir() string {
 	// xdg library does not currently parse the user-dirs.dirs file (see https://github.com/adrg/xdg/issues/29)
 	// we'll do it manually for now

@@ -195,7 +195,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.DebugLevel)
 		}
 
-		fName := fmt.Sprintf("%s/sdpctl.log", filesystem.ConfigDir())
+		fName := fmt.Sprintf("%s/sdpctl.log", filesystem.DataDir())
 		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			log.SetFormatter(&log.TextFormatter{
