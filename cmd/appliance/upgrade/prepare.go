@@ -36,6 +36,7 @@ import (
 type prepareUpgradeOptions struct {
 	Config           *configuration.Config
 	Out              io.Writer
+	SpinnerOut       io.Writer
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	debug            bool
 	insecure         bool
@@ -54,11 +55,12 @@ type prepareUpgradeOptions struct {
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	f.Config.Timeout = 300
 	opts := &prepareUpgradeOptions{
-		Config:    f.Config,
-		Appliance: f.Appliance,
-		debug:     f.Config.Debug,
-		Out:       f.IOOutWriter,
-		timeout:   DefaultTimeout,
+		Config:     f.Config,
+		Appliance:  f.Appliance,
+		debug:      f.Config.Debug,
+		Out:        f.IOOutWriter,
+		SpinnerOut: f.SpinnerOut,
+		timeout:    DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
@@ -154,7 +156,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
-
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
@@ -312,7 +313,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
-		p := mpb.New(mpb.WithOutput(opts.Out))
+		p := mpb.New(mpb.WithOutput(opts.SpinnerOut))
 		if err := a.UploadFile(ctx, imageFile, p); err != nil {
 			return err
 		}
@@ -333,7 +334,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err != nil {
 			return err
 		}
-		p := mpb.New(mpb.WithOutput(opts.Out))
+		p := mpb.New(mpb.WithOutput(opts.SpinnerOut))
 		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
 			return err
 		}
@@ -376,7 +377,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			wg sync.WaitGroup
 		)
 
-		updateProgressBars := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWaitGroup(&wg))
+		updateProgressBars := mpb.New(mpb.WithOutput(opts.SpinnerOut), mpb.PopCompletedMode(), mpb.WithWaitGroup(&wg))
 		wg.Add(count)
 
 		for _, ap := range appliances {

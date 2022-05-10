@@ -38,6 +38,7 @@ type BackupOpts struct {
 	Config        *configuration.Config
 	Appliance     func(*configuration.Config) (*Appliance, error)
 	Out           io.Writer
+	SpinnerOut    io.Writer
 	Destination   string
 	With          []string
 	AllFlag       bool
@@ -64,6 +65,7 @@ func PrepareBackup(opts *BackupOpts) error {
 }
 
 func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
+	spinnerOut := opts.SpinnerOut()
 	backupIDs := make(map[string]string)
 	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
@@ -193,7 +195,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		backups      = make(chan backedUp, count)
 		errorChannel = make(chan error, count)
 		backupAPI    = backup.New(app.APIClient, app.Token, opts.Config.Version)
-		progressBars = mpb.NewWithContext(ctx, mpb.WithOutput(opts.Out), mpb.WithWaitGroup(&wg))
+		progressBars = mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
 	)
 
 	wg.Add(count)
