@@ -15,18 +15,18 @@ $ sudo dpkg -i <path-to-downloaded-debian-package>
 ```
 
 **Red Hat/Fedora:**
-Download the latest [rpm package](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install using this command:
+Download the latest [rpm package](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using this command:
 ```bash
 $ sudo rpm -i <path-to-downloaded-rpm-package>
 ```
 
 **Binary (Cross-platform)**
-Download the appropriate version for your platform from sdpctl [releases](https://github.com/appgate/sdpctl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a global location. This works well for shared hosts and other systems where you don’t have a privileged account.
+Download the appropriate version for your platform from sdpctl [releases](https://github.com/appgate/sdpctl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a specific location. This works well for shared hosts and other systems where you don’t have a privileged account.
 
 Ideally, you should install it somewhere in your PATH for easy use. /usr/local/bin is the most probable location.
 
 ## MacOS
-Download the latest [darwin binary](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install using the command line:
+Download the latest [macOS build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using the command line:
 ```bash
 # Unpack the downloaded package in the current directory
 $ gunzip -c <path-to-downloaded-tar> | tar xopf -
@@ -37,7 +37,7 @@ $ sudo chown root:root /usr/local/bin/sdpctl
 ```
 
 ## Windows
-Download the latest [windows build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Install using the command line:
+Download the latest [Windows build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Install using the command line:
 ```powershell
 # Create a folder for the binary
 PS> mkdir <folder-path>
@@ -59,9 +59,9 @@ $ sdpctl completion --help
 ---
 # Usage
 ## Initial setup
-To start using `sdpctl`, you'll need to authenticate with your Appgate SDP collective. The authentication process is a two step process where you first configure `sdpctl` and then authenticate by signing in to the collective configured in the first step.
+To start using `sdpctl`, you'll need to authenticate with your Appgate SDP Collective. The authentication process has two steps; first configure `sdpctl` and then authenticate by signing in to the Collective configured in the first step.
 
-See the [configuration documentation](./docs/configure.md) for a more detailed description on how to use the configure command.
+See the [configuration documentation](./docs/configure.md) for a more detailed description on how to use the `configure` command.
 
 Example:
 ```bash
@@ -73,11 +73,11 @@ $ sdpctl configure
 $ sdpctl configure signin
 ```
 
-You can also manage multiple Appgate SDP collectives using `sdpctl`. See the [authentication documentation](./docs/configure.md#working-with-multiple-appgate-sdp-collectives) for more information.
+You can also manage multiple Appgate SDP Collectives using `sdpctl`. See the [authentication documentation](./docs/configure.md#working-with-multiple-appgate-sdp-collectives) for more information.
 
 ---
 ## The `appliance` command
-The `appliance` command is the base command in `sdpctl` for managing appliance resource specific tasks, such as backing up appliances or upgrading them. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
+The `appliance` command is the command in `sdpctl` for managing appliance management tasks, such as backing up or upgrading appliances. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
 
 See the [appliance command documentation](./docs/appliance.md) for a more detailed description
 
