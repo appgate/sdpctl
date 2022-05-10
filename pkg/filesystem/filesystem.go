@@ -7,7 +7,6 @@ import (
 	"regexp"
 
 	"github.com/adrg/xdg"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -38,11 +37,7 @@ func DataDir() string {
 func DownloadDir() string {
 	// xdg library does not currently parse the user-dirs.dirs file (see https://github.com/adrg/xdg/issues/29)
 	// we'll do it manually for now
-	ud, err := parseUsersDirs()
-	if err != nil {
-		// Not a fatal error here, since we have some fallback below
-		logrus.WithError(err).Error("failed to read localized user directories from user-dirs.dirs")
-	}
+	ud, _ := parseUsersDirs()
 	if dlDir, ok := ud["DOWNLOAD"]; ok {
 		return dlDir
 	}
