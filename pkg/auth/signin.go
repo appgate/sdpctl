@@ -125,6 +125,8 @@ func Signin(f *factory.Factory, remember, saveConfig, noInteractive bool) error 
 
 	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
 	if err != nil {
+		fmt.Println("Login failed!")
+		fmt.Println("Make sure you've typed in the right credentials. If using '--no-interactive' mode, remember to set the 'SDPCTL_USERNAME', 'SDPCTL_PASSWORD' and 'SDPCT_PROVIDER' environment variables")
 		return err
 	}
 	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
