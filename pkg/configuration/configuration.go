@@ -17,7 +17,8 @@ type Config struct {
 	URL                      string `mapstructure:"url"`
 	Provider                 string `mapstructure:"provider"`
 	Insecure                 bool   `mapstructure:"insecure"`
-	Debug                    bool   `mapstructure:"debug"`       // http debug flag
+	Debug                    bool   `mapstructure:"debug"` // http debug flag
+	DisableSpinner           bool   `mapstructure:"disable_spinner"`
 	Version                  int    `mapstructure:"api_version"` // api peer interface version
 	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
 	ExpiresAt                string `mapstructure:"expires_at"`

@@ -86,8 +86,11 @@ func NewCmdRoot() *cobra.Command {
 	initConfig()
 	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
-	f := factory.New(version, cfg)
 
+	if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) || cmdutil.IsCI() {
+		cfg.DisableSpinner = true
+	}
+	f := factory.New(version, cfg)
 	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
 	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
 	rootCmd.AddCommand(token.NewTokenCmd(f))
