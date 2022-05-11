@@ -143,17 +143,12 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
+	reg := regexp.MustCompile(`Using '--no-interactive' flag while backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again.`)
 	_, err := cmd.ExecuteC()
 	if err != nil {
-		t.Fatalf("executeC %s", err)
-	}
-	got, err := io.ReadAll(buf)
-	if err != nil {
-		t.Fatalf("unable to read stdout %s", err)
-	}
-	reg := regexp.MustCompile(`Skipping backup. Backup API is disabled while --no-interactive flag is set`)
-	if res := reg.Find(got); res == nil {
-		t.Fatalf("result matching failed. WANT: %+v, GOT: %+v", reg.String(), string(got))
+		if !reg.MatchString(err.Error()) {
+			t.Fatalf("Error message did not match expected.\nWANT: %s\nGOT: %s", reg.String(), err.Error())
+		}
 	}
 }
 
@@ -201,16 +196,11 @@ func TestBackupCmdNoState(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
+	reg := regexp.MustCompile(`Backup failed due to error while --no-interactive flag is set`)
 	_, err := cmd.ExecuteC()
 	if err != nil {
-		t.Fatalf("executeC %s", err)
-	}
-	got, err := io.ReadAll(buf)
-	if err != nil {
-		t.Fatalf("unable to read stdout %s", err)
-	}
-	reg := regexp.MustCompile(`Skipping backup due to error while --no-interactive flag is set`)
-	if res := reg.Find(got); res == nil {
-		t.Fatalf("result matching failed. WANT: %+v, GOT: %+v", reg.String(), string(got))
+		if !reg.MatchString(err.Error()) {
+			t.Fatalf("Error message did not match expected.\nWANT: %s\nGOT: %s", reg.String(), err.Error())
+		}
 	}
 }
