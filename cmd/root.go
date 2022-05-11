@@ -39,7 +39,7 @@ build date: %s`, version, commit, buildDate)
 func initConfig() {
 	dir := filesystem.ConfigDir()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.Mkdir(dir, os.ModePerm)
+		err := os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
 			fmt.Printf("Can't create config dir: %s %s\n", dir, err)
 			os.Exit(1)
@@ -196,7 +196,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.DebugLevel)
 		}
 
-		fName := fmt.Sprintf("%s/sdpctl.log", filesystem.ConfigDir())
+		fName := fmt.Sprintf("%s/sdpctl.log", filesystem.DataDir())
 		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 		if err != nil {
 			log.SetFormatter(&log.TextFormatter{

@@ -20,7 +20,7 @@ func TestConfigDir(t *testing.T) {
 			name: "HOME/USERPROFILE specified",
 			env: map[string]string{
 				"SDPCTL_CONFIG_DIR": "",
-				"XDG_CONFIG_HOME":   "",
+				"XDG_CONFIG_HOME":   filepath.Join(tempDir, ".config"),
 				"AppData":           "",
 				"HOME":              tempDir,
 			},

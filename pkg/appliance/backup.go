@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -27,7 +28,7 @@ import (
 )
 
 var (
-	DefaultBackupDestination = "$HOME/Downloads/appgate/backup"
+	DefaultBackupDestination = filepath.Join(filesystem.DownloadDir(), "appgate", "backup")
 )
 
 type BackupOpts struct {
@@ -56,14 +57,6 @@ func PrepareBackup(opts *BackupOpts) error {
 
 	if IsOnAppliance() {
 		return fmt.Errorf("This should not be executed on an appliance")
-	}
-
-	if opts.Destination == DefaultBackupDestination {
-		homedir, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		opts.Destination = filepath.FromSlash(fmt.Sprintf("%s/Downloads/appgate/backup", homedir))
 	}
 
 	if err := os.MkdirAll(opts.Destination, 0700); err != nil {
