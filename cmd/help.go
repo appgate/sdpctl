@@ -95,6 +95,7 @@ Available Variables:
   SDPCTL_LOG_LEVEL:
     Description: application log level
     Default: INFO
+    Options: PANIC,FATAL, INFO, TRACE
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 
