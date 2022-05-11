@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -9,6 +12,7 @@ import (
 
 func HelpTemplate() string {
 	cobra.AddTemplateFunc("now", time.Now)
+	cobra.AddTemplateFunc("caller", getCaller)
 	return `© {{ now.Year }} Appgate Cybersecurity, Inc.
 All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
 https://www.appgate.com
@@ -16,7 +20,7 @@ https://www.appgate.com
 {{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}{{end}}
 
 Environment Variables:
-  See 'sdpctl help environment' for the list of supported environment variables.
+  See '{{caller}} help environment' for the list of supported environment variables.
 
 {{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
@@ -114,4 +118,14 @@ func NewHelpCmd(f *factory.Factory) *cobra.Command {
 		command.Println(command.Long)
 	})
 	return cmd
+}
+
+func getCaller() string {
+	binary := "sdpctl"
+	raw := os.Args[0]
+	regex := regexp.MustCompile(`sdpctl`)
+	if bin := filepath.Base(raw); regex.MatchString(bin) {
+		binary = bin
+	}
+	return binary
 }

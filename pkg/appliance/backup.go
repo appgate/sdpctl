@@ -92,17 +92,15 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	backupEnabled, err := backupEnabled(ctx, app.APIClient, token, opts.NoInteractive)
 	if err != nil {
 		if opts.NoInteractive {
-			log.WithError(err).Warn("Skipping backup due to error while --no-interactive flag is set")
-			return backupIDs, nil
+			return backupIDs, errors.New("Backup failed due to error while --no-interactive flag is set")
 		}
 		return backupIDs, fmt.Errorf("Failed to determine backup option: %w", err)
 	}
 	if !backupEnabled {
 		if opts.NoInteractive {
-			log.Warn("Skipping backup. Backup API is disabled while --no-interactive flag is set")
-			return backupIDs, nil
+			return backupIDs, errors.New("Using '--no-interactive' flag while backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again.")
 		}
-		return backupIDs, fmt.Errorf("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it.")
+		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it.")
 	}
 
 	appliances, err := app.List(ctx, nil)
@@ -287,8 +285,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
-	if IDs == nil {
-		return nil
+	if IDs == nil || len(IDs) <= 0 {
+		return errors.New("Command finished, but no appliances were backed up. See log for more details")
 	}
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
