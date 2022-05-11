@@ -56,7 +56,7 @@ func TestConfigDir(t *testing.T) {
 			}
 
 			if dir := ConfigDir(); dir != tt.output {
-				t.Errorf("Got %s, expected %s", tt.output, dir)
+				t.Errorf("Got %s, expected %s", dir, tt.output)
 			}
 		})
 	}
