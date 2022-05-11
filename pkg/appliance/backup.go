@@ -252,7 +252,12 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			}
 			defer file.Close()
 			dst := fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405"))
-
+			// TODO, i/p race condition, lock
+			// we need to seperate I/o to multiple go routines instead of
+			// same errGroup go routine,
+			// see https://github.com/appgate/sdpctl/pull/22#pullrequestreview-813268386
+			// this triggers error in the test suite on Windows
+			// backup_test.go:85: executeC rename C:\Users\usr\AppData\Local\Temp\HttpClientFile2320220325 /tmp/appgate-testing/appgate_backup_controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1_20220511_195711.bkp: The process cannot access the file because it is being used by another process.
 			err = os.Rename(file.Name(), dst)
 			if err != nil {
 				spinner.Abort(false)
