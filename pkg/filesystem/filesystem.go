@@ -10,17 +10,12 @@ import (
 )
 
 const (
-	AgConfigDir   = "SDPCTL_CONFIG_DIR"
-	XdgConfigHome = "XDG_CONFIG_HOME"
-	AppData       = "AppData"
+	AgConfigDir = "SDPCTL_CONFIG_DIR"
 )
 
 func ConfigDir() string {
 	if path := os.Getenv(AgConfigDir); len(path) > 0 {
 		return path
-	}
-	if path := os.Getenv(XdgConfigHome); len(path) > 0 {
-		return filepath.Join(path, "sdpctl")
 	}
 	return filepath.Join(xdg.ConfigHome, "sdpctl")
 }
