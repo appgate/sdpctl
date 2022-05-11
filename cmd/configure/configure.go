@@ -3,6 +3,7 @@ package configure
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -56,8 +57,12 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		return err
 	}
 
+	viper.Set("pem_filepath", "")
 	if len(opts.PEM) > 0 {
 		opts.PEM = os.ExpandEnv(opts.PEM)
+		if absPath, err := filepath.Abs(opts.PEM); err == nil {
+			opts.PEM = absPath
+		}
 		if ok, err := util.FileExists(opts.PEM); err != nil || !ok {
 			return fmt.Errorf("File not found: %s", opts.PEM)
 		}

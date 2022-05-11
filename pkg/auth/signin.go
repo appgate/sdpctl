@@ -14,6 +14,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
@@ -22,7 +23,7 @@ import (
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Signin(f *factory.Factory, remember, saveConfig bool) error {
+func Signin(f *factory.Factory, remember, saveConfig, noInteractive bool) error {
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
@@ -83,31 +84,35 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 	if len(loginOpts.ProviderName) > 0 && !util.InSlice(loginOpts.ProviderName, providers) {
 		return fmt.Errorf("invalid provider '%s'", loginOpts.ProviderName)
 	}
-	if len(providers) > 1 && len(loginOpts.ProviderName) <= 0 {
+	var valErrs error
+	if len(providers) > 1 && len(loginOpts.ProviderName) <= 0 && !noInteractive {
 		qs := &survey.Select{
 			Message: "Choose a provider:",
 			Options: providers,
 		}
 		if err := prompt.SurveyAskOne(qs, &loginOpts.ProviderName); err != nil {
-			return err
+			valErrs = multierror.Append(valErrs, err)
 		}
 	}
 	cfg.Provider = loginOpts.ProviderName
-	if len(credentials.Username) <= 0 {
+	if len(credentials.Username) <= 0 && !noInteractive {
 		err := prompt.SurveyAskOne(&survey.Input{
 			Message: "Username:",
 		}, &credentials.Username, survey.WithValidator(survey.Required))
 		if err != nil {
-			return err
+			valErrs = multierror.Append(valErrs, err)
 		}
 	}
-	if len(credentials.Password) <= 0 {
+	if len(credentials.Password) <= 0 && !noInteractive {
 		err := prompt.SurveyAskOne(&survey.Password{
 			Message: "Password:",
 		}, &credentials.Password, survey.WithValidator(survey.Required))
 		if err != nil {
-			return err
+			valErrs = multierror.Append(valErrs, err)
 		}
+	}
+	if valErrs != nil {
+		return valErrs
 	}
 
 	if remember {
@@ -120,6 +125,8 @@ func Signin(f *factory.Factory, remember, saveConfig bool) error {
 
 	loginResponse, _, err := authenticator.Authentication(ctxWithAccept, loginOpts)
 	if err != nil {
+		fmt.Println("Login failed!")
+		fmt.Println("Make sure you've typed in the right credentials. If using '--no-interactive' mode, remember to set the 'SDPCTL_USERNAME', 'SDPCTL_PASSWORD' and 'SDPCT_PROVIDER' environment variables")
 		return err
 	}
 	authToken := fmt.Sprintf("Bearer %s", loginResponse.GetToken())
