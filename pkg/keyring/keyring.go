@@ -14,10 +14,13 @@ const (
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
 
-func ClearCredentials(prefix string) {
+func ClearCredentials(prefix string) error {
 	for _, k := range []string{username, password, bearer} {
-		deleteSecret(format(prefix, k))
+		if err := deleteSecret(format(prefix, k)); err != nil {
+			return err
+		}
 	}
+    return nil
 }
 
 func GetPassword(prefix string) (string, error) {
