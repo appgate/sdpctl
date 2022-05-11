@@ -50,7 +50,7 @@ $ SDPCTL_USERNAME=<username> SDPCTL_PASSWORD=<password> sdpctl configure signin 
 ## Working with multiple appgate sdp collectives
 
 sdpctl support working with multiple appgate sdp collectives. Using the environment variable `SDPCTL_CONFIG_DIR` you can toggle which collective you want
-to work against. If `SDPCTL_CONFIG_DIR` is not set by the user, the default directory will be `$XDG_CONFIG_HOME/sdpctl` or `$HOME/.config/sdpctl` on UNIX and `%APPDATA%/sdpctl` on Windows.
+to work against. If `SDPCTL_CONFIG_DIR` is not set by the user, the default directory will be `$XDG_CONFIG_HOME/sdpctl` or `$HOME/.config/sdpctl` on UNIX and `%APPDATA%\Local\sdpctl` on Windows.
 
 Imagine you have the following file structure, where each directory represent a appgatesdp collective.
 
