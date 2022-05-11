@@ -4,7 +4,8 @@ DESTDIR :=
 prefix  := /usr/local
 bindir  := ${prefix}/bin
 
-build: go.mod main.go cmd/*.go cmd/token/*.go cmd/appliance/*.go cmd/configure/*.go pkg/api/*.go pkg/appliance/*.go pkg/auth/*.go pkg/cmdutil/*.go pkg/configuration/*.go pkg/docs/*.go pkg/factory/*.go pkg/filesystem/*.go pkg/hashcode/*.go pkg/httpmock/*.go pkg/keyring/*.go pkg/prompt/*.go pkg/queue/*.go pkg/token/*.go pkg/util/*.go
+.PHONY: build
+build:
 	go build -o build/$(BIN_NAME)
 
 .PHONY: deps
