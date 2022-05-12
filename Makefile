@@ -4,6 +4,7 @@ DESTDIR :=
 prefix  := /usr/local
 bindir  := ${prefix}/bin
 
+.PHONY: build
 build:
 	go build -o build/$(BIN_NAME)
 
