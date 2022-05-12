@@ -11,18 +11,24 @@
 package keyring
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/billgraziano/dpapi"
+	zkeyring "github.com/zalando/go-keyring"
 )
 
+// ClearCredentials removes any existing items in the keychain,
+// it will ignore if not found errors
 func ClearCredentials(prefix string) error {
 	for _, k := range []string{username, password} {
 		if err := deleteSecret(format(prefix, k)); err != nil {
-			return err
+			if !errors.Is(err, zkeyring.ErrNotFound) {
+				return err
+			}
 		}
 	}
 	p, err := filepath.Abs(fmt.Sprintf("%s/%s", filesystem.ConfigDir(), format(prefix, bearer)))

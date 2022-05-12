@@ -4,8 +4,11 @@
 package keyring
 
 import (
+	"errors"
 	"os"
 	"strings"
+
+	zkeyring "github.com/zalando/go-keyring"
 )
 
 const (
@@ -14,13 +17,18 @@ const (
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
 
+// ClearCredentials removes any existing items in the keychain,
+// it will ignore if not found errors
 func ClearCredentials(prefix string) error {
 	for _, k := range []string{username, password, bearer} {
 		if err := deleteSecret(format(prefix, k)); err != nil {
-			return err
+			if !errors.Is(err, zkeyring.ErrNotFound) {
+				return err
+			}
+
 		}
 	}
-    return nil
+	return nil
 }
 
 func GetPassword(prefix string) (string, error) {
