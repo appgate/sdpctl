@@ -2,14 +2,18 @@ package appliance
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-version"
+	"github.com/sirupsen/logrus"
 )
 
 func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) {
@@ -143,4 +147,30 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 	}
 
 	return tpl.String(), nil
+}
+
+// CheckVersionsEqual will check if appliance versions are equal to the version being uploaded on all appliances
+// Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
+func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance) {
+	skip := []openapi.Appliance{}
+
+	for i := 0; i < len(appliances); i++ {
+		for _, stat := range stats.GetData() {
+			if stat.GetId() == appliances[i].GetId() {
+				statV, err := ParseVersionString(stat.GetVersion())
+				if err != nil {
+					logrus.Warn("failed to parse version from stats")
+				}
+				statBuildNr, _ := strconv.ParseInt(statV.Metadata(), 10, 64)
+				uploadBuildNr, _ := strconv.ParseInt(v.Metadata(), 10, 64)
+				if statV.Equal(v) && statBuildNr == uploadBuildNr {
+					logrus.WithField("appliance", appliances[i].GetName()).Info("Appliance is already at the same version. Skipping.")
+					skip = append(skip, appliances[i])
+					appliances = append(appliances[:i], appliances[i+1:]...)
+				}
+			}
+		}
+	}
+
+	return appliances, skip
 }

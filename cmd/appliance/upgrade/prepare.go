@@ -45,6 +45,7 @@ type prepareUpgradeOptions struct {
 	timeout          time.Duration
 	defaultFilter    map[string]map[string]string
 	hostOnController bool
+	forcePrepare     bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -124,6 +125,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", true, "Use the development keyring to verify the upgrade image")
 	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag.")
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use primary controller as image host when uploading from remote source.")
+	flags.BoolVar(&opts.forcePrepare, "force", false, "force prepare of upgrade on appliances even though the version uploaded is the same as the version already running on the appliance")
 
 	return prepareCmd
 }
@@ -180,6 +182,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	appliances, _, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
+	skipAppliances := []openapi.Appliance{}
+	if !opts.forcePrepare {
+		appliances, skipAppliances = appliancepkg.CheckVersionsEqual(ctx, initialStats, appliances, targetVersion)
+		if len(appliances) <= 0 {
+			return errors.New("No appliances to prepare for upgrade. All appliances are already at the same version as the upgrade image")
+		}
+	}
 
 	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
 		appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace)
@@ -255,7 +264,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if targetVersion != nil {
 		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
 	}
-	msg, err := showPrepareUpgradeMessage(opts.filename, appliances, initialStats.GetData())
+	msg, err := showPrepareUpgradeMessage(opts.filename, appliances, skipAppliances, initialStats.GetData())
 	if err != nil {
 		return err
 	}
@@ -457,17 +466,23 @@ const prepareUpgradeMessage = `
 {{end}}
 
 3. Delete upgrade image from Controller
-`
 
-func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+{{ if gt (len .SkipAppliances) 0 }}These appliances will be skipped:
+{{- range .SkipAppliances }}
+  - Current Version: {{.CurrentVersion }}{{"\t"}}{{.Online -}}{{"\t"}} {{.Name -}}
+{{- end }}
+{{ end }}`
+
+func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
 	type applianceData struct {
 		Name           string
 		CurrentVersion string
 		Online         string
 	}
 	type stub struct {
-		Filepath   string
-		Appliances []applianceData
+		Filepath       string
+		Appliances     []applianceData
+		SkipAppliances []applianceData
 	}
 	data := stub{Filepath: f}
 	for _, a := range appliance {
@@ -484,6 +499,23 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, stats []
 					i.Online = "Online ✓"
 				}
 				data.Appliances = append(data.Appliances, i)
+			}
+		}
+	}
+
+	for _, s := range skip {
+		for _, stat := range stats {
+			if s.GetId() == stat.GetId() {
+				version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
+				i := applianceData{
+					Name:           s.GetName(),
+					CurrentVersion: version.String(),
+					Online:         "Offline ⨯",
+				}
+				if appliancepkg.StatsIsOnline(stat) {
+					i.Online = "Online ✓"
+				}
+				data.SkipAppliances = append(data.SkipAppliances, i)
 			}
 		}
 	}

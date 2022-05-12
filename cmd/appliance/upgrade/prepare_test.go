@@ -68,17 +68,20 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 func TestUpgradePrepareCommand(t *testing.T) {
 
 	tests := []struct {
-		name                string
-		cli                 string
-		askStubs            func(*prompt.AskStubber)
-		httpStubs           []httpmock.Stub
-		upgradeStatusWorker appliancepkg.WaitForUpgradeStatus
-		wantErr             bool
-		wantErrOut          *regexp.Regexp
+		name                     string
+		cli                      string
+		primaryControllerVersion string
+		askStubs                 func(*prompt.AskStubber)
+		httpStubs                []httpmock.Stub
+		upgradeStatusWorker      appliancepkg.WaitForUpgradeStatus
+		wantOut                  *regexp.Regexp
+		wantErr                  bool
+		wantErrOut               *regexp.Regexp
 	}{
 		{
-			name: "with existing file",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			name:                     "with existing file",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
@@ -145,8 +148,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "with gateway filter",
-			cli:  `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1.img.zip'`,
+			name:                     "with gateway filter",
+			cli:                      `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1.img.zip'`,
+			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
@@ -213,10 +217,11 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:                "error upgrade status",
-			cli:                 "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
-			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`gateway never reached verifying, ready, failed, got failed`),
+			name:                     "error upgrade status",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			primaryControllerVersion: "5.3.4+24950",
+			upgradeStatusWorker:      &errorUpgradeStatus{},
+			wantErrOut:               regexp.MustCompile(`gateway never reached verifying, ready, failed, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // auto-scaling warning
 				s.StubOne(true) // disk usage
@@ -283,15 +288,17 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:       "no image argument",
-			cli:        "upgrade prepare",
-			httpStubs:  []httpmock.Stub{},
-			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`--image is mandatory`),
+			name:                     "no image argument",
+			cli:                      "upgrade prepare",
+			primaryControllerVersion: "5.3.4+24950",
+			httpStubs:                []httpmock.Stub{},
+			wantErr:                  true,
+			wantErrOut:               regexp.MustCompile(`--image is mandatory`),
 		},
 		{
-			name: "timeout flag",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1.img.zip' --timeout 0s",
+			name:                     "timeout flag",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip' --timeout 0s",
+			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubOne(true) // auto-scaling warning
 				as.StubOne(true) // disk usage
@@ -359,8 +366,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile("WARNING: timeout is less than the allowed minimum. Using default timeout instead: 30m0s"),
 		},
 		{
-			name: "disagree with peer warning",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			name:                     "disagree with peer warning",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(false) // peer_warning message
@@ -379,8 +387,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Cancelled by user`),
 		},
 		{
-			name: "no prepare confirmation",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			name:                     "no prepare confirmation",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(true)  // disk usage
@@ -400,8 +409,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "image file not found",
-			cli:  "upgrade prepare --image 'abc123456'",
+			name:                     "image file not found",
+			cli:                      "upgrade prepare --image 'abc123456'",
+			primaryControllerVersion: "5.3.4+24950",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -416,8 +426,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Image file not found "abc123456"`),
 		},
 		{
-			name: "file name error",
-			cli:  "upgrade prepare --image './testdata/appgate.img'",
+			name:                     "file name error",
+			cli:                      "upgrade prepare --image './testdata/appgate.img'",
+			primaryControllerVersion: "5.3.4+24950",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -432,8 +443,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Invalid mimetype on image file. The format is expected to be a .img.zip archive.`),
 		},
 		{
-			name: "invalid zip file error",
-			cli:  "upgrade prepare --image './testdata/invalid-5.5.1.img.zip'",
+			name:                     "invalid zip file error",
+			cli:                      "upgrade prepare --image './testdata/invalid-5.5.1.img.zip'",
+			primaryControllerVersion: "5.3.4+24950",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -446,6 +458,109 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			},
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`zip: not a valid zip file`),
+		},
+		{
+			name:                     "prepare same version",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-12345.img.zip'",
+			primaryControllerVersion: "5.5.1+12345",
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(true) // auto-scaling warning
+				as.StubOne(true) // disk usage
+				as.StubOne(true) // peer_warning message
+				as.StubOne(true) // upgrade_confirm
+			},
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_5.5.1.json"),
+				},
+				{
+					URL:       "/files/appgate-5.5.1-12345.img.zip",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file_5.5.1.json")
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file_5.5.1.json")
+					},
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances are already at the same version as the upgrade image`),
+		},
+		{
+			name:                     "force prepare same version",
+			cli:                      "upgrade prepare --force --image './testdata/appgate-5.5.1-12345.img.zip'",
+			primaryControllerVersion: "5.5.1+12345",
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(true) // auto-scaling warning
+				as.StubOne(true) // disk usage
+				as.StubOne(true) // peer_warning message
+				as.StubOne(true) // upgrade_confirm
+			},
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_5.5.1.json"),
+				},
+				{
+					URL:       "/files/appgate-5.5.1-12345.img.zip",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+						}
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
+						}
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{
+		                    "status": "idle",
+		                    "details": "a reboot is required for the Upgrade to go into effect"
+		                  }`))
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -466,7 +581,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				Config: &configuration.Config{
 					Debug:                    false,
 					URL:                      fmt.Sprintf("http://controller.devops:%d", registry.Port),
-					PrimaryControllerVersion: "5.3.4+24950",
+					PrimaryControllerVersion: tt.primaryControllerVersion,
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,
@@ -506,8 +621,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			}
 			cmd.SetArgs(argv)
 
+			out := &bytes.Buffer{}
 			cmd.SetIn(&bytes.Buffer{})
-			cmd.SetOut(io.Discard)
+			cmd.SetOut(out)
 			cmd.SetErr(io.Discard)
 
 			stubber, teardown := prompt.InitAskStubber()
@@ -525,6 +641,15 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				if !tt.wantErrOut.MatchString(err.Error()) {
 					t.Logf("Stdout: %s", stdout)
 					t.Errorf("Expected output to match, got:\n%s\n expected: \n%s\n", err.Error(), tt.wantErrOut)
+				}
+			}
+			if tt.wantOut != nil {
+				got, err := io.ReadAll(out)
+				if err != nil {
+					t.Fatal("Test error: Failed to read output buffer")
+				}
+				if !tt.wantOut.Match(got) {
+					t.Fatalf("WANT: %s\nGOT: %s", tt.wantOut.String(), string(got))
 				}
 			}
 		})
