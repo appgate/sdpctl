@@ -68,6 +68,10 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
 	fmt.Fprintln(w, "Name\tStatus\tFunction\tCPU\tMemory\tNetwork out/in\tDisk\tVersion")
 	for _, s := range stats.GetData() {
+		version := s.GetVersion()
+		if v, err := appliancepkg.ParseVersionString(version); err == nil {
+			version = v.String()
+		}
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			s.GetName(),
 			s.GetStatus(),
@@ -76,7 +80,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 			fmt.Sprintf("%g%%", s.GetMemory()),
 			statsNetworkPrettyPrint(s.GetNetwork()),
 			fmt.Sprintf("%g%%", s.GetDisk()),
-			s.GetVersion(),
+			version,
 		)
 	}
 	w.Flush()
