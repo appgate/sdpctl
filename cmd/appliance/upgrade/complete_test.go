@@ -52,7 +52,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		wantErrOut                  *regexp.Regexp
 	}{
 		{
-			name: "test complete multiple appliances",
+			name: "test complete multiple appliances backup false",
 			cli:  "upgrade complete --backup=false",
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubOne(true)
@@ -157,7 +157,8 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test complete multiple appliances",
+			// TODO; fails to Windows rename issue. See https://github.com/appgate/sdpctl/pull/22#pullrequestreview-813268386
+			name: "test complete multiple appliances with backup",
 			cli:  "upgrade complete --backup=true --no-interactive=true",
 			httpStubs: []httpmock.Stub{
 				{

@@ -91,10 +91,11 @@ Available Variables:
              reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography /v MachineGuid on Windows
   SDPCTL_CONFIG_DIR:
     Description: the directory where sdpctl will store configuration files.
-    Default: "$XDG_CONFIG_HOME/sdpctl" or "$HOME/.config/sdpctl on UNIX".
+    Default: "$XDG_CONFIG_HOME/sdpctl" or "$HOME/.config/sdpctl on UNIX and %APPDATA%\Local\sdpctl on Windows".
   SDPCTL_LOG_LEVEL:
     Description: application log level
     Default: INFO
+    Options: PANIC,FATAL, INFO, TRACE
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 

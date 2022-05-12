@@ -101,7 +101,7 @@ func AddDefaultSpinner(p *mpb.Progress, name string, stage string, cmsg string, 
 		mpb.AppendDecorators(
 			decor.Name(name, decor.WCSyncWidthR),
 			decor.Name(":", decor.WC{W: 2, C: decor.DidentRight}),
-			decor.OnComplete(decor.OnAbort(decor.Name(stage), "failed"), cmsg),
+			decor.OnComplete(decor.OnAbort(decor.Name(stage), ""), cmsg),
 		),
 	}
 	options = append(options, opts...)

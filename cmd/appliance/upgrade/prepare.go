@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"sync"
@@ -84,7 +86,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				opts.timeout = flagTimeout
 			}
 			var errs error
-			opts.filename = path.Base(opts.image)
+			opts.filename = filepath.Base(opts.image)
 			if err := checkImageFilename(opts.filename); err != nil {
 				errs = multierr.Append(errs, err)
 			}
@@ -92,6 +94,14 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			// allow remote addr for image, such as aws s3 bucket
 			if util.IsValidURL(opts.image) {
 				opts.remoteImage = true
+				// if the file is a remote image URL, derive the filename from
+				// standard lib 'path' instead of 'filepath' to avoid trailing URI elements
+
+				// we can skip error check here since we already validated that its a url
+				u, _ := url.Parse(opts.image)
+				// remove any query string, and leave us only with the filename
+				u.RawQuery = ""
+				opts.filename = path.Base(u.String())
 			}
 			if !opts.remoteImage {
 				// if the image is a local file, make sure its readable

@@ -11,17 +11,38 @@
 package keyring
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/billgraziano/dpapi"
+	zkeyring "github.com/zalando/go-keyring"
 )
 
-func ClearCredentials(prefix string) {
-	for _, k := range []string{username, password, bearer} {
-		deleteSecret(format(prefix, k))
+// ClearCredentials removes any existing items in the keychain,
+// it will ignore if not found errors
+func ClearCredentials(prefix string) error {
+	for _, k := range []string{username, password} {
+		if err := deleteSecret(format(prefix, k)); err != nil {
+			if !errors.Is(err, zkeyring.ErrNotFound) {
+				return err
+			}
+		}
 	}
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", filesystem.ConfigDir(), format(prefix, bearer)))
+	if err != nil {
+		return err
+	}
+	if ok, err := util.FileExists(p); err == nil && ok {
+		if err := os.Remove(p); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func GetPassword(prefix string) (string, error) {
@@ -50,10 +71,13 @@ func GetBearer(prefix string) (string, error) {
 	if v, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		return v, nil
 	}
-	filepath := filesystem.ConfigDir()
-	filename := format(prefix, bearer)
 
-	dat, err := os.ReadFile(fmt.Sprintf("%s/%s", filepath, filename))
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", filesystem.ConfigDir(), format(prefix, bearer)))
+	if err != nil {
+		return "", err
+	}
+
+	dat, err := os.ReadFile(p)
 	if err != nil {
 		return "", err
 	}
@@ -65,14 +89,20 @@ func GetBearer(prefix string) (string, error) {
 }
 
 func SetBearer(prefix, secret string) error {
-	filepath := filesystem.ConfigDir()
-	filename := format(prefix, bearer)
-
 	encrypted, err := dpapi.EncryptBytes([]byte(secret))
 	if err != nil {
 		return fmt.Errorf("could not encrypt bearer token to Windows DPAPI %w", err)
 	}
-	f, err := os.Create(fmt.Sprintf("%s/%s", filepath, filename))
+	dir := filesystem.ConfigDir()
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", dir, format(prefix, bearer)))
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(p)
 	if err != nil {
 		return fmt.Errorf("could create file %w", err)
 	}
