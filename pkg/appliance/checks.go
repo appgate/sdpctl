@@ -153,10 +153,11 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
 func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance) {
 	skip := []openapi.Appliance{}
+	keep := []openapi.Appliance{}
 
-	for i := 0; i < len(appliances); i++ {
+	for _, appliance := range appliances {
 		for _, stat := range stats.GetData() {
-			if stat.GetId() == appliances[i].GetId() {
+			if stat.GetId() == appliance.GetId() {
 				statV, err := ParseVersionString(stat.GetVersion())
 				if err != nil {
 					logrus.Warn("failed to parse version from stats")
@@ -164,13 +165,14 @@ func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, 
 				statBuildNr, _ := strconv.ParseInt(statV.Metadata(), 10, 64)
 				uploadBuildNr, _ := strconv.ParseInt(v.Metadata(), 10, 64)
 				if statV.Equal(v) && statBuildNr == uploadBuildNr {
-					logrus.WithField("appliance", appliances[i].GetName()).Info("Appliance is already at the same version. Skipping.")
-					skip = append(skip, appliances[i])
-					appliances = append(appliances[:i], appliances[i+1:]...)
+					logrus.WithField("appliance", appliance.GetName()).Info("Appliance is already at the same version. Skipping.")
+					skip = append(skip, appliance)
+				} else {
+					keep = append(keep, appliance)
 				}
 			}
 		}
 	}
 
-	return appliances, skip
+	return keep, skip
 }
