@@ -13,7 +13,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-version"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) {
@@ -160,12 +160,13 @@ func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, 
 			if stat.GetId() == appliance.GetId() {
 				statV, err := ParseVersionString(stat.GetVersion())
 				if err != nil {
-					logrus.Warn("failed to parse version from stats")
+					log.Warn("failed to parse version from stats")
+					continue
 				}
 				statBuildNr, _ := strconv.ParseInt(statV.Metadata(), 10, 64)
 				uploadBuildNr, _ := strconv.ParseInt(v.Metadata(), 10, 64)
 				if statV.Equal(v) && statBuildNr == uploadBuildNr {
-					logrus.WithField("appliance", appliance.GetName()).Info("Appliance is already at the same version. Skipping.")
+					log.WithField("appliance", appliance.GetName()).Info("Appliance is already at the same version. Skipping.")
 					skip = append(skip, appliance)
 				} else {
 					keep = append(keep, appliance)
