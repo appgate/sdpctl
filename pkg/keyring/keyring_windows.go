@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/billgraziano/dpapi"
 	zkeyring "github.com/zalando/go-keyring"
 )
@@ -35,9 +36,12 @@ func ClearCredentials(prefix string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(p); err != nil {
-		return err
+	if ok, err := util.FileExists(p); err == nil && ok {
+		if err := os.Remove(p); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
