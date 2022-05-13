@@ -722,11 +722,10 @@ func printPostCompleteSummary(applianceVersions map[string]string, hasDiff bool)
 	}
 	tpl := `UPGRADE COMPLETE
 
+{{ if .HasDiff }}WARNING: Upgrade was completed, but not all appliances are running the same version.{{ end }}
 Appliances are now running these versions:
-{{ range $appliance, $version := .ApplianceVersions }}
+{{- range $appliance, $version := .ApplianceVersions }}
   {{ $appliance }}: {{ $version }}{{ end }}
-{{ .HasDiff }}
-WARNING: Upgrade was completed, but there are different versions running on the appliances.{{ end }}
 `
 	tplData := tplStub{
 		ApplianceVersions: applianceVersions,
