@@ -534,7 +534,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				finalState = "multi_controller_ready"
 			}
 			statusReport := make(chan string)
-			defer close(statusReport)
 			a.UpgradeStatusWorker.Watch(ctx, ctrlP, ctrl, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
 			if err := a.UpgradeComplete(ctx, ctrl.GetId(), true); err != nil {
 				close(statusReport)
@@ -573,13 +572,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if cfg.Version >= 15 {
 				_, err := a.DisableMaintenanceMode(ctx, ctrl.GetId())
 				if err != nil {
+					close(statusReport)
 					ctrlCancel()
 					return err
 				}
 				log.WithFields(f).Info("Disabled maintenance mode")
 			}
-			ctrlP.Wait()
+			close(statusReport)
 			ctrlCancel()
+			ctrlP.Wait()
 		}
 		log.Info("done waiting for additional controllers upgrade")
 	}
