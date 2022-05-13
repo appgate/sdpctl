@@ -3,7 +3,6 @@ package appliance
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -12,15 +11,19 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/appliance/backup"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	mpb "github.com/vbauerster/mpb/v7"
@@ -36,7 +39,6 @@ type BackupOpts struct {
 	Appliance     func(*configuration.Config) (*Appliance, error)
 	Out           io.Writer
 	Destination   string
-	NotifyURL     string
 	With          []string
 	AllFlag       bool
 	PrimaryFlag   bool
@@ -45,11 +47,6 @@ type BackupOpts struct {
 	NoInteractive bool
 	FilterFlag    map[string]map[string]string
 	Quiet         bool
-}
-
-type backupHTTPResponse struct {
-	ID      string `json:"id"`
-	Message string `json:"message"`
 }
 
 func PrepareBackup(opts *BackupOpts) error {
@@ -68,18 +65,10 @@ func PrepareBackup(opts *BackupOpts) error {
 
 func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	backupIDs := make(map[string]string)
-	ctx := context.Background()
-	aud := util.InSlice("audit", opts.With)
+	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
+	defer cancel()
+	audit := util.InSlice("audit", opts.With)
 	logs := util.InSlice("logs", opts.With)
-
-	iObj := *openapi.NewInlineObject()
-	iObj.Audit = &aud
-	iObj.Logs = &logs
-
-	if opts.Config.Version >= 16 && len(opts.NotifyURL) > 0 {
-		// introduced in v16
-		iObj.NotifyUrl = &opts.NotifyURL
-	}
 
 	app, err := opts.Appliance(opts.Config)
 	if err != nil {
@@ -177,10 +166,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 	toBackup, offline, _ := FilterAvailable(toBackup, initialStats.GetData())
 
-	if len(offline) > 0 {
-		for _, v := range offline {
-			log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
-		}
+	for _, v := range offline {
+		log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
 	}
 
 	if len(toBackup) <= 0 {
@@ -195,98 +182,98 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 		fmt.Fprintf(opts.Out, "%s\n", msg)
 	}
-	g, ctx := errgroup.WithContext(ctx)
-	backupCount := len(toBackup)
-	p := mpb.NewWithContext(ctx)
-	log.Infof("Starting backup on %d appliances", backupCount)
-	bIDChan := make(chan map[string]string, backupCount)
+
+	type backedUp struct {
+		applianceID, backupID, destination string
+	}
+
+	var (
+		wg           sync.WaitGroup
+		count        = len(toBackup)
+		backups      = make(chan backedUp, count)
+		errorChannel = make(chan error, count)
+		backupAPI    = backup.New(app.APIClient, app.Token, opts.Config.Version)
+		progressBars = mpb.NewWithContext(ctx, mpb.WithOutput(opts.Out), mpb.WithWaitGroup(&wg))
+	)
+
+	wg.Add(count)
+
+	retryStatus := func(ctx context.Context, applianceID, backupID string) error {
+		return backoff.Retry(func() error {
+			status, err := backupAPI.Status(ctx, applianceID, backupID)
+			if err != nil {
+				return err
+			}
+			if status != backup.Done {
+				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status)
+			}
+			return nil
+		}, backoff.NewExponentialBackOff())
+	}
+
+	b := func(appliance openapi.Appliance) (backedUp, error) {
+		b := backedUp{applianceID: appliance.GetId()}
+		b.backupID, err = backupAPI.Initiate(ctx, b.applianceID, logs, audit)
+		if err != nil {
+			return b, err
+		}
+		if err := retryStatus(ctx, b.applianceID, b.backupID); err != nil {
+			return b, err
+		}
+		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
+		if err != nil {
+			return b, err
+		}
+		defer file.Close()
+
+		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
+		out, err := os.Create(b.destination)
+		if err != nil {
+			return b, err
+		}
+		defer out.Close()
+		if _, err := io.Copy(out, file); err != nil {
+			return b, err
+		}
+		return b, nil
+	}
+
 	for _, a := range toBackup {
 		appliance := a
-		apiClient := app.APIClient
-		g.Go(func() error {
-			spinner := util.AddDefaultSpinner(p, appliance.GetName(), "backing up", "completed")
-			log.WithField("appliance", appliance.GetName()).Info("backing up")
-			run := apiClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, appliance.Id).Authorization(app.Token).InlineObject(iObj)
-			res, httpresponse, err := run.Execute()
+		bar := util.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
+		go func(appliance openapi.Appliance) {
+			defer func() {
+				wg.Done()
+				bar.Increment()
+			}()
+			backedUp, err := b(appliance)
 			if err != nil {
-				spinner.Abort(false)
-				respBody := backupHTTPResponse{}
-				decodeErr := json.NewDecoder(httpresponse.Body).Decode(&respBody)
-				if decodeErr != nil {
-					return decodeErr
-				}
-				log.WithError(err).Error("Caught backup error")
-				return err
+				bar.Abort(false)
+				errorChannel <- fmt.Errorf("could not backup %s %s", appliance.GetName(), err)
+				return
 			}
-			backupID := res.GetId()
-			log.WithField("backup_id", backupID).Info("recieved backup id")
-			bIDChan <- map[string]string{appliance.GetId(): backupID}
-
-			var status string
-			var backoff float32 = 1
-			now := time.Now()
-			log.WithField("appliance", appliance.GetName()).Info("waiting for backup to be ready")
-			for status != "done" {
-				time.Sleep(time.Duration(backoff) * time.Second)
-				if backoff < 5 {
-					backoff *= 1.2
-				}
-				log.WithField("backoff", backoff).Debug("backoff request")
-				currentStatus, err := getBackupState(ctx, apiClient, app.Token, appliance.Id, backupID)
-				if err != nil {
-					return err
-				}
-				status = currentStatus
-				// Exponential backoff to not hammer API
-				if time.Since(now) > opts.Timeout {
-					return errors.New("Failed backup. Backup status exceeded timeout.")
-				}
-			}
-			log.WithField("backup_id", backupID).Info("recieved backup")
-			ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
-			file, inlineRes, err := apiClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, appliance.Id, backupID).Authorization(app.Token).Execute()
-			if err != nil {
-				spinner.Abort(false)
-				log.WithError(err).WithField("response", inlineRes).Debug(err)
-				return err
-			}
-			defer file.Close()
-			dst := fmt.Sprintf("%s/appgate_backup_%s_%s.bkp", opts.Destination, appliance.Name, time.Now().Format("20060102_150405"))
-			// TODO, i/p race condition, lock
-			// we need to seperate I/o to multiple go routines instead of
-			// same errGroup go routine,
-			// see https://github.com/appgate/sdpctl/pull/22#pullrequestreview-813268386
-			// this triggers error in the test suite on Windows
-			// backup_test.go:85: executeC rename C:\Users\usr\AppData\Local\Temp\HttpClientFile2320220325 /tmp/appgate-testing/appgate_backup_controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1_20220511_195711.bkp: The process cannot access the file because it is being used by another process.
-			err = os.Rename(file.Name(), dst)
-			if err != nil {
-				spinner.Abort(false)
-				return err
-			}
-
-			log.WithField("file", dst).Info("Wrote backup file")
-			spinner.Increment()
-			spinner.Wait()
-			return nil
-		})
+			backups <- backedUp
+		}(appliance)
 	}
 
 	go func() {
-		g.Wait()
-		close(bIDChan)
+		wg.Wait()
+		close(backups)
+		close(errorChannel)
 	}()
 
-	if err := g.Wait(); err != nil {
-		return backupIDs, err
+	progressBars.Wait()
+	for b := range backups {
+		backupIDs[b.applianceID] = b.backupID
+		log.WithField("file", b.destination).Info("Wrote backup file")
+	}
+	var result error
+	for err := range errorChannel {
+		log.Error(err)
+		result = multierror.Append(err)
 	}
 
-	for bID := range bIDChan {
-		for key, id := range bID {
-			backupIDs[key] = id
-		}
-	}
-	p.Wait()
-	return backupIDs, nil
+	return backupIDs, result
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
@@ -353,17 +340,6 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	})
 
 	return result, nil
-}
-
-func getBackupState(ctx context.Context, client *openapi.APIClient, token string, aID string, bID string) (string, error) {
-	res, _, err := client.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, aID, bID).Authorization(token).Execute()
-	if err != nil {
-		log.Debug(err)
-		return "", err
-	}
-	log.WithField("appliance", aID).WithField("current state", res.GetStatus()).Debug("Waiting for backup to reach done state")
-
-	return *res.Status, nil
 }
 
 func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteraction bool) (bool, error) {
