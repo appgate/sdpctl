@@ -7,6 +7,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 )
 
@@ -294,6 +295,54 @@ func TestCompareVersionAndBuildNumber(t *testing.T) {
 			v2, _ := version.NewVersion(tC.v2)
 			if res := CompareVersionsAndBuildNumber(v1, v2); res != tC.want {
 				t.Fatalf("Unexpected version compare:\nWANT\t%d\nGOT\t%d", tC.want, res)
+			}
+		})
+	}
+}
+
+func TestHasDiffVersions(t *testing.T) {
+	testCases := []struct {
+		name   string
+		stats  []openapi.StatsAppliancesListAllOfData
+		expect bool
+	}{
+		{
+			name: "should not have diff versions",
+			stats: []openapi.StatsAppliancesListAllOfData{
+				{
+					Name:    openapi.PtrString("controller"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("6.0.0-12345-release"),
+				},
+				{
+					Name:    openapi.PtrString("controller"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("6.0.0-12345-release"),
+				},
+			},
+			expect: false,
+		},
+		{
+			name: "should have diff versions",
+			stats: []openapi.StatsAppliancesListAllOfData{
+				{
+					Name:    openapi.PtrString("controller"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("6.0.0-12345-release"),
+				},
+				{
+					Name:    openapi.PtrString("controller"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("6.0.0-23456-release"),
+				},
+			},
+			expect: true,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			if res, _ := HasDiffVersions(tt.stats); res != tt.expect {
+				t.Fatalf("HasDiffVersions() failed\nWANT: %v\nGOT: %v", tt.expect, res)
 			}
 		})
 	}
