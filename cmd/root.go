@@ -5,7 +5,9 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -77,19 +79,18 @@ func NewCmdRoot() *cobra.Command {
 	cfg := &configuration.Config{}
 
 	viper.SetDefault("debug", false)
-
 	pFlags := rootCmd.PersistentFlags()
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
 	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
+	pFlags.Bool("log-to-stdout", false, "log to stdout instead of file")
+	pFlags.Bool("disable-spinner", false, "disable spinner animation")
+
 	initConfig()
 	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
 
-	if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) || cmdutil.IsCI() {
-		cfg.DisableSpinner = true
-	}
 	f := factory.New(version, cfg)
 	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
 	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
@@ -177,6 +178,30 @@ func Execute() exitCode {
 	return exitOK
 }
 
+// logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
+// if no TTY is avaliable, stdout will be used
+func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config) io.Writer {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05",
+		PadLevelText:    true,
+	})
+	if v, err := cmd.Flags().GetBool("log-to-stdout"); err == nil && v {
+		return f.IOOutWriter // f.StdErr ?
+	}
+	if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
+		return f.IOOutWriter
+	}
+
+	name := filepath.Join(filesystem.DataDir(), "sdpctl.log")
+	file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return f.IOOutWriter
+	}
+
+	return file
+}
+
 func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		logLevel := strings.ToLower(util.Getenv("SDPCTL_LOG_LEVEL", "info"))
@@ -198,21 +223,14 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if cfg.Debug {
 			log.SetLevel(log.DebugLevel)
 		}
-
-		fName := fmt.Sprintf("%s/sdpctl.log", filesystem.DataDir())
-		file, err := os.OpenFile(fName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
-		if err != nil {
-			log.SetFormatter(&log.TextFormatter{
-				FullTimestamp:   true,
-				TimestampFormat: "2006-01-02 15:04:05",
-				PadLevelText:    true,
-				ForceColors:     true,
-			})
-			log.Warn("Failed to open log file. Logging to stdout")
-			log.SetOutput(f.IOOutWriter)
-		} else {
-			log.SetOutput(file)
+		if v, err := cmd.Flags().GetBool("disable-spinner"); err == nil && v {
+			f.SetSpinnerOutput(io.Discard)
 		}
+		if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
+			f.SetSpinnerOutput(io.Discard)
+		}
+
+		log.SetOutput(logOutput(cmd, f, cfg))
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {

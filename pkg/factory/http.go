@@ -43,13 +43,17 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.StdErr = os.Stderr
 	f.SpinnerOut = os.Stdout
 
-	if config.DisableSpinner {
-		f.SpinnerOut = io.Discard
-	}
-
 	return f
 }
 
+func (f *Factory) SetSpinnerOutput(o io.Writer) {
+	f.SpinnerOut = o
+}
+func (f *Factory) GetSpinnerOutput() func() io.Writer {
+	return func() io.Writer {
+		return f.SpinnerOut
+	}
+}
 func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		cfg := f.Config

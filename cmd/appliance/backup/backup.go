@@ -16,7 +16,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	opts := appliance.BackupOpts{
 		Config:      f.Config,
 		Out:         f.IOOutWriter,
-		SpinnerOut:  f.SpinnerOut,
+		SpinnerOut:  f.GetSpinnerOutput(),
 		Appliance:   f.Appliance,
 		Destination: appliance.DefaultBackupDestination,
 	}

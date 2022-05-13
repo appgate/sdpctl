@@ -38,7 +38,7 @@ type BackupOpts struct {
 	Config        *configuration.Config
 	Appliance     func(*configuration.Config) (*Appliance, error)
 	Out           io.Writer
-	SpinnerOut    io.Writer
+	SpinnerOut    func() io.Writer
 	Destination   string
 	With          []string
 	AllFlag       bool

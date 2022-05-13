@@ -32,7 +32,7 @@ import (
 type upgradeCompleteOptions struct {
 	Config            *configuration.Config
 	Out               io.Writer
-	SpinnerOut        io.Writer
+	SpinnerOut        func() io.Writer
 	Appliance         func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	debug             bool
 	backup            bool
@@ -50,7 +50,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Appliance:  f.Appliance,
 		debug:      f.Config.Debug,
 		Out:        f.IOOutWriter,
-		SpinnerOut: f.SpinnerOut,
+		SpinnerOut: f.GetSpinnerOutput(),
 		Timeout:    DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
@@ -110,7 +110,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-
+	spinnerOut := opts.SpinnerOut()
 	if a.ApplianceStats == nil {
 		a.ApplianceStats = &appliancepkg.ApplianceStatus{
 			Appliance: a,
@@ -340,7 +340,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
 	fmt.Fprint(opts.Out, "\nInitializing upgrade:\n")
-	initP := mpb.New(mpb.WithOutput(opts.SpinnerOut))
+	initP := mpb.New(mpb.WithOutput(spinnerOut))
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
 		for _, controller := range additionalControllers {
@@ -417,7 +417,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
-		primaryP := mpb.New(mpb.WithOutput(opts.SpinnerOut))
+		primaryP := mpb.New(mpb.WithOutput(spinnerOut))
 		statusReport := make(chan string)
 		a.UpgradeStatusWorker.Watch(pctx, primaryP, *primaryController, ctrlUpgradeState, appliancepkg.UpgradeStatusFailed, statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
@@ -530,7 +530,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
 		for _, ctrl := range additionalControllers {
 			ctrlCtx, ctrlCancel := context.WithTimeout(ctx, opts.Timeout)
-			ctrlP := mpb.New(mpb.WithOutput(opts.SpinnerOut))
+			ctrlP := mpb.New(mpb.WithOutput(spinnerOut))
 			finalState := "controller_ready"
 			if cfg.Version < 15 {
 				finalState = "multi_controller_ready"
@@ -588,7 +588,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	for index, chunk := range chunks {
-		chunkP := mpb.New(mpb.WithOutput(opts.SpinnerOut))
+		chunkP := mpb.New(mpb.WithOutput(spinnerOut))
 		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunkP, chunk, false, "appliance_ready"); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)

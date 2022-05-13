@@ -26,7 +26,7 @@ import (
 type upgradeCancelOptions struct {
 	Config        *configuration.Config
 	Out           io.Writer
-	SpinnerOut    io.Writer
+	SpinnerOut    func() io.Writer
 	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	debug         bool
 	delete        bool
@@ -42,7 +42,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		Appliance:  f.Appliance,
 		debug:      f.Config.Debug,
 		Out:        f.IOOutWriter,
-		SpinnerOut: f.SpinnerOut,
+		SpinnerOut: f.GetSpinnerOutput(),
 		timeout:    DefaultTimeout,
 		defaultfilter: map[string]map[string]string{
 			"include": {},
@@ -74,6 +74,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	if err != nil {
 		return err
 	}
+	spinnerOut := opts.SpinnerOut()
 	if a.ApplianceStats == nil {
 		a.ApplianceStats = &appliancepkg.ApplianceStatus{
 			Appliance: a,
@@ -135,7 +136,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			// wg is the wait group for the progressbars
 			wg sync.WaitGroup
 		)
-		cancelProgressBars := mpb.New(mpb.WithOutput(opts.SpinnerOut), mpb.WithWaitGroup(&wg))
+		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
 		wg.Add(count)
 		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
 			return backoff.Retry(func() error {
