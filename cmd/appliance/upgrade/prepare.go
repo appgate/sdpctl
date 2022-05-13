@@ -314,9 +314,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		defer imageFile.Close()
 		p := mpb.New(mpb.WithOutput(opts.SpinnerOut))
+		log.WithField("file", imageFile.Name()).Info("Uploading file")
 		if err := a.UploadFile(ctx, imageFile, p); err != nil {
 			return err
 		}
+		log.WithField("file", imageFile.Name()).Info("Uploaded file")
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
