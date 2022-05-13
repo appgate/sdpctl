@@ -3,10 +3,12 @@ GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
 DESTDIR :=
 prefix  := /usr/local
 bindir  := ${prefix}/bin
+commit=$$(git rev-parse HEAD)
+commitPath=github.com/appgate/sdpctl/cmd.commit=${commit}
 
 .PHONY: build
 build:
-	go build -o build/$(BIN_NAME)
+	go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}'"
 
 .PHONY: deps
 deps:
