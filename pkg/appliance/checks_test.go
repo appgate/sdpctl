@@ -7,6 +7,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/google/go-cmp/cmp"
+	"github.com/hashicorp/go-version"
 )
 
 func TestPrintDiskSpaceWarningMessage(t *testing.T) {
@@ -256,6 +257,43 @@ Not disabling the health checks in those auto-scaled gateways could cause them t
 			}
 			if !cmp.Equal(got, tt.want) {
 				t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCompareVersionAndBuildNumber(t *testing.T) {
+	testCases := []struct {
+		desc string
+		v1   string
+		v2   string
+		want int
+	}{
+		{
+			desc: "should equal",
+			v1:   "6.0.0-beta+12345",
+			v2:   "6.0.0-beta+12345",
+			want: IsEqual,
+		},
+		{
+			desc: "v1 greater than v2",
+			v1:   "6.0.0-beta+23456",
+			v2:   "6.0.0-beta+12345",
+			want: IsLower,
+		},
+		{
+			desc: "v2 greater than v1",
+			v1:   "6.0.0-beta+12345",
+			v2:   "6.0.0-beta+23456",
+			want: IsGreater,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			v1, _ := version.NewVersion(tC.v1)
+			v2, _ := version.NewVersion(tC.v2)
+			if res := CompareVersionsAndBuildNumber(v1, v2); res != tC.want {
+				t.Fatalf("Unexpected version compare:\nWANT\t%d\nGOT\t%d", tC.want, res)
 			}
 		})
 	}

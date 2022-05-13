@@ -114,6 +114,18 @@ func unique(slice []openapi.Appliance) []openapi.Appliance {
 	return list
 }
 
+func uniqueString(slice []string) []string {
+	keys := make(map[string]bool)
+	list := []string{}
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 const autoScalingWarning = `
 {{ if .Template }}
 There is an auto-scale template configured: {{ .Template.Name }}
@@ -176,4 +188,40 @@ func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, 
 	}
 
 	return keep, skip
+}
+
+const (
+	IsLower   = -1
+	IsEqual   = 0
+	IsGreater = 1
+)
+
+// CompareVersionsAndBuildNumber compares two versions and returns the result with an integer representation
+// -1 if y is lower than x
+// 0 if versions match
+// 1 if y is greater than x
+func CompareVersionsAndBuildNumber(x, y *version.Version) int {
+	res := y.Compare(x)
+
+	// if res is 0, we also compare build number
+	if res == IsEqual {
+		buildX, _ := version.NewVersion(x.Metadata())
+		buildY, _ := version.NewVersion(y.Metadata())
+		res = buildY.Compare(buildX)
+	}
+
+	return res
+}
+
+func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {
+	res := map[string]string{}
+	versionList := []string{}
+	for _, stat := range stats {
+		v, _ := ParseVersionString(stat.GetVersion())
+		versionString := v.String()
+		res[stat.GetName()] = versionString
+		versionList = append(versionList, versionString)
+	}
+	unique := uniqueString(versionList)
+	return len(unique) != 1, res
 }

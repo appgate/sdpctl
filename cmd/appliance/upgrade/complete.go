@@ -608,7 +608,19 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	fmt.Fprint(opts.Out, "\nUpgrade complete!\n")
+	// Check if all appliances are running the same version after upgrade complete
+	newStats, _, err := a.Stats(ctx)
+	if err != nil {
+		return err
+	}
+	newStatsData := newStats.GetData()
+	hasDiff, versionList := appliancepkg.HasDiffVersions(newStatsData)
+
+	postSummary, err := printPostCompleteSummary(versionList, hasDiff)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(opts.Out, "\n%s\n", postSummary)
 
 	return nil
 }
@@ -701,4 +713,29 @@ Appliances that will be backed up before completing upgrade:{{ range . }}
 		return "", err
 	}
 	return tpl.String(), nil
+}
+
+func printPostCompleteSummary(applianceVersions map[string]string, hasDiff bool) (string, error) {
+	type tplStub struct {
+		ApplianceVersions map[string]string
+		HasDiff           bool
+	}
+	tpl := `UPGRADE COMPLETE
+
+Appliances are now running these versions:
+{{ range $appliance, $version := .ApplianceVersions }}
+  {{ $appliance }}: {{ $version }}{{ end }}
+{{ .HasDiff }}
+WARNING: Upgrade was completed, but there are different versions running on the appliances.{{ end }}
+`
+	tplData := tplStub{
+		ApplianceVersions: applianceVersions,
+		HasDiff:           hasDiff,
+	}
+	t := template.Must(template.New("").Parse(tpl))
+	var buf bytes.Buffer
+	if err := t.Execute(&buf, tplData); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
