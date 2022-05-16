@@ -245,16 +245,14 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		appliance := a
 		bar := util.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
 		go func(appliance openapi.Appliance) {
-			defer func() {
-				wg.Done()
-				bar.Increment()
-			}()
+			defer wg.Done()
 			backedUp, err := b(appliance)
 			if err != nil {
 				bar.Abort(false)
 				errorChannel <- fmt.Errorf("could not backup %s %s", appliance.GetName(), err)
 				return
 			}
+			bar.Increment()
 			backups <- backedUp
 		}(appliance)
 	}
