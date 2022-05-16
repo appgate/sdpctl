@@ -224,15 +224,18 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if err != nil {
 			return b, err
 		}
-		defer file.Close()
 
 		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
 		out, err := os.Create(b.destination)
 		if err != nil {
 			return b, err
 		}
-		defer out.Close()
 		if _, err := io.Copy(out, file); err != nil {
+			return b, err
+		}
+		file.Close()
+		out.Close()
+		if err := os.Remove(file.Name()); err != nil {
 			return b, err
 		}
 		return b, nil
