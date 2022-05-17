@@ -528,3 +528,56 @@ Appliances that will be backed up before completing upgrade:
 		})
 	}
 }
+
+func TestPrintPostCompleteSummary(t *testing.T) {
+	testCases := []struct {
+		name              string
+		applianceVersions map[string]string
+		hasDiff           bool
+		expect            string
+	}{
+		{
+			name: "print no diff summary",
+			applianceVersions: map[string]string{
+				"controller": "6.0.0+12345",
+				"gateway":    "6.0.0+12345",
+			},
+			hasDiff: false,
+			expect: `UPGRADE COMPLETE
+
+
+Appliances are now running these versions:
+  controller: 6.0.0+12345
+  gateway: 6.0.0+12345
+`,
+		},
+		{
+			name: "diff on three appliances",
+			applianceVersions: map[string]string{
+				"primary-controller":   "6.0.0-beta+12345",
+				"secondary-controller": "6.0.0+23456",
+				"gateway":              "6.0.0+23456",
+			},
+			hasDiff: true,
+			expect: `UPGRADE COMPLETE
+
+WARNING: Upgrade was completed, but not all appliances are running the same version.
+Appliances are now running these versions:
+  gateway: 6.0.0+23456
+  primary-controller: 6.0.0-beta+12345
+  secondary-controller: 6.0.0+23456
+`,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := printPostCompleteSummary(tt.applianceVersions, tt.hasDiff)
+			if err != nil {
+				t.Fatal("error printing summary")
+			}
+			if res != tt.expect {
+				t.Fatalf("Output don't match expected:\nWANT: %s\nGOT: %s", tt.expect, res)
+			}
+		})
+	}
+}
