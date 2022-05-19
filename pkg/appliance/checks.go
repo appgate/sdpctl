@@ -221,7 +221,10 @@ func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[st
 		log.WithField("stat_version", statVersionString).Debug("parsing version string")
 		v, err := ParseVersionString(statVersionString)
 		if err != nil {
-			log.WithError(err).WithField("string", statVersionString).Warn("failed to parse version string")
+			log.WithError(err).WithFields(log.Fields{
+				"appliance": stat.GetName(),
+				"version":   statVersionString,
+			}).Warn("failed to parse version string")
 			return false, res
 		}
 		versionString := v.String()
