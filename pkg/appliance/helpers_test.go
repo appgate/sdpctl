@@ -11,7 +11,7 @@ var (
 	Appliance55Constraints, _ = version.NewConstraint(">= 5.5.0-*, < 5.6.0")
 )
 
-func TestGuessVersion(t *testing.T) {
+func TestParseVersionString(t *testing.T) {
 	type args struct {
 		f string
 	}
@@ -39,9 +39,73 @@ func TestGuessVersion(t *testing.T) {
 			wantErr:     false,
 		},
 		{
-			name: "Full file path not allowed",
+			name: "Full file path",
 			args: args{
 				"/full/file/path/is/not/allowed/appgate-5.4-26245-release.img.zip",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "Swapped meta and pre",
+			args: args{
+				"appgate-5.4-beta-26245.img.zip",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "plus instead of minus",
+			args: args{
+				"appgate-5.4+release+26245.img.zip",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "major and minor version only",
+			args: args{
+				"5.4.img.zip",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "major version only",
+			args: args{
+				"5.img.zip",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "full version no file ending",
+			args: args{
+				"5.4.4",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "major and minor version only no file ending",
+			args: args{
+				"5.4",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "major version only no file ending",
+			args: args{
+				"5",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "empty string",
+			args: args{
+				"",
 			},
 			constraints: Appliance55Constraints,
 			wantErr:     true,
@@ -51,7 +115,7 @@ func TestGuessVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := ParseVersionString(tt.args.f)
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("GuessVersion() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("ParseVersionString() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if (got != nil) && !tt.constraints.Check(got) {
