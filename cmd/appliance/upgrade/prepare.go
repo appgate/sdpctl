@@ -37,6 +37,7 @@ type prepareUpgradeOptions struct {
 	Config           *configuration.Config
 	Out              io.Writer
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	SpinnerOut       func() io.Writer
 	debug            bool
 	insecure         bool
 	NoInteractive    bool
@@ -54,11 +55,12 @@ type prepareUpgradeOptions struct {
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	f.Config.Timeout = 300
 	opts := &prepareUpgradeOptions{
-		Config:    f.Config,
-		Appliance: f.Appliance,
-		debug:     f.Config.Debug,
-		Out:       f.IOOutWriter,
-		timeout:   DefaultTimeout,
+		Config:     f.Config,
+		Appliance:  f.Appliance,
+		debug:      f.Config.Debug,
+		Out:        f.IOOutWriter,
+		SpinnerOut: f.GetSpinnerOutput(),
+		timeout:    DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
@@ -154,11 +156,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
-
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
 	}
+	spinnerOut := opts.SpinnerOut()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	if a.UpgradeStatusWorker == nil {
@@ -312,10 +314,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
-		p := mpb.New(mpb.WithOutput(opts.Out))
+		p := mpb.New(mpb.WithOutput(spinnerOut))
+		log.WithField("file", imageFile.Name()).Info("Uploading file")
 		if err := a.UploadFile(ctx, imageFile, p); err != nil {
 			return err
 		}
+		log.WithField("file", imageFile.Name()).Info("Uploaded file")
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
 		if err != nil {
@@ -333,7 +337,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err != nil {
 			return err
 		}
-		p := mpb.New(mpb.WithOutput(opts.Out))
+		p := mpb.New(mpb.WithOutput(spinnerOut))
 		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
 			return err
 		}
@@ -376,7 +380,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			wg sync.WaitGroup
 		)
 
-		updateProgressBars := mpb.New(mpb.WithOutput(opts.Out), mpb.WithWaitGroup(&wg))
+		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.PopCompletedMode(), mpb.WithWaitGroup(&wg))
 		wg.Add(count)
 
 		for _, ap := range appliances {

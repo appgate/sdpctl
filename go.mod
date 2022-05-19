@@ -18,6 +18,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.4.0
 	github.com/kr/pretty v0.3.0 // indirect
+	github.com/mattn/go-isatty v0.0.14
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.8.1

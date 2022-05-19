@@ -27,7 +27,8 @@ type Factory struct {
 	Config      *configuration.Config
 	IOOutWriter io.Writer
 	Stdin       io.Reader
-	StdErr      io.Reader
+	StdErr      io.Writer
+	SpinnerOut  io.Writer
 }
 
 func New(appVersion string, config *configuration.Config) *Factory {
@@ -39,9 +40,20 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.Token = tokenFunc(f, appVersion)         // depends on config
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
+	f.StdErr = os.Stderr
+	f.SpinnerOut = os.Stdout
+
 	return f
 }
 
+func (f *Factory) SetSpinnerOutput(o io.Writer) {
+	f.SpinnerOut = o
+}
+func (f *Factory) GetSpinnerOutput() func() io.Writer {
+	return func() io.Writer {
+		return f.SpinnerOut
+	}
+}
 func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		cfg := f.Config
