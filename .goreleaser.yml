@@ -4,24 +4,53 @@ before:
   hooks:
     - make deps
 builds:
-  - main: ./main.go
+  - id: sdpctl_linux
+    main: ./main.go
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
-      - darwin
     goarch:
       - amd64
+      - arm64
     binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
     ldflags:
       - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
       - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
       - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+  - id: sdpctl_windows
+    main: ./main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
+    ldflags:
+      - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
+      - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
+      - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+  - id: sdpctl_darwin
+    main: ./main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
+    ldflags:
+      - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
+      - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
+      - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+universal_binaries:
+  - replace: false
+    id: sdpctl_darwin
 archives:
-  - replacements:
-      386: i386
-    format_overrides:
+  - format_overrides:
       - goos: windows
         format: zip
 checksum:
