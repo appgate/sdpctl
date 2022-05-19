@@ -84,8 +84,7 @@ func NewCmdRoot() *cobra.Command {
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
 	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
-	pFlags.Bool("log-to-stdout", false, "log to stdout instead of file")
-	pFlags.Bool("disable-spinner", false, "disable spinner animation")
+	pFlags.Bool("ci-mode", false, "log to stderr instead of file and disable progress-bars")
 
 	initConfig()
 	BindEnvs(*cfg)
@@ -186,11 +185,11 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 		TimestampFormat: "2006-01-02 15:04:05",
 		PadLevelText:    true,
 	})
-	if v, err := cmd.Flags().GetBool("log-to-stdout"); err == nil && v {
-		return f.IOOutWriter // f.StdErr ?
+	if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
+		return f.StdErr
 	}
 	if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
-		return f.IOOutWriter
+		return f.StdErr
 	}
 
 	name := filepath.Join(filesystem.DataDir(), "sdpctl.log")
@@ -223,7 +222,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if cfg.Debug {
 			log.SetLevel(log.DebugLevel)
 		}
-		if v, err := cmd.Flags().GetBool("disable-spinner"); err == nil && v {
+		if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
 			f.SetSpinnerOutput(io.Discard)
 		}
 		if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
