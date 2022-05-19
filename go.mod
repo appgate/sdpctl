@@ -5,7 +5,6 @@ go 1.16
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.4
 	github.com/adrg/xdg v0.4.0
-	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20220502093424-6e14652717a2
 	github.com/billgraziano/dpapi v0.4.0
 	github.com/cenkalti/backoff/v4 v4.1.3
