@@ -431,6 +431,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
 		// once it has past the 'downloading' stage, we will go to the next item in the queue.
 		err := qw.Work(func(v interface{}) error {
+			if v == nil {
+				return nil
+			}
 			appliance := v.(openapi.Appliance)
 			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 			defer cancel()
