@@ -52,6 +52,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Out:        f.IOOutWriter,
 		SpinnerOut: f.GetSpinnerOutput(),
 		Timeout:    DefaultTimeout,
+		backup:     true,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
