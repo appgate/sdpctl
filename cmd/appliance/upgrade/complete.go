@@ -137,7 +137,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if !opts.backup && !flagIsChanged && !opts.NoInteractive {
 		performBackup := &survey.Confirm{
 			Message: "Do you want to backup before proceeding?",
-			Default: false,
+			Default: opts.backup,
 		}
 
 		if err := survey.AskOne(performBackup, &opts.backup); err != nil {
