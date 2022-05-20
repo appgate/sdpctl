@@ -37,7 +37,7 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 
 	flags := signinCmd.Flags()
 
-	flags.BoolVar(&opts.remember, "remember-me", false, "Remember sign in credentials. This will remove any existing, stored credentials.")
+	flags.BoolVar(&opts.remember, "remember-me", true, "Remember sign in credentials. This will remove any existing, stored credentials.")
 
 	return signinCmd
 }
