@@ -641,7 +641,7 @@ func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, a
 	completeSummaryTpl := `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in a few ordered steps:
+Upgrade will be completed in three steps:
 
  1. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.
