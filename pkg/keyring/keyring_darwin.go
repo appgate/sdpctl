@@ -1,27 +1,15 @@
-//go:build !windows
-// +build !windows
+//go:build darwin
+// +build darwin
 
+// The bearer token is not saved in the OS keychain for macOS because of string length limitation.
+// If the user choose to save their username/password in the keychain, they will still experiance a
+// seemless integration, however they need todo a few more http requests on startup for each command they execute.
 package keyring
-
-import (
-	"errors"
-	"fmt"
-	"os"
-	"strings"
-
-	zkeyring "github.com/zalando/go-keyring"
-)
-
-const (
-	// Error string if org.freedesktop.secrets does not exists, for example a environment
-	// without X (graphical interface, for example a server environment)
-	secretMissing = "org.freedesktop.secrets was not provided by any"
-)
 
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
-	for _, k := range []string{username, password, bearer} {
+	for _, k := range []string{username, password} {
 		if err := deleteSecret(format(prefix, k)); err != nil {
 			if !errors.Is(err, zkeyring.ErrNotFound) {
 				return err
@@ -41,7 +29,7 @@ func GetPassword(prefix string) (string, error) {
 
 func SetPassword(prefix, secret string) error {
 	err := setSecret(format(prefix, password), secret)
-	if err != nil && strings.Contains(err.Error(), secretMissing) {
+	if err != nil {
 		os.Setenv("SDPCTL_PASSWORD", secret)
 		return nil
 	}
@@ -52,25 +40,16 @@ func GetBearer(prefix string) (string, error) {
 	if v, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		return v, nil
 	}
-	v, err := getSecret(format(prefix, bearer))
-	if err != nil {
-		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'sdpctl configure login' or set SDPCTL_BEARER %w", prefix, err)
-	}
-	return v, nil
+	return "", errors.New("bearer token not saved persistently on macOS")
 }
 
 func SetBearer(prefix, secret string) error {
-	err := setSecret(format(prefix, bearer), secret)
-	if err != nil && strings.Contains(err.Error(), secretMissing) {
-		os.Setenv("SDPCTL_BEARER", secret)
-		return nil
-	}
-	return err
+	os.Setenv("SDPCTL_BEARER", secret)
 }
 
 func SetUsername(prefix, secret string) error {
 	err := setSecret(format(prefix, username), secret)
-	if err != nil && strings.Contains(err.Error(), secretMissing) {
+	if err != nil {
 		os.Setenv("SDPCTL_USERNAME", secret)
 		return nil
 	}
