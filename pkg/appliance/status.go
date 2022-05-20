@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -40,12 +41,20 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 
 func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, currentStatus chan<- string) backoff.Operation {
 	fields := log.Fields{"appliance": appliance.GetName()}
+	hasRebooted := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
-			currentStatus <- "rebooting, waiting for appliance to come back online"
+			if errors.Is(err, context.DeadlineExceeded) {
+				currentStatus <- "rebooting, waiting for appliance to come back online"
+				hasRebooted = true
+			} else if hasRebooted {
+				currentStatus <- "switching partition"
+			} else {
+				currentStatus <- "installing"
+			}
 			return err
 		}
 		var s string
