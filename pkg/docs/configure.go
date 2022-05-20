@@ -31,8 +31,8 @@ This will fetch a token on valid authentication which will be valid for 24 hours
 				Command:     "sdpctl configure signin",
 			},
 			{
-				Description: "remember credentials on sign in",
-				Command:     "sdpctl configure signin --remember-me",
+				Description: "do not remember credentials on sign in",
+				Command:     "sdpctl configure signin --no-remember",
 			},
 		},
 	}
