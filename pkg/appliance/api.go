@@ -1,23 +1,15 @@
 package appliance
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
-	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-version"
-	mpb "github.com/vbauerster/mpb/v7"
-	decor "github.com/vbauerster/mpb/v7/decor"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -138,94 +130,36 @@ func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.Fi
 }
 
 // UploadFile directly to the current Controller. Note that the File is stored only on the current Controller, not synced between Controllers.
-func (a *Appliance) UploadFile(ctx context.Context, file *os.File, p *mpb.Progress) error {
-	fileStat, err := file.Stat()
-	if err != nil {
-		return err
-	}
-	content, err := io.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	fs := fileStat.Size()
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", fileStat.Name())
-	if err != nil {
-		return err
-	}
-	part.Write(content)
-	if err = writer.Close(); err != nil {
-		return err
-	}
-
-	limitReader := io.LimitReader(body, int64(body.Len()))
-	bar := p.AddBar(fs,
-		mpb.BarWidth(50),
-		mpb.BarFillerOnComplete("uploaded"),
-		mpb.PrependDecorators(
-			decor.OnComplete(decor.Name(" uploading"), " ✓"),
-			decor.Name(fileStat.Name(), decor.WC{W: len(fileStat.Name()) + 1}),
-		),
-		mpb.AppendDecorators(
-			decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
-			decor.OnComplete(decor.Name(" | "), ""),
-			decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
-		),
-	)
-	waitSpinner := util.AddDefaultSpinner(p, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
-	proxyReader := bar.ProxyReader(limitReader)
-	defer proxyReader.Close()
-
+func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[string]string) error {
 	httpClient := a.HTTPClient
 	cfg := a.APIClient.GetConfig()
 	url, err := cfg.ServerURLWithContext(ctx, "ApplianceUpgradeApiService.FilesPut")
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPut, url+"/files", proxyReader)
+	req, err := http.NewRequest(http.MethodPut, url+"/files", r)
 	if err != nil {
 		return err
 	}
 	for k, v := range cfg.DefaultHeader {
 		req.Header.Add(k, v)
 	}
-	headers := map[string]string{
-		"Content-Type":        writer.FormDataContentType(),
-		"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
-	}
+
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 	req.Header.Set("Authorization", a.Token)
 	response, err := httpClient.Do(req)
 	if err != nil {
-		bar.Abort(false)
-		waitSpinner.Abort(true)
 		if response == nil {
 			return fmt.Errorf("no response during upload %w", err)
 		}
 		if response.StatusCode == http.StatusConflict {
 			return fmt.Errorf("already exists %w", err)
 		}
-		if response.StatusCode > 400 {
-			responseBody, errRead := io.ReadAll(response.Body)
-			if errRead != nil {
-				return err
-			}
-			errBody := api.GenericErrorResponse{}
-			if err := json.Unmarshal(responseBody, &errBody); err != nil {
-				return err
-			}
-			return fmt.Errorf("%s %v", errBody.Message, errBody.Errors)
-		}
-		return err
+		return api.HTTPErrorResponse(response, err)
 	}
-	waitSpinner.Increment()
 	defer response.Body.Close()
-	bar.Wait()
-	waitSpinner.Wait()
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/url"
 	"os"
 	"path"
@@ -30,6 +31,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 type prepareUpgradeOptions struct {
@@ -316,11 +318,55 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
-		p := mpb.New(mpb.WithOutput(spinnerOut))
-		log.WithField("file", imageFile.Name()).Info("Uploading file")
-		if err := a.UploadFile(ctx, imageFile, p); err != nil {
+
+		fileStat, err := imageFile.Stat()
+		if err != nil {
 			return err
 		}
+		content, err := io.ReadAll(imageFile)
+		if err != nil {
+			return err
+		}
+		body := new(bytes.Buffer)
+		writer := multipart.NewWriter(body)
+		part, err := writer.CreateFormFile("file", fileStat.Name())
+		if err != nil {
+			return err
+		}
+		part.Write(content)
+		if err = writer.Close(); err != nil {
+			return err
+		}
+
+		reader := io.LimitReader(body, int64(body.Len()))
+		uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
+		bar := uploadProgress.AddBar(int64(body.Len()),
+			mpb.BarWidth(50),
+			mpb.BarFillerOnComplete("uploaded"),
+			mpb.PrependDecorators(
+				decor.OnComplete(decor.Name(" uploading"), " ✓"),
+				decor.Name(fileStat.Name(), decor.WC{W: len(fileStat.Name()) + 1}),
+			),
+			mpb.AppendDecorators(
+				decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
+				decor.OnComplete(decor.Name(" | "), ""),
+				decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+			),
+		)
+		waitSpinner := util.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
+		proxyReader := bar.ProxyReader(reader)
+		waitSpinner.Increment()
+		log.WithField("file", imageFile.Name()).Info("Uploading file")
+		headers := map[string]string{
+			"Content-Type":        writer.FormDataContentType(),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
+		}
+		if err := a.UploadFile(ctx, proxyReader, headers); err != nil {
+			bar.Abort(false)
+			return err
+		}
+		uploadProgress.Wait()
+		proxyReader.Close()
 		log.WithField("file", imageFile.Name()).Info("Uploaded file")
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
@@ -331,7 +377,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
-		p.Wait()
+
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
