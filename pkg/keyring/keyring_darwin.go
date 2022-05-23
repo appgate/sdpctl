@@ -6,6 +6,13 @@
 // seemless integration, however they need todo a few more http requests on startup for each command they execute.
 package keyring
 
+import (
+	"errors"
+	"os"
+
+	zkeyring "github.com/zalando/go-keyring"
+)
+
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
@@ -45,6 +52,7 @@ func GetBearer(prefix string) (string, error) {
 
 func SetBearer(prefix, secret string) error {
 	os.Setenv("SDPCTL_BEARER", secret)
+	return nil
 }
 
 func SetUsername(prefix, secret string) error {
