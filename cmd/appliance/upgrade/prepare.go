@@ -425,22 +425,52 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}(appliance)
 		}
 
+		// Struct to pass when continuing queue.
+		// We need to keep track of the timeout, so the context deadline is passed along
+		// to the next phase
+		type continueStruct struct {
+			appliance openapi.Appliance
+			deadline  time.Time
+		}
+		queueContinue := make(chan continueStruct)
+
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
 		// once it has past the 'downloading' stage, we will go to the next item in the queue.
-		err := qw.Work(func(v interface{}) error {
-			if v == nil {
+		go func() {
+			err := qw.Work(func(v interface{}) error {
+				if v == nil {
+					return nil
+				}
+				appliance := v.(openapi.Appliance)
+				ctx, cancel := context.WithTimeout(ctx, opts.timeout)
+				defer cancel()
+				deadline, _ := ctx.Deadline()
+				if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
+					return err
+				}
+				if err := a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus); err != nil {
+					return err
+				}
+				queueContinue <- continueStruct{
+					appliance: appliance,
+					deadline:  deadline,
+				}
 				return nil
+			})
+			if err != nil {
+				errs = multierr.Append(errs, err)
 			}
-			appliance := v.(openapi.Appliance)
-			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
-			defer cancel()
-			if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
-				return err
+			close(queueContinue)
+		}()
+
+		// After image is downloaded, we block until we reach the desired state or fail
+		// keeping the deadline from the previous queue processing
+		for qc := range queueContinue {
+			ctx, cancel := context.WithDeadline(context.Background(), qc.deadline)
+			if err := a.UpgradeStatusWorker.Wait(ctx, qc.appliance, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed}); err != nil {
+				errs = multierr.Append(errs, err)
 			}
-			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
-		})
-		if err != nil {
-			errs = multierr.Append(errs, err)
+			cancel()
 		}
 
 		updateProgressBars.Wait()
