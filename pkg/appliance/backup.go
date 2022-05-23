@@ -245,7 +245,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 	for _, a := range toBackup {
 		appliance := a
-		bar := util.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
+		bar := prompt.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
 		go func(appliance openapi.Appliance) {
 			defer wg.Done()
 			backedUp, err := b(appliance)

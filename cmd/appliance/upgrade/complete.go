@@ -349,7 +349,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
 		for _, controller := range additionalControllers {
-			spinner := util.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")
+			spinner := prompt.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")
 			f := log.Fields{"appliance": controller.GetName()}
 			log.WithFields(f).Info("Disabling controller function")
 			if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
@@ -367,7 +367,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// verify the state for all controller
-	verifyingSpinner := util.AddDefaultSpinner(initP, "verifying states", "verifying", "ready")
+	verifyingSpinner := prompt.AddDefaultSpinner(initP, "verifying states", "verifying", "ready")
 	state := "controller_ready"
 	if cfg.Version < 15 {
 		state = "single_controller_ready"

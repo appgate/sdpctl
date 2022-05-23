@@ -356,7 +356,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
 			),
 		)
-		waitSpinner := util.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
+		waitSpinner := prompt.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
 		proxyReader := bar.ProxyReader(reader)
 		waitSpinner.Increment()
 		log.WithField("file", imageFile.Name()).Info("Uploading file")
