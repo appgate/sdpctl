@@ -374,20 +374,40 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		if remoteFile.GetStatus() != appliancepkg.FileReady {
-			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
+			return fmt.Errorf("remote file %q is uploaded, but is in status %s - %s", opts.filename, remoteFile.GetStatus(), remoteFile.GetFailureReason())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
 
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
-		token, err := opts.Config.GetBearTokenHeaderValue()
-		if err != nil {
+
+		p := mpb.New(mpb.WithOutput(spinnerOut))
+		if err := a.UploadToController(fileStatusCtx, opts.image, opts.filename); err != nil {
 			return err
 		}
-		p := mpb.New(mpb.WithOutput(spinnerOut))
-		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
-			return err
+		status := ""
+		statusChan := make(chan string)
+		a.UpgradeStatusWorker.Watch(ctx, p, *primaryController, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
+		for status != appliancepkg.FileReady {
+			remoteFile, err := a.FileStatus(ctx, opts.filename)
+			if err != nil {
+				close(statusChan)
+				return err
+			}
+			status = remoteFile.GetStatus()
+			statusChan <- status
+			if status == appliancepkg.FileReady {
+				close(statusChan)
+				break
+			}
+			if status == appliancepkg.FileFailed {
+				close(statusChan)
+				reason := errors.New(remoteFile.GetFailureReason())
+				return fmt.Errorf("Upload to controller failed: %w", reason)
+			}
+			// Arbitrary sleep for not polling file status from the API too much
+			time.Sleep(time.Second * 2)
 		}
 		p.Wait()
 	}
