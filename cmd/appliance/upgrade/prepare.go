@@ -25,6 +25,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
+	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/util"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
@@ -152,6 +153,8 @@ func checkImageFilename(i string) error {
 var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run sdpctl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
+	terminal.Lock()
+	defer terminal.Unlock()
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
