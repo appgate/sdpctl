@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 	"text/template"
 	"time"
 
@@ -135,8 +136,12 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 				appliancepkg.UpgradeStatusIdle,
 				appliancepkg.UpgradeStatusFailed,
 			}
+			// wg is the wait group for the progressbars
+			wg           sync.WaitGroup
+			errorChannel = make(chan error, count)
 		)
-		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
+		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
+		wg.Add(count)
 		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
 			return backoff.Retry(func() error {
 				return a.UpgradeCancel(ctx, appliance.GetId())
@@ -150,8 +155,12 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, appliancepkg.UpgradeStatusIdle, appliancepkg.UpgradeStatusFailed, statusReport)
 
 			go func(appliance openapi.Appliance) {
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, statusReport); err != nil {
+				defer func() {
+					wg.Done()
 					close(statusReport)
+				}()
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, statusReport); err != nil {
+					errorChannel <- err
 				}
 			}(appliance)
 		}
@@ -173,9 +182,19 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		if err != nil {
 			return err
 		}
+		go func() {
+			wg.Wait()
+			close(errorChannel)
+		}()
+
+		var result error
+		for err := range errorChannel {
+			log.Error(err)
+			return result
+		}
 		cancelProgressBars.Wait()
 
-		return nil
+		return result
 	}
 	fmt.Fprintln(opts.Out, "Cancelling pending upgrades...")
 	// workers is intentionally a fixed value of 2
