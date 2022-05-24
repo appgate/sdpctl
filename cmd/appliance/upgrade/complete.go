@@ -52,6 +52,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Out:        f.IOOutWriter,
 		SpinnerOut: f.GetSpinnerOutput(),
 		Timeout:    DefaultTimeout,
+		backup:     true,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
@@ -136,7 +137,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if !opts.backup && !flagIsChanged && !opts.NoInteractive {
 		performBackup := &survey.Confirm{
 			Message: "Do you want to backup before proceeding?",
-			Default: false,
+			Default: opts.backup,
 		}
 
 		if err := survey.AskOne(performBackup, &opts.backup); err != nil {
@@ -640,7 +641,7 @@ func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, a
 	completeSummaryTpl := `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in a few ordered steps:
+Upgrade will be completed in three steps:
 
  1. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.

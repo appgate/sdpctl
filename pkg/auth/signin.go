@@ -23,7 +23,7 @@ import (
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Signin(f *factory.Factory, remember, saveConfig, noInteractive bool) error {
+func Signin(f *factory.Factory, noRemember, saveConfig, noInteractive bool) error {
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
@@ -37,7 +37,7 @@ func Signin(f *factory.Factory, remember, saveConfig, noInteractive bool) error 
 		return err
 	}
 	// Clear old credentials if remember me flag is provided
-	if remember {
+	if !noRemember {
 		if err := cfg.ClearCredentials(); err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func Signin(f *factory.Factory, remember, saveConfig, noInteractive bool) error 
 		return valErrs
 	}
 
-	if remember {
+	if !noRemember {
 		if err := rememberCredentials(cfg, credentials); err != nil {
 			return fmt.Errorf("Failed to store credentials: %w", err)
 		}
@@ -232,7 +232,7 @@ func rememberCredentials(cfg *configuration.Config, credentials *configuration.C
 			Name: "remember",
 			Prompt: &survey.Select{
 				Message: "What credentials should be saved?",
-				Options: []string{"both", "only username", "only password"},
+				Options: []string{"both", "only username", "only password", "nothing"},
 				Default: "both",
 			},
 		},
@@ -252,9 +252,11 @@ func rememberCredentials(cfg *configuration.Config, credentials *configuration.C
 		credentialsCopy.Username = credentials.Username
 	case "only password":
 		credentialsCopy.Password = credentials.Password
-	default:
+	case "both":
 		credentialsCopy.Username = credentials.Username
 		credentialsCopy.Password = credentials.Password
+	default:
+		return nil
 	}
 
 	if err := cfg.StoreCredentials(credentialsCopy); err != nil {

@@ -27,24 +27,31 @@ $ SDPCTL_USERNAME=<username> sdpctl configure signin
 ? Password: <password>
 ```
 
-On successful authentication, a token is retrieved and stored in the sdpctl configuration and will be used for all the consecutive commands executed until the token expires. Once the token is expired, you'll need to re-authenticate to get a new token using the same signin command. For convenience, you can also store username and/or password for future use by using the `--remember-me` flag when logging in. Using this flag will delete any existing credentials that are already stored.
+On successful authentication, a token is retrieved and stored in the sdpctl configuration and will be used for all the consecutive commands executed until the token expires. By default, sdpctl will save your signin credentials for re-use. If you don't want sdpctl to remember the credentials, you can pass the `--no-remember` flag when using the `signin` command.
 
 ```bash
 $ # Using default credentials prompt
-$ sdpctl configure signin --remember-me
+$ sdpctl configure signin
 ? Username: <username>
 ? Password: <password>
 ? What credentials should be saved? [Use arrows to move, type to filter]
 > both
   only username
   only password
+  nothing
 
 $ # Using environment variables
-$ SDPCTL_USERNAME=<username> SDPCTL_PASSWORD=<password> sdpctl configure signin --remember-me
+$ SDPCTL_USERNAME=<username> SDPCTL_PASSWORD=<password> sdpctl configure signin
 ? What credentials should be saved? [Use arrows to move, type to filter]
 > both
   only username
   only password
+  nothing
+
+$ Do not save credentials when signing in
+>sdpctl configure signin --no-remember
+? Username: <username>
+? Password: <password>
 ```
 
 ## Working with multiple appgate sdp collectives
