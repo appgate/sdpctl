@@ -453,48 +453,43 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		for _, appliance := range appliances {
-			bctx, bcancel := context.WithTimeout(ctx, opts.Timeout)
 			i := appliance
 			g.Go(func() error {
-				defer bcancel()
+				ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 				log.WithField("appliance", i.GetName()).Info("checking if ready")
 				statusReport := make(chan string)
-				defer close(statusReport)
-				a.UpgradeStatusWorker.Watch(bctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
-				if err := a.UpgradeComplete(bctx, i.GetId(), SwitchPartition); err != nil {
+				defer func() {
+					cancel()
 					close(statusReport)
+				}()
+				a.UpgradeStatusWorker.Watch(ctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
+				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
 				}
 				if !SwitchPartition {
-					if err := a.UpgradeStatusWorker.Subscribe(bctx, i, []string{appliancepkg.UpgradeStatusSuccess}, statusReport); err != nil {
-						close(statusReport)
+					if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, statusReport); err != nil {
 						return err
 					}
-					status, err := a.UpgradeStatus(bctx, i.GetId())
+					status, err := a.UpgradeStatus(ctx, i.GetId())
 					if err != nil {
-						close(statusReport)
 						return err
 					}
 					if regex.MatchString(status.GetDetails()) {
-						if err := a.UpgradeSwitchPartition(bctx, i.GetId()); err != nil {
-							close(statusReport)
+						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
 							return err
 						}
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
-				if err := a.UpgradeStatusWorker.Subscribe(bctx, i, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
-					close(statusReport)
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
 					return err
 				}
-				if err := a.ApplianceStats.WaitForState(bctx, i, finalState, statusReport); err != nil {
-					close(statusReport)
+				if err := a.ApplianceStats.WaitForState(ctx, i, finalState, statusReport); err != nil {
 					return err
 				}
 				select {
-				case <-bctx.Done():
-					close(statusReport)
-					return bctx.Err()
+				case <-ctx.Done():
+					return ctx.Err()
 				case upgradeChan <- i:
 				}
 				return nil
@@ -533,60 +528,57 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	if len(additionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
-		for _, ctrl := range additionalControllers {
-			ctrlCtx, ctrlCancel := context.WithTimeout(ctx, opts.Timeout)
-			ctrlP := mpb.NewWithContext(ctrlCtx, mpb.WithOutput(spinnerOut))
+
+		upgradeAdditionalController := func(ctx context.Context, controller openapi.Appliance, p *mpb.Progress, disable bool) error {
+			ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 			finalState := "controller_ready"
 			if cfg.Version < 15 {
 				finalState = "multi_controller_ready"
 			}
 			statusReport := make(chan string)
-			a.UpgradeStatusWorker.Watch(ctx, ctrlP, ctrl, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
-			if err := a.UpgradeComplete(ctx, ctrl.GetId(), true); err != nil {
+			defer func() {
 				close(statusReport)
-				ctrlCancel()
+				cancel()
+			}()
+			a.UpgradeStatusWorker.Watch(ctx, p, controller, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
+			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
 			}
-			if err := a.UpgradeStatusWorker.Subscribe(ctrlCtx, ctrl, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
-				ctrlCancel()
-				close(statusReport)
+			if err := a.UpgradeStatusWorker.Subscribe(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
 				return err
 			}
-			if disableAdditionalControllers {
-				if err := backoffEnableController(ctrl); err != nil {
+			if disable {
+				if err := backoffEnableController(controller); err != nil {
 					log.WithFields(f).WithError(err).Error("Failed to enable controller")
 					if merr, ok := err.(*multierror.Error); ok {
 						var mutliErr error
 						for _, e := range merr.Errors {
 							mutliErr = multierror.Append(e)
 						}
-						mutliErr = multierror.Append(fmt.Errorf("could not enable controller on %s", ctrl.GetName()))
-						ctrlCancel()
-						close(statusReport)
+						mutliErr = multierror.Append(fmt.Errorf("could not enable controller on %s", controller.GetName()))
 						return mutliErr
 					}
-					close(statusReport)
-					ctrlCancel()
 					return err
 				}
 			}
-			if err := a.ApplianceStats.WaitForState(ctx, ctrl, finalState, statusReport); err != nil {
+			if err := a.ApplianceStats.WaitForState(ctx, controller, finalState, statusReport); err != nil {
 				log.WithFields(f).WithError(err).Error("Controller never reached desired state")
-				close(statusReport)
-				ctrlCancel()
 				return err
 			}
 			if cfg.Version >= 15 {
-				_, err := a.DisableMaintenanceMode(ctx, ctrl.GetId())
+				_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
 				if err != nil {
-					close(statusReport)
-					ctrlCancel()
 					return err
 				}
 				log.WithFields(f).Info("Disabled maintenance mode")
 			}
-			close(statusReport)
-			ctrlCancel()
+			return nil
+		}
+		for _, ctrl := range additionalControllers {
+			ctrlP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
+			if err := upgradeAdditionalController(ctx, ctrl, ctrlP, disableAdditionalControllers); err != nil {
+				return err
+			}
 			ctrlP.Wait()
 		}
 		log.Info("done waiting for additional controllers upgrade")
