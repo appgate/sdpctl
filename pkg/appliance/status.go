@@ -220,44 +220,22 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 
 func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
 	go func() {
-		log.WithField("appliance", appliance.GetName()).Info("Watching for appliance state")
+		log.WithField("appliance", appliance.GetName()).Debug("Watching for appliance state")
 		endMsg := "completed"
 		previous := ""
 		name := appliance.GetName()
 		spinner := util.AddDefaultSpinner(p, name, "", endMsg)
 		for status := range current {
-			log.WithFields(log.Fields{
-				"appliance": appliance.GetName(),
-				"current":   status,
-				"want":      endState,
-			}).Debug("state update")
 			switch status {
 			case endState:
 				spinner.Increment()
-				log.WithFields(log.Fields{
-					"appliance":        appliance.GetName(),
-					"status":           status,
-					"spinnerCompleted": spinner.Completed(),
-				}).Debug("Completing spinner")
 			case failState:
 				spinner.Abort(false)
-				log.WithFields(log.Fields{
-					"appliance":      appliance.GetName(),
-					"status":         status,
-					"spinnerAborted": spinner.Aborted(),
-				}).Debug("Aborting spinner")
 			default:
 				if len(status) > 0 && status != previous {
 					spinner.Increment()
 					old := spinner
 					spinner = util.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
-					log.WithFields(log.Fields{
-						"appliance":          appliance.GetName(),
-						"current":            previous,
-						"new":                status,
-						"oldSpinnerComplete": old.Completed(),
-						"newSpinnerComplete": spinner.Completed(),
-					}).Debug("Updating current state")
 					previous = status
 				}
 			}
