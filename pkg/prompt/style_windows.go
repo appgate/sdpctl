@@ -3,6 +3,8 @@
 
 package prompt
 
-var SpinnerStyle = []string{"|", "-", "/", "-", "\\", "-"}
+// SpinnerStyle for Windows has no special unicode characters, to support cmd.exe out-of-the-box.
+var SpinnerStyle = []string{"-", "\\", "|", "/"}
 
-var SpinnerDone = "OK"
+// SpinnerDone intentionally left empty due to causing false positives in cmd.exe
+var SpinnerDone = ""
