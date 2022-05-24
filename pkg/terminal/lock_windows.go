@@ -38,23 +38,6 @@ var (
 )
 
 type (
-	// Defines the coordinates of the upper left and lower right corners
-	// of a rectangle.
-	// See
-	// http://msdn.microsoft.com/en-us/library/windows/desktop/ms686311(v=vs.85).aspx
-	smallRect struct {
-		Left, Top, Right, Bottom int16
-	}
-
-	// Defines the coordinates of a character cell in a console screen
-	// buffer. The origin of the coordinate system (0,0) is at the top, left cell
-	// of the buffer.
-	// See
-	// http://msdn.microsoft.com/en-us/library/windows/desktop/ms682119(v=vs.85).aspx
-	coordinates struct {
-		X, Y int16
-	}
-
 	word int16
 )
 
@@ -65,18 +48,16 @@ var echoLockMutex sync.Mutex
 
 var oldState word
 
-func Lock() (shutdownCh chan struct{}, err error) {
+func Lock() (chan struct{}, error) {
 	echoLockMutex.Lock()
 	defer echoLockMutex.Unlock()
 	if echoLocked {
-		err = ErrPoolWasStarted
-		return
+		return nil, ErrPoolWasStarted
 	}
 	echoLocked = true
 
 	if _, _, e := syscall.Syscall(getConsoleMode.Addr(), 2, uintptr(syscall.Stdout), uintptr(unsafe.Pointer(&oldState)), 0); e != 0 {
-		err = fmt.Errorf("Can't get terminal settings: %v", e)
-		return
+		return nil, fmt.Errorf("Can't get terminal settings: %v", e)
 	}
 
 	newState := oldState
@@ -84,23 +65,22 @@ func Lock() (shutdownCh chan struct{}, err error) {
 	const ENABLE_LINE_INPUT = 0x0002
 	newState = newState & (^(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT))
 	if _, _, e := syscall.Syscall(setConsoleMode.Addr(), 2, uintptr(syscall.Stdout), uintptr(newState), 0); e != 0 {
-		err = fmt.Errorf("Can't set terminal settings: %v", e)
-		return
+		return nil, fmt.Errorf("Can't set terminal settings: %v", e)
 	}
 
-	shutdownCh = make(chan struct{})
-	return
+	shutdownCh := make(chan struct{})
+	return shutdownCh, nil
 }
 
-func Unlock() (err error) {
+func Unlock() error {
 	echoLockMutex.Lock()
 	defer echoLockMutex.Unlock()
 	if !echoLocked {
-		return
+		return nil
 	}
 	echoLocked = false
 	if _, _, e := syscall.Syscall(setConsoleMode.Addr(), 2, uintptr(syscall.Stdout), uintptr(oldState), 0); e != 0 {
-		err = fmt.Errorf("Can't set terminal settings")
+		return fmt.Errorf("Can't set terminal settings %v", e)
 	}
-	return
+	return nil
 }

@@ -56,7 +56,7 @@ func Lock() (chan struct{}, error) {
 
 		origTermStatePtr, err := unix.IoctlGetTermios(fd, ioctlReadTermios)
 		if err != nil {
-			return nil, fmt.Errorf("Can't get terminal settings: %v", err)
+			return nil, fmt.Errorf("Can't get terminal settings: %w", err)
 		}
 
 		oldTermios := *origTermStatePtr
@@ -65,7 +65,7 @@ func Lock() (chan struct{}, error) {
 		newTermios.Lflag |= syscall.ICANON | syscall.ISIG
 		newTermios.Iflag |= syscall.ICRNL
 		if err := unix.IoctlSetTermios(fd, ioctlWriteTermios, &newTermios); err != nil {
-			return nil, fmt.Errorf("Can't set terminal settings: %v", err)
+			return nil, fmt.Errorf("Can't set terminal settings: %w", err)
 		}
 
 	}
@@ -98,7 +98,7 @@ func Unlock() error {
 		fd := int(tty.Fd())
 
 		if err := unix.IoctlSetTermios(fd, ioctlWriteTermios, origTermStatePtr); err != nil {
-			return fmt.Errorf("Can't set terminal settings: %v", err)
+			return fmt.Errorf("Can't set terminal settings: %w", err)
 		}
 
 	}
