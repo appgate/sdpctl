@@ -138,12 +138,13 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 		previous := ""
 		name := appliance.GetName()
 		spinner := prompt.AddDefaultSpinner(p, name, "", endMsg)
-		go func(bar *mpb.Bar) {
+		barCtxErr := func(bar *mpb.Bar) {
 			<-ctx.Done()
 			if !bar.Completed() {
 				bar.Increment()
 			}
-		}(spinner)
+		}
+		go barCtxErr(spinner)
 		for status := range current {
 			switch status {
 			case endState:
@@ -154,6 +155,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 				} else if len(status) > 0 && status != previous {
 					old := spinner
 					spinner = prompt.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
+					go barCtxErr(spinner)
 					old.Increment()
 					previous = status
 				}
@@ -161,6 +163,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 				if len(status) > 0 && status != previous {
 					old := spinner
 					spinner = prompt.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
+					go barCtxErr(spinner)
 					old.Increment()
 					previous = status
 				}
