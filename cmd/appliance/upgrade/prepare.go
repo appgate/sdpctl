@@ -385,33 +385,38 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
 
-		p := mpb.New(mpb.WithOutput(spinnerOut))
+		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 		if err := a.UploadToController(fileStatusCtx, opts.image, opts.filename); err != nil {
 			return err
 		}
-		status := ""
-		statusChan := make(chan string)
-		a.UpgradeStatusWorker.Watch(ctx, p, *primaryController, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
-		for status != appliancepkg.FileReady {
-			remoteFile, err := a.FileStatus(ctx, opts.filename)
-			if err != nil {
-				close(statusChan)
-				return err
+		fileUploadStatus := func(controller openapi.Appliance, p *mpb.Progress) error {
+			status := ""
+			statusChan := make(chan string)
+			defer close(statusChan)
+			a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
+			for status != appliancepkg.FileReady {
+				remoteFile, err := a.FileStatus(ctx, opts.filename)
+				if err != nil {
+					return err
+				}
+				status = remoteFile.GetStatus()
+				statusChan <- status
+				if status == appliancepkg.FileReady {
+					break
+				}
+				if status == appliancepkg.FileFailed {
+					reason := errors.New(remoteFile.GetFailureReason())
+					return fmt.Errorf("Upload to controller failed: %w", reason)
+				}
+				// Arbitrary sleep for not polling file status from the API too much
+				time.Sleep(time.Second * 2)
 			}
-			status = remoteFile.GetStatus()
-			statusChan <- status
-			if status == appliancepkg.FileReady {
-				close(statusChan)
-				break
-			}
-			if status == appliancepkg.FileFailed {
-				close(statusChan)
-				reason := errors.New(remoteFile.GetFailureReason())
-				return fmt.Errorf("Upload to controller failed: %w", reason)
-			}
-			// Arbitrary sleep for not polling file status from the API too much
-			time.Sleep(time.Second * 2)
+			return nil
 		}
+		if err := fileUploadStatus(*primaryController, p); err != nil {
+			return err
+		}
+
 		p.Wait()
 	}
 
@@ -493,7 +498,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 			go func(appliance openapi.Appliance) {
 				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
-					close(statusReport)
+					log.Warn("appliance %s never reached desired state %s", appliance.GetName(), err)
 				}
 			}(appliance)
 		}
