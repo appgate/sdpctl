@@ -420,31 +420,31 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
-		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
-		primaryP := mpb.NewWithContext(pctx, mpb.WithOutput(spinnerOut))
-		statusReport := make(chan string)
-		a.UpgradeStatusWorker.Watch(pctx, primaryP, *primaryController, ctrlUpgradeState, appliancepkg.UpgradeStatusFailed, statusReport)
-		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
-		if err := a.UpgradeComplete(pctx, primaryController.GetId(), true); err != nil {
-			close(statusReport)
-			pcancel()
+		primaryP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
+		upgradeReadyPrimary := func(ctx context.Context, controller openapi.Appliance, p *mpb.Progress) error {
+			statusReport := make(chan string)
+			defer close(statusReport)
+			a.UpgradeStatusWorker.Watch(ctx, p, controller, ctrlUpgradeState, appliancepkg.UpgradeStatusFailed, statusReport)
+			log.WithField("appliance", controller.GetName()).Info("Completing upgrade and switching partition")
+			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
+				return err
+			}
+			log.WithField("appliance", controller.GetName()).Infof("Waiting for primary controller to reach state %s", state)
+			if err := a.UpgradeStatusWorker.Subscribe(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
+				return err
+			}
+			if err := a.ApplianceStats.WaitForState(ctx, controller, ctrlUpgradeState, statusReport); err != nil {
+				return err
+			}
+
+			log.WithField("appliance", controller.GetName()).Info("Primary controller updated")
+			return nil
+		}
+		if err := upgradeReadyPrimary(ctx, *primaryController, primaryP); err != nil {
 			return err
 		}
-		log.WithField("appliance", primaryController.GetName()).Infof("Waiting for primary controller to reach state %s", state)
-		if err := a.UpgradeStatusWorker.Subscribe(pctx, *primaryController, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
-			close(statusReport)
-			pcancel()
-			return err
-		}
-		if err := a.ApplianceStats.WaitForState(pctx, *primaryController, ctrlUpgradeState, statusReport); err != nil {
-			close(statusReport)
-			pcancel()
-			return err
-		}
-		close(statusReport)
-		log.WithField("appliance", primaryController.GetName()).Info("Primary controller updated")
-		pcancel()
+
 		primaryP.Wait()
 	}
 
