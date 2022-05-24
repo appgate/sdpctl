@@ -514,9 +514,21 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		})
 		if err != nil {
 			errs = multierr.Append(errs, err)
+			return err
 		}
 
 		updateProgressBars.Wait()
+		m, err := a.UpgradeStatusMap(ctx, appliances)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+			return err
+		}
+		for _, result := range m {
+			if !util.InSlice(result.Status, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}) {
+				errs = multierr.Append(errs, fmt.Errorf("%s %s %s", result.Name, result.Status, result.Details))
+			}
+		}
+
 		return errs
 	}
 

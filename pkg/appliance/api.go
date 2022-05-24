@@ -57,13 +57,13 @@ func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (open
 }
 
 type UpgradeStatusResult struct {
-	Status, Name string
+	Status, Details, Name string
 }
 
 // UpgradeStatusMap return a map with appliance.id, UpgradeStatusResult
 func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.Appliance) (map[string]UpgradeStatusResult, error) {
 	type result struct {
-		id, status, name string
+		id, status, details, name string
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	c := make(chan result)
@@ -75,7 +75,12 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 				return fmt.Errorf("Could not read status of %s %w", i.GetId(), err)
 			}
 			select {
-			case c <- result{i.GetId(), status.GetStatus(), i.GetName()}:
+			case c <- result{
+				id:      i.GetId(),
+				status:  status.GetStatus(),
+				details: status.GetDetails(),
+				name:    i.GetName(),
+			}:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -89,8 +94,9 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 	m := make(map[string]UpgradeStatusResult)
 	for r := range c {
 		m[r.id] = UpgradeStatusResult{
-			Status: r.status,
-			Name:   r.name,
+			Status:  r.status,
+			Details: r.details,
+			Name:    r.name,
 		}
 	}
 	if err := g.Wait(); err != nil {
