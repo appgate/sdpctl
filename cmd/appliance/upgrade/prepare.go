@@ -371,7 +371,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			wantedStatus = []string{
 				appliancepkg.UpgradeStatusVerifying,
 				appliancepkg.UpgradeStatusReady,
-				appliancepkg.UpgradeStatusFailed,
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}

@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
 	"text/template"
 	"time"
 
@@ -133,11 +132,8 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 				appliancepkg.UpgradeStatusIdle,
 				appliancepkg.UpgradeStatusFailed,
 			}
-			// wg is the wait group for the progressbars
-			wg sync.WaitGroup
 		)
-		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
-		wg.Add(count)
+		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
 		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
 			return backoff.Retry(func() error {
 				return a.UpgradeCancel(ctx, appliance.GetId())
@@ -151,7 +147,6 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, appliancepkg.UpgradeStatusIdle, appliancepkg.UpgradeStatusFailed, statusReport)
 
 			go func(appliance openapi.Appliance) {
-				defer wg.Done()
 				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, statusReport); err != nil {
 					close(statusReport)
 				}

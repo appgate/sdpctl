@@ -40,7 +40,8 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 }
 
 func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, currentStatus chan<- string) backoff.Operation {
-	fields := log.Fields{"appliance": appliance.GetName()}
+	name := appliance.GetName()
+	fields := log.Fields{"appliance": name}
 	hasRebooted := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -58,32 +59,33 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 			return err
 		}
 		var s string
+		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			responseStatus := status.GetStatus()
-			currentStatus <- responseStatus
-			if responseStatus == UpgradeStatusFailed {
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", appliance.GetName(), status.GetDetails()))
+			currentStatus <- s
+			if s == UpgradeStatusFailed && !util.InSlice(s, desiredStatuses) {
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
 		}
-		fields["image"] = status.GetDetails()
+		fields["image"] = details
 		fields["status"] = s
 		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) {
+		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
 			return nil
 		}
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
-			appliance.GetName(),
+			name,
 			strings.Join(desiredStatuses, ", "),
 			s,
-			status.GetDetails(),
+			details,
 		)
 	}
 }
 
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) backoff.Operation {
-	fields := log.Fields{"appliance": appliance.GetName()}
+	name := appliance.GetName()
+	fields := log.Fields{"appliance": name}
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -94,23 +96,23 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		var s string
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			responseStatus := status.GetStatus()
-			if responseStatus == UpgradeStatusFailed {
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", appliance.GetName(), status.GetDetails()))
+			if s == UpgradeStatusFailed && !util.InSlice(s, desiredStatuses) {
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, status.GetDetails()))
 			}
 		}
-		fields["image"] = status.GetDetails()
+		details := status.GetDetails()
+		fields["image"] = details
 		fields["status"] = s
 		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) {
+		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
 			return nil
 		}
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
-			appliance.GetName(),
+			name,
 			strings.Join(desiredStatuses, ", "),
 			s,
-			status.GetDetails(),
+			details,
 		)
 	}
 }
@@ -230,12 +232,19 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 			case endState:
 				spinner.Increment()
 			case failState:
-				spinner.Abort(false)
-			default:
-				if len(status) > 0 && status != previous {
-					spinner.Increment()
+				if len(previous) > 0 {
+					spinner.Abort(false)
+				} else if len(status) > 0 && status != previous {
 					old := spinner
 					spinner = util.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
+					old.Increment()
+					previous = status
+				}
+			default:
+				if len(status) > 0 && status != previous {
+					old := spinner
+					spinner = util.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
+					old.Increment()
 					previous = status
 				}
 			}
