@@ -345,7 +345,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
 	fmt.Fprint(opts.Out, "\nInitializing upgrade:\n")
-	initP := mpb.New(mpb.WithOutput(spinnerOut))
+	initP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
 		for _, controller := range additionalControllers {
@@ -422,7 +422,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		pctx, pcancel := context.WithTimeout(ctx, opts.Timeout)
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
-		primaryP := mpb.New(mpb.WithOutput(spinnerOut))
+		primaryP := mpb.NewWithContext(pctx, mpb.WithOutput(spinnerOut))
 		statusReport := make(chan string)
 		a.UpgradeStatusWorker.Watch(pctx, primaryP, *primaryController, ctrlUpgradeState, appliancepkg.UpgradeStatusFailed, statusReport)
 		log.WithField("appliance", primaryController.GetName()).Info("Completing upgrade and switching partition")
@@ -535,7 +535,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
 		for _, ctrl := range additionalControllers {
 			ctrlCtx, ctrlCancel := context.WithTimeout(ctx, opts.Timeout)
-			ctrlP := mpb.New(mpb.WithOutput(spinnerOut))
+			ctrlP := mpb.NewWithContext(ctrlCtx, mpb.WithOutput(spinnerOut))
 			finalState := "controller_ready"
 			if cfg.Version < 15 {
 				finalState = "multi_controller_ready"
@@ -593,7 +593,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	for index, chunk := range chunks {
-		chunkP := mpb.New(mpb.WithOutput(spinnerOut))
+		chunkP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunkP, chunk, false, "appliance_ready"); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
