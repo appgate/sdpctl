@@ -252,11 +252,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	targetBuild, _ := strconv.ParseInt(targetVersion.Metadata(), 10, 64)
 	primaryControllerBuild, _ := strconv.ParseInt(currentPrimaryControllerVersion.Metadata(), 10, 64)
 	if targetVersion.LessThan(currentPrimaryControllerVersion) && targetBuild < primaryControllerBuild {
-		log.WithFields(log.Fields{
+		logEntry := log.WithFields(log.Fields{
 			"currentPrimaryControllerVersion": currentPrimaryControllerVersion.String(),
 			"targetVersion":                   targetVersion.String(),
-		}).Error("invalid upgrade version")
-		return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
+		})
+		if !opts.forcePrepare {
+			logEntry.Error("invalid upgrade version")
+			return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
+		}
+		fmt.Fprintf(opts.Out, "\nWARNING: forcing preperation of an older appliance version than currently running\nCurrent version: %s\nPrepare version: %s\n", currentPrimaryControllerVersion.String(), targetVersion.String())
+		logEntry.Warn("preparing an older appliance version using the --force flag")
 	}
 
 	// if we have an existing config with the primary controller version, check if we need to re-authenticate
