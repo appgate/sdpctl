@@ -44,7 +44,7 @@ func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	}
 	v, err := keyring.GetBearer(h)
 	if err != nil {
-		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'sdpctl configure login' or set SDPCTL_BEARER %w", h, err)
+		return "", err
 	}
 	return fmt.Sprintf("Bearer %s", v), nil
 }
