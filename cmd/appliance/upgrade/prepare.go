@@ -431,6 +431,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		type continueStruct struct {
 			appliance openapi.Appliance
 			deadline  time.Time
+			err       error
 		}
 		queueContinue := make(chan continueStruct)
 
@@ -458,7 +459,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return nil
 			})
 			if err != nil {
-				errs = multierr.Append(errs, err)
+				queueContinue <- continueStruct{err: err}
 			}
 			close(queueContinue)
 		}()
@@ -466,6 +467,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		// After image is downloaded, we block until we reach the desired state or fail
 		// keeping the deadline from the previous queue processing
 		for qc := range queueContinue {
+			if qc.err != nil {
+				errs = multierr.Append(errs, qc.err)
+				continue
+			}
 			ctx, cancel := context.WithDeadline(context.Background(), qc.deadline)
 			if err := a.UpgradeStatusWorker.Wait(ctx, qc.appliance, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed}); err != nil {
 				errs = multierr.Append(errs, err)
