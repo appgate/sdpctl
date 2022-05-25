@@ -168,10 +168,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
-				},
-				{
 					URL:       "/files/appgate-5.5.1.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
@@ -208,10 +204,15 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{
-		                    "status": "idle",
-		                    "details": "a reboot is required for the Upgrade to go into effect"
-		                  }`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
 					},
 				},
 			},
