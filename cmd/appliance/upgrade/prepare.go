@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"sync"
 	"text/template"
 	"time"
 
@@ -455,9 +456,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
+			// wg is the wait group for the progressbars
+			wg           sync.WaitGroup
+			errorChannel = make(chan error, count)
 		)
 
-		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
+		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.PopCompletedMode(), mpb.WithWaitGroup(&wg))
+		wg.Add(count)
 
 		for _, ap := range appliances {
 			appliance := ap
@@ -497,8 +502,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 
 			go func(appliance openapi.Appliance) {
+				defer func() {
+					wg.Done()
+					close(statusReport)
+				}()
 				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
-					log.Warn("appliance %s never reached desired state %s", appliance.GetName(), err)
+					errorChannel <- err
 				}
 			}(appliance)
 		}
@@ -521,7 +530,19 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			errs = multierr.Append(errs, err)
 			return err
 		}
-
+		go func() {
+			wg.Wait()
+			close(errorChannel)
+		}()
+		var result error
+		for err := range errorChannel {
+			log.Error(err)
+			result = multierr.Append(result, err)
+		}
+		// dont wait for the progress bar if we get any errors
+		if result != nil {
+			return result
+		}
 		updateProgressBars.Wait()
 		m, err := a.UpgradeStatusMap(ctx, appliances)
 		if err != nil {
