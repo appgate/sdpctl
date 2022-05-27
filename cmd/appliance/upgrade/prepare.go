@@ -38,7 +38,6 @@ type prepareUpgradeOptions struct {
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	SpinnerOut       func() io.Writer
 	debug            bool
-	insecure         bool
 	NoInteractive    bool
 	image            string
 	DevKeyring       bool
@@ -130,7 +129,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	flags := prepareCmd.Flags()
-	flags.BoolVar(&opts.insecure, "insecure", true, "Whether server should be accessed without verifying the TLS certificate")
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
 	flags.StringVarP(&opts.image, "image", "", "", "Upgrade image file or URL")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", false, "Use the development keyring to verify the upgrade image")
