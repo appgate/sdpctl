@@ -61,11 +61,10 @@ func GetBearer(prefix string) (string, error) {
 
 func SetBearer(prefix, secret string) error {
 	err := setSecret(format(prefix, bearer), secret)
-	if err != nil && strings.Contains(err.Error(), secretMissing) {
+	if err != nil {
 		os.Setenv("SDPCTL_BEARER", secret)
-		return nil
 	}
-	return err
+	return nil
 }
 
 func SetUsername(prefix, secret string) error {

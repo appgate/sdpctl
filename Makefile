@@ -8,7 +8,7 @@ commitPath=github.com/appgate/sdpctl/cmd.commit=${commit}
 
 .PHONY: build
 build:
-	go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}'"
+	CGO_ENABLED=0 go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}'"
 
 .PHONY: deps
 deps:
