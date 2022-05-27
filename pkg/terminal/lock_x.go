@@ -77,7 +77,7 @@ func Lock() (chan struct{}, error) {
 // listen exit signals and restore terminal state
 func catchTerminate(shutdownCh chan struct{}) {
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGKILL)
+	signal.Notify(sig, os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM)
 	defer signal.Stop(sig)
 	select {
 	case <-shutdownCh:
