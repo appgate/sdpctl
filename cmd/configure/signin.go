@@ -12,8 +12,7 @@ import (
 )
 
 type signinOptions struct {
-	f          *factory.Factory
-	noRemember bool
+	f *factory.Factory
 }
 
 // NewSigninCmd return a new signin command
@@ -35,10 +34,6 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	flags := signinCmd.Flags()
-
-	flags.BoolVar(&opts.noRemember, "no-remember", false, "Do not remember sign in credentials when signin in")
-
 	return signinCmd
 }
 
@@ -47,7 +42,7 @@ func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := auth.Signin(opts.f, opts.noRemember, true, noInteractive); err != nil {
+	if err := auth.Signin(opts.f, true, noInteractive); err != nil {
 		return err
 	}
 	log.WithField("config file", viper.ConfigFileUsed()).Info("Sign in event")

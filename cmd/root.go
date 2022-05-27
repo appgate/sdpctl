@@ -237,7 +237,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			if err != nil {
 				return err
 			}
-			if err := auth.Signin(f, false, false, noInteractive); err != nil {
+			if err := auth.Signin(f, false, noInteractive); err != nil {
 				var result error
 				result = multierror.Append(result, err)
 				return result

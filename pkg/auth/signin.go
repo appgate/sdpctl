@@ -23,7 +23,7 @@ import (
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Signin(f *factory.Factory, noRemember, saveConfig, noInteractive bool) error {
+func Signin(f *factory.Factory, saveConfig, noInteractive bool) error {
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
@@ -36,12 +36,7 @@ func Signin(f *factory.Factory, noRemember, saveConfig, noInteractive bool) erro
 	if err != nil {
 		return err
 	}
-	// Clear old credentials if remember me flag is provided
-	if !noRemember {
-		if err := cfg.ClearCredentials(); err != nil {
-			return err
-		}
-	}
+
 	// if we already have a valid bearer token, we will continue without
 	// without any additional checks.
 	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 && !saveConfig {
@@ -115,11 +110,6 @@ func Signin(f *factory.Factory, noRemember, saveConfig, noInteractive bool) erro
 		return valErrs
 	}
 
-	if !noRemember {
-		if err := rememberCredentials(cfg, credentials); err != nil {
-			return fmt.Errorf("Failed to store credentials: %w", err)
-		}
-	}
 	loginOpts.Username = openapi.PtrString(credentials.Username)
 	loginOpts.Password = openapi.PtrString(credentials.Password)
 
@@ -193,6 +183,11 @@ func Signin(f *factory.Factory, noRemember, saveConfig, noInteractive bool) erro
 		return fmt.Errorf("could not store token in keychain %w", err)
 	}
 
+	if !noInteractive && saveConfig {
+		if err := rememberCredentials(cfg, credentials); err != nil {
+			return fmt.Errorf("Failed to store credentials: %w", err)
+		}
+	}
 	viper.Set("provider", cfg.Provider)
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)

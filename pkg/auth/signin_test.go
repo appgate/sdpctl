@@ -125,7 +125,6 @@ var (
 func TestSignin(t *testing.T) {
 	keyring.MockInit()
 	type args struct {
-		noRemember    bool
 		saveConfig    bool
 		noInteractive bool
 	}
@@ -140,7 +139,6 @@ func TestSignin(t *testing.T) {
 		{
 			name: "signin with environment variables",
 			args: args{
-				noRemember: true,
 				saveConfig: false,
 			},
 			environmentVariables: map[string]string{
@@ -164,7 +162,6 @@ func TestSignin(t *testing.T) {
 		{
 			name: "signin prompt username and password",
 			args: args{
-				noRemember: true,
 				saveConfig: false,
 			},
 
@@ -189,7 +186,6 @@ func TestSignin(t *testing.T) {
 		{
 			name: "signin prompt username and password and MFA token",
 			args: args{
-				noRemember: true,
 				saveConfig: false,
 			},
 
@@ -286,7 +282,6 @@ func TestSignin(t *testing.T) {
 		{
 			name: "no auth no-interactive",
 			args: args{
-				noRemember:    true,
 				saveConfig:    false,
 				noInteractive: true,
 			},
@@ -342,7 +337,7 @@ func TestSignin(t *testing.T) {
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
 			}
-			if err := Signin(f, tt.args.noRemember, tt.args.saveConfig, tt.args.noInteractive); (err != nil) != tt.wantErr {
+			if err := Signin(f, tt.args.saveConfig, tt.args.noInteractive); (err != nil) != tt.wantErr {
 				t.Errorf("Signin() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
