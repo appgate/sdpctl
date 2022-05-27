@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -53,7 +54,8 @@ func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, d
 }
 
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) backoff.Operation {
-	fields := log.Fields{"appliance": appliance.GetName()}
+	name := appliance.GetName()
+	fields := log.Fields{"appliance": name}
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -64,58 +66,67 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		var s string
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			responseStatus := status.GetStatus()
-			if responseStatus == UpgradeStatusFailed {
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", appliance.GetName(), status.GetDetails()))
+			if s == UpgradeStatusFailed && !util.InSlice(s, desiredStatuses) {
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, status.GetDetails()))
 			}
 		}
-		fields["image"] = status.GetDetails()
+		details := status.GetDetails()
+		fields["image"] = details
 		fields["status"] = s
 		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) {
+		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
 			return nil
 		}
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
-			appliance.GetName(),
+			name,
 			strings.Join(desiredStatuses, ", "),
 			s,
-			status.GetDetails(),
+			details,
 		)
 	}
 }
 
 func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, currentStatus chan<- string) backoff.Operation {
-	fields := log.Fields{"appliance": appliance.GetName()}
+	name := appliance.GetName()
+	fields := log.Fields{"appliance": name}
+	hasRebooted := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
-			currentStatus <- "rebooting, waiting for appliance to come back online"
+			if errors.Is(err, context.DeadlineExceeded) {
+				currentStatus <- "rebooting, waiting for appliance to come back online"
+				hasRebooted = true
+			} else if hasRebooted {
+				currentStatus <- "switching partition"
+			} else {
+				currentStatus <- "installing"
+			}
 			return err
 		}
 		var s string
+		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			responseStatus := status.GetStatus()
-			currentStatus <- responseStatus
-			if responseStatus == UpgradeStatusFailed {
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", appliance.GetName(), status.GetDetails()))
+			currentStatus <- s
+			if s == UpgradeStatusFailed && !util.InSlice(s, desiredStatuses) {
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
 		}
-		fields["image"] = status.GetDetails()
+		fields["image"] = details
 		fields["status"] = s
 		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) {
+		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
 			return nil
 		}
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
-			appliance.GetName(),
+			name,
 			strings.Join(desiredStatuses, ", "),
 			s,
-			status.GetDetails(),
+			details,
 		)
 	}
 }
