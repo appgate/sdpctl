@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
-	"sync"
 	"text/template"
 	"time"
 
@@ -253,11 +252,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	targetBuild, _ := strconv.ParseInt(targetVersion.Metadata(), 10, 64)
 	primaryControllerBuild, _ := strconv.ParseInt(currentPrimaryControllerVersion.Metadata(), 10, 64)
 	if targetVersion.LessThan(currentPrimaryControllerVersion) && targetBuild < primaryControllerBuild {
-		log.WithFields(log.Fields{
+		logEntry := log.WithFields(log.Fields{
 			"currentPrimaryControllerVersion": currentPrimaryControllerVersion.String(),
 			"targetVersion":                   targetVersion.String(),
-		}).Error("invalid upgrade version")
-		return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
+		})
+		if !opts.forcePrepare {
+			logEntry.Error("invalid upgrade version")
+			return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
+		}
+		fmt.Fprintf(opts.Out, "\nWARNING: forcing preperation of an older appliance version than currently running\nCurrent version: %s\nPrepare version: %s\n", currentPrimaryControllerVersion.String(), targetVersion.String())
+		logEntry.Warn("preparing an older appliance version using the --force flag")
 	}
 
 	// if we have an existing config with the primary controller version, check if we need to re-authenticate
@@ -372,16 +376,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			wantedStatus = []string{
 				appliancepkg.UpgradeStatusVerifying,
 				appliancepkg.UpgradeStatusReady,
-				appliancepkg.UpgradeStatusFailed,
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
-			// wg is the wait group for the progressbars
-			wg sync.WaitGroup
 		)
 
-		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.PopCompletedMode(), mpb.WithWaitGroup(&wg))
-		wg.Add(count)
+		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
 
 		for _, ap := range appliances {
 			appliance := ap
@@ -421,7 +421,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 
 			go func(appliance openapi.Appliance) {
-				defer wg.Done()
 				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
 					close(statusReport)
 				}
