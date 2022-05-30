@@ -21,14 +21,9 @@ import (
 )
 
 var (
-	tty *os.File
-
-	unlockSignals = []os.Signal{
-		os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM,
-	}
+	tty      *os.File
+	oldState syscall.Termios
 )
-
-var oldState syscall.Termios
 
 func init() {
 	var err error
