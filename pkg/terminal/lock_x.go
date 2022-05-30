@@ -24,7 +24,7 @@ var (
 	tty *os.File
 
 	unlockSignals = []os.Signal{
-		os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGKILL,
+		os.Interrupt, syscall.SIGQUIT, syscall.SIGTERM,
 	}
 )
 
