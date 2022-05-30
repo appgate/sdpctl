@@ -359,7 +359,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		)
 		waitSpinner := prompt.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
 		proxyReader := bar.ProxyReader(reader)
-		waitSpinner.Increment()
 		log.WithField("file", imageFile.Name()).Info("Uploading file")
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
@@ -369,8 +368,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			bar.Abort(false)
 			return err
 		}
-		uploadProgress.Wait()
 		proxyReader.Close()
+		bar.Wait()
+		waitSpinner.Increment()
+		uploadProgress.Wait()
+
 		log.WithField("file", imageFile.Name()).Info("Uploaded file")
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
