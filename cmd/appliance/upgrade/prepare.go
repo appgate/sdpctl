@@ -376,7 +376,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				appliancepkg.UpgradeStatusReady,
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
-			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
+			prepareReady = []string{appliancepkg.UpgradeStatusReady}
 		)
 
 		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
@@ -459,6 +459,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return nil
 			})
 			if err != nil {
+				log.WithError(err).Error("failed during download stage")
 				queueContinue <- continueStruct{err: err}
 			}
 			close(queueContinue)
@@ -472,7 +473,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				continue
 			}
 			ctx, cancel := context.WithDeadline(context.Background(), qc.deadline)
-			if err := a.UpgradeStatusWorker.Wait(ctx, qc.appliance, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed}); err != nil {
+			if err := a.UpgradeStatusWorker.Wait(ctx, qc.appliance, []string{appliancepkg.UpgradeStatusReady}); err != nil {
+				log.WithError(err).Error("failed during verifying stage")
 				errs = multierr.Append(errs, err)
 			}
 			cancel()
