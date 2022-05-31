@@ -33,7 +33,7 @@ $ gunzip -c <path-to-downloaded-tar> | tar xopf -
 
 # Install the binary
 $ sudo mv <binary-path> /usr/local/bin/sdpctl
-$ sudo chown root:root /usr/local/bin/sdpctl
+$ sudo chmod 0755 /usr/local/bin/sdpctl
 ```
 
 ## Windows
