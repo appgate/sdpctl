@@ -1,5 +1,5 @@
 # the `appliance` command
-The `appliance` command is the base command in `sdpctl` for managing appliance resource specific tasks, such as backing up appliances or upgrading them. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
+The `sdpctl appliance` is the base command for managing appliance resource specific tasks, such as upgrading or backing up appliances. The appliance command should be followed by at least one action command. Executing the appliance command without an action command will print the help text for the command.
 
 ### Available actions:
 - [list](#listing-appliances)
@@ -54,9 +54,9 @@ $ sdpctl appliance backup controller-site1
 $ sdpctl appliance backup controller-site1 gateway-site1
 ```
 
-There are also flags to help select what appliances to backup. The `--primary` flag will find the primary controller in the collective and perform a backup of that. Similarly, the `--current` flag performs a backup of the appliance which sdpctl is currently connected to. The `--all` flag will perform a backup of all appliances in the collective.
+There are also flags to help select which appliances to backup. The `--primary` flag will find the primary Controller in the Collective and perform a backup of that appliance. Similarly, the `--current` flag performs a backup of the appliance that sdpctl is currently accessing. The `--all` flag will perform a backup of all appliances in the collective.
 
-You can also select appliances to backup using the global `--include` flag and the backup will be performed only on the appliances that match the filter query. On the opposite, if you'd want to exclude some specific appliances from the backup, you can use the `--exclude` flag. The exclude flag uses the same syntax as the global filter flag. When both the `--include` and `--exclude` flags are used combined, the exclusion will apply after the filtering. In other words, the exclusion will apply to the list of appliances that matches the filtering rules.
+You can also select appliances to backup using the global `--include` flag and the backup will be performed only on the appliances that match the filter query. If you want to do the opposite, you can exclude some specific appliances from the backup using the `--exclude` flag. The exclude flag uses the same syntax as the global filter flag. When both the `--include` and `--exclude` flags are used combined, the exclusion will apply after the filtering. In other words, the exclusion will apply to the list of appliances that matches the filtering rules.
 ```bash
 # given that our list of appliances is the same as provided in the list command example, this command will only backup the controller-site1 appliance
 $ sdpctl appliance backup --include function=controller --exclude name=controller2
@@ -87,7 +87,7 @@ Once you have an image to upgrade your appliances with, you upload it using the 
 ```bash
 $ sdpctl appliance upgrade prepare --image /path/to/image-5.5.3.img.zip
 ```
-Aternatively, you can specify an URL from where appliances can download the upgrade image. In case a URL is specified, you also have the option to let the primary controller host the upgrade image for the other appliances by using the `--host-on-controller` flag during prepare. In this case, the upgrade image will only be downloaded by the primary controller from the specified URL. The primary controller will then host the upgrade image from its repository for the other appliances to download from.
+Aternatively, you can specify an URL from where appliances can download the upgrade image. In case a URL is specified, you also have the option to let the primary controller host the upgrade image for the other appliances by using the `--host-on-controller` flag during prepare. In this case, the upgrade image will only be downloaded by the primary Controller from the specified URL. The primary Controller will then host the upgrade image for the other appliances to download.
 ```bash
 $ # using an URL for the prepare command
 $ sdpctl appliance upgrade prepare --image https://url.to/image-5.5.3.img.zip
