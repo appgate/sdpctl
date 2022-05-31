@@ -1972,6 +1972,82 @@ func TestActiveSitesInAppliances(t *testing.T) {
 	}
 }
 
+func TestGetRealHostname(t *testing.T) {
+	testCases := []struct {
+		name                   string
+		expect                 string
+		hostname               string
+		peerInterfaceHostname  string
+		adminInterfaceHostname string
+		wantErr                bool
+		matchErr               *regexp.Regexp
+	}{
+		{
+			name:                   "test admin interface hostname",
+			expect:                 "real.host.devops",
+			hostname:               "fakehost1.devops",
+			peerInterfaceHostname:  "fakehost2.devops",
+			adminInterfaceHostname: "real.host.devops",
+		},
+		{
+			name:                  "test no admin interface",
+			expect:                "real.host.devops",
+			hostname:              "fakehost1.devops",
+			peerInterfaceHostname: "real.host.devops",
+		},
+		{
+			name:                   "empty hostname",
+			expect:                 "real.host.devops",
+			adminInterfaceHostname: "real.host.devops",
+		},
+		{
+			name:                  "empty admin hostname",
+			expect:                "real.host.devops",
+			hostname:              "fakehost.devops",
+			peerInterfaceHostname: "real.host.devops",
+		},
+		{
+			name:     "no hostname",
+			wantErr:  true,
+			matchErr: regexp.MustCompile("failed to determine hostname for controller admin interface"),
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := openapi.Appliance{
+				Id:        uuid.New().String(),
+				Name:      "controller",
+				Activated: openapi.PtrBool(true),
+			}
+			if len(tt.hostname) > 0 {
+				ctrl.Hostname = openapi.PtrString(tt.hostname)
+			}
+			if len(tt.peerInterfaceHostname) > 0 {
+				ctrl.PeerInterface = openapi.ApplianceAllOfPeerInterface{
+					Hostname: *openapi.PtrString(tt.peerInterfaceHostname),
+				}
+			}
+			if len(tt.adminInterfaceHostname) > 0 {
+				ctrl.AdminInterface = &openapi.ApplianceAllOfAdminInterface{
+					Hostname: *openapi.PtrString(tt.adminInterfaceHostname),
+				}
+			}
+			result, err := GetRealHostname(ctrl)
+			if err != nil {
+				if !tt.wantErr {
+					t.Fatalf("GetRealHostname() error: %v", err)
+				}
+				if !tt.matchErr.MatchString(err.Error()) {
+					t.Fatalf("GetRealHostname() - error does not match. WANT: %s, GOT: %s", tt.matchErr.String(), err.Error())
+				}
+			}
+			if result != tt.expect {
+				t.Fatalf("GetRealHostname() - unexpected result. WANT: %s, GOT: %s", tt.expect, result)
+			}
+		})
+	}
+}
+
 func TestValidateHostname(t *testing.T) {
 	tests := []struct {
 		name          string
