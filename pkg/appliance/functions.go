@@ -350,6 +350,20 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 	)
 }
 
+func GetRealHostname(controller openapi.Appliance) (string, error) {
+	realHost := controller.GetHostname()
+	if i, ok := controller.GetPeerInterfaceOk(); ok {
+		realHost = i.GetHostname()
+	}
+	if i, ok := controller.GetAdminInterfaceOk(); ok {
+		realHost = i.GetHostname()
+	}
+	if err := ValidateHostname(controller, realHost); err != nil {
+		return "", err
+	}
+	return realHost, nil
+}
+
 func ValidateHostname(controller openapi.Appliance, hostname string) error {
 	var h string
 	if ai, ok := controller.GetAdminInterfaceOk(); ok {
