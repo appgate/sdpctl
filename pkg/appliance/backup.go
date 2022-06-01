@@ -317,11 +317,23 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	names := []string{}
 	preSelectNames := []string{}
 
-	for _, a := range appliances {
-		names = append(names, a.GetName())
+	selectorNameMap := map[string]string{}
+	prependFunctions := func(appliance openapi.Appliance) string {
+		name := appliance.GetName()
+		activeFunctions := GetActiveFunctions(appliance)
+		selectorName := fmt.Sprintf("[ %s ] %s", strings.Join(activeFunctions, ", "), name)
+		selectorNameMap[selectorName] = name
+		return selectorName
 	}
-	for _, a := range preSelected {
-		preSelectNames = append(preSelectNames, a.GetName())
+
+	for _, a := range appliances {
+		selectorName := prependFunctions(a)
+		for _, ps := range preSelected {
+			if a.GetName() == ps.GetName() {
+				preSelectNames = append(preSelectNames, selectorName)
+			}
+		}
+		names = append(names, selectorName)
 	}
 
 	qs := &survey.MultiSelect{
@@ -330,11 +342,15 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 		Options:  names,
 		Default:  preSelectNames,
 	}
-	var selected []string
-	if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+	var selectedEntries []string
+	if err := prompt.SurveyAskOne(qs, &selectedEntries); err != nil {
 		return nil, err
 	}
-	log.WithField("appliances", selected)
+	selected := []string{}
+	for _, selectorName := range selectedEntries {
+		selected = append(selected, selectorNameMap[selectorName])
+	}
+	log.WithField("appliances", selected).Info("selected appliances for backup")
 
 	result := FilterAppliances(appliances, map[string]map[string]string{
 		"include": {
