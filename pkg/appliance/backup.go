@@ -358,7 +358,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",
 			Default: true,
 		}
-		if err := survey.AskOne(q, &shouldEnable, survey.WithValidator(survey.Required)); err != nil {
+		if err := prompt.SurveyAskOne(q, &shouldEnable, survey.WithValidator(survey.Required)); err != nil {
 			return false, err
 		}
 

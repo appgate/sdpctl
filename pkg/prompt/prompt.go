@@ -22,7 +22,7 @@ func AskConfirmation(m ...string) error {
 	return nil
 }
 
-// SurveyAskOne helper method, mainly used within tests
+// SurveyAskOne helper method with user interrupt check
 var SurveyAskOne = func(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
 	err := survey.AskOne(p, response, opts...)
 	if err != nil {
