@@ -231,6 +231,13 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		log.SetOutput(logOutput(cmd, f, cfg))
 
+		if !cmdutil.IsTTY(os.Stdout) {
+			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
+				return err
+			}
+			log.Info("Output is not TTY. Using no-interactive mode")
+		}
+
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			noInteractive, err := cmd.Flags().GetBool("no-interactive")
