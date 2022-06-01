@@ -6,3 +6,4 @@ package prompt
 var SpinnerStyle = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 var SpinnerDone = "✓"
+var SpinnerErr = "⨯"

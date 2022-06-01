@@ -8,3 +8,4 @@ var SpinnerStyle = []string{"-", "\\", "|", "/"}
 
 // SpinnerDone intentionally left empty due to causing false positives in cmd.exe
 var SpinnerDone = ""
+var SpinnerErr = "Error"
