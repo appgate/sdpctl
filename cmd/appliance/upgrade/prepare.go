@@ -347,13 +347,17 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 2
-	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryController.GetHostname(), opts.filename)
+	primaryControllerRealHostname, err := appliancepkg.GetRealHostname(*primaryController)
+	if err != nil {
+		return err
+	}
+	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryControllerRealHostname, opts.filename)
 	// NOTE: Backwards compatibility with appliances older than API version 13.
 	// Appliances before API version require that the peer port be passed explicitly as part of the download URL.
 	// Insert the peer port into the URL if necessary.
 	if opts.Config.Version < 13 {
 		if v, ok := primaryController.GetPeerInterfaceOk(); ok {
-			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", primaryController.GetHostname(), int(v.GetHttpsPort()), opts.filename)
+			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", primaryControllerRealHostname, int(v.GetHttpsPort()), opts.filename)
 		}
 	}
 
