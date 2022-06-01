@@ -111,7 +111,7 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
 			currentStatus <- s
-			if s == UpgradeStatusFailed && !util.InSlice(s, desiredStatuses) {
+			if s == UpgradeStatusFailed {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
 		}
