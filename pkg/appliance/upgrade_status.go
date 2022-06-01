@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -13,6 +14,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 const backoffDefaultTimeout = time.Minute * 30
@@ -32,12 +34,13 @@ type WaitForUpgradeStatus interface {
 	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error
 	// Subscribe does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
 	Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error
-
+	// Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
 	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string)
 }
 
 type UpgradeStatus struct {
 	Appliance *Appliance
+	mu        sync.Mutex
 }
 
 func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error {
@@ -141,44 +144,94 @@ func (u *UpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Applian
 	}
 }
 
-// Watch starts a new gorotuine with a statusbar for the appliance
+// Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
 func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
+	name := appliance.GetName()
+	// we will lock each time we add a new bar to avoid duplicates
+	u.mu.Lock()
+	barMessage := make(chan string, 1)
+	bar := p.New(1,
+		mpb.SpinnerStyle(prompt.SpinnerStyle...),
+		mpb.AppendDecorators(
+			func(cond string) decor.Decorator {
+				var (
+					done       = false
+					defaultStr = cond
+					doneText   string
+					body       string
+				)
+				return decor.Any(func(s decor.Statistics) string {
+					if done {
+						return doneText
+					}
+					if s.Completed || ctx.Err() != nil {
+						done = true
+						if ctx.Err() == nil {
+							doneText = cond
+						} else {
+							doneText = fmt.Sprintf("time out on %s %s", cond, ctx.Err())
+						}
+						return doneText
+					}
+					select {
+					case msg := <-barMessage:
+						body = fmt.Sprintf("%s %s", cond, msg)
+						// default refreshrate is 150ms, we will check
+						// the channel every 2/3 of that time to reduce duplicate
+					case <-time.After(100 * time.Millisecond):
+						if len(body) == 0 {
+							body = defaultStr
+						}
+					}
+					return body
+				}, decor.WCSyncSpaceR)
+			}(name),
+		),
+		mpb.BarFillerMiddleware(
+			prompt.CheckBarFiller(ctx, func(c context.Context) bool {
+				return ctx.Err() == nil
+			}),
+		),
+		mpb.BarWidth(1),
+	)
+
 	go func() {
-		log.WithField("appliance", appliance.GetName()).Debug("Watching for appliance state")
-		endMsg := "completed"
-		previous := ""
-		name := appliance.GetName()
-		spinner := prompt.AddDefaultSpinner(p, name, "", endMsg)
-		barCtxErr := func(bar *mpb.Bar) {
-			<-ctx.Done()
-			if !bar.Completed() {
-				bar.Increment()
-			}
-		}
-		go barCtxErr(spinner)
-		for status := range current {
-			switch status {
-			case endState:
-				spinner.Increment()
-			case failState:
-				if len(previous) > 0 {
-					spinner.Abort(false)
-				} else if len(status) > 0 && status != previous {
-					old := spinner
-					spinner = prompt.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
-					go barCtxErr(spinner)
-					old.Increment()
-					previous = status
-				}
-			default:
-				if len(status) > 0 && status != previous {
-					old := spinner
-					spinner = prompt.AddDefaultSpinner(p, name, strings.ReplaceAll(status, "_", " "), endMsg, mpb.BarQueueAfter(old, false))
-					go barCtxErr(spinner)
-					old.Increment()
-					previous = status
-				}
-			}
+		<-ctx.Done()
+		if !bar.Completed() {
+			bar.Increment()
 		}
 	}()
+
+	u.mu.Unlock()
+	// Proxy message from <-current to <-barMessage channel,
+	// each time we update it, we will lock to avoid duplicate
+	for !bar.Completed() {
+		v, ok := <-current
+		if !ok {
+			bar.Abort(true)
+			break
+		}
+
+		go func() {
+			u.mu.Lock()
+			barMessage <- v
+			u.mu.Unlock()
+		}()
+
+		if v == failState {
+			bar.Abort(false)
+			break
+		}
+		if v == endState {
+			go func() {
+				u.mu.Lock()
+				bar.Increment()
+				u.mu.Unlock()
+			}()
+			break
+		}
+	}
+	if !bar.Completed() {
+		bar.Increment()
+	}
 }

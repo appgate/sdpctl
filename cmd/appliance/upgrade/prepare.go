@@ -396,7 +396,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			status := ""
 			statusChan := make(chan string)
 			defer close(statusChan)
-			a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
+			go a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
 			for status != appliancepkg.FileReady {
 				remoteFile, err := a.FileStatus(ctx, opts.filename)
 				if err != nil {
@@ -463,7 +463,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			errorChannel = make(chan error, count)
 		)
 
-		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.PopCompletedMode(), mpb.WithWaitGroup(&wg))
+		updateProgressBars := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
 		wg.Add(count)
 
 		for _, ap := range appliances {
@@ -501,7 +501,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 			qw.Push(appliance)
 			statusReport := make(chan string)
-			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 
 			go func(appliance openapi.Appliance) {
 				defer func() {
@@ -512,6 +511,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					errorChannel <- err
 				}
 			}(appliance)
+
+			go a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 		}
 
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
