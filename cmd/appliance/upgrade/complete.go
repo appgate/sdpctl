@@ -469,11 +469,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					cancel()
 					close(statusReport)
 				}()
-				go func() {
-					ctx, cancel := context.WithCancel(context.Background())
-					defer cancel()
-					a.UpgradeStatusWorker.Watch(ctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
-				}()
+				go a.UpgradeStatusWorker.Watch(ctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
 
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
