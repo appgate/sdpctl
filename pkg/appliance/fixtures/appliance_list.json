@@ -10,13 +10,13 @@
             "activated": true,
             "pendingCertificateRenewal": false,
             "version": 14,
-            "hostname": "controller.devops",
+            "hostname": "localhost",
             "site": "8a4add9e-0e99-4bb1-949c-c9faf9a49ad4",
             "siteName": "Default Site",
             "connectToPeersUsingClientPortWithSpa": true,
             "clientInterface": {
                 "proxyProtocol": false,
-                "hostname": "controller.devops",
+                "hostname": "localhost",
                 "httpsPort": 443,
                 "dtlsPort": 443,
                 "allowSources": [
@@ -31,7 +31,7 @@
                 ]
             },
             "peerInterface": {
-                "hostname": "controller.devops",
+                "hostname": "localhost",
                 "httpsPort": 444,
                 "allowSources": [
                     {

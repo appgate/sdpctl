@@ -172,14 +172,14 @@ func TestFindPrimaryController(t *testing.T) {
 							Enabled: openapi.PtrBool(true),
 						},
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "foo.devops",
+							Hostname: "localhost",
 						},
 					},
 					{
 						Name: "secondary controller with log server",
 						Id:   "two",
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "foobar.devops",
+							Hostname: "localhost",
 						},
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
@@ -189,7 +189,7 @@ func TestFindPrimaryController(t *testing.T) {
 						},
 					},
 				},
-				hostname: "foo.devops",
+				hostname: "localhost",
 			},
 			want: &openapi.Appliance{
 				Name: "primary controller",
@@ -198,7 +198,7 @@ func TestFindPrimaryController(t *testing.T) {
 					Enabled: openapi.PtrBool(true),
 				},
 				AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-					Hostname: "foo.devops",
+					Hostname: "localhost",
 				},
 			},
 			wantErr: false,
@@ -214,17 +214,17 @@ func TestFindPrimaryController(t *testing.T) {
 							Enabled: openapi.PtrBool(true),
 						},
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "foo.devops",
+							Hostname: "localhost",
 						},
 					},
 					{
 						Name: "secondary controller with log server",
 						Id:   "two",
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "foo.devops",
+							Hostname: "localhost",
 						},
 						PeerInterface: openapi.ApplianceAllOfPeerInterface{
-							Hostname: "foo.devops",
+							Hostname: "localhost",
 						},
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
@@ -234,7 +234,7 @@ func TestFindPrimaryController(t *testing.T) {
 						},
 					},
 				},
-				hostname: "controller.devops",
+				hostname: "appgate.com",
 			},
 			want:    nil,
 			wantErr: true,
@@ -1984,27 +1984,27 @@ func TestGetRealHostname(t *testing.T) {
 	}{
 		{
 			name:                   "test admin interface hostname",
-			expect:                 "real.host.devops",
+			expect:                 "localhost",
 			hostname:               "fakehost1.devops",
 			peerInterfaceHostname:  "fakehost2.devops",
-			adminInterfaceHostname: "real.host.devops",
+			adminInterfaceHostname: "localhost",
 		},
 		{
 			name:                  "test no admin interface",
-			expect:                "real.host.devops",
+			expect:                "localhost",
 			hostname:              "fakehost1.devops",
-			peerInterfaceHostname: "real.host.devops",
+			peerInterfaceHostname: "localhost",
 		},
 		{
 			name:                   "empty hostname",
-			expect:                 "real.host.devops",
-			adminInterfaceHostname: "real.host.devops",
+			expect:                 "localhost",
+			adminInterfaceHostname: "localhost",
 		},
 		{
 			name:                  "empty admin hostname",
-			expect:                "real.host.devops",
+			expect:                "localhost",
 			hostname:              "fakehost.devops",
-			peerInterfaceHostname: "real.host.devops",
+			peerInterfaceHostname: "localhost",
 		},
 		{
 			name:     "no hostname",
