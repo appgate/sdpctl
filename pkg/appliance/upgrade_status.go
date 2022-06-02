@@ -76,7 +76,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		details := status.GetDetails()
 		fields["image"] = details
 		fields["status"] = s
-		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
+		log.WithFields(fields).Infof("waiting for '%s' status", desiredStatuses)
 		if util.InSlice(s, desiredStatuses) {
 			return nil
 		}
@@ -125,7 +125,7 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 		}
 		fields["image"] = details
 		fields["status"] = s
-		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
+		log.WithFields(fields).Infof("waiting for '%s' status", desiredStatuses)
 		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
 			return nil
 		}
