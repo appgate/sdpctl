@@ -31,9 +31,9 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 
 type WaitForUpgradeStatus interface {
 	// Wait does expodential backoff retries on upgrade status and return nil if it reaches any of the desiredStatuses
-	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error
+	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) error
 	// Subscribe does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
-	Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error
+	Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error
 	// Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
 	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string)
 }
@@ -43,9 +43,9 @@ type UpgradeStatus struct {
 	mu        sync.Mutex
 }
 
-func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error {
+func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) error {
 	b := backoff.WithContext(defaultExponentialBackOff, ctx)
-	if err := backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatuses), b); err != nil {
+	if err := backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatuses, undesiredStatuses), b); err != nil {
 		return err
 	}
 	select {
@@ -56,7 +56,7 @@ func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, d
 	}
 }
 
-func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) backoff.Operation {
+func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) backoff.Operation {
 	name := appliance.GetName()
 	fields := log.Fields{"appliance": name}
 	return func() error {
@@ -69,7 +69,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		var s string
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			if s == UpgradeStatusFailed && !util.InSlice(s, desiredStatuses) {
+			if util.InSlice(s, undesiredStatuses) {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, status.GetDetails()))
 			}
 		}
@@ -77,7 +77,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		fields["image"] = details
 		fields["status"] = s
 		log.WithFields(fields).Infof("waiting for '%s' state", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
+		if util.InSlice(s, desiredStatuses) {
 			return nil
 		}
 		return fmt.Errorf(
@@ -90,10 +90,11 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	}
 }
 
-func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, currentStatus chan<- string) backoff.Operation {
+func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, currentStatus chan<- string) backoff.Operation {
 	name := appliance.GetName()
 	fields := log.Fields{"appliance": name}
 	hasRebooted := false
+	isInitialState := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -113,8 +114,12 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
+			if !isInitialState {
+				isInitialState = true
+				return errors.New("initial state throwaway")
+			}
 			currentStatus <- s
-			if s == UpgradeStatusFailed {
+			if util.InSlice(s, undesiredStatuses) {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
 		}
@@ -134,13 +139,13 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 	}
 }
 
-func (u *UpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error {
+func (u *UpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
 	b := backoff.WithContext(defaultExponentialBackOff, ctx)
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
-		return backoff.Retry(u.upgradeStatusSubscribe(ctx, appliance, desiredStatuses, current), b)
+		return backoff.Retry(u.upgradeStatusSubscribe(ctx, appliance, desiredStatuses, undesiredStatuses, current), b)
 	}
 }
 
