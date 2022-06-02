@@ -56,7 +56,7 @@ func TestBackupCmd(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://controller.devops:%d", registry.Port),
+			URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 		},
 		IOOutWriter: buf,
 	}
@@ -119,7 +119,7 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 		},
 		IOOutWriter: buf,
 	}
