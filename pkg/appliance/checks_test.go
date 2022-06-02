@@ -150,7 +150,7 @@ func TestApplianceGroupDescription(t *testing.T) {
 					},
 				},
 			},
-			want: "connector, controller, gateway",
+			want: "Connector, Controller, Gateway",
 		},
 	}
 	for _, tt := range tests {
@@ -191,7 +191,7 @@ func TestShowPeerInterfaceWarningMessage(t *testing.T) {
 Version 5.4 and later are designed to operate with the admin port (default 8443)
 separate from the deprecated peer port (set to 443).
 It is recommended to switch to port 8443 before continuing
-The following controller is still configured without the Admin/API TLS Connection:
+The following Controller is still configured without the Admin/API TLS Connection:
 
   - controller
 `,

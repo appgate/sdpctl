@@ -20,12 +20,12 @@ import (
 )
 
 const (
-	FunctionController   = "controller"
-	FunctionGateway      = "gateway"
-	FunctionPortal       = "portal"
-	FunctionConnector    = "connector"
-	FunctionLogServer    = "logserver"
-	FunctionLogForwarder = "logforwarder"
+	FunctionController   = "Controller"
+	FunctionGateway      = "Gateway"
+	FunctionPortal       = "Portal"
+	FunctionConnector    = "Connector"
+	FunctionLogServer    = "LogServer"
+	FunctionLogForwarder = "LogForwarder"
 	FilterDelimiter      = "&"
 )
 
@@ -568,7 +568,16 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "function":
 				functionList := strings.Split(s, FilterDelimiter)
 				for _, function := range functionList {
-					if functions := GetActiveFunctions(a); util.InSlice(function, functions) {
+					functions := GetActiveFunctions(a)
+
+					// Normalize casings
+					normalizedSearchTerm := strings.ToLower(function)
+					normalizedFunctions := []string{}
+					for _, f := range functions {
+						normalizedFunctions = append(normalizedFunctions, strings.ToLower(f))
+					}
+
+					if util.InSlice(normalizedSearchTerm, normalizedFunctions) {
 						appendUnique(a)
 					}
 				}
