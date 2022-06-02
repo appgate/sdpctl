@@ -179,7 +179,7 @@ func TestFindPrimaryController(t *testing.T) {
 						Name: "secondary controller with log server",
 						Id:   "two",
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "localhost",
+							Hostname: "otherhost",
 						},
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
@@ -2058,8 +2058,8 @@ func TestValidateHostname(t *testing.T) {
 	}{
 		{
 			name:          "valid hostname",
-			hostname:      "appgate.com",
-			adminHostName: "appgate.com",
+			hostname:      "127.0.0.1",
+			adminHostName: "127.0.0.1",
 			wantErr:       false,
 		},
 		{
@@ -2072,7 +2072,7 @@ func TestValidateHostname(t *testing.T) {
 		{
 			name:          "admin interface not hostname",
 			hostname:      "controller.devops",
-			adminHostName: "admin.controller.devops",
+			adminHostName: "127.0.0.1",
 			wantErr:       true,
 			want:          *regexp.MustCompile(`Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname`),
 		},
