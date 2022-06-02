@@ -13,6 +13,9 @@ func TestQueueWithError(t *testing.T) {
 		qw.Push(letter)
 	}
 	err := qw.Work(func(v interface{}) error {
+		if v == nil {
+			return nil
+		}
 		if v.(string) == "e" {
 			return errors.New("E is error letter")
 		}

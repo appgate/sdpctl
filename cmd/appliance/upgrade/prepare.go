@@ -7,12 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"sync"
 	"text/template"
 	"time"
 
@@ -24,12 +26,14 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
+	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/util"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 type prepareUpgradeOptions struct {
@@ -150,6 +154,8 @@ func checkImageFilename(i string) error {
 var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run sdpctl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
+	terminal.Lock()
+	defer terminal.Unlock()
 	if appliancepkg.IsOnAppliance() {
 		return cmdutil.ErrExecutedOnAppliance
 	}
@@ -316,11 +322,57 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		defer imageFile.Close()
-		p := mpb.New(mpb.WithOutput(spinnerOut))
-		log.WithField("file", imageFile.Name()).Info("Uploading file")
-		if err := a.UploadFile(ctx, imageFile, p); err != nil {
+
+		fileStat, err := imageFile.Stat()
+		if err != nil {
 			return err
 		}
+		content, err := io.ReadAll(imageFile)
+		if err != nil {
+			return err
+		}
+		body := new(bytes.Buffer)
+		writer := multipart.NewWriter(body)
+		part, err := writer.CreateFormFile("file", fileStat.Name())
+		if err != nil {
+			return err
+		}
+		part.Write(content)
+		if err = writer.Close(); err != nil {
+			return err
+		}
+
+		reader := io.LimitReader(body, int64(body.Len()))
+		uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
+		bar := uploadProgress.AddBar(int64(body.Len()),
+			mpb.BarWidth(50),
+			mpb.BarFillerOnComplete("uploaded"),
+			mpb.PrependDecorators(
+				decor.OnComplete(decor.Name(" uploading"), " ✓"),
+				decor.Name(fileStat.Name(), decor.WC{W: len(fileStat.Name()) + 1}),
+			),
+			mpb.AppendDecorators(
+				decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
+				decor.OnComplete(decor.Name(" | "), ""),
+				decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+			),
+		)
+		waitSpinner := prompt.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
+		proxyReader := bar.ProxyReader(reader)
+		log.WithField("file", imageFile.Name()).Info("Uploading file")
+		headers := map[string]string{
+			"Content-Type":        writer.FormDataContentType(),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
+		}
+		if err := a.UploadFile(ctx, proxyReader, headers); err != nil {
+			bar.Abort(false)
+			return err
+		}
+		proxyReader.Close()
+		bar.Wait()
+		waitSpinner.Increment()
+		uploadProgress.Wait()
+
 		log.WithField("file", imageFile.Name()).Info("Uploaded file")
 
 		remoteFile, err := a.FileStatus(ctx, opts.filename)
@@ -328,21 +380,46 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		if remoteFile.GetStatus() != appliancepkg.FileReady {
-			return fmt.Errorf("remote file %q is uploaded, but is in status %s", opts.filename, existingFile.GetStatus())
+			return fmt.Errorf("remote file %q is uploaded, but is in status %s - %s", opts.filename, remoteFile.GetStatus(), remoteFile.GetFailureReason())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
-		p.Wait()
+
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
-		token, err := opts.Config.GetBearTokenHeaderValue()
-		if err != nil {
+
+		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
+		if err := a.UploadToController(fileStatusCtx, opts.image, opts.filename); err != nil {
 			return err
 		}
-		p := mpb.New(mpb.WithOutput(spinnerOut))
-		if err := a.UploadToController(fileStatusCtx, *primaryController, p, token, opts.image, opts.filename); err != nil {
+		fileUploadStatus := func(controller openapi.Appliance, p *mpb.Progress) error {
+			status := ""
+			statusChan := make(chan string)
+			defer close(statusChan)
+			go a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
+			for status != appliancepkg.FileReady {
+				remoteFile, err := a.FileStatus(ctx, opts.filename)
+				if err != nil {
+					return err
+				}
+				status = remoteFile.GetStatus()
+				statusChan <- status
+				if status == appliancepkg.FileReady {
+					break
+				}
+				if status == appliancepkg.FileFailed {
+					reason := errors.New(remoteFile.GetFailureReason())
+					return fmt.Errorf("Upload to controller failed: %w", reason)
+				}
+				// Arbitrary sleep for not polling file status from the API too much
+				time.Sleep(time.Second * 2)
+			}
+			return nil
+		}
+		if err := fileUploadStatus(*primaryController, p); err != nil {
 			return err
 		}
+
 		p.Wait()
 	}
 
@@ -381,9 +458,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
+			// wg is the wait group for the progressbars
+			wg           sync.WaitGroup
+			errorChannel = make(chan error, count)
 		)
 
-		updateProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
+		updateProgressBars := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
+		wg.Add(count)
 
 		for _, ap := range appliances {
 			appliance := ap
@@ -420,13 +501,18 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 			qw.Push(appliance)
 			statusReport := make(chan string)
-			a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 
 			go func(appliance openapi.Appliance) {
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
+				defer func() {
+					wg.Done()
 					close(statusReport)
+				}()
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
+					errorChannel <- err
 				}
 			}(appliance)
+
+			go a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 		}
 
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
@@ -445,9 +531,33 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		})
 		if err != nil {
 			errs = multierr.Append(errs, err)
+			return err
+		}
+		go func() {
+			wg.Wait()
+			close(errorChannel)
+		}()
+		var result error
+		for err := range errorChannel {
+			log.Error(err)
+			result = multierr.Append(result, err)
+		}
+		// dont wait for the progress bar if we get any errors
+		if result != nil {
+			return result
+		}
+		updateProgressBars.Wait()
+		m, err := a.UpgradeStatusMap(ctx, appliances)
+		if err != nil {
+			errs = multierr.Append(errs, err)
+			return err
+		}
+		for _, result := range m {
+			if !util.InSlice(result.Status, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}) {
+				errs = multierr.Append(errs, fmt.Errorf("%s %s %s", result.Name, result.Status, result.Details))
+			}
 		}
 
-		updateProgressBars.Wait()
 		return errs
 	}
 
