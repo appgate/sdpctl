@@ -172,7 +172,7 @@ func TestFindPrimaryController(t *testing.T) {
 							Enabled: openapi.PtrBool(true),
 						},
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "localhost",
+							Hostname: "appgate.com",
 						},
 					},
 					{
@@ -189,7 +189,7 @@ func TestFindPrimaryController(t *testing.T) {
 						},
 					},
 				},
-				hostname: "localhost",
+				hostname: "appgate.com",
 			},
 			want: &openapi.Appliance{
 				Name: "primary controller",
@@ -198,7 +198,7 @@ func TestFindPrimaryController(t *testing.T) {
 					Enabled: openapi.PtrBool(true),
 				},
 				AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-					Hostname: "localhost",
+					Hostname: "appgate.com",
 				},
 			},
 			wantErr: false,
@@ -1984,27 +1984,27 @@ func TestGetRealHostname(t *testing.T) {
 	}{
 		{
 			name:                   "test admin interface hostname",
-			expect:                 "localhost",
+			expect:                 "appgate.com",
 			hostname:               "fakehost1.devops",
 			peerInterfaceHostname:  "fakehost2.devops",
-			adminInterfaceHostname: "localhost",
+			adminInterfaceHostname: "appgate.com",
 		},
 		{
 			name:                  "test no admin interface",
-			expect:                "localhost",
+			expect:                "appgate.com",
 			hostname:              "fakehost1.devops",
-			peerInterfaceHostname: "localhost",
+			peerInterfaceHostname: "appgate.com",
 		},
 		{
 			name:                   "empty hostname",
-			expect:                 "localhost",
-			adminInterfaceHostname: "localhost",
+			expect:                 "appgate.com",
+			adminInterfaceHostname: "appgate.com",
 		},
 		{
 			name:                  "empty admin hostname",
-			expect:                "localhost",
+			expect:                "appgate.com",
 			hostname:              "fakehost.devops",
-			peerInterfaceHostname: "localhost",
+			peerInterfaceHostname: "appgate.com",
 		},
 		{
 			name:     "no hostname",
@@ -2058,8 +2058,8 @@ func TestValidateHostname(t *testing.T) {
 	}{
 		{
 			name:          "valid hostname",
-			hostname:      "127.0.0.1",
-			adminHostName: "127.0.0.1",
+			hostname:      "appgate.com",
+			adminHostName: "appgate.com",
 			wantErr:       false,
 		},
 		{
@@ -2072,7 +2072,7 @@ func TestValidateHostname(t *testing.T) {
 		{
 			name:          "admin interface not hostname",
 			hostname:      "controller.devops",
-			adminHostName: "127.0.0.1",
+			adminHostName: "appgate.com",
 			wantErr:       true,
 			want:          *regexp.MustCompile(`Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname`),
 		},

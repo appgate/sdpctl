@@ -81,7 +81,7 @@ func TestApplianceListCommandTable(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://127.0.0.1:%d", registry.Port),
+			URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
@@ -117,7 +117,7 @@ func TestApplianceListCommandTable(t *testing.T) {
 	gotStr := string(got)
 	want := `Name                                                   ID                                    Hostname        Site          Activated
 ----                                                   --                                    --------        ----          ---------
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1  4c07bc67-57ea-42dd-b702-c2d6c45419fc  127.0.0.1       Default Site  true
+controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1  4c07bc67-57ea-42dd-b702-c2d6c45419fc  appgate.com     Default Site  true
 gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1     ee639d70-e075-4f01-596b-930d5f24f569  gateway.devops  Default Site  true
 `
 	if !cmp.Equal(want, gotStr) {
@@ -140,7 +140,7 @@ func TestApplianceFiltering(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://127.0.0.1:%d", registry.Port),
+			URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
@@ -176,9 +176,9 @@ func TestApplianceFiltering(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := `Name                                                   ID                                    Hostname   Site          Activated
-----                                                   --                                    --------   ----          ---------
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1  4c07bc67-57ea-42dd-b702-c2d6c45419fc  127.0.0.1  Default Site  true
+	want := `Name                                                   ID                                    Hostname     Site          Activated
+----                                                   --                                    --------     ----          ---------
+controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1  4c07bc67-57ea-42dd-b702-c2d6c45419fc  appgate.com  Default Site  true
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
