@@ -465,18 +465,19 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 				log.WithField("appliance", i.GetName()).Info("checking if ready")
 				statusReport := make(chan string)
-				defer func() {
-					cancel()
-					close(statusReport)
-				}()
+				defer cancel()
 				go a.UpgradeStatusWorker.Watch(ctx, p, i, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
-
+				go func() {
+					if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
+						log.Error(err)
+					}
+				}()
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
 				}
 				log.WithField("appliance", i.GetName()).Info("Install the downloaded to Upgrade image to the other partition")
 				if !SwitchPartition {
-					if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}); err != nil {
 						return err
 					}
 					status, err := a.UpgradeStatus(ctx, i.GetId())
@@ -490,7 +491,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.Wait(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}); err != nil {
 					return err
 				}
 				if err := a.ApplianceStats.WaitForState(ctx, i, finalState, nil); err != nil {
