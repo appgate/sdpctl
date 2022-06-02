@@ -474,6 +474,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
 				}
+				log.WithField("appliance", i.GetName()).Info("Install the downloaded to Upgrade image to the other partition")
 				if !SwitchPartition {
 					if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 						return err
