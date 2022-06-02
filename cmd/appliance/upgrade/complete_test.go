@@ -390,6 +390,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 		chunks                [][]openapi.Appliance
 		skipped               []openapi.Appliance
 		backup                []openapi.Appliance
+		backupDestination     string
 		toVersion             string
 		expect                string
 	}{
@@ -476,7 +477,8 @@ The following appliances will be upgraded to version 5.5.4:
 					Name: "primary-controller",
 				},
 			},
-			toVersion: "5.5.4",
+			backupDestination: "/tmp/appgate/backup",
+			toVersion:         "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
@@ -509,7 +511,7 @@ Appliances that will be skipped:
 
 Appliances that will be backed up before completing upgrade:
   - primary-controller
-
+Backup destination is: /tmp/appgate/backup
 `,
 		},
 	}
@@ -518,7 +520,7 @@ Appliances that will be backed up before completing upgrade:
 		t.Run(tt.name, func(t *testing.T) {
 			var b bytes.Buffer
 			version, _ := version.NewVersion(tt.toVersion)
-			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.chunks, tt.skipped, tt.backup, version)
+			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}

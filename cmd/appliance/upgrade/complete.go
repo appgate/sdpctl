@@ -137,7 +137,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// if backup is default value (false) and user hasn't explicitly stated the flag, ask if user wants to backup
 	flagIsChanged := cmd.Flags().Changed("backup")
 	toBackup := []openapi.Appliance{}
-	if !opts.backup && !flagIsChanged && !opts.NoInteractive {
+	if !flagIsChanged && !opts.NoInteractive {
 		performBackup := &survey.Confirm{
 			Message: "Do you want to backup before proceeding?",
 			Default: opts.backup,
@@ -298,12 +298,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	msg := ""
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
-		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, chunks, offline, toBackup, newVersion)
+		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, chunks, offline, toBackup, opts.backupDestination, newVersion)
 		if err != nil {
 			return err
 		}
 	} else {
-		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, chunks, offline, toBackup, newVersion)
+		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, chunks, offline, toBackup, opts.backupDestination, newVersion)
 		if err != nil {
 			return err
 		}
@@ -624,13 +624,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	return nil
 }
 
-func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers []openapi.Appliance, chunks [][]openapi.Appliance, skipped, backup []openapi.Appliance, toVersion *version.Version) (string, error) {
+func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers []openapi.Appliance, chunks [][]openapi.Appliance, skipped, backup []openapi.Appliance, backupDestination string, toVersion *version.Version) (string, error) {
 	type tplStub struct {
 		PrimaryController     string
 		AdditionalControllers []string
 		Chunks                map[int][]string
 		Skipped               []string
 		Backup                []string
+		BackupDestination     string
 		Version               string
 	}
 	completeSummaryTpl := `
@@ -670,8 +671,9 @@ Appliances that will be skipped:{{ range . }}
 {{ end }}
 {{ with .Backup -}}
 Appliances that will be backed up before completing upgrade:{{ range . }}
-  - {{ . }}{{ end }}
-{{ end }}
+  - {{ . }}{{ end }}{{ end }}
+{{ if .Backup -}}Backup destination is: {{ .BackupDestination }}
+{{ end -}}
 `
 	additionalControllerNames := []string{}
 	for _, a := range additionalControllers {
@@ -699,6 +701,7 @@ Appliances that will be backed up before completing upgrade:{{ range . }}
 		Chunks:                upgradeChunks,
 		Skipped:               toSkip,
 		Backup:                toBackup,
+		BackupDestination:     backupDestination,
 	}
 	if primaryController != nil {
 		tplData.PrimaryController = primaryController.GetName()
