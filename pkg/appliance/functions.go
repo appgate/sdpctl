@@ -386,9 +386,25 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname")
 	}
 
+	var errs error
+	errCount := 0
 	ctx := context.Background()
-	ipv4s, _ := net.DefaultResolver.LookupIP(ctx, "ip4", nHost)
-	ipv6s, _ := net.DefaultResolver.LookupIP(ctx, "ip6", nHost)
+	ipv4s, err := net.DefaultResolver.LookupIP(ctx, "ip4", nHost)
+	if err != nil {
+		errCount++
+		err = fmt.Errorf("ipv4: %w", err)
+		errs = multierror.Append(err, errs)
+	}
+	ipv6s, err := net.DefaultResolver.LookupIP(ctx, "ip6", nHost)
+	if err != nil {
+		errCount++
+		err = fmt.Errorf("ipv6: %w", err)
+		errs = multierror.Append(err, errs)
+	}
+	// We check errors, but only one needs to succeed, so we also count the errors before determining if we return an error
+	if errs != nil && errCount > 1 {
+		return errs
+	}
 	v4length := len(ipv4s)
 	v6length := len(ipv6s)
 	if v4length > 1 || v6length > 1 {
