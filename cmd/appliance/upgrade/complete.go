@@ -469,7 +469,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					cancel()
 					close(statusReport)
 				}()
-				go a.UpgradeStatusWorker.Watch(ctx, p, i, finalState, appliancepkg.UpgradeStatusFailed, statusReport)
+				go a.UpgradeStatusWorker.Watch(ctx, p, i, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
@@ -492,7 +492,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 					return err
 				}
-				if err := a.ApplianceStats.WaitForState(ctx, i, finalState, statusReport); err != nil {
+				if err := a.ApplianceStats.WaitForState(ctx, i, finalState, nil); err != nil {
 					return err
 				}
 				select {
