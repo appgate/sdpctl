@@ -431,7 +431,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 			log.WithField("appliance", controller.GetName()).Infof("Waiting for primary controller to reach state %s", state)
-			if err := a.UpgradeStatusWorker.Subscribe(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
+			if err := a.UpgradeStatusWorker.Subscribe(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 				return err
 			}
 			if err := a.ApplianceStats.WaitForState(ctx, controller, ctrlUpgradeState, statusReport); err != nil {
@@ -467,7 +467,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 				if !SwitchPartition {
-					if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, statusReport); err != nil {
+					if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 						return err
 					}
 					status, err := a.UpgradeStatus(ctx, i.GetId())
@@ -481,7 +481,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 					return err
 				}
 				if err := a.ApplianceStats.WaitForState(ctx, i, finalState, statusReport); err != nil {
@@ -544,7 +544,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
 			}
-			if err := a.UpgradeStatusWorker.Subscribe(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, statusReport); err != nil {
+			if err := a.UpgradeStatusWorker.Subscribe(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 				return err
 			}
 			if disable {

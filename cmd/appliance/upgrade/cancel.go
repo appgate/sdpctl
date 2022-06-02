@@ -134,6 +134,9 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			// wantedStatus is the desired state for the queued jobs, we need to limit these jobs, and run them in order
 			wantedStatus = []string{
 				appliancepkg.UpgradeStatusIdle,
+			}
+			undesiredStatus = []string{
+				appliancepkg.UpgradeStatusReady,
 				appliancepkg.UpgradeStatusFailed,
 			}
 			// wg is the wait group for the progressbars
@@ -152,14 +155,14 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			appliance := ap
 			qw.Push(appliance)
 			statusReport := make(chan string)
-			go a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, appliancepkg.UpgradeStatusIdle, appliancepkg.UpgradeStatusFailed, statusReport)
+			go a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, appliancepkg.UpgradeStatusIdle, appliancepkg.UpgradeStatusReady, statusReport)
 
 			go func(appliance openapi.Appliance) {
 				defer func() {
 					wg.Done()
 					close(statusReport)
 				}()
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, undesiredStatus, statusReport); err != nil {
 					errorChannel <- err
 				}
 			}(appliance)
@@ -174,10 +177,10 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			if err := retryCancel(ctx, appliance); err != nil {
 				return fmt.Errorf("Upgrade cancel for %s failed, %w", appliance.GetName(), err)
 			}
-			if err := a.ApplianceStats.WaitForStatus(ctx, appliance, appliancepkg.NotBusyStatus); err != nil {
+			if err := a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, undesiredStatus); err != nil {
 				log.Warn(err)
 			}
-			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
+			return a.ApplianceStats.WaitForStatus(ctx, appliance, appliancepkg.NotBusyStatus)
 		})
 		if err != nil {
 			return err

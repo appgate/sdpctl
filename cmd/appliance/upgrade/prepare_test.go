@@ -29,10 +29,10 @@ func init() {
 
 type mockUpgradeStatus struct{}
 
-func (u *mockUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error {
+func (u *mockUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) error {
 	return nil
 }
-func (u *mockUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error {
+func (u *mockUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
 	return nil
 }
 
@@ -41,10 +41,10 @@ func (u *mockUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, applianc
 
 type errorUpgradeStatus struct{}
 
-func (u *errorUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string) error {
+func (u *errorUpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) error {
 	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
 }
-func (u *errorUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, current chan<- string) error {
+func (u *errorUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
 	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
 }
 

@@ -493,7 +493,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
 						errs = multierr.Append(errs, err)
 					}
-					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}); err != nil {
+					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}); err != nil {
 						errs = multierr.Append(errs, err)
 					}
 				}
@@ -507,7 +507,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					wg.Done()
 					close(statusReport)
 				}()
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 					errorChannel <- err
 				}
 			}(appliance)
@@ -527,7 +527,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 				return err
 			}
-			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus)
+			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, []string{appliancepkg.UpgradeStatusFailed})
 		})
 		if err != nil {
 			errs = multierr.Append(errs, err)
