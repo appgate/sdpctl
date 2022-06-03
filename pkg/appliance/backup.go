@@ -326,6 +326,11 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 		return selectorName
 	}
 
+	// Filter out all but Controllers, LogServers and Portals
+	appliances = FilterAppliances(appliances, map[string]map[string]string{
+		"include": {"function": strings.Join([]string{FunctionController, FunctionLogServer, FunctionPortal}, FilterDelimiter)},
+	})
+
 	for _, a := range appliances {
 		selectorName := appendFunctions(a)
 		for _, ps := range preSelected {
