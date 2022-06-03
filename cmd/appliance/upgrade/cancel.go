@@ -180,7 +180,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			if err := a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, undesiredStatus); err != nil {
 				log.Warn(err)
 			}
-			return a.ApplianceStats.WaitForStatus(ctx, appliance, appliancepkg.NotBusyStatus)
+			return a.ApplianceStats.WaitForStatus(ctx, appliance, appliancepkg.StatusNotBusy)
 		})
 		if err != nil {
 			return err

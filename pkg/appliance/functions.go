@@ -591,21 +591,33 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 }
 
 const (
+	statControllerReady       string = "controller_ready"
+	statSingleControllerReady string = "single_controller_ready"
+	statMultiControllerReady  string = "multi_controller_ready"
+	statApplianceReady        string = "appliance_ready"
+
 	// https://github.com/appgate/sdp-api-specification/blob/94d8f7970cd025c8cf92b4560c1a9a0595d66133/dashboard.yml#L477-L483
-	statsHealthy      string = "healthy"
-	statsBusy         string = "busy"
-	statsWarning      string = "warning"
-	statsError        string = "error"
-	statsNotAvailable string = "n/a"
-	statsOffline      string = "offline"
+	statusHealthy      string = "healthy"
+	statusBusy         string = "busy"
+	statusWarning      string = "warning"
+	statusError        string = "error"
+	statusNotAvailable string = "n/a"
+	statusOffline      string = "offline"
 )
 
-var NotBusyStatus = []string{
-	statsHealthy,
-	statsWarning,
-	statsError,
-	statsNotAvailable,
-	statsOffline,
+var StatReady = []string{
+	statControllerReady,
+	statSingleControllerReady,
+	statMultiControllerReady,
+	statApplianceReady,
+}
+
+var StatusNotBusy = []string{
+	statusHealthy,
+	statusWarning,
+	statusError,
+	statusNotAvailable,
+	statusOffline,
 }
 
 // StatsIsOnline will return true if the controller reports the appliance to be online in a valid status
@@ -615,11 +627,11 @@ func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	if s.GetOnline() {
 		return true
 	}
-	if util.InSlice(s.GetStatus(), []string{statsNotAvailable, statsOffline}) {
+	if util.InSlice(s.GetStatus(), []string{statusNotAvailable, statusOffline}) {
 		return false
 	}
 	// unkown or empty status will report appliance as offline.
-	return util.InSlice(s.GetStatus(), []string{statsHealthy, statsBusy, statsWarning, statsError})
+	return util.InSlice(s.GetStatus(), []string{statusHealthy, statusBusy, statusWarning, statusError})
 }
 
 func ShouldDisable(from, to *version.Version) bool {
