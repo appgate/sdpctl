@@ -1,6 +1,7 @@
 package util
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -84,6 +85,68 @@ func TestIsJSON(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := IsJSON(tt.args.str); got != tt.want {
 				t.Errorf("IsJSON() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSearchSlice(t *testing.T) {
+	type args struct {
+		needle          string
+		haystack        []string
+		caseInsensitive bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "case insensitive search match",
+			args: args{
+				needle:          "controller",
+				caseInsensitive: true,
+			},
+			want: []string{"controller", "Controller"},
+		},
+		{
+			name: "case sensitive search match",
+			args: args{
+				needle:          "controller",
+				caseInsensitive: false,
+			},
+			want: []string{"controller"},
+		},
+		{
+			name: "case insensitive no match",
+			args: args{
+				needle:          "randomTerm",
+				caseInsensitive: true,
+			},
+			want: []string{},
+		},
+		{
+			name: "case sensitive no match",
+			args: args{
+				needle:          "portal",
+				caseInsensitive: false,
+			},
+			want: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.args.haystack = []string{
+				"controller",
+				"Controller",
+				"Connector",
+				"Gateway",
+				"LogServer",
+				"LogForwarder",
+				"Portal",
+			}
+			if got := SearchSlice(tt.args.needle, tt.args.haystack, tt.args.caseInsensitive); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SearchSlice() = %v, want %v", got, tt.want)
 			}
 		})
 	}

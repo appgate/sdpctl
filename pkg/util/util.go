@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"regexp"
 	"sort"
 
 	"github.com/spf13/pflag"
@@ -36,6 +37,26 @@ func InSlice(needle string, haystack []string) bool {
 		return true
 	}
 	return false
+}
+
+// SearchSlice will search a slice of strings and return all matching results.
+// The search can either be case sensitive or not.
+func SearchSlice(needle string, haystack []string, caseInsensitive bool) []string {
+	result := []string{}
+
+	searchTerm := needle
+	if caseInsensitive {
+		searchTerm = "(?i)" + searchTerm
+	}
+	regex := regexp.MustCompile(searchTerm)
+
+	for _, s := range haystack {
+		if regex.MatchString(s) {
+			result = append(result, s)
+		}
+	}
+
+	return result
 }
 
 func FileExists(name string) (bool, error) {

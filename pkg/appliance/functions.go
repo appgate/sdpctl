@@ -521,11 +521,8 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				tagSlice := strings.Split(s, FilterDelimiter)
 				appTags := a.GetTags()
 				for _, t := range tagSlice {
-					regex := regexp.MustCompile(t)
-					for _, at := range appTags {
-						if regex.MatchString(at) {
-							appendUnique(a)
-						}
+					if res := util.SearchSlice(t, appTags, false); len(res) > 0 {
+						appendUnique(a)
 					}
 				}
 			case "version":
@@ -569,15 +566,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				functionList := strings.Split(s, FilterDelimiter)
 				for _, function := range functionList {
 					functions := GetActiveFunctions(a)
-
-					// Normalize casings
-					normalizedSearchTerm := strings.ToLower(function)
-					normalizedFunctions := []string{}
-					for _, f := range functions {
-						normalizedFunctions = append(normalizedFunctions, strings.ToLower(f))
-					}
-
-					if util.InSlice(normalizedSearchTerm, normalizedFunctions) {
+					if results := util.SearchSlice(function, functions, true); len(results) > 0 {
 						appendUnique(a)
 					}
 				}
