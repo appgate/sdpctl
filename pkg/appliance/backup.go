@@ -318,16 +318,16 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	preSelectNames := []string{}
 
 	selectorNameMap := map[string]string{}
-	prependFunctions := func(appliance openapi.Appliance) string {
+	appendFunctions := func(appliance openapi.Appliance) string {
 		name := appliance.GetName()
 		activeFunctions := GetActiveFunctions(appliance)
-		selectorName := fmt.Sprintf("[ %s ] %s", strings.Join(activeFunctions, ", "), name)
+		selectorName := fmt.Sprintf("%s ( %s )", name, strings.Join(activeFunctions, ", "))
 		selectorNameMap[selectorName] = name
 		return selectorName
 	}
 
 	for _, a := range appliances {
-		selectorName := prependFunctions(a)
+		selectorName := appendFunctions(a)
 		for _, ps := range preSelected {
 			if a.GetName() == ps.GetName() {
 				preSelectNames = append(preSelectNames, selectorName)
