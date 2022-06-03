@@ -20,12 +20,12 @@ import (
 )
 
 const (
-	FunctionController   = "controller"
-	FunctionGateway      = "gateway"
-	FunctionPortal       = "portal"
-	FunctionConnector    = "connector"
-	FunctionLogServer    = "logserver"
-	FunctionLogForwarder = "logforwarder"
+	FunctionController   = "Controller"
+	FunctionGateway      = "Gateway"
+	FunctionPortal       = "Portal"
+	FunctionConnector    = "Connector"
+	FunctionLogServer    = "LogServer"
+	FunctionLogForwarder = "LogForwarder"
 	FilterDelimiter      = "&"
 )
 
@@ -521,11 +521,8 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				tagSlice := strings.Split(s, FilterDelimiter)
 				appTags := a.GetTags()
 				for _, t := range tagSlice {
-					regex := regexp.MustCompile(t)
-					for _, at := range appTags {
-						if regex.MatchString(at) {
-							appendUnique(a)
-						}
+					if res := util.SearchSlice(t, appTags, false); len(res) > 0 {
+						appendUnique(a)
 					}
 				}
 			case "version":
@@ -568,7 +565,8 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "function":
 				functionList := strings.Split(s, FilterDelimiter)
 				for _, function := range functionList {
-					if functions := GetActiveFunctions(a); util.InSlice(function, functions) {
+					functions := GetActiveFunctions(a)
+					if results := util.SearchSlice(function, functions, true); len(results) > 0 {
 						appendUnique(a)
 					}
 				}
