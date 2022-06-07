@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
 	"text/template"
 	"time"
 
@@ -141,32 +140,17 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			}
 			// statusReport is the channel that triggers updates in progress bars
 			statusReport = make(chan string)
-			// wg is the wait group for the progressbars
-			wg           sync.WaitGroup
-			errorChannel = make(chan error, count)
 		)
 		defer close(statusReport)
-		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
-		wg.Add(count)
+		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
 		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
 			return backoff.Retry(func() error {
 				return a.UpgradeCancel(ctx, appliance.GetId())
 			}, backoff.NewExponentialBackOff())
 		}
 
-		for _, ap := range appliances {
-			appliance := ap
+		for _, appliance := range appliances {
 			qw.Push(appliance)
-			go a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusReady}, statusReport)
-
-			go func(appliance openapi.Appliance) {
-				defer func() {
-					wg.Done()
-				}()
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, undesiredStatus, statusReport); err != nil {
-					errorChannel <- err
-				}
-			}(appliance)
 		}
 		err := qw.Work(func(v interface{}) error {
 			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
@@ -175,30 +159,22 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			// and that the apppliance is not busy to avoid race condition When running to many operations
 			// on mulitple appliances at once.
 			appliance := v.(openapi.Appliance)
+			go a.UpgradeStatusWorker.Watch(context.Background(), cancelProgressBars, appliance, appliancepkg.StatusNotBusy, undesiredStatus, statusReport)
 			if err := retryCancel(ctx, appliance); err != nil {
 				return fmt.Errorf("Upgrade cancel for %s failed, %w", appliance.GetName(), err)
 			}
-			if err := a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, undesiredStatus); err != nil {
-				log.Warn(err)
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, wantedStatus, undesiredStatus, statusReport); err != nil {
+				return err
 			}
 			return a.ApplianceStats.WaitForApplianceStatus(ctx, appliance, appliancepkg.StatusNotBusy, statusReport)
 		})
 		if err != nil {
 			return err
 		}
-		go func() {
-			wg.Wait()
-			close(errorChannel)
-		}()
 
-		var result error
-		for err := range errorChannel {
-			log.Error(err)
-			return result
-		}
 		cancelProgressBars.Wait()
 
-		return result
+		return nil
 	}
 	fmt.Fprintln(opts.Out, "Cancelling pending upgrades...")
 	// workers is intentionally a fixed value of 2
