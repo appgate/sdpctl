@@ -139,10 +139,13 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 				appliancepkg.UpgradeStatusReady,
 				appliancepkg.UpgradeStatusFailed,
 			}
+			// statusReport is the channel that triggers updates in progress bars
+			statusReport = make(chan string)
 			// wg is the wait group for the progressbars
 			wg           sync.WaitGroup
 			errorChannel = make(chan error, count)
 		)
+		defer close(statusReport)
 		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
 		wg.Add(count)
 		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
@@ -154,13 +157,11 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		for _, ap := range appliances {
 			appliance := ap
 			qw.Push(appliance)
-			statusReport := make(chan string)
 			go a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusReady}, statusReport)
 
 			go func(appliance openapi.Appliance) {
 				defer func() {
 					wg.Done()
-					close(statusReport)
 				}()
 				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, wantedStatus, undesiredStatus, statusReport); err != nil {
 					errorChannel <- err
@@ -180,7 +181,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			if err := a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, undesiredStatus); err != nil {
 				log.Warn(err)
 			}
-			return a.ApplianceStats.WaitForApplianceStatus(ctx, appliance, appliancepkg.StatusNotBusy)
+			return a.ApplianceStats.WaitForApplianceStatus(ctx, appliance, appliancepkg.StatusNotBusy, statusReport)
 		})
 		if err != nil {
 			return err

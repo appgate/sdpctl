@@ -14,14 +14,14 @@ import (
 type WaitForApplianceStatus interface {
 	WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error
 	// WaitForStatus tries appliance stats until the appliance has want status or it reaches the timeout
-	WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string) error
+	WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
 }
 
-func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
 	return backoff.Retry(func() error {
 		stats, _, err := u.Appliance.Stats(ctx)
 		if err != nil {
@@ -29,8 +29,12 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 		}
 		for _, stat := range stats.GetData() {
 			if stat.GetId() == appliance.GetId() {
-				if !util.InSlice(stat.GetStatus(), want) {
-					return fmt.Errorf("Want status %s, got %s", want, stat.GetStatus())
+				current := stat.GetStatus()
+				if status != nil {
+					status <- current
+				}
+				if !util.InSlice(current, want) {
+					return fmt.Errorf("Want status %s, got %s", want, current)
 				}
 			}
 		}
