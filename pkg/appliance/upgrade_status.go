@@ -35,7 +35,7 @@ type WaitForUpgradeStatus interface {
 	// Subscribe does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
 	Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error
 	// Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
-	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string)
+	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string)
 }
 
 type UpgradeStatus struct {
@@ -150,7 +150,7 @@ func (u *UpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Applian
 }
 
 // Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
-func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
+func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
 	name := appliance.GetName()
 	// we will lock each time we add a new bar to avoid duplicates
 	u.mu.Lock()
@@ -223,11 +223,11 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 			u.mu.Unlock()
 		}()
 
-		if v == failState {
+		if util.InSlice(v, failStates) {
 			bar.Abort(false)
 			break
 		}
-		if v == endState {
+		if util.InSlice(v, endStates) {
 			go func() {
 				u.mu.Lock()
 				bar.Increment()

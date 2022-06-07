@@ -155,7 +155,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			appliance := ap
 			qw.Push(appliance)
 			statusReport := make(chan string)
-			go a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, appliancepkg.UpgradeStatusIdle, appliancepkg.UpgradeStatusReady, statusReport)
+			go a.UpgradeStatusWorker.Watch(ctx, cancelProgressBars, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusReady}, statusReport)
 
 			go func(appliance openapi.Appliance) {
 				defer func() {
@@ -180,7 +180,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			if err := a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, undesiredStatus); err != nil {
 				log.Warn(err)
 			}
-			return a.ApplianceStats.WaitForStatus(ctx, appliance, appliancepkg.StatusNotBusy)
+			return a.ApplianceStats.WaitForApplianceStatus(ctx, appliance, appliancepkg.StatusNotBusy)
 		})
 		if err != nil {
 			return err
