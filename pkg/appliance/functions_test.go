@@ -32,14 +32,14 @@ func TestFilterAvailable(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
 					},
 					{
 						Name: "gateway",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						Gateway: &openapi.ApplianceAllOfGateway{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -59,7 +59,7 @@ func TestFilterAvailable(t *testing.T) {
 			wantOnline: []openapi.Appliance{
 				{
 					Name: "primary controller",
-					Id:   "one",
+					Id:   openapi.PtrString("one"),
 					Controller: &openapi.ApplianceAllOfController{
 						Enabled: openapi.PtrBool(true),
 					},
@@ -68,7 +68,7 @@ func TestFilterAvailable(t *testing.T) {
 			wantOffline: []openapi.Appliance{
 				{
 					Name: "gateway",
-					Id:   "two",
+					Id:   openapi.PtrString("two"),
 					Gateway: &openapi.ApplianceAllOfGateway{
 						Enabled: openapi.PtrBool(true),
 					},
@@ -82,14 +82,14 @@ func TestFilterAvailable(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
 					},
 					{
 						Name: "secondary controller with log server",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -112,7 +112,7 @@ func TestFilterAvailable(t *testing.T) {
 			wantOnline: []openapi.Appliance{
 				{
 					Name: "primary controller",
-					Id:   "one",
+					Id:   openapi.PtrString("one"),
 					Controller: &openapi.ApplianceAllOfController{
 						Enabled: openapi.PtrBool(true),
 					},
@@ -121,7 +121,7 @@ func TestFilterAvailable(t *testing.T) {
 			wantOffline: []openapi.Appliance{
 				{
 					Name: "secondary controller with log server",
-					Id:   "two",
+					Id:   openapi.PtrString("two"),
 					Controller: &openapi.ApplianceAllOfController{
 						Enabled: openapi.PtrBool(true),
 					},
@@ -167,7 +167,7 @@ func TestFindPrimaryController(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -177,7 +177,7 @@ func TestFindPrimaryController(t *testing.T) {
 					},
 					{
 						Name: "secondary controller with log server",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "otherhost",
 						},
@@ -193,7 +193,7 @@ func TestFindPrimaryController(t *testing.T) {
 			},
 			want: &openapi.Appliance{
 				Name: "primary controller",
-				Id:   "one",
+				Id:   openapi.PtrString("one"),
 				Controller: &openapi.ApplianceAllOfController{
 					Enabled: openapi.PtrBool(true),
 				},
@@ -209,7 +209,7 @@ func TestFindPrimaryController(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -219,11 +219,11 @@ func TestFindPrimaryController(t *testing.T) {
 					},
 					{
 						Name: "secondary controller with log server",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "localhost",
 						},
-						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 							Hostname: "localhost",
 						},
 						Controller: &openapi.ApplianceAllOfController{
@@ -269,7 +269,7 @@ func TestGroupByFunctions(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -279,11 +279,11 @@ func TestGroupByFunctions(t *testing.T) {
 					},
 					{
 						Name: "secondary controller with log server",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "foo.devops",
 						},
-						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 							Hostname: "foo.devops",
 						},
 						Controller: &openapi.ApplianceAllOfController{
@@ -295,7 +295,7 @@ func TestGroupByFunctions(t *testing.T) {
 					},
 					{
 						Name: "gateway",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						Gateway: &openapi.ApplianceAllOfGateway{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -306,7 +306,7 @@ func TestGroupByFunctions(t *testing.T) {
 				FunctionController: {
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -316,11 +316,11 @@ func TestGroupByFunctions(t *testing.T) {
 					},
 					{
 						Name: "secondary controller with log server",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "foo.devops",
 						},
-						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 							Hostname: "foo.devops",
 						},
 						Controller: &openapi.ApplianceAllOfController{
@@ -334,7 +334,7 @@ func TestGroupByFunctions(t *testing.T) {
 				FunctionGateway: {
 					{
 						Name: "gateway",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						Gateway: &openapi.ApplianceAllOfGateway{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -343,11 +343,11 @@ func TestGroupByFunctions(t *testing.T) {
 				FunctionLogServer: {
 					{
 						Name: "secondary controller with log server",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "foo.devops",
 						},
-						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 							Hostname: "foo.devops",
 						},
 						Controller: &openapi.ApplianceAllOfController{
@@ -386,7 +386,7 @@ func TestActiveFunctions(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -406,7 +406,7 @@ func TestActiveFunctions(t *testing.T) {
 				appliances: []openapi.Appliance{
 					{
 						Name: "primary controller",
-						Id:   "one",
+						Id:   openapi.PtrString("one"),
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -416,14 +416,14 @@ func TestActiveFunctions(t *testing.T) {
 					},
 					{
 						Name: "gateway",
-						Id:   "two",
+						Id:   openapi.PtrString("two"),
 						Gateway: &openapi.ApplianceAllOfGateway{
 							Enabled: openapi.PtrBool(true),
 						},
 					},
 					{
 						Name: "portal",
-						Id:   "three",
+						Id:   openapi.PtrString("three"),
 						Portal: &openapi.Portal{
 							Enabled: openapi.PtrBool(false),
 						},
@@ -453,7 +453,7 @@ func TestFilterAndExclude(t *testing.T) {
 	mockControllers := map[string]openapi.Appliance{
 		"primaryController": {
 			Name: "primary controller",
-			Id:   "f1bef0c4-e0b6-42ac-9c40-3f6214c34869",
+			Id:   openapi.PtrString("f1bef0c4-e0b6-42ac-9c40-3f6214c34869"),
 			Controller: &openapi.ApplianceAllOfController{
 				Enabled: openapi.PtrBool(true),
 			},
@@ -463,7 +463,7 @@ func TestFilterAndExclude(t *testing.T) {
 			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 				Hostname: "foo.devops",
 			},
-			Hostname:  openapi.PtrString("foo.devops"),
+			Hostname:  "foo.devops",
 			Site:      openapi.PtrString("640039ab-8b13-494a-af9e-20a48846674a"),
 			Activated: openapi.PtrBool(true),
 			Tags: &[]string{
@@ -474,7 +474,7 @@ func TestFilterAndExclude(t *testing.T) {
 		},
 		"secondaryController": {
 			Name: "secondary controller",
-			Id:   "6090fd66-6e21-4ef5-87d0-36c7a1b04a80",
+			Id:   openapi.PtrString("6090fd66-6e21-4ef5-87d0-36c7a1b04a80"),
 			Controller: &openapi.ApplianceAllOfController{
 				Enabled: openapi.PtrBool(true),
 			},
@@ -491,7 +491,7 @@ func TestFilterAndExclude(t *testing.T) {
 		},
 		"gateway": {
 			Name: "gateway",
-			Id:   "85fac76b-c526-486d-844a-520a023e76e2",
+			Id:   openapi.PtrString("85fac76b-c526-486d-844a-520a023e76e2"),
 			Gateway: &openapi.ApplianceAllOfGateway{
 				Enabled: openapi.PtrBool(true),
 			},
@@ -2015,15 +2015,15 @@ func TestGetRealHostname(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := openapi.Appliance{
-				Id:        uuid.New().String(),
+				Id:        openapi.PtrString(uuid.New().String()),
 				Name:      "controller",
 				Activated: openapi.PtrBool(true),
 			}
 			if len(tt.hostname) > 0 {
-				ctrl.Hostname = openapi.PtrString(tt.hostname)
+				ctrl.Hostname = tt.hostname
 			}
 			if len(tt.peerInterfaceHostname) > 0 {
-				ctrl.PeerInterface = openapi.ApplianceAllOfPeerInterface{
+				ctrl.PeerInterface = &openapi.ApplianceAllOfPeerInterface{
 					Hostname: *openapi.PtrString(tt.peerInterfaceHostname),
 				}
 			}
@@ -2080,11 +2080,11 @@ func TestValidateHostname(t *testing.T) {
 
 	for _, tt := range tests {
 		ctrl := openapi.Appliance{
-			Id:        uuid.New().String(),
+			Id:        openapi.PtrString(uuid.New().String()),
 			Name:      "controller",
 			Activated: openapi.PtrBool(true),
-			Hostname:  openapi.PtrString(tt.hostname),
-			PeerInterface: openapi.ApplianceAllOfPeerInterface{
+			Hostname:  tt.hostname,
+			PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 				Hostname:  tt.adminHostName,
 				HttpsPort: openapi.PtrInt32(444),
 			},
