@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/token"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -26,7 +27,7 @@ type Factory struct {
 	Token       func(c *configuration.Config) (*token.Token, error)
 	Config      *configuration.Config
 	IOOutWriter io.Writer
-	Stdin       io.Reader
+	Stdin       io.ReadCloser
 	StdErr      io.Writer
 	SpinnerOut  io.Writer
 }
@@ -44,6 +45,10 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.SpinnerOut = os.Stdout
 
 	return f
+}
+
+func (f *Factory) CanPrompt() bool {
+	return cmdutil.IsTTYRead(f.Stdin) && cmdutil.IsTTY(f.StdErr)
 }
 
 func (f *Factory) SetSpinnerOutput(o io.Writer) {
