@@ -135,7 +135,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 					}
 					select {
 					case msg := <-barMessage:
-						body = fmt.Sprintf("%s %s", cond, msg)
+						body = fmt.Sprintf("%s: %s", cond, strings.ReplaceAll(msg, "_", " "))
 						// default refreshrate is 150ms, we will check
 						// the channel every 2/3 of that time to reduce duplicate
 					case <-time.After(100 * time.Millisecond):
