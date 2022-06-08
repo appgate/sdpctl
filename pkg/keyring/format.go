@@ -12,6 +12,7 @@ const (
 	password       = "password"
 	username       = "username"
 	bearer         = "bearer"
+	refreshToken   = "refreshToken"
 )
 
 func format(prefix, value string) string {
