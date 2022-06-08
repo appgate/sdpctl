@@ -128,6 +128,10 @@ func Signin(f *factory.Factory, remember bool) error {
 	case RadiusProvider:
 	case LocalProvider:
 		p = NewLocal(f, remember)
+	case OidcProvider:
+		oidc := NewOpenIDConnect(f, client)
+		defer oidc.Close()
+		p = oidc
 	default:
 		return fmt.Errorf("%s %s identity provider is not supported", selectedProvider.GetName(), selectedProvider.GetType())
 	}
