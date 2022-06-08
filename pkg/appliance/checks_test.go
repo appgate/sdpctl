@@ -181,7 +181,7 @@ func TestShowPeerInterfaceWarningMessage(t *testing.T) {
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
-						PeerInterface: openapi.ApplianceAllOfPeerInterface{
+						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 							HttpsPort: openapi.PtrInt32(443),
 						},
 					},

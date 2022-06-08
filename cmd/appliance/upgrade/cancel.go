@@ -103,7 +103,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 
 	noneIdleAppliances := make([]openapi.Appliance, 0)
 	for _, app := range appliances {
-		s, err := a.UpgradeStatus(ctx, app.Id)
+		s, err := a.UpgradeStatus(ctx, app.GetId())
 		if err != nil {
 			return err
 		}

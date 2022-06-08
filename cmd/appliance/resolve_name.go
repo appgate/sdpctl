@@ -96,10 +96,10 @@ func resolveNameRun(cmd *cobra.Command, args []string, opts *resolveNameOpts) er
 	}
 
 	ctx := context.Background()
-	body := openapi.InlineObject4{
+	body := openapi.InlineObject2{
 		ResourceName: openapi.PtrString(opts.resourceName),
 	}
-	result, response, err := client.AppliancesApi.AppliancesIdTestResolverNamePost(ctx, opts.applianceID).InlineObject4(body).Authorization(token).Execute()
+	result, response, err := client.AppliancesApi.AppliancesIdTestResolverNamePost(ctx, opts.applianceID).InlineObject2(body).Authorization(token).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
