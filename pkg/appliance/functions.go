@@ -464,23 +464,25 @@ var DefaultCommandFilter = map[string]map[string]string{
 }
 
 func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
+	result := make([]openapi.Appliance, len(appliances))
+	copy(result, appliances)
 	// apply normal filter
 	if len(filter["include"]) > 0 {
-		appliances = applyApplianceFilter(appliances, filter["include"])
+		result = applyApplianceFilter(result, filter["include"])
 	}
 
 	// apply exclusion filter
-	toExclude := applyApplianceFilter(appliances, filter["exclude"])
+	toExclude := applyApplianceFilter(result, filter["exclude"])
 	for _, exa := range toExclude {
 		eID := exa.GetId()
-		for i, a := range appliances {
+		for i, a := range result {
 			if eID == a.GetId() {
-				appliances = append(appliances[:i], appliances[i+1:]...)
+				result = append(result[:i], result[i+1:]...)
 			}
 		}
 	}
 
-	return appliances
+	return result
 }
 
 func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) []openapi.Appliance {
