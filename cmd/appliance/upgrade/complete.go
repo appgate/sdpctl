@@ -562,9 +562,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err != nil {
 					return err
 				}
-				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, controller, appliancepkg.StatusNotBusy, statusReport); err != nil {
-					return err
-				}
 				log.WithFields(f).Info("Disabled maintenance mode")
 			}
 			p.Wait()
