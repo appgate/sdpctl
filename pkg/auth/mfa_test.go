@@ -5,19 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestAuthProviderNames(t *testing.T) {
 	tests := []struct {
 		name      string
 		httpStubs []httpmock.Stub
-		want      []string
+		want      []openapi.InlineResponse200Data
 		wantErr   bool
 	}{
 		{
@@ -51,7 +51,19 @@ func TestAuthProviderNames(t *testing.T) {
 					},
 				},
 			},
-			want:    []string{"SAML Admin", "local"},
+			want: []openapi.InlineResponse200Data{
+				{
+					Name:                  openapi.PtrString("SAML Admin"),
+					RedirectUrl:           openapi.PtrString("https://login.microsoftonline.com/321312"),
+					Type:                  openapi.PtrString("Saml"),
+					CertificatePriorities: &[]map[string]interface{}{},
+				},
+				{
+					Name:                  openapi.PtrString("local"),
+					Type:                  openapi.PtrString("Credentials"),
+					CertificatePriorities: &[]map[string]interface{}{},
+				},
+			},
 			wantErr: false,
 		},
 	}
@@ -71,8 +83,8 @@ func TestAuthProviderNames(t *testing.T) {
 				t.Errorf("Auth.ProviderNames() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Auth.ProviderNames() = %v, want %v", got, tt.want)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("Auth.ProviderNames() = %v", cmp.Diff(got, tt.want))
 			}
 		})
 	}
@@ -384,7 +396,7 @@ func TestAuthInitializeOTP(t *testing.T) {
 			a := &Auth{
 				APIClient: registry.Client,
 			}
-			got, err := a.InitializeOTP(context.TODO(), "password", "token")
+			got, err := a.InitializeOTP(context.TODO(), openapi.PtrString("password"), "token")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Auth.InitializeOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return

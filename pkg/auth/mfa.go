@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sort"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
@@ -25,18 +26,18 @@ func NewAuth(APIClient *openapi.APIClient) *Auth {
 
 var ErrPreConditionFailed = errors.New("OTP required")
 
-func (a *Auth) ProviderNames(ctx context.Context) ([]string, error) {
-	result := make([]string, 0)
+// ProviderNames HTTP GET /identity-providers/names
+func (a *Auth) ProviderNames(ctx context.Context) ([]openapi.InlineResponse200Data, error) {
 	list, response, err := a.APIClient.LoginApi.IdentityProvidersNamesGet(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	for _, i := range list.GetData() {
-		result = append(result, i.GetName())
-	}
-	return result, nil
+	data := list.GetData()
+	sort.Slice(data, func(i, j int) bool { return data[i].GetName() < data[j].GetName() })
+	return data, nil
 }
 
+// Authentication HTTP POST /authentication
 func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*openapi.LoginResponse, *MinMax, error) {
 	c := a.APIClient
 	loginResponse, response, err := c.LoginApi.AuthenticationPost(ctx).LoginRequest(opts).Execute()
@@ -61,6 +62,7 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 	return &loginResponse, nil, nil
 }
 
+// Authorization HTTP GET /authorization
 func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginResponse, error) {
 	loginResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Authorization(token).Execute()
 	if err != nil {
@@ -72,8 +74,9 @@ func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginR
 	return &loginResponse, nil
 }
 
-func (a *Auth) InitializeOTP(ctx context.Context, password, token string) (openapi.InlineResponse2001, error) {
-	o := openapi.InlineObject{UserPassword: openapi.PtrString(password)}
+// InitializeOTP HTTP POST /authentication/otp/initialize
+func (a *Auth) InitializeOTP(ctx context.Context, password *string, token string) (openapi.InlineResponse2001, error) {
+	o := openapi.InlineObject{UserPassword: password}
 	r, response, err := a.APIClient.LoginApi.AuthenticationOtpInitializePost(ctx).Authorization(token).InlineObject(o).Execute()
 	if err != nil {
 		return r, api.HTTPErrorResponse(response, err)
@@ -83,6 +86,7 @@ func (a *Auth) InitializeOTP(ctx context.Context, password, token string) (opena
 
 var ErrInvalidOneTimePassword = errors.New("Invalid one-time password.")
 
+// PushOTP HTTP POST /authentication/otp
 func (a *Auth) PushOTP(ctx context.Context, answer, token string) (*openapi.LoginResponse, error) {
 	o := openapi.InlineObject1{
 		Otp: answer,
