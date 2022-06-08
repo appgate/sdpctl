@@ -129,7 +129,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 						if ctx.Err() == nil {
 							doneText = cond
 						} else {
-							doneText = fmt.Sprintf("time out on %s %s", cond, ctx.Err())
+							doneText = fmt.Sprintf("time out on %s: %s", cond, ctx.Err())
 						}
 						return doneText
 					}
