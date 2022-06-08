@@ -30,11 +30,32 @@ type Authenticate interface {
 	signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error)
 }
 
+// mandatoryEnvVariables if no TTY is enable
+var mandatoryEnvVariables = []string{
+	"SDPCTL_USERNAME",
+	"SDPCTL_PASSWORD",
+}
+
+func hasRequiredEnv() bool {
+	for _, value := range mandatoryEnvVariables {
+		if _, ok := os.LookupEnv(value); !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // Signin is an interactive sign in function, that generates the config file
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
 func Signin(f *factory.Factory, remember bool) error {
+	if !f.CanPrompt() {
+		if !hasRequiredEnv() {
+			return errors.New("no TTY present, and missing required environment variables to authenticate")
+		}
+	}
+
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
