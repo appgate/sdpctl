@@ -424,7 +424,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				go func() {
 					ctx, cancel := context.WithCancel(context.Background())
 					defer cancel()
-					go a.UpgradeStatusWorker.Watch(ctx, primaryP, controller, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
+					a.UpgradeStatusWorker.Watch(ctx, primaryP, controller, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
 				}()
 			}
 
@@ -470,7 +470,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					go func() {
 						ctx, cancel := context.WithCancel(context.Background())
 						defer cancel()
-						go a.UpgradeStatusWorker.Watch(ctx, p, i, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
+						a.UpgradeStatusWorker.Watch(ctx, p, i, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
 					}()
 				}
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
@@ -552,7 +552,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				go func() {
 					ctx, cancel := context.WithCancel(context.Background())
 					defer cancel()
-					go a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
+					a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
 				}()
 				defer p.Wait()
 			}
