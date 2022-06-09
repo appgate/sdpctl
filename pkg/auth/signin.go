@@ -123,7 +123,6 @@ func Signin(f *factory.Factory) error {
 		return fmt.Errorf("invalid provider %s - %s", selectedProvider.GetName(), loginOpts.ProviderName)
 	}
 	cfg.Provider = loginOpts.ProviderName
-	var token *signInResponse
 	var p Authenticate
 	switch selectedProvider.GetType() {
 	case RadiusProvider:
@@ -136,11 +135,11 @@ func Signin(f *factory.Factory) error {
 	default:
 		return fmt.Errorf("%s %s identity provider is not supported", selectedProvider.GetName(), selectedProvider.GetType())
 	}
-	token, err = p.signin(ctxWithAccept, loginOpts, selectedProvider)
+	response, err := p.signin(ctxWithAccept, loginOpts, selectedProvider)
 	if err != nil {
 		return err
 	}
-	newToken, err := authAndOTP(ctxWithAccept, authenticator, token.LoginOpts.Password, token.Token)
+	newToken, err := authAndOTP(ctxWithAccept, authenticator, response.LoginOpts.Password, response.Token)
 	if err != nil {
 		return err
 	}
@@ -152,7 +151,7 @@ func Signin(f *factory.Factory) error {
 	cfg.BearerToken = authorizationToken.GetToken()
 	// use the original auth request expires_at value instead of the value from authorization since they can be different
 	// depending on the provider type.
-	cfg.ExpiresAt = token.Expires.String()
+	cfg.ExpiresAt = response.Expires.String()
 	host, err := cfg.GetHost()
 	if err != nil {
 		return err
@@ -161,6 +160,12 @@ func Signin(f *factory.Factory) error {
 		return fmt.Errorf("could not store token in keychain %w", err)
 	}
 
+	// store username and password if any in keyring, in practice only applicable on local provider
+	if len(response.LoginOpts.GetUsername()) > 1 && len(response.LoginOpts.GetPassword()) > 1 {
+		if err := cfg.StoreCredentials(response.LoginOpts.GetUsername(), response.LoginOpts.GetPassword()); err != nil {
+			return err
+		}
+	}
 	a, err := f.Appliance(cfg)
 	if err != nil {
 		return err
