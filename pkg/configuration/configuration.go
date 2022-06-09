@@ -22,7 +22,7 @@ type Config struct {
 	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
 	ExpiresAt                string `mapstructure:"expires_at"`
 	DeviceID                 string `mapstructure:"device_id"`
-	PemFilePath              string `mapstructure:"pem_filepath"`
+	PemFilePath              string `mapstructure:"pem_filepath,omitempty"`
 	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
 	Timeout                  int    // HTTP timeout, not supported in the config file.
 }
