@@ -185,6 +185,8 @@ func (o OpenIDConnect) refreshToken(clientID, tokenURL, refreshToken string) (*o
 	return &data, nil
 }
 
+var ErrPlatformNotSupported = errors.New("Provider with OpenID Connect is not supported on your system")
+
 func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
 	// Due to macOS being un-tested for oidc provider, we will disable support for oidc provider.
 	// The oidc implementation won't work for macOS until we have resolved the issue
@@ -276,7 +278,7 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 	}()
 	browser.Stderr = io.Discard
 	if err := browser.OpenURL(oidcRedirectAddress); err != nil {
-		return nil, err
+		return nil, ErrPlatformNotSupported
 	}
 	select {
 	case err := <-o.errors:
