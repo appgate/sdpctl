@@ -70,3 +70,11 @@ func GetUsername(prefix string) (string, error) {
 	}
 	return getSecret(format(prefix, username))
 }
+
+func GetRefreshToken(prefix string) (string, error) {
+	return "", errors.New("macOS is not supported")
+}
+
+func SetRefreshToken(prefix, secret string) error {
+	return errors.New("macOS is not supported")
+}
