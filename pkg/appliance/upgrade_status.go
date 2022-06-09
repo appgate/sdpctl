@@ -107,6 +107,7 @@ func (u *UpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance open
 // Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
 func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
 	name := appliance.GetName()
+	log.WithField("appliance", name).Debug("watching status on appliance")
 	// we will lock each time we add a new bar to avoid duplicates
 	u.mu.Lock()
 	barMessage := make(chan string, 1)
@@ -144,7 +145,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 						}
 					}
 					return body
-				}, decor.WCSyncSpaceR)
+				})
 			}(name),
 		),
 		mpb.BarFillerMiddleware(
@@ -167,6 +168,10 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 	// each time we update it, we will lock to avoid duplicate
 	for !bar.Completed() {
 		v, ok := <-current
+		log.WithFields(log.Fields{
+			"appliance": name,
+			"status":    v,
+		}).Debug("recieved status")
 		if !ok {
 			bar.Abort(true)
 			break
