@@ -22,6 +22,10 @@ type ApplianceStatus struct {
 }
 
 func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+	logEntry := log.WithFields(log.Fields{
+		"appliance": appliance.GetName(),
+	})
+	logEntry.WithField("want", want).Info("polling for appliance status")
 	return backoff.Retry(func() error {
 		stats, _, err := u.Appliance.Stats(ctx)
 		if err != nil {
@@ -30,6 +34,9 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 		for _, stat := range stats.GetData() {
 			if stat.GetId() == appliance.GetId() {
 				current := stat.GetStatus()
+				logEntry.WithFields(log.Fields{
+					"current": current,
+				}).Debug("recieved appliance status")
 				if status != nil {
 					status <- current
 				}
@@ -38,6 +45,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 				}
 			}
 		}
+		logEntry.Info("reached wanted appliance status")
 		return nil
 
 	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
@@ -53,6 +61,10 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 		Stop:                backoff.Stop,
 		Clock:               backoff.SystemClock,
 	}, ctx)
+	logEntry := log.WithFields(log.Fields{
+		"appliance": appliance.GetName(),
+	})
+	logEntry.WithField("want", want).Info("polling for appliance state")
 	// initial sleep period
 	time.Sleep(2 * time.Second)
 	return backoff.Retry(func() error {
@@ -67,27 +79,18 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 			if stat.GetId() == appliance.GetId() {
 				state := stat.GetState()
 				fields := log.Fields{
-					"status":        stat.GetStatus(),
-					"current_state": state,
-					"appliance":     stat.GetName(),
+					"current": state,
 				}
-				log.WithFields(fields).Infof(
-					"Waiting for state %q",
-					want,
-				)
+				logEntry.WithFields(fields).Debug("recieved appliance state")
 				if status != nil {
 					status <- state
 				}
 				if !util.InSlice(state, want) {
-					log.WithFields(fields).Errorf("never reached desired state")
 					return fmt.Errorf("never reached desired state %s", want)
 				}
 			}
 		}
-		log.WithFields(log.Fields{
-			"appliance":     appliance.GetName(),
-			"current_state": want,
-		}).Info("reached desired state")
+		logEntry.Info("reached wanted appliance state")
 		return nil
 	}, b)
 }

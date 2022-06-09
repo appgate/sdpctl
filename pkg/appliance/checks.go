@@ -218,7 +218,6 @@ func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[st
 	versionList := []string{}
 	for _, stat := range stats {
 		statVersionString := stat.GetVersion()
-		log.WithField("stat_version", statVersionString).Debug("parsing version string")
 		v, err := ParseVersionString(statVersionString)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{

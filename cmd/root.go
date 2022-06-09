@@ -215,6 +215,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		case "debug":
 			log.SetLevel(log.DebugLevel)
 		case "trace":
+			log.SetReportCaller(true)
 			log.SetLevel(log.TraceLevel)
 		default:
 			log.SetLevel(log.ErrorLevel)

@@ -474,9 +474,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err != nil {
 				log.WithError(err).WithField("applianceID", appliance.GetId()).Debug("Failed to determine current upgrade status")
 			}
-			preparedVersion, err := appliancepkg.ParseVersionString(status.GetDetails())
-			if err != nil {
-				log.WithError(err).Warn("Failed to determine currently prepared version")
+			details := status.GetDetails()
+			var preparedVersion *version.Version
+			if len(details) > 0 {
+				preparedVersion, err = appliancepkg.ParseVersionString(details)
+				if err != nil {
+					log.WithError(err).Warn("Failed to determine currently prepared version")
+				}
 			}
 			uploadVersion, _ := appliancepkg.ParseVersionString(opts.image)
 

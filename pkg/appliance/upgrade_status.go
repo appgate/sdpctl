@@ -43,7 +43,8 @@ type UpgradeStatus struct {
 
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, currentStatus chan<- string) backoff.Operation {
 	name := appliance.GetName()
-	fields := log.Fields{"appliance": name}
+	logEntry := log.WithField("appliance", name)
+	logEntry.WithField("want", desiredStatuses).Info("polling for upgrade status")
 	hasRebooted := false
 	isInitialState := false
 	return func() error {
@@ -61,12 +62,14 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 					currentStatus <- "installing"
 				}
 			}
+			logEntry.WithError(err).Debug("appliance unreachable")
 			return err
 		}
 		var s string
 		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
+			logEntry.WithField("current", s).Debug("recieved upgrade status")
 			if !isInitialState {
 				isInitialState = true
 				return errors.New("initial state throwaway")
@@ -78,10 +81,8 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
 		}
-		fields["image"] = details
-		fields["status"] = s
-		log.WithFields(fields).Infof("waiting for '%s' status", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
+		if util.InSlice(s, desiredStatuses) {
+			logEntry.Info("reached wanted upgrade status")
 			return nil
 		}
 		return fmt.Errorf(
@@ -107,7 +108,8 @@ func (u *UpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance open
 // Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
 func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
 	name := appliance.GetName()
-	log.WithField("appliance", name).Debug("watching status on appliance")
+	logEntry := log.WithField("appliance", name)
+	logEntry.Info("watching status on appliance")
 	// we will lock each time we add a new bar to avoid duplicates
 	u.mu.Lock()
 	barMessage := make(chan string, 1)
@@ -168,10 +170,6 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 	// each time we update it, we will lock to avoid duplicate
 	for !bar.Completed() {
 		v, ok := <-current
-		log.WithFields(log.Fields{
-			"appliance": name,
-			"status":    v,
-		}).Debug("recieved status")
 		if !ok {
 			bar.Abort(true)
 			break

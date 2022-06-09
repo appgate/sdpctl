@@ -428,11 +428,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				}()
 			}
 
-			log.WithField("appliance", controller.GetName()).Info("Completing upgrade and switching partition")
+			logEntry := log.WithField("appliance", controller.GetName())
+			logEntry.Info("completing upgrade and switching partition")
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
 			}
-			log.WithField("appliance", controller.GetName()).Infof("Waiting for primary controller to reach state %s", appliancepkg.StatReady)
+			logEntry.WithField("want", appliancepkg.StatReady).Info("waiting for primary controller to reach a wanted state")
 			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 				return err
 			}
@@ -440,7 +441,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 
-			log.WithField("appliance", controller.GetName()).Info("Primary controller updated")
+			logEntry.Info("primary controller updated")
 			return nil
 		}
 		if err := upgradeReadyPrimary(ctx, *primaryController); err != nil {
@@ -462,7 +463,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			g.Go(func() error {
 				ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 				defer cancel()
-				log.WithField("appliance", i.GetName()).Info("checking if ready")
+				logEntry := log.WithField("appliance", i.GetName())
+				logEntry.Info("checking if ready")
 				var statusReport chan string
 				if !ciMode {
 					statusReport = make(chan string)
@@ -476,7 +478,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
 				}
-				log.WithField("appliance", i.GetName()).Info("Install the downloaded to Upgrade image to the other partition")
+				logEntry.Info("install the downloaded upgrade image to the other partition")
 				if !SwitchPartition {
 					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 						return err
