@@ -10,6 +10,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -235,6 +236,9 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string, toke
 			for i := 0; i < 3; i++ {
 				newToken, err := testOTP()
 				if err != nil {
+					if errors.Is(err, cmdutil.ErrExecutionCanceledByUser) {
+						return nil, err
+					}
 					if errors.Is(err, ErrInvalidOneTimePassword) {
 						fmt.Fprintf(os.Stderr, "[error] %s\n", err)
 						continue
