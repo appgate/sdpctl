@@ -213,7 +213,10 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 		return nil, errors.New("macOS is not supported with oidc")
 	}
 	authenticator := NewAuth(o.Client)
-	prefix := provider.GetTokenUrl()
+	prefix, err := o.Factory.Config.GetHost()
+	if err != nil {
+		return nil, err
+	}
 	if k, err := keyring.GetRefreshToken(prefix); err == nil {
 		t, err := o.refreshToken(provider.GetClientId(), provider.GetTokenUrl(), k)
 		if err != nil {
