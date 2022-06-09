@@ -46,14 +46,21 @@ func hasRequiredEnv() bool {
 	return true
 }
 
-// Signin is an interactive sign in function, that generates the config file
-// Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
-// and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
-// Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
+var ErrSignInNotSupported = errors.New("no TTY present, and missing required environment variables to authenticate")
+
+// Signin support interactive signin if a valid TTY is present, otherwise it requires environment variables to authenticate,
+// this is only supported by 'local' auth provider
+// If OTP is required, a prompt will appear and await user input
+// Signin is done in several steps
+// - Compute correct peer api version to use, based on login response body, which gives us a range of supported peer api to use
+// - If there are more then 1 auth provider supported, prompt user to select (requires TTY | error shown if no TTY)
+// - Store bearer token in os keyring, (refresh token if the provider supports it too)
+// - Store primary controller version in config file
+// - Save config file to $SDPCTL_CONFIG_DIR
 func Signin(f *factory.Factory) error {
 	if !f.CanPrompt() {
 		if !hasRequiredEnv() {
-			return errors.New("no TTY present, and missing required environment variables to authenticate")
+			return ErrSignInNotSupported
 		}
 	}
 
@@ -156,8 +163,12 @@ func Signin(f *factory.Factory) error {
 	if err != nil {
 		return err
 	}
+
+	// if the bearer token can't be saved to the keychain, it will be exported as env variable
+	// and saved in the config file as fallback, this should only happend if the system does not
+	// support the keychain integration.
 	if err := keyring.SetBearer(host, cfg.BearerToken); err != nil {
-		return fmt.Errorf("could not store token in keychain %w", err)
+		return err
 	}
 
 	// store username and password if any in keyring, in practice only applicable on local provider
@@ -166,6 +177,7 @@ func Signin(f *factory.Factory) error {
 			return err
 		}
 	}
+
 	a, err := f.Appliance(cfg)
 	if err != nil {
 		return err
@@ -191,8 +203,9 @@ func Signin(f *factory.Factory) error {
 	viper.Set("url", cfg.URL)
 	viper.Set("primary_controller_version", v.String())
 
+	// saving the config file is not a fatal error, we will only show a error message
 	if err := viper.WriteConfig(); err != nil {
-		return err
+		fmt.Fprintf(f.StdErr, "[error] %s\n", err)
 	}
 
 	return nil
