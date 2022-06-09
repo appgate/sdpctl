@@ -240,7 +240,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
-			if err := auth.Signin(f, false); err != nil {
+			if err := auth.Signin(f); err != nil {
 				var result error
 				result = multierror.Append(result, err)
 				return result

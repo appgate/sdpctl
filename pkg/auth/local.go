@@ -12,26 +12,17 @@ import (
 )
 
 type Local struct {
-	Factory  *factory.Factory
-	Remember bool
+	Factory *factory.Factory
 }
 
-func NewLocal(f *factory.Factory, remember bool) *Local {
+func NewLocal(f *factory.Factory) *Local {
 	return &Local{
-		Factory:  f,
-		Remember: remember,
+		Factory: f,
 	}
 }
 
 func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
 	cfg := l.Factory.Config
-
-	// Clear old credentials if remember me flag is provided
-	if l.Remember {
-		if err := cfg.ClearCredentials(); err != nil {
-			return nil, err
-		}
-	}
 
 	client, err := l.Factory.APIClient(cfg)
 	if err != nil {
@@ -60,10 +51,8 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 		}
 	}
 
-	if l.Remember {
-		if err := rememberCredentials(cfg, credentials); err != nil {
-			return nil, fmt.Errorf("Failed to store credentials: %w", err)
-		}
+	if err := rememberCredentials(cfg, credentials); err != nil {
+		return nil, fmt.Errorf("Failed to store credentials: %w", err)
 	}
 	loginOpts.Username = openapi.PtrString(credentials.Username)
 	loginOpts.Password = openapi.PtrString(credentials.Password)

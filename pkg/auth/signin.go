@@ -50,7 +50,7 @@ func hasRequiredEnv() bool {
 // Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
 // and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
 // Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Signin(f *factory.Factory, remember bool) error {
+func Signin(f *factory.Factory) error {
 	if !f.CanPrompt() {
 		if !hasRequiredEnv() {
 			return errors.New("no TTY present, and missing required environment variables to authenticate")
@@ -68,7 +68,7 @@ func Signin(f *factory.Factory, remember bool) error {
 
 	// if we already have a valid bearer token, we will continue without
 	// without any additional checks.
-	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 && !remember {
+	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 {
 		return nil
 	}
 	authenticator := NewAuth(client)
@@ -128,7 +128,7 @@ func Signin(f *factory.Factory, remember bool) error {
 	switch selectedProvider.GetType() {
 	case RadiusProvider:
 	case LocalProvider:
-		p = NewLocal(f, remember)
+		p = NewLocal(f)
 	case OidcProvider:
 		oidc := NewOpenIDConnect(f, client)
 		defer oidc.Close()
@@ -161,10 +161,6 @@ func Signin(f *factory.Factory, remember bool) error {
 		return fmt.Errorf("could not store token in keychain %w", err)
 	}
 
-	viper.Set("provider", selectedProvider.GetName())
-	viper.Set("expires_at", cfg.ExpiresAt)
-	viper.Set("url", cfg.URL)
-
 	a, err := f.Appliance(cfg)
 	if err != nil {
 		return err
@@ -185,11 +181,13 @@ func Signin(f *factory.Factory, remember bool) error {
 	if err != nil {
 		return err
 	}
+	viper.Set("provider", selectedProvider.GetName())
+	viper.Set("expires_at", cfg.ExpiresAt)
+	viper.Set("url", cfg.URL)
 	viper.Set("primary_controller_version", v.String())
-	if remember {
-		if err := viper.WriteConfig(); err != nil {
-			return err
-		}
+
+	if err := viper.WriteConfig(); err != nil {
+		return err
 	}
 
 	return nil
