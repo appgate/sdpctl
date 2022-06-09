@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -272,7 +271,7 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 	go func() {
 		if err := o.httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				fmt.Fprintf(os.Stderr, "[error] %s\n", err)
+				fmt.Fprintf(o.Factory.StdErr, "[error] %s\n", err)
 			}
 		}
 	}()
