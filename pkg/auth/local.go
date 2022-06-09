@@ -2,11 +2,9 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
-	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 )
@@ -51,9 +49,6 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 		}
 	}
 
-	if err := rememberCredentials(cfg, credentials); err != nil {
-		return nil, fmt.Errorf("Failed to store credentials: %w", err)
-	}
 	loginOpts.Username = openapi.PtrString(credentials.Username)
 	loginOpts.Password = openapi.PtrString(credentials.Password)
 
@@ -67,42 +62,4 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 		LoginOpts: &loginOpts,
 	}
 	return response, nil
-}
-
-func rememberCredentials(cfg *configuration.Config, credentials *configuration.Credentials) error {
-	q := []*survey.Question{
-		{
-			Name: "remember",
-			Prompt: &survey.Select{
-				Message: "What credentials should be saved?",
-				Options: []string{"both", "only username", "only password"},
-				Default: "both",
-			},
-		},
-	}
-
-	answers := struct {
-		Remember string `survey:"remember"`
-	}{}
-
-	if err := survey.Ask(q, &answers); err != nil {
-		return err
-	}
-
-	credentialsCopy := &configuration.Credentials{}
-	switch answers.Remember {
-	case "only username":
-		credentialsCopy.Username = credentials.Username
-	case "only password":
-		credentialsCopy.Password = credentials.Password
-	default:
-		credentialsCopy.Username = credentials.Username
-		credentialsCopy.Password = credentials.Password
-	}
-
-	if err := cfg.StoreCredentials(credentialsCopy); err != nil {
-		return err
-	}
-
-	return nil
 }
