@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	expect "github.com/Netflix/go-expect"
@@ -122,6 +124,26 @@ var (
 			}
 		}}
 )
+
+func TestSignInNoPromptOrEnv(t *testing.T) {
+	f := &factory.Factory{
+		Config: &configuration.Config{
+			Debug:                    false,
+			URL:                      "http://localhost",
+			PrimaryControllerVersion: "5.3.4-24950",
+		},
+		IOOutWriter: os.Stdout,
+		Stdin:       os.Stdin,
+		StdErr:      os.Stderr,
+	}
+	err := Signin(f)
+	if err == nil {
+		t.Fatal("Expected err ErrSignInNotSupported")
+	}
+	if !errors.Is(ErrSignInNotSupported, err) {
+		t.Errorf("expected %s, got %s", ErrSignInNotSupported, err)
+	}
+}
 
 func TestSignin(t *testing.T) {
 
@@ -284,7 +306,6 @@ func TestSignin(t *testing.T) {
 			for k, v := range tt.environmentVariables {
 				t.Setenv(k, v)
 			}
-
 			defer registry.Teardown()
 			registry.Serve()
 			pty, tty, err := pseudotty.Open()
@@ -332,8 +353,9 @@ func TestSignin(t *testing.T) {
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
+				tt.askStubs = nil
 			}
-			if err := Signin(f, false); (err != nil) != tt.wantErr {
+			if err := Signin(f); (err != nil) != tt.wantErr {
 				t.Errorf("Signin() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err := c.Tty().Close(); err != nil {
