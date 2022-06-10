@@ -21,3 +21,10 @@ func IsTTY(out io.Writer) bool {
 	}
 	return false
 }
+
+func IsTTYRead(out io.ReadCloser) bool {
+	if stdout, ok := out.(*os.File); ok {
+		return isTerminal(stdout)
+	}
+	return false
+}

@@ -125,8 +125,7 @@ var (
 func TestSignin(t *testing.T) {
 	keyring.MockInit()
 	type args struct {
-		saveConfig    bool
-		noInteractive bool
+		saveConfig bool
 	}
 	tests := []struct {
 		name                 string
@@ -282,8 +281,7 @@ func TestSignin(t *testing.T) {
 		{
 			name: "no auth no-interactive",
 			args: args{
-				saveConfig:    false,
-				noInteractive: true,
+				saveConfig: false,
 			},
 			wantErr: true,
 			httpStubs: []httpmock.Stub{
@@ -337,7 +335,7 @@ func TestSignin(t *testing.T) {
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
 			}
-			if err := Signin(f, tt.args.saveConfig, tt.args.noInteractive); (err != nil) != tt.wantErr {
+			if err := Signin(f, tt.args.saveConfig); (err != nil) != tt.wantErr {
 				t.Errorf("Signin() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
