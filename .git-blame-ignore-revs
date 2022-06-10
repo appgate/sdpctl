@@ -1,2 +1,6 @@
 # Update sdp-api-client-go to v17 from v16
 6f9238992574095129634a587464c2a9bf329199
+# The massive rename commit
+4089e935928aa61025ab2c11abb14609152a0717
+# Upgrade API to v17
+ac6ba79f37e7aae839cad10036cb50b07f682c4b
