@@ -37,6 +37,10 @@ p {
   padding: 24px;
   margin: 28px;
 }
+img {
+  height: auto;
+  max-width: 100%;
+}
 </style>
 <body>
   <div class="box">
