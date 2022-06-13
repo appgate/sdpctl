@@ -97,27 +97,27 @@ func statsActiveFunction(s openapi.StatsAppliancesListAllOfData) string {
 	functions := make([]string, 0)
 	if v, ok := s.GetLogServerOk(); ok {
 		if v.GetStatus() != na {
-			functions = append(functions, "log server")
+			functions = append(functions, appliancepkg.FunctionLogServer)
 		}
 	}
 	if v, ok := s.GetLogForwarderOk(); ok {
 		if v.GetStatus() != na {
-			functions = append(functions, "log forwader")
+			functions = append(functions, appliancepkg.FunctionLogForwarder)
 		}
 	}
 	if v, ok := s.GetControllerOk(); ok {
 		if v.GetStatus() != na {
-			functions = append(functions, "controller")
+			functions = append(functions, appliancepkg.FunctionController)
 		}
 	}
 	if v, ok := s.GetConnectorOk(); ok {
 		if v.GetStatus() != na {
-			functions = append(functions, "Connector")
+			functions = append(functions, appliancepkg.FunctionConnector)
 		}
 	}
 	if v, ok := s.GetGatewayOk(); ok {
 		if v.GetStatus() != na {
-			functions = append(functions, "gateway")
+			functions = append(functions, appliancepkg.FunctionGateway)
 		}
 	}
 	return strings.Join(functions, ", ")
