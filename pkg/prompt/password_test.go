@@ -30,7 +30,7 @@ func TestPasswordConfirmation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stubber, teardown := InitAskStubber()
+			stubber, teardown := InitAskStubber(t)
 			defer teardown()
 			tt.askStubs(stubber)
 			got, err := PasswordConfirmation("")

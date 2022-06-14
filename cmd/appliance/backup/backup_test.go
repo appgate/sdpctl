@@ -17,7 +17,7 @@ import (
 func TestBackupCmd(t *testing.T) {
 	applianceUUID := "4c07bc67-57ea-42dd-b702-c2d6c45419fc"
 	backupUUID := "fd5ea380-496b-41eb-8bc8-2c84eb36b605"
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 
 	// Appliance list route
 	registry.Register(
@@ -95,18 +95,7 @@ func TestBackupCmd(t *testing.T) {
 }
 
 func TestBackupCmdDisabledAPI(t *testing.T) {
-	registry := httpmock.NewRegistry()
-
-	// Appliance list route
-	registry.Register(
-		"/appliances",
-		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
-	)
-	// Appliance stats route
-	registry.Register(
-		"/stats/appliances",
-		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
-	)
+	registry := httpmock.NewRegistry(t)
 	// Backup state
 	registry.Register(
 		"/global-settings",
@@ -153,18 +142,7 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 }
 
 func TestBackupCmdNoState(t *testing.T) {
-	registry := httpmock.NewRegistry()
-
-	// Appliance list route
-	registry.Register(
-		"/appliances",
-		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
-	)
-	// Appliance stats route
-	registry.Register(
-		"/stats/appliances",
-		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
-	)
+	registry := httpmock.NewRegistry(t)
 	defer registry.Teardown()
 	registry.Serve()
 

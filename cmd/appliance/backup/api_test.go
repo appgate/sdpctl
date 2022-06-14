@@ -17,7 +17,7 @@ import (
 )
 
 func TestBackupAPICommandAlreadyEnabled(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/global-settings",
 		func(rw http.ResponseWriter, r *http.Request) {
@@ -94,7 +94,7 @@ func TestBackupAPICommandAlreadyEnabled(t *testing.T) {
 }
 
 func TestBackupAPICommand(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/global-settings",
 		func(rw http.ResponseWriter, r *http.Request) {
@@ -154,7 +154,7 @@ func TestBackupAPICommand(t *testing.T) {
 
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
-	stubber, teardown := prompt.InitAskStubber()
+	stubber, teardown := prompt.InitAskStubber(t)
 	defer teardown()
 	func(prompt *prompt.AskStubber) {
 		prompt.StubOne("newBackupPassphrase") // password

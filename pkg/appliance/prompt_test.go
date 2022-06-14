@@ -30,14 +30,14 @@ func TestPromptSelect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.TODO()
-			registry := httpmock.NewRegistry()
+			registry := httpmock.NewRegistry(t)
 			a := &Appliance{
 				APIClient: registry.Client,
 				Token:     "",
 			}
 			registry.Register("/appliances", httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"))
 			registry.Register("/stats/appliances", httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"))
-			stubber, teardown := prompt.InitAskStubber()
+			stubber, teardown := prompt.InitAskStubber(t)
 			func(s *prompt.AskStubber) {
 				s.StubOne(1)
 			}(stubber)

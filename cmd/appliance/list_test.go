@@ -16,7 +16,7 @@ import (
 )
 
 func TestApplianceListCommandJSON(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
@@ -67,7 +67,7 @@ func TestApplianceListCommandJSON(t *testing.T) {
 	}
 }
 func TestApplianceListCommandTable(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
@@ -126,7 +126,7 @@ gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1     ee639d70-e075-4f01-596b-9
 }
 
 func TestApplianceFiltering(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),

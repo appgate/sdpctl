@@ -15,7 +15,7 @@ import (
 )
 
 func TestMetricCommand(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/metrics",
 		func(rw http.ResponseWriter, r *http.Request) {
@@ -83,7 +83,7 @@ audit_event{collective_id="8dda5969-e9de-4d0f-b4e8-38954c7c0507", appliance_id="
 }
 
 func TestMetricCommandSpecificMetric(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/metrics/vpn_total_sessions",
 		func(rw http.ResponseWriter, r *http.Request) {

@@ -16,7 +16,7 @@ import (
 )
 
 func TestApplianceStatsCommandJSON(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/stats/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
@@ -68,7 +68,7 @@ func TestApplianceStatsCommandJSON(t *testing.T) {
 }
 
 func TestApplianceStatsCommandTable(t *testing.T) {
-	registry := httpmock.NewRegistry()
+	registry := httpmock.NewRegistry(t)
 	registry.Register(
 		"/stats/appliances",
 		httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
