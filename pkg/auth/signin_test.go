@@ -1,19 +1,20 @@
 package auth
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"testing"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
+
 	"github.com/appgate/sdpctl/pkg/prompt"
+	pseudotty "github.com/creack/pty"
+	"github.com/hinshun/vt10x"
 	"github.com/zalando/go-keyring"
 )
 
@@ -123,13 +124,9 @@ var (
 )
 
 func TestSignin(t *testing.T) {
-	keyring.MockInit()
-	type args struct {
-		saveConfig bool
-	}
+
 	tests := []struct {
 		name                 string
-		args                 args
 		askStubs             func(*prompt.AskStubber)
 		environmentVariables map[string]string
 		httpStubs            []httpmock.Stub
@@ -137,9 +134,6 @@ func TestSignin(t *testing.T) {
 	}{
 		{
 			name: "signin with environment variables",
-			args: args{
-				saveConfig: false,
-			},
 			environmentVariables: map[string]string{
 				"SDPCTL_USERNAME": "bob",
 				"SDPCTL_PASSWORD": "alice",
@@ -160,9 +154,6 @@ func TestSignin(t *testing.T) {
 		},
 		{
 			name: "signin prompt username and password",
-			args: args{
-				saveConfig: false,
-			},
 
 			httpStubs: []httpmock.Stub{
 				authenticationResponse,
@@ -178,16 +169,12 @@ func TestSignin(t *testing.T) {
 				},
 			},
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne("bob")   // username
-				s.StubOne("alice") // password
+				s.StubPrompt("Username:").AnswerWith("bob")
+				s.StubPrompt("Password:").AnswerWith("alice")
 			},
 		},
 		{
 			name: "signin prompt username and password and MFA token",
-			args: args{
-				saveConfig: false,
-			},
-
 			httpStubs: []httpmock.Stub{
 				authenticationResponse,
 				identityProviderNames,
@@ -199,34 +186,34 @@ func TestSignin(t *testing.T) {
 							if v, ok := r.Header["Authorization"]; ok && v[0] == "Bearer newToken" {
 								rw.WriteHeader(http.StatusOK)
 								fmt.Fprint(rw, string(`{
-                                    "user": {
-                                        "name": "admin",
-                                        "needTwoFactorAuth": false,
-                                        "canAccessAuditLogs": true,
-                                        "privileges": [
-                                            {
-                                                "type": "All",
-                                                "target": "All",
-                                                "scope": {
-                                                    "all": true,
-                                                    "ids": [],
-                                                    "tags": []
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    "token": "authorizedNewToken",
-                                    "expires": "2022-02-01T15:07:04.451882Z"
-                                }`))
+		                            "user": {
+		                                "name": "admin",
+		                                "needTwoFactorAuth": false,
+		                                "canAccessAuditLogs": true,
+		                                "privileges": [
+		                                    {
+		                                        "type": "All",
+		                                        "target": "All",
+		                                        "scope": {
+		                                            "all": true,
+		                                            "ids": [],
+		                                            "tags": []
+		                                        }
+		                                    }
+		                                ]
+		                            },
+		                            "token": "authorizedNewToken",
+		                            "expires": "2022-02-01T15:07:04.451882Z"
+		                        }`))
 								return
 							}
 							rw.WriteHeader(http.StatusPreconditionFailed)
 							fmt.Fprint(rw, string(`{
-                                "id": "precondition failed",
-                                "message": "Administrative authorization requires two-factor authentication.",
-                                "otpRequired": true,
-                                "username": "admin"
-                            }`))
+		                        "id": "precondition failed",
+		                        "message": "Administrative authorization requires two-factor authentication.",
+		                        "otpRequired": true,
+		                        "username": "admin"
+		                    }`))
 							return
 						}
 					},
@@ -238,9 +225,9 @@ func TestSignin(t *testing.T) {
 							rw.Header().Set("Content-Type", "application/json")
 							rw.WriteHeader(http.StatusOK)
 							fmt.Fprint(rw, string(`{
-                                "inputType": "Numeric",
-                                "type": "AlreadySeeded"
-                            }`))
+		                        "inputType": "Numeric",
+		                        "type": "AlreadySeeded"
+		                    }`))
 						}
 					},
 				},
@@ -251,15 +238,15 @@ func TestSignin(t *testing.T) {
 							rw.Header().Set("Content-Type", "application/json")
 							rw.WriteHeader(http.StatusOK)
 							fmt.Fprint(rw, string(`{
-                                "user": {
-                                    "name": "admin",
-                                    "needTwoFactorAuth": false,
-                                    "canAccessAuditLogs": false,
-                                    "privileges": []
-                                },
-                                "token": "newToken",
-                                "expires": "2022-02-01T15:07:04.451882Z"
-                            }`))
+		                        "user": {
+		                            "name": "admin",
+		                            "needTwoFactorAuth": false,
+		                            "canAccessAuditLogs": false,
+		                            "privileges": []
+		                        },
+		                        "token": "newToken",
+		                        "expires": "2022-02-01T15:07:04.451882Z"
+		                    }`))
 						}
 					},
 				},
@@ -273,16 +260,13 @@ func TestSignin(t *testing.T) {
 				},
 			},
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne("bob")    // username
-				s.StubOne("alice")  // password
-				s.StubOne("123456") // OTP
+				s.StubPrompt("Username:").AnswerWith("bob")
+				s.StubPrompt("Password:").AnswerWith("alice")
+				s.StubPrompt("Please enter your one-time password:").AnswerWith("123456")
 			},
 		},
 		{
-			name: "no auth no-interactive",
-			args: args{
-				saveConfig: false,
-			},
+			name:    "no auth no-interactive",
 			wantErr: true,
 			httpStubs: []httpmock.Stub{
 				unauthorizedResponse,
@@ -292,29 +276,44 @@ func TestSignin(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			registry := httpmock.NewRegistry()
+			keyring.MockInit()
+			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
 				registry.Register(v.URL, v.Responder)
 			}
 			for k, v := range tt.environmentVariables {
-				os.Setenv(k, v)
+				t.Setenv(k, v)
 			}
+
 			defer registry.Teardown()
 			registry.Serve()
-			stdout := &bytes.Buffer{}
-			stdin := &bytes.Buffer{}
-			stderr := &bytes.Buffer{}
-			in := io.NopCloser(stdin)
+			pty, tty, err := pseudotty.Open()
+			if err != nil {
+				t.Fatalf("failed to open pseudotty: %v", err)
+			}
+			term := vt10x.New(vt10x.WithWriter(tty))
+			c, err := expect.NewConsole(expect.WithStdin(pty), expect.WithStdout(term), expect.WithCloser(pty, tty))
+			if err != nil {
+				t.Fatalf("failed to create console: %v", err)
+			}
+
+			defer c.Close()
+
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug:                    false,
 					URL:                      fmt.Sprintf("http://appgate.com:%d", registry.Port),
 					PrimaryControllerVersion: "5.3.4-24950",
 				},
-				IOOutWriter: stdout,
-				Stdin:       in,
-				StdErr:      stderr,
+				IOOutWriter: tty,
+				Stdin:       pty,
+				StdErr:      pty,
 			}
+			t.Cleanup(func() {
+				if err := f.Config.ClearCredentials(); err != nil {
+					t.Errorf("Failed to clear mock credentials after test %s", err)
+				}
+			})
 			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 				return registry.Client, nil
 			}
@@ -329,14 +328,16 @@ func TestSignin(t *testing.T) {
 				return a, nil
 			}
 
-			stubber, teardown := prompt.InitAskStubber()
+			stubber, teardown := prompt.InitAskStubber(t)
 			defer teardown()
-
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
 			}
-			if err := Signin(f, tt.args.saveConfig); (err != nil) != tt.wantErr {
+			if err := Signin(f, false); (err != nil) != tt.wantErr {
 				t.Errorf("Signin() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err := c.Tty().Close(); err != nil {
+				t.Errorf("error closing Tty: %v", err)
 			}
 		})
 	}

@@ -62,9 +62,6 @@ func TestUpgradeCancelCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
-			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(false) // confirm cancel
-			},
 			wantErr: true,
 		},
 		{
