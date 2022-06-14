@@ -291,7 +291,7 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 		loginOpts.AccessToken = &t.AccessToken
 
 		if err := keyring.SetRefreshToken(prefix, t.RefreshToken); err != nil {
-			return nil, err
+			return nil, ErrPlatformNotSupported
 		}
 
 		loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
