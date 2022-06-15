@@ -21,6 +21,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-multierror"
@@ -245,7 +246,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 	for _, a := range toBackup {
 		appliance := a
-		bar := prompt.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
+		bar := tui.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
 		go func(appliance openapi.Appliance) {
 			defer wg.Done()
 			backedUp, err := b(appliance)

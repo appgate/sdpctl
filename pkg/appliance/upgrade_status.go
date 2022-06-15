@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
@@ -46,7 +46,6 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	logEntry := log.WithField("appliance", name)
 	logEntry.WithField("want", desiredStatuses).Info("polling for upgrade status")
 	hasRebooted := false
-	isInitialState := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -70,20 +69,16 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
 			logEntry.WithField("current", s).Debug("recieved upgrade status")
-			if !isInitialState {
-				isInitialState = true
-				return errors.New("initial state throwaway")
-			}
 			if currentStatus != nil {
 				currentStatus <- s
 			}
 			if util.InSlice(s, undesiredStatuses) {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
-		}
-		if util.InSlice(s, desiredStatuses) {
-			logEntry.Info("reached wanted upgrade status")
-			return nil
+			if util.InSlice(s, desiredStatuses) {
+				logEntry.Info("reached wanted upgrade status")
+				return nil
+			}
 		}
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
@@ -114,7 +109,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 	u.mu.Lock()
 	barMessage := make(chan string, 1)
 	bar := p.New(1,
-		mpb.SpinnerStyle(prompt.SpinnerStyle...),
+		mpb.SpinnerStyle(tui.SpinnerStyle...),
 		mpb.AppendDecorators(
 			func(cond string) decor.Decorator {
 				var (
@@ -151,7 +146,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 			}(name),
 		),
 		mpb.BarFillerMiddleware(
-			prompt.CheckBarFiller(ctx, func(c context.Context) bool {
+			tui.CheckBarFiller(ctx, func(c context.Context) bool {
 				return ctx.Err() == nil
 			}),
 		),

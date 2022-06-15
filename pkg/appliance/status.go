@@ -65,8 +65,6 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 		"appliance": appliance.GetName(),
 	})
 	logEntry.WithField("want", want).Info("polling for appliance state")
-	// initial sleep period
-	time.Sleep(2 * time.Second)
 	return backoff.Retry(func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()

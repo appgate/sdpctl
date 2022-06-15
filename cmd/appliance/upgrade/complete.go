@@ -19,6 +19,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/terminal"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-multierror"
@@ -353,7 +354,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
 		for _, controller := range additionalControllers {
-			spinner := prompt.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")
+			spinner := tui.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")
 			f := log.Fields{"appliance": controller.GetName()}
 			log.WithFields(f).Info("Disabling controller function")
 			if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
@@ -371,7 +372,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// verify the state for all controller
-	verifyingSpinner := prompt.AddDefaultSpinner(initP, "verifying states", "verifying", "ready")
+	verifyingSpinner := tui.AddDefaultSpinner(initP, "verifying states", "verifying", "ready")
 	if err := a.ApplianceStats.WaitForApplianceState(ctx, *primaryController, appliancepkg.StatReady, nil); err != nil {
 		verifyingSpinner.Abort(false)
 		return fmt.Errorf("primary controller %s", err)
