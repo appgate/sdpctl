@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -17,6 +20,8 @@ import (
 type apiOptions struct {
 	Config    *configuration.Config
 	Out       io.Writer
+	In        io.ReadCloser
+	CanPrompt bool
 	APIClient func(c *configuration.Config) (*openapi.APIClient, error)
 	debug     bool
 	disable   bool
@@ -29,6 +34,8 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 		APIClient: f.APIClient,
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
+		In:        f.Stdin,
+		CanPrompt: f.CanPrompt(),
 	}
 	var cmd = &cobra.Command{
 		Use:     "api",
@@ -67,13 +74,17 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		settings.SetBackupApiEnabled(false)
 		message = "backup API has been disabled."
 	} else {
-		settings.SetBackupApiEnabled(true)
-		answer, err := prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
+		hasStdin := false
+		stat, err := os.Stdin.Stat()
+		if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+			hasStdin = true
+		}
+		answer, err := getPassPhrase(opts.In, opts.CanPrompt, hasStdin)
 		if err != nil {
 			return err
 		}
 		settings.SetBackupPassphrase(answer)
-		message = "Backup API and phassphrase has been updated."
+		message = "Backup API and passphrase has been updated."
 	}
 
 	response, err = client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(settings).Authorization(t).Execute()
@@ -82,4 +93,18 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 	}
 	fmt.Fprintln(opts.Out, message)
 	return nil
+}
+
+func getPassPhrase(stdIn io.Reader, canPrompt, hasStdin bool) (string, error) {
+	if hasStdin {
+		buf, err := io.ReadAll(stdIn)
+		if err != nil {
+			return "", fmt.Errorf("could not read input from stdin %s", err)
+		}
+		return strings.TrimSuffix(string(buf), "\n"), nil
+	}
+	if !canPrompt {
+		return "", cmdutil.ErrMissingTTY
+	}
+	return prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
 }
