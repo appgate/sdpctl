@@ -24,7 +24,7 @@ require (
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.3
 	github.com/vbauerster/mpb/v7 v7.4.2
 	github.com/zalando/go-keyring v0.2.1
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
