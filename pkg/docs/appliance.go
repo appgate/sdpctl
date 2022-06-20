@@ -232,11 +232,11 @@ the IPs in the specific network or set of protected resources.`,
 		Examples: []ExampleDoc{
 			{
 				Description: "with a specific gateway appliance id",
-				Command:     "sdpctl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 --resource-name dns://google.se",
+				Command:     "sdpctl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 dns://google.se",
 			},
 			{
 				Description: "If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.",
-				Command:     "sdpctl appliance resolve-name --resource-name dns://google.se",
+				Command:     "sdpctl appliance resolve-name dns://google.se",
 				Output: `? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
 142.251.36.3
 2a00:1450:400e:80f::2003`,

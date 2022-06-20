@@ -8,12 +8,11 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +36,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var cmd = &cobra.Command{
-		Use:     "resolve-name [<appliance-id>] --resolve-name=query",
+		Use:     "resolve-name [<appliance-id>] [<query>]",
 		Short:   docs.ApplianceResolveNameDoc.Short,
 		Long:    docs.ApplianceResolveNameDoc.Long,
 		Example: docs.ApplianceResolveNameDoc.ExampleString(),
@@ -52,25 +51,31 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 					"function": "gateway",
 				},
 			}
-			if len(args) != 1 {
-				opts.applianceID, err = appliancepkg.PromptSelect(ctx, a, filter)
+			switch len(args) {
+			case 0:
+				applianceID, err := appliancepkg.PromptSelect(ctx, a, filter)
 				if err != nil {
 					return err
 				}
-				return nil
-			}
-
-			// Validate UUID if the argument is applied
-			uuidArg := args[0]
-			_, err = uuid.Parse(uuidArg)
-			if err != nil {
-				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = appliancepkg.PromptSelect(ctx, a, filter)
-				if err != nil {
-					return err
+				opts.applianceID = applianceID
+			case 1:
+				if util.IsUUID(args[0]) {
+					opts.applianceID = args[0]
+				} else {
+					applianceID, err := appliancepkg.PromptSelect(ctx, a, filter)
+					if err != nil {
+						return err
+					}
+					opts.applianceID = applianceID
+					opts.resourceName = args[0]
 				}
+			case 2:
+				if !util.IsUUID(args[0]) {
+					return fmt.Errorf("%s is not a valid appliance UUID", args[0])
+				}
+				opts.applianceID = args[0]
+				opts.resourceName = args[1]
 			}
-			opts.applianceID = uuidArg
 
 			return nil
 		},
@@ -79,8 +84,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
-	cmd.Flags().StringVar(&opts.resourceName, "resource-name", "", "The resource name to test on the Gateway. (Required)")
-	cmd.MarkFlagRequired("resource-name")
+	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 
 	return cmd
 }

@@ -107,7 +107,7 @@ func TestNewResolveNameCmdJSON(t *testing.T) {
 				return a, nil
 			}
 			cmd := NewResolveNameCmd(f)
-			cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "--json", "--resource-name", "dns://appgate.com"})
+			cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "--json", "dns://appgate.com"})
 
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
