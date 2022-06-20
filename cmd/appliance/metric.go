@@ -12,7 +12,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/google/uuid"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -47,10 +47,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			isUUID := func(str string) bool {
-				_, err := uuid.Parse(args[0])
-				return err == nil
-			}
+
 			switch len(args) {
 			case 0:
 				applianceID, err := appliancepkg.PromptSelect(ctx, a, nil)
@@ -59,7 +56,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 				}
 				opts.applianceID = applianceID
 			case 1:
-				if isUUID(args[0]) {
+				if util.IsUUID(args[0]) {
 					opts.applianceID = args[0]
 				} else {
 					applianceID, err := appliancepkg.PromptSelect(ctx, a, nil)
@@ -71,7 +68,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 				}
 
 			case 2:
-				if !isUUID(args[0]) {
+				if !util.IsUUID(args[0]) {
 					return fmt.Errorf("%s is not a valid appliance UUID", args[0])
 				}
 				opts.applianceID = args[0]
