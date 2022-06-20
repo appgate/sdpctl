@@ -8,6 +8,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -83,7 +84,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 			return metricRun(c, args, &opts)
 		},
 	}
-
+	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 	return cmd
 }
 
