@@ -206,7 +206,7 @@ and perform a reboot to make the second partition the primary.`,
 	ApplianceMetricsDoc = CommandDoc{
 		Short: "Get all the Prometheus metrics for the given Appgate SDP Appliance",
 		Long: `The 'metric' command will return a list of all the available metrics provided by an Appgate SDP Appliance for use in Prometheus.
-If no Appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. The '--metric-name' flag can be used
+If no Appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. A second argument can be used
 to get a specific metric name. This needs to be an exact match.
 
 NOTE: Although the '--include' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
@@ -221,7 +221,7 @@ NOTE: Although the '--include' and '--exclude' flags are provided as options her
 			},
 			{
 				Description: "get a particular metric from an appliance",
-				Command:     "sdpctl appliance metric <appliance-id> --metric-name=<some_metric_name>",
+				Command:     "sdpctl appliance metric <appliance-id> <metric-name>",
 			},
 		},
 	}
