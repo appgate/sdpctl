@@ -52,6 +52,7 @@ type prepareUpgradeOptions struct {
 	defaultFilter    map[string]map[string]string
 	hostOnController bool
 	forcePrepare     bool
+	ciMode           bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -125,6 +126,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					}
 				}
 			}
+
+			ciModeFlag, err := cmd.Flags().GetBool("ci-mode")
+			if err != nil {
+				return err
+			}
+			opts.ciMode = ciModeFlag
 
 			return errs
 		},
@@ -459,13 +466,22 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
-			// wg is the wait group for the progressbars
-			wg           sync.WaitGroup
-			errorChannel = make(chan error, count)
+			// unwantedStatus is used to determine if the upgrade prepare has failed
+			unwantedStatus = []string{appliancepkg.UpgradeStatusFailed, appliancepkg.UpgradeStatusIdle}
 		)
 
-		updateProgressBars := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
-		wg.Add(count)
+		var updateProgressBars *tui.Progress
+		if !opts.ciMode {
+			updateProgressBars = tui.NewProgress(ctx, spinnerOut)
+			defer updateProgressBars.Wait(3 * time.Second)
+		}
+
+		type queueStruct struct {
+			appliance    openapi.Appliance
+			statusReport chan<- string
+			deadline     time.Time
+			err          error
+		}
 
 		for _, ap := range appliances {
 			appliance := ap
@@ -489,7 +505,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				// Cancel current prepared version if the one uploaded is equal or newer
 				preparedBuildNr, _ := strconv.ParseInt(preparedVersion.Metadata(), 10, 64)
 				uploadBuildNr, _ := strconv.ParseInt(uploadVersion.Metadata(), 10, 64)
-				if preparedVersion.LessThanOrEqual(uploadVersion) && uploadBuildNr < preparedBuildNr {
+				if uploadVersion.LessThanOrEqual(preparedVersion) && uploadBuildNr <= preparedBuildNr {
 					log.WithFields(log.Fields{
 						"uploadVersion":   uploadVersion.String(),
 						"preparedVersion": preparedVersion.String(),
@@ -504,64 +520,76 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 			}
 
-			qw.Push(appliance)
-			statusReport := make(chan string)
+			var s chan<- string
+			if !opts.ciMode {
+				var t *tui.Tracker
+				t, s = updateProgressBars.AddTracker(appliance.GetName(), "ready")
+				go t.Watch(prepareReady, unwantedStatus)
+			}
 
-			go a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, []string{appliancepkg.UpgradeStatusReady}, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
-			go func(appliance openapi.Appliance) {
-				defer func() {
-					wg.Done()
-					close(statusReport)
-				}()
-				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, prepareReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
-					errorChannel <- err
-				}
-			}(appliance)
+			qs := queueStruct{
+				appliance:    appliance,
+				statusReport: s,
+			}
+			qw.Push(qs)
 		}
 
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
 		// once it has past the 'downloading' stage, we will go to the next item in the queue.
-		err := qw.Work(func(v interface{}) error {
-			if v == nil {
-				return nil
-			}
-			appliance := v.(openapi.Appliance)
-			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
-			defer cancel()
-			if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
-				return err
-			}
-			return a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, wantedStatus, []string{appliancepkg.UpgradeStatusFailed}, nil)
-		})
-		if err != nil {
-			errs = multierr.Append(errs, err)
-			return err
-		}
+		queueContinue := make(chan queueStruct)
 		go func() {
-			wg.Wait()
-			close(errorChannel)
+			qw.Work(func(v interface{}) error {
+				if v == nil {
+					return nil
+				}
+				qs := v.(queueStruct)
+				ctx, cancel := context.WithTimeout(ctx, opts.timeout)
+				defer cancel()
+				deadline, ok := ctx.Deadline()
+				if !ok {
+					log.WithContext(ctx).Warning("no deadline in context")
+				}
+				if err := a.PrepareFileOn(ctx, remoteFilePath, qs.appliance.GetId(), opts.DevKeyring); err != nil {
+					queueContinue <- queueStruct{err: err}
+					return err
+				}
+				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.statusReport); err != nil {
+					queueContinue <- queueStruct{err: err}
+					return err
+				}
+				queueContinue <- queueStruct{
+					appliance:    qs.appliance,
+					statusReport: qs.statusReport,
+					deadline:     deadline,
+				}
+				return nil
+			})
+			close(queueContinue)
 		}()
-		var result error
-		for err := range errorChannel {
-			log.Error(err)
-			result = multierr.Append(result, err)
-		}
-		// dont wait for the progress bar if we get any errors
-		if result != nil {
-			return result
-		}
-		updateProgressBars.Wait()
-		m, err := a.UpgradeStatusMap(ctx, appliances)
-		if err != nil {
-			errs = multierr.Append(errs, err)
-			return err
-		}
-		for _, result := range m {
-			if !util.InSlice(result.Status, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}) {
-				errs = multierr.Append(errs, fmt.Errorf("%s %s %s", result.Name, result.Status, result.Details))
-			}
+
+		// continues preparing appliances until we either reach the desired state or fail
+		// this is run after an appliance has reached the verifying stage and is released from the
+		var wg sync.WaitGroup
+		for qs := range queueContinue {
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, qs queueStruct) {
+				defer wg.Done()
+				if qs.err != nil {
+					errs = multierr.Append(qs.err, errs)
+					return
+				}
+				ctx, cancel := context.WithDeadline(ctx, qs.deadline)
+				defer cancel()
+				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, prepareReady, unwantedStatus, qs.statusReport); err != nil {
+					errs = multierr.Append(err, errs)
+					return
+				}
+
+			}(&wg, qs)
 		}
 
+		// wait for all appliances to either succed or fail preperation
+		wg.Wait()
 		return errs
 	}
 
