@@ -48,7 +48,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 			}
 			ctx := context.Background()
 			filter := map[string]map[string]string{
-				"filter": {
+				"include": {
 					"function": "gateway",
 				},
 			}
