@@ -30,10 +30,14 @@ func AppendIfMissing(slice []int, i int) []int {
 }
 
 func InSlice(needle string, haystack []string) bool {
-	sort.Strings(haystack)
-	i := sort.Search(len(haystack),
-		func(i int) bool { return haystack[i] >= needle })
-	if i < len(haystack) && haystack[i] == needle {
+	stack := make([]string, len(haystack))
+	copy(stack, haystack)
+	sort.Strings(stack)
+	i := sort.Search(
+		len(stack),
+		func(i int) bool { return stack[i] >= needle },
+	)
+	if i < len(stack) && stack[i] == needle {
 		return true
 	}
 	return false
