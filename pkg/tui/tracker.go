@@ -5,7 +5,6 @@ import (
 	"io"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/vbauerster/mpb/v7"
@@ -17,10 +16,11 @@ type Tracker struct {
 	container    *Progress
 	name         string
 	bar          *mpb.Bar
+	current      string
+	endMsg       string
 	success      bool
 	done         bool
 	statusReport chan string
-	msgProxy     chan string
 }
 
 // Watch initiates the progress tracking for each appliance update
@@ -28,8 +28,11 @@ type Tracker struct {
 // It will abort the tracker if status the same as included in the failOn slice
 func (t *Tracker) Watch(until, failOn []string) {
 	defer func() {
-		close(t.msgProxy)
+		t.done = true
 		close(t.statusReport)
+		if !t.bar.Completed() || !t.bar.Aborted() {
+			t.abort(false)
+		}
 	}()
 
 	// failCount keeps track of the amount of failed status updates
@@ -41,12 +44,14 @@ func (t *Tracker) Watch(until, failOn []string) {
 	var ok bool
 	for {
 		if util.InSlice(msg, until) {
+			t.current = t.endMsg
 			t.success = true
 			t.complete()
 			break
 		}
 		if util.InSlice(msg, failOn) {
 			if failCount > 0 {
+				t.current = "failed"
 				t.abort(false)
 				break
 			}
@@ -58,11 +63,7 @@ func (t *Tracker) Watch(until, failOn []string) {
 			t.abort(false)
 			break
 		}
-		t.msgProxy <- msg
-	}
-	t.done = true
-	if !t.bar.Completed() || !t.bar.Aborted() {
-		t.abort(false)
+		t.current = msg
 	}
 }
 
@@ -74,24 +75,11 @@ func (t *Tracker) abort(drop bool) {
 	t.bar.Abort(drop)
 }
 
-func (t *Tracker) decoratorFunc(name, endMsg string) decor.Decorator {
-	msg := "waiting"
+func (t *Tracker) decoratorFunc(name string) decor.Decorator {
 	return decor.Any(func(s decor.Statistics) string {
 		t.mu.Lock()
 		defer t.mu.Unlock()
-		select {
-		case <-time.After(80 * time.Millisecond):
-			return fmt.Sprintf("%s: %s", name, strings.ReplaceAll(msg, "_", " "))
-		case msg = <-t.msgProxy:
-			if t.done {
-				if t.success {
-					msg = endMsg
-				} else {
-					msg = "failed"
-				}
-			}
-			return fmt.Sprintf("%s: %s", name, strings.ReplaceAll(msg, "_", " "))
-		}
+		return fmt.Sprintf("%s: %s", name, strings.ReplaceAll(t.current, "_", " "))
 	})
 }
 

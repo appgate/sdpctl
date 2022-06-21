@@ -14,12 +14,16 @@ type Progress struct {
 	trackers []*Tracker
 }
 
+var (
+	DefaultRefreshRate = 120 * time.Millisecond
+)
+
 // NewProgress initiates a new progress tracking container
 func NewProgress(ctx context.Context, out io.Writer, options ...mpb.ContainerOption) *Progress {
 	p := Progress{
 		ctx: ctx,
 	}
-	options = append(options, mpb.WithWidth(1), mpb.WithOutput(out), mpb.WithRefreshRate(80*time.Millisecond))
+	options = append(options, mpb.WithWidth(1), mpb.WithOutput(out), mpb.WithRefreshRate(DefaultRefreshRate))
 	p.pc = mpb.NewWithContext(ctx, options...)
 	return &p
 }
@@ -30,14 +34,15 @@ func (p *Progress) AddTracker(name, endMsg string) (*Tracker, chan<- string) {
 	t := Tracker{
 		container:    p,
 		name:         name,
+		current:      "waiting",
+		endMsg:       endMsg,
 		statusReport: make(chan string, 1),
-		msgProxy:     make(chan string),
 	}
 
 	t.mu.Lock()
 	t.bar = p.pc.New(1,
 		mpb.SpinnerStyle(SpinnerStyle...),
-		mpb.AppendDecorators(t.decoratorFunc(t.name, endMsg)),
+		mpb.AppendDecorators(t.decoratorFunc(t.name)),
 		mpb.BarFillerMiddleware(t.barFillerFunc()),
 	)
 	t.mu.Unlock()
@@ -64,6 +69,9 @@ func (p *Progress) Abort() {
 // If deadline is reached before the bars are complete, it will abort
 // all bars remaining and return
 func (p *Progress) Wait(timeout time.Duration) {
+	// wait one refresh cycle to give bars a chance to complete
+	time.Sleep(DefaultRefreshRate)
+
 	done := make(chan bool)
 	ctx, cancel := context.WithTimeout(p.ctx, timeout)
 	defer cancel()
