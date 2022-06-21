@@ -19,7 +19,7 @@ func NewProgress(ctx context.Context, out io.Writer, options ...mpb.ContainerOpt
 	p := Progress{
 		ctx: ctx,
 	}
-	options = append(options, mpb.WithWidth(1), mpb.WithOutput(out))
+	options = append(options, mpb.WithWidth(1), mpb.WithOutput(out), mpb.WithRefreshRate(80*time.Millisecond))
 	p.pc = mpb.NewWithContext(ctx, options...)
 	return &p
 }
@@ -35,7 +35,7 @@ func (p *Progress) AddTracker(name, endMsg string) (*Tracker, chan<- string) {
 	}
 
 	t.mu.Lock()
-	t.bar = t.container.pc.New(1,
+	t.bar = p.pc.New(1,
 		mpb.SpinnerStyle(SpinnerStyle...),
 		mpb.AppendDecorators(t.decoratorFunc(t.name, endMsg)),
 		mpb.BarFillerMiddleware(t.barFillerFunc()),

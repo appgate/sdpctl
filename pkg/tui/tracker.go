@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
@@ -79,8 +80,8 @@ func (t *Tracker) decoratorFunc(name, endMsg string) decor.Decorator {
 		t.mu.Lock()
 		defer t.mu.Unlock()
 		select {
-		case <-time.After(100 * time.Millisecond):
-			return fmt.Sprintf("%s: %s", name, msg)
+		case <-time.After(80 * time.Millisecond):
+			return fmt.Sprintf("%s: %s", name, strings.ReplaceAll(msg, "_", " "))
 		case msg = <-t.msgProxy:
 			if t.done {
 				if t.success {
@@ -89,7 +90,7 @@ func (t *Tracker) decoratorFunc(name, endMsg string) decor.Decorator {
 					msg = "failed"
 				}
 			}
-			return fmt.Sprintf("%s: %s", name, msg)
+			return fmt.Sprintf("%s: %s", name, strings.ReplaceAll(msg, "_", " "))
 		}
 	})
 }
