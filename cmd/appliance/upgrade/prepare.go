@@ -468,9 +468,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
 			// unwantedStatus is used to determine if the upgrade prepare has failed
 			unwantedStatus = []string{appliancepkg.UpgradeStatusFailed, appliancepkg.UpgradeStatusIdle}
+			// updateProgressBars is the container for the progress bars
+			updateProgressBars *tui.Progress
 		)
 
-		var updateProgressBars *tui.Progress
 		if !opts.ciMode {
 			updateProgressBars = tui.NewProgress(ctx, spinnerOut)
 			defer updateProgressBars.Wait(3 * time.Second)
@@ -570,26 +571,34 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		// continues preparing appliances until we either reach the desired state or fail
 		// this is run after an appliance has reached the verifying stage and is released from the
 		var wg sync.WaitGroup
+		errChan := make(chan error)
 		for qs := range queueContinue {
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, qs queueStruct) {
 				defer wg.Done()
 				if qs.err != nil {
-					errs = multierr.Append(qs.err, errs)
+					errChan <- qs.err
 					return
 				}
 				ctx, cancel := context.WithDeadline(ctx, qs.deadline)
 				defer cancel()
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, prepareReady, unwantedStatus, qs.statusReport); err != nil {
-					errs = multierr.Append(err, errs)
+					errChan <- err
 					return
 				}
 
 			}(&wg, qs)
 		}
 
-		// wait for all appliances to either succed or fail preperation
-		wg.Wait()
+		go func(wg *sync.WaitGroup, errChan chan error) {
+			wg.Wait()
+			close(errChan)
+		}(&wg, errChan)
+
+		for err := range errChan {
+			errs = multierr.Append(err, errs)
+		}
+
 		return errs
 	}
 
