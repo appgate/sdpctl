@@ -8,11 +8,11 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Appliance: f.Appliance,
 	}
 	var cmd = &cobra.Command{
-		Use:     "metric [<appliance-id>]",
+		Use:     "metric [<appliance-id>] [<metric-name>]",
 		Short:   docs.ApplianceMetricsDoc.Short,
 		Long:    docs.ApplianceMetricsDoc.Long,
 		Example: docs.ApplianceMetricsDoc.ExampleString(),
@@ -47,25 +47,33 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if len(args) != 1 {
-				opts.applianceID, err = appliancepkg.PromptSelect(ctx, a, nil)
-				if err != nil {
-					return err
-				}
-				return nil
-			}
 
-			// Validate UUID if the argument is applied
-			uuidArg := args[0]
-			_, err = uuid.Parse(uuidArg)
-			if err != nil {
-				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = appliancepkg.PromptSelect(ctx, a, nil)
+			switch len(args) {
+			case 0:
+				applianceID, err := appliancepkg.PromptSelect(ctx, a, nil)
 				if err != nil {
 					return err
 				}
+				opts.applianceID = applianceID
+			case 1:
+				if util.IsUUID(args[0]) {
+					opts.applianceID = args[0]
+				} else {
+					applianceID, err := appliancepkg.PromptSelect(ctx, a, nil)
+					if err != nil {
+						return err
+					}
+					opts.applianceID = applianceID
+					opts.metric = args[0]
+				}
+
+			case 2:
+				if !util.IsUUID(args[0]) {
+					return fmt.Errorf("%s is not a valid appliance UUID", args[0])
+				}
+				opts.applianceID = args[0]
+				opts.metric = args[1]
 			}
-			opts.applianceID = uuidArg
 
 			return nil
 		},
@@ -73,9 +81,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 			return metricRun(c, args, &opts)
 		},
 	}
-
-	cmd.Flags().StringVar(&opts.metric, "metric-name", "", "Query for a specific metric by name (exact match)")
-
+	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 	return cmd
 }
 

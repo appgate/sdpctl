@@ -123,7 +123,7 @@ func TestMetricCommandSpecificMetric(t *testing.T) {
 		return a, nil
 	}
 	cmd := NewMetricCmd(f)
-	cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "--metric-name", "vpn_total_sessions"})
+	cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "vpn_total_sessions"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
