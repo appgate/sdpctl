@@ -92,10 +92,9 @@ func (t *Tracker) barFillerFunc() func(mpb.BarFiller) mpb.BarFiller {
 				if t.success {
 					io.WriteString(w, SpinnerDone)
 					return
-				} else {
-					io.WriteString(w, SpinnerErr)
-					return
 				}
+				io.WriteString(w, SpinnerErr)
+				return
 			}
 			bf.Fill(w, reqWidth, st)
 		})

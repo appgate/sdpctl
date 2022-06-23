@@ -15,15 +15,15 @@ type Progress struct {
 }
 
 var (
-	DefaultRefreshRate = 120 * time.Millisecond
+	defaultRefreshRate = 120 * time.Millisecond
 )
 
-// NewProgress initiates a new progress tracking container
-func NewProgress(ctx context.Context, out io.Writer, options ...mpb.ContainerOption) *Progress {
+// New initiates a new progress tracking container
+func New(ctx context.Context, out io.Writer, options ...mpb.ContainerOption) *Progress {
 	p := Progress{
 		ctx: ctx,
 	}
-	options = append(options, mpb.WithWidth(1), mpb.WithOutput(out), mpb.WithRefreshRate(DefaultRefreshRate))
+	options = append(options, mpb.WithWidth(1), mpb.WithOutput(out), mpb.WithRefreshRate(defaultRefreshRate))
 	p.pc = mpb.NewWithContext(ctx, options...)
 	return &p
 }
@@ -70,7 +70,7 @@ func (p *Progress) Abort() {
 // all bars remaining and return
 func (p *Progress) Wait(timeout time.Duration) {
 	// wait one refresh cycle to give bars a chance to complete
-	time.Sleep(DefaultRefreshRate)
+	time.Sleep(defaultRefreshRate)
 
 	done := make(chan bool)
 	ctx, cancel := context.WithTimeout(p.ctx, timeout)
