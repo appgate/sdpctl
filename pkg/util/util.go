@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 
+	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 )
 
@@ -115,4 +116,9 @@ func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[stri
 	}
 
 	return result
+}
+
+func IsUUID(str string) bool {
+	_, err := uuid.Parse(str)
+	return err == nil
 }
