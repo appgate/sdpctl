@@ -60,11 +60,18 @@ func GetBearer(prefix string) (string, error) {
 }
 
 func SetBearer(prefix, secret string) error {
-	err := setSecret(format(prefix, bearer), secret)
-	if err != nil {
+	if err := setSecret(format(prefix, bearer), secret); err != nil {
 		os.Setenv("SDPCTL_BEARER", secret)
 	}
 	return nil
+}
+
+func GetRefreshToken(prefix string) (string, error) {
+	return getSecret(format(prefix, refreshToken))
+}
+
+func SetRefreshToken(prefix, secret string) error {
+	return setSecret(format(prefix, refreshToken), secret)
 }
 
 func SetUsername(prefix, secret string) error {

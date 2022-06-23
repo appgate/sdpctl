@@ -10,6 +10,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -45,14 +46,21 @@ func hasRequiredEnv() bool {
 	return true
 }
 
-// Signin is an interactive sign in function, that generates the config file
-// Signin will show a interactive prompt to query the user for username, password and enter MFA if needed.
-// and support SDPCTL_USERNAME & SDPCTL_PASSWORD environment variables.
-// Signin supports MFA, compute a valid peer api version for selected appgate sdp collective.
-func Signin(f *factory.Factory, remember bool) error {
+var ErrSignInNotSupported = errors.New("no TTY present, and missing required environment variables to authenticate")
+
+// Signin support interactive signin if a valid TTY is present, otherwise it requires environment variables to authenticate,
+// this is only supported by 'local' auth provider
+// If OTP is required, a prompt will appear and await user input
+// Signin is done in several steps
+// - Compute correct peer api version to use, based on login response body, which gives us a range of supported peer api to use
+// - If there are more then 1 auth provider supported, prompt user to select (requires TTY | error shown if no TTY)
+// - Store bearer token in os keyring, (refresh token if the provider supports it too)
+// - Store primary controller version in config file
+// - Save config file to $SDPCTL_CONFIG_DIR
+func Signin(f *factory.Factory) error {
 	if !f.CanPrompt() {
 		if !hasRequiredEnv() {
-			return errors.New("no TTY present, and missing required environment variables to authenticate")
+			return ErrSignInNotSupported
 		}
 	}
 
@@ -67,7 +75,7 @@ func Signin(f *factory.Factory, remember bool) error {
 
 	// if we already have a valid bearer token, we will continue without
 	// without any additional checks.
-	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 && !remember {
+	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 {
 		return nil
 	}
 	authenticator := NewAuth(client)
@@ -122,12 +130,11 @@ func Signin(f *factory.Factory, remember bool) error {
 		return fmt.Errorf("invalid provider %s - %s", selectedProvider.GetName(), loginOpts.ProviderName)
 	}
 	cfg.Provider = loginOpts.ProviderName
-	var token *signInResponse
 	var p Authenticate
 	switch selectedProvider.GetType() {
 	case RadiusProvider:
 	case LocalProvider:
-		p = NewLocal(f, remember)
+		p = NewLocal(f)
 	case OidcProvider:
 		oidc := NewOpenIDConnect(f, client)
 		defer oidc.Close()
@@ -135,11 +142,11 @@ func Signin(f *factory.Factory, remember bool) error {
 	default:
 		return fmt.Errorf("%s %s identity provider is not supported", selectedProvider.GetName(), selectedProvider.GetType())
 	}
-	token, err = p.signin(ctxWithAccept, loginOpts, selectedProvider)
+	response, err := p.signin(ctxWithAccept, loginOpts, selectedProvider)
 	if err != nil {
 		return err
 	}
-	newToken, err := authAndOTP(ctxWithAccept, authenticator, token.LoginOpts.Password, token.Token)
+	newToken, err := authAndOTP(ctxWithAccept, authenticator, response.LoginOpts.Password, response.Token)
 	if err != nil {
 		return err
 	}
@@ -151,18 +158,25 @@ func Signin(f *factory.Factory, remember bool) error {
 	cfg.BearerToken = authorizationToken.GetToken()
 	// use the original auth request expires_at value instead of the value from authorization since they can be different
 	// depending on the provider type.
-	cfg.ExpiresAt = token.Expires.String()
+	cfg.ExpiresAt = response.Expires.String()
 	host, err := cfg.GetHost()
 	if err != nil {
 		return err
 	}
+
+	// if the bearer token can't be saved to the keychain, it will be exported as env variable
+	// and saved in the config file as fallback, this should only happend if the system does not
+	// support the keychain integration.
 	if err := keyring.SetBearer(host, cfg.BearerToken); err != nil {
-		return fmt.Errorf("could not store token in keychain %w", err)
+		return err
 	}
 
-	viper.Set("provider", selectedProvider.GetName())
-	viper.Set("expires_at", cfg.ExpiresAt)
-	viper.Set("url", cfg.URL)
+	// store username and password if any in keyring, in practice only applicable on local provider
+	if len(response.LoginOpts.GetUsername()) > 1 && len(response.LoginOpts.GetPassword()) > 1 {
+		if err := cfg.StoreCredentials(response.LoginOpts.GetUsername(), response.LoginOpts.GetPassword()); err != nil {
+			return err
+		}
+	}
 
 	a, err := f.Appliance(cfg)
 	if err != nil {
@@ -184,11 +198,14 @@ func Signin(f *factory.Factory, remember bool) error {
 	if err != nil {
 		return err
 	}
+	viper.Set("provider", selectedProvider.GetName())
+	viper.Set("expires_at", cfg.ExpiresAt)
+	viper.Set("url", cfg.URL)
 	viper.Set("primary_controller_version", v.String())
-	if remember {
-		if err := viper.WriteConfig(); err != nil {
-			return err
-		}
+
+	// saving the config file is not a fatal error, we will only show a error message
+	if err := viper.WriteConfig(); err != nil {
+		fmt.Fprintf(f.StdErr, "[error] %s\n", err)
 	}
 
 	return nil
@@ -235,6 +252,9 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string, toke
 			for i := 0; i < 3; i++ {
 				newToken, err := testOTP()
 				if err != nil {
+					if errors.Is(err, cmdutil.ErrExecutionCanceledByUser) {
+						return nil, err
+					}
 					if errors.Is(err, ErrInvalidOneTimePassword) {
 						fmt.Fprintf(os.Stderr, "[error] %s\n", err)
 						continue

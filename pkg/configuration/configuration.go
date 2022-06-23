@@ -171,20 +171,16 @@ func (c *Config) ClearCredentials() error {
 	return nil
 }
 
-func (c *Config) StoreCredentials(crd *Credentials) error {
+func (c *Config) StoreCredentials(username, password string) error {
 	h, err := c.GetHost()
 	if err != nil {
 		return err
 	}
-	if len(crd.Username) > 0 {
-		if err := keyring.SetUsername(h, crd.Username); err != nil {
-			return fmt.Errorf("could not store username in keychain %w", err)
-		}
+	if err := keyring.SetUsername(h, username); err != nil {
+		return fmt.Errorf("could not store username in keychain %w", err)
 	}
-	if len(crd.Password) > 0 {
-		if err := keyring.SetPassword(h, crd.Password); err != nil {
-			return fmt.Errorf("could not store password in keychain %w", err)
-		}
+	if err := keyring.SetPassword(h, password); err != nil {
+		return fmt.Errorf("could not store password in keychain %w", err)
 	}
 
 	return nil

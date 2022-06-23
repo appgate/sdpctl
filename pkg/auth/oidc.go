@@ -10,13 +10,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/google/uuid"
 	"github.com/pkg/browser"
 )
@@ -159,6 +159,33 @@ func newSHACodeChallenge(s string) string {
 	return base64.RawURLEncoding.EncodeToString(sum)
 }
 
+func (o OpenIDConnect) refreshToken(clientID, tokenURL, refreshToken string) (*oIDCResponse, error) {
+	form := url.Values{}
+	form.Add("client_id", clientID)
+	form.Add("grant_type", "refresh_token")
+	form.Add("refresh_token", refreshToken)
+	req, err := http.NewRequest(http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var data oIDCResponse
+	if err := json.Unmarshal(body, &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+var ErrPlatformNotSupported = errors.New("Provider with OpenID Connect is not supported on your system")
+
 func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
 	// Due to macOS being un-tested for oidc provider, we will disable support for oidc provider.
 	// The oidc implementation won't work for macOS until we have resolved the issue
@@ -185,8 +212,34 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 	if runtime.GOOS == "darwin" {
 		return nil, errors.New("macOS is not supported with oidc")
 	}
-	mux := http.NewServeMux()
+	authenticator := NewAuth(o.Client)
+	prefix, err := o.Factory.Config.GetHost()
+	if err != nil {
+		return nil, err
+	}
+	if k, err := keyring.GetRefreshToken(prefix); err == nil {
+		t, err := o.refreshToken(provider.GetClientId(), provider.GetTokenUrl(), k)
+		if err != nil {
+			return nil, err
+		}
 
+		loginOpts.IdToken = &t.IDToken
+		loginOpts.AccessToken = &t.AccessToken
+
+		loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
+		if err != nil {
+			return nil, err
+		}
+
+		response := &signInResponse{
+			Token:     loginResponse.GetToken(),
+			Expires:   time.Now().Local().Add(time.Second * time.Duration(t.ExpiresIn)),
+			LoginOpts: &loginOpts,
+		}
+		return response, nil
+	}
+
+	mux := http.NewServeMux()
 	o.httpServer = &http.Server{
 		Addr:    oidcPort,
 		Handler: mux,
@@ -221,26 +274,25 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 	go func() {
 		if err := o.httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
-				fmt.Fprintf(os.Stderr, "[error] %s\n", err)
+				fmt.Fprintf(o.Factory.StdErr, "[error] %s\n", err)
 			}
 		}
 	}()
 	browser.Stderr = io.Discard
 	if err := browser.OpenURL(oidcRedirectAddress); err != nil {
-		return nil, err
+		return nil, ErrPlatformNotSupported
 	}
 	select {
 	case err := <-o.errors:
 		return nil, err
 	case t := <-o.response:
-		authenticator := NewAuth(o.Client)
 
 		loginOpts.IdToken = &t.IDToken
 		loginOpts.AccessToken = &t.AccessToken
-		// TODO Handle refresh token
-		// save t.RefreshToken in the keychain and use it if the expires date is still valid.
-		// https://docs.microsoft.com/en-us/azure/active-directory/develop/access-tokens#access-token-lifetime
-		// as it is now, the bearer token is only valid 2-5 hours
+
+		if err := keyring.SetRefreshToken(prefix, t.RefreshToken); err != nil {
+			return nil, ErrPlatformNotSupported
+		}
 
 		loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
 		if err != nil {
