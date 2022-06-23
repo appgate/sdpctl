@@ -258,14 +258,6 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 					},
 				},
 				{
-					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/complete",
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusOK)
-						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
-					},
-				},
-				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
@@ -298,8 +290,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
-			registry := httpmock.NewRegistry()
+			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
 				registry.Register(v.URL, v.Responder)
 			}
@@ -363,7 +354,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			cmd.SetIn(&bytes.Buffer{})
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
-			stubber, teardown := prompt.InitAskStubber()
+			stubber, teardown := prompt.InitAskStubber(t)
 			defer teardown()
 
 			if tt.askStubs != nil {

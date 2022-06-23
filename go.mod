@@ -4,11 +4,13 @@ go 1.16
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.5
+	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/adrg/xdg v0.4.0
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20220601135625-2256361d243d
 	github.com/billgraziano/dpapi v0.4.0
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cheynewallace/tabby v1.1.1
+	github.com/creack/pty v1.1.17
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/enriquebris/goconcurrentqueue v0.6.3
 	github.com/google/go-cmp v0.5.8
@@ -17,6 +19,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.5.0
+	github.com/hinshun/vt10x v0.0.0-20220119200601-820417d04eec
 	github.com/mattn/go-isatty v0.0.14
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rogpeppe/go-internal v1.8.1 // indirect

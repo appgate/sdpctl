@@ -15,8 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTokenListTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
-	registry := httpmock.NewRegistry()
+func setupTokenListTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
+	t.Helper()
+	registry := httpmock.NewRegistry(t)
 	registry.Register("/token-records/dn", httpmock.JSONResponse("../../pkg/token/fixtures/token_list.json"))
 	registry.Serve()
 
@@ -57,7 +58,7 @@ func setupTokenListTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
 }
 
 func TestTokenList(t *testing.T) {
-	registry, opts, out := setupTokenListTest()
+	registry, opts, out := setupTokenListTest(t)
 	defer registry.Teardown()
 
 	cmd := NewTokenListCmd(opts)
@@ -94,7 +95,7 @@ CN=3332396333654131b235633864363134,CN=admin,OU=local  33323963-3365-4131-b235-6
 }
 
 func TestTokenListJSON(t *testing.T) {
-	registry, opts, out := setupTokenListTest()
+	registry, opts, out := setupTokenListTest(t)
 	defer registry.Teardown()
 
 	opts.useJSON = true

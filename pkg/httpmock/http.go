@@ -12,6 +12,8 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"sync"
+	"testing"
 	"testing/fstest"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -38,9 +40,11 @@ type Registry struct {
 	Teardown func()
 	Requests []*http.Request
 	stubs    []*Stub
+	mu       sync.Mutex
 }
 
-func NewRegistry() *Registry {
+func NewRegistry(t *testing.T) *Registry {
+	t.Helper()
 	client, cfg, mux, srv, port, teardown := setup()
 
 	r := &Registry{
@@ -52,11 +56,20 @@ func NewRegistry() *Registry {
 		Teardown: teardown,
 	}
 	os.Setenv("SDPCTL_BEARER", "header-token-value")
+	t.Cleanup(func() {
+		for _, s := range r.stubs {
+			if !s.matched {
+				t.Helper()
+				t.Errorf("URL %s was registered but never used", s.URL)
+			}
+		}
+	})
 	return r
 }
 
 type Stub struct {
 	URL       string
+	matched   bool
 	Responder http.HandlerFunc
 }
 
@@ -66,10 +79,22 @@ func (r *Registry) Register(url string, resp http.HandlerFunc) {
 		Responder: resp,
 	})
 }
+func (r *Registry) middlewareOne(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, request *http.Request) {
+		r.mu.Lock()
+		for _, s := range r.stubs {
+			if s.URL == request.URL.Path {
+				s.matched = true
+			}
+		}
+		next.ServeHTTP(rw, request)
+		r.mu.Unlock()
+	})
+}
 
 func (r *Registry) Serve() {
 	for _, stub := range r.stubs {
-		r.Mux.HandleFunc(stub.URL, stub.Responder)
+		r.Mux.Handle(stub.URL, r.middlewareOne(stub.Responder))
 	}
 }
 

@@ -15,11 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTokenRevokeTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
-	registry := httpmock.NewRegistry()
-	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
-	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
-	registry.Serve()
+func setupTokenRevokeTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
+	registry := httpmock.NewRegistry(t)
 
 	stdout := &bytes.Buffer{}
 	stdin := &bytes.Buffer{}
@@ -59,7 +56,9 @@ func setupTokenRevokeTest() (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
 }
 
 func TestTokenRevokeByTokenType(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest()
+	registry, opts, stdout := setupTokenRevokeTest(t)
+	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
+	registry.Serve()
 	defer registry.Teardown()
 
 	cmd := NewTokenRevokeCmd(opts)
@@ -89,7 +88,9 @@ e433ec11-cb89-4a59-a0e3-f89848783b04  Entitlement  CN=b37de2ed4b4c4d21952f718e2d
 }
 
 func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest()
+	registry, opts, stdout := setupTokenRevokeTest(t)
+	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
+	registry.Serve()
 	defer registry.Teardown()
 
 	opts.useJSON = true
@@ -112,7 +113,9 @@ func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
 }
 
 func TestTokenRevokeByDistinguishedName(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest()
+	registry, opts, stdout := setupTokenRevokeTest(t)
+	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+	registry.Serve()
 	defer registry.Teardown()
 
 	cmd := NewTokenRevokeCmd(opts)
@@ -138,8 +141,10 @@ c3eeb87b-e406-42ee-a1a9-0dadb4752023  AdminClaims     CN=70e076801c4b5bdc87b4afc
 	assert.Equal(t, expected, string(actual))
 }
 
-func TestTokenRevokeByDistinguishedNameJOSN(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest()
+func TestTokenRevokeByDistinguishedNameJSON(t *testing.T) {
+	registry, opts, stdout := setupTokenRevokeTest(t)
+	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+	registry.Serve()
 	defer registry.Teardown()
 
 	opts.useJSON = true
@@ -162,7 +167,7 @@ func TestTokenRevokeByDistinguishedNameJOSN(t *testing.T) {
 }
 
 func TestInvalidArgumentsAndOptions(t *testing.T) {
-	registry, opts, _ := setupTokenRevokeTest()
+	registry, opts, _ := setupTokenRevokeTest(t)
 	defer registry.Teardown()
 
 	cmd1 := NewTokenRevokeCmd(opts)

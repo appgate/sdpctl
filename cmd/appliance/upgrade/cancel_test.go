@@ -62,9 +62,6 @@ func TestUpgradeCancelCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
-			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(false) // confirm cancel
-			},
 			wantErr: true,
 		},
 		{
@@ -93,7 +90,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			registry := httpmock.NewRegistry()
+			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
 				registry.Register(v.URL, v.Responder)
 			}
@@ -141,7 +138,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			cmd.SetIn(&bytes.Buffer{})
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
-			stubber, teardown := prompt.InitAskStubber()
+			stubber, teardown := prompt.InitAskStubber(t)
 			defer teardown()
 
 			if tt.askStubs != nil {
