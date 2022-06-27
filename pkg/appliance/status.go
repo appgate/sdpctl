@@ -12,16 +12,16 @@ import (
 )
 
 type WaitForApplianceStatus interface {
-	WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error
+	WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error
 	// WaitForStatus tries appliance stats until the appliance has want status or it reaches the timeout
-	WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error
+	WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
 }
 
-func (u *ApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
 	return backoff.Retry(func() error {
 		stats, _, err := u.Appliance.Stats(ctx)
 		if err != nil {
@@ -29,8 +29,12 @@ func (u *ApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.A
 		}
 		for _, stat := range stats.GetData() {
 			if stat.GetId() == appliance.GetId() {
-				if !util.InSlice(stat.GetStatus(), want) {
-					return fmt.Errorf("Want status %s, got %s", want, stat.GetStatus())
+				current := stat.GetStatus()
+				if status != nil {
+					status <- current
+				}
+				if !util.InSlice(current, want) {
+					return fmt.Errorf("Want status %s, got %s", want, current)
 				}
 			}
 		}
@@ -39,7 +43,7 @@ func (u *ApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.A
 	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 }
 
-func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
+func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
 	b := backoff.WithContext(&backoff.ExponentialBackOff{
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
@@ -69,20 +73,20 @@ func (u *ApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Ap
 				}
 				log.WithFields(fields).Infof(
 					"Waiting for state %q",
-					expectedState,
+					want,
 				)
 				if status != nil {
 					status <- state
 				}
-				if state != expectedState {
+				if !util.InSlice(state, want) {
 					log.WithFields(fields).Errorf("never reached desired state")
-					return fmt.Errorf("never reached desired state %s", expectedState)
+					return fmt.Errorf("never reached desired state %s", want)
 				}
 			}
 		}
 		log.WithFields(log.Fields{
 			"appliance":     appliance.GetName(),
-			"current_state": expectedState,
+			"current_state": want,
 		}).Info("reached desired state")
 		return nil
 	}, b)

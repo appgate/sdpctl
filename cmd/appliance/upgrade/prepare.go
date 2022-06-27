@@ -396,7 +396,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			status := ""
 			statusChan := make(chan string)
 			defer close(statusChan)
-			go a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.FileReady, appliancepkg.FileFailed, statusChan)
+			go a.UpgradeStatusWorker.Watch(ctx, p, controller, []string{appliancepkg.FileReady}, []string{appliancepkg.FileFailed}, statusChan)
 			for status != appliancepkg.FileReady {
 				remoteFile, err := a.FileStatus(ctx, opts.filename)
 				if err != nil {
@@ -493,7 +493,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
 						errs = multierr.Append(errs, err)
 					}
-					if err := a.UpgradeStatusWorker.Wait(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}); err != nil {
+					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, nil); err != nil {
 						errs = multierr.Append(errs, err)
 					}
 				}
@@ -502,17 +502,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			qw.Push(appliance)
 			statusReport := make(chan string)
 
+			go a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, []string{appliancepkg.UpgradeStatusReady}, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
 			go func(appliance openapi.Appliance) {
 				defer func() {
 					wg.Done()
 					close(statusReport)
 				}()
-				if err := a.UpgradeStatusWorker.Subscribe(ctx, appliance, prepareReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, prepareReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport); err != nil {
 					errorChannel <- err
 				}
 			}(appliance)
-
-			go a.UpgradeStatusWorker.Watch(ctx, updateProgressBars, appliance, appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusFailed, statusReport)
 		}
 
 		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
@@ -527,7 +526,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err := a.PrepareFileOn(ctx, remoteFilePath, appliance.GetId(), opts.DevKeyring); err != nil {
 				return err
 			}
-			return a.UpgradeStatusWorker.Wait(ctx, appliance, wantedStatus, []string{appliancepkg.UpgradeStatusFailed})
+			return a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, wantedStatus, []string{appliancepkg.UpgradeStatusFailed}, nil)
 		})
 		if err != nil {
 			errs = multierr.Append(errs, err)

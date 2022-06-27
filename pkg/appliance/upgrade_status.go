@@ -30,12 +30,10 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 }
 
 type WaitForUpgradeStatus interface {
-	// Wait does expodential backoff retries on upgrade status and return nil if it reaches any of the desiredStatuses
-	Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) error
-	// Subscribe does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
-	Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error
+	// WaitForUpgradeStatus does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
+	WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error
 	// Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
-	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string)
+	Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string)
 }
 
 type UpgradeStatus struct {
@@ -43,54 +41,7 @@ type UpgradeStatus struct {
 	mu        sync.Mutex
 }
 
-func (u *UpgradeStatus) Wait(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) error {
-	b := backoff.WithContext(defaultExponentialBackOff, ctx)
-	if err := backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatuses, undesiredStatuses), b); err != nil {
-		return err
-	}
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-		return nil
-	}
-}
-
-func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string) backoff.Operation {
-	name := appliance.GetName()
-	fields := log.Fields{"appliance": name}
-	return func() error {
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
-		if err != nil {
-			return err
-		}
-		var s string
-		if v, ok := status.GetStatusOk(); ok {
-			s = *v
-			if util.InSlice(s, undesiredStatuses) {
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, status.GetDetails()))
-			}
-		}
-		details := status.GetDetails()
-		fields["image"] = details
-		fields["status"] = s
-		log.WithFields(fields).Infof("waiting for '%s' status", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) {
-			return nil
-		}
-		return fmt.Errorf(
-			"%s never reached %s, got %q %s",
-			name,
-			strings.Join(desiredStatuses, ", "),
-			s,
-			details,
-		)
-	}
-}
-
-func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, currentStatus chan<- string) backoff.Operation {
+func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, currentStatus chan<- string) backoff.Operation {
 	name := appliance.GetName()
 	fields := log.Fields{"appliance": name}
 	hasRebooted := false
@@ -100,13 +51,15 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
-			if errors.Is(err, context.DeadlineExceeded) {
-				currentStatus <- "rebooting, waiting for appliance to come back online"
-				hasRebooted = true
-			} else if hasRebooted {
-				currentStatus <- "switching partition"
-			} else {
-				currentStatus <- "installing"
+			if currentStatus != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					currentStatus <- "rebooting, waiting for appliance to come back online"
+					hasRebooted = true
+				} else if hasRebooted {
+					currentStatus <- "switching partition"
+				} else {
+					currentStatus <- "installing"
+				}
 			}
 			return err
 		}
@@ -118,7 +71,9 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 				isInitialState = true
 				return errors.New("initial state throwaway")
 			}
-			currentStatus <- s
+			if currentStatus != nil {
+				currentStatus <- s
+			}
 			if util.InSlice(s, undesiredStatuses) {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
@@ -139,19 +94,20 @@ func (u *UpgradeStatus) upgradeStatusSubscribe(ctx context.Context, appliance op
 	}
 }
 
-func (u *UpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
+func (u *UpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
 	b := backoff.WithContext(defaultExponentialBackOff, ctx)
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
-		return backoff.Retry(u.upgradeStatusSubscribe(ctx, appliance, desiredStatuses, undesiredStatuses, current), b)
+		return backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatuses, undesiredStatuses, current), b)
 	}
 }
 
 // Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
-func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endState string, failState string, current <-chan string) {
+func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
 	name := appliance.GetName()
+	log.WithField("appliance", name).Debug("watching status on appliance")
 	// we will lock each time we add a new bar to avoid duplicates
 	u.mu.Lock()
 	barMessage := make(chan string, 1)
@@ -174,13 +130,13 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 						if ctx.Err() == nil {
 							doneText = cond
 						} else {
-							doneText = fmt.Sprintf("time out on %s %s", cond, ctx.Err())
+							doneText = fmt.Sprintf("time out on %s: %s", cond, ctx.Err())
 						}
 						return doneText
 					}
 					select {
 					case msg := <-barMessage:
-						body = fmt.Sprintf("%s %s", cond, msg)
+						body = fmt.Sprintf("%s: %s", cond, strings.ReplaceAll(msg, "_", " "))
 						// default refreshrate is 150ms, we will check
 						// the channel every 2/3 of that time to reduce duplicate
 					case <-time.After(100 * time.Millisecond):
@@ -189,7 +145,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 						}
 					}
 					return body
-				}, decor.WCSyncSpaceR)
+				})
 			}(name),
 		),
 		mpb.BarFillerMiddleware(
@@ -212,6 +168,10 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 	// each time we update it, we will lock to avoid duplicate
 	for !bar.Completed() {
 		v, ok := <-current
+		log.WithFields(log.Fields{
+			"appliance": name,
+			"status":    v,
+		}).Debug("recieved status")
 		if !ok {
 			bar.Abort(true)
 			break
@@ -223,11 +183,11 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 			u.mu.Unlock()
 		}()
 
-		if v == failState {
+		if util.InSlice(v, failStates) {
 			bar.Abort(false)
 			break
 		}
-		if v == endState {
+		if util.InSlice(v, endStates) {
 			go func() {
 				u.mu.Lock()
 				bar.Increment()

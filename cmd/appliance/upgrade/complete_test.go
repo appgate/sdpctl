@@ -21,19 +21,19 @@ import (
 
 type mockApplianceStatus struct{}
 
-func (u *mockApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
+func (u *mockApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
 	return nil
 }
-func (u *mockApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+func (u *mockApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
 	return nil
 }
 
 type errApplianceStatus struct{}
 
-func (u *errApplianceStatus) WaitForState(ctx context.Context, appliance openapi.Appliance, expectedState string, status chan<- string) error {
-	return fmt.Errorf("never reached expected state %s", expectedState)
+func (u *errApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+	return fmt.Errorf("never reached expected state %s", want)
 }
-func (u *errApplianceStatus) WaitForStatus(ctx context.Context, appliance openapi.Appliance, want []string) error {
+func (u *errApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
 	return fmt.Errorf("Never reached expected status %s", want)
 }
 
@@ -234,7 +234,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 			},
 			upgradeApplianeStatusWorker: &errApplianceStatus{},
-			wantErrOut:                  regexp.MustCompile(`primary controller never reached expected state single_controller_ready`),
+			wantErrOut:                  regexp.MustCompile(`primary controller never reached expected state`),
 			wantErr:                     true,
 		},
 		{
