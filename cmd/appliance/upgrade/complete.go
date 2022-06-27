@@ -423,8 +423,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			var primaryControllerBars *tui.Progress
 			var statusReport chan<- string
 			if !opts.ciMode {
-				primaryControllerBars = tui.NewProgress(ctx, spinnerOut)
-				defer primaryControllerBars.Wait(3 * time.Second)
+				primaryControllerBars = tui.New(ctx, spinnerOut)
+				defer primaryControllerBars.Wait()
 				var t *tui.Tracker
 				t, statusReport = primaryControllerBars.AddTracker(controller.GetName(), "upgraded")
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
@@ -457,8 +457,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		var p *tui.Progress
 		if !opts.ciMode {
-			p = tui.NewProgress(ctx, spinnerOut)
-			defer p.Wait(3 * time.Second)
+			p = tui.New(ctx, spinnerOut)
+			defer p.Wait()
 		}
 		for _, appliance := range appliances {
 			i := appliance
@@ -589,14 +589,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		for _, ctrl := range additionalControllers {
 			var additionalControllerBars *tui.Progress
 			if !opts.ciMode {
-				additionalControllerBars = tui.NewProgress(ctx, spinnerOut)
+				additionalControllerBars = tui.New(ctx, spinnerOut)
 
 			}
 			if err := upgradeAdditionalController(ctx, ctrl, disableAdditionalControllers, additionalControllerBars); err != nil {
 				return err
 			}
 			if !opts.ciMode {
-				additionalControllerBars.Wait(3 * time.Second)
+				additionalControllerBars.Wait()
 			}
 		}
 		log.Info("done waiting for additional controllers upgrade")
