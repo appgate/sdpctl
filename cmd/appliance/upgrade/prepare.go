@@ -473,8 +473,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		)
 
 		if !opts.ciMode {
-			updateProgressBars = tui.NewProgress(ctx, spinnerOut)
-			defer updateProgressBars.Wait(3 * time.Second)
+			updateProgressBars = tui.New(ctx, spinnerOut)
+			defer updateProgressBars.Wait()
 		}
 
 		type queueStruct struct {
