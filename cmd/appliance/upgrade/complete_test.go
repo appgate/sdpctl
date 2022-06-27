@@ -343,7 +343,6 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
 			cmd.Flags().Bool("no-interactive", false, "usage")
-			cmd.PersistentFlags().Bool("ci-mode", false, "usage")
 			cmd.PersistentFlags().String("actual-hostname", "", "")
 
 			argv, err := shlex.Split(tt.cli)
