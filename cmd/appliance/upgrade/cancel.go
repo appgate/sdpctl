@@ -16,11 +16,11 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/terminal"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v7"
 )
 
 type upgradeCancelOptions struct {
@@ -33,6 +33,7 @@ type upgradeCancelOptions struct {
 	NoInteractive bool
 	defaultfilter map[string]map[string]string
 	timeout       time.Duration
+	ciMode        bool
 }
 
 // NewUpgradeCancelCmd return a new upgrade status command
@@ -87,6 +88,11 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			Appliance: a,
 		}
 	}
+	ciFlag, err := cmd.Flags().GetBool("ci-mode")
+	if err != nil {
+		return err
+	}
+	opts.ciMode = ciFlag
 
 	ctx := context.Background()
 	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
@@ -138,41 +144,54 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 				appliancepkg.UpgradeStatusReady,
 				appliancepkg.UpgradeStatusFailed,
 			}
-			// statusReport is the channel that triggers updates in progress bars
-			statusReport = make(chan string)
 		)
-		defer close(statusReport)
-		cancelProgressBars := mpb.New(mpb.WithOutput(spinnerOut))
 		retryCancel := func(ctx context.Context, appliance openapi.Appliance) error {
 			return backoff.Retry(func() error {
 				return a.UpgradeCancel(ctx, appliance.GetId())
 			}, backoff.NewExponentialBackOff())
 		}
 
+		type queueStruct struct {
+			appliance openapi.Appliance
+			status    chan<- string
+		}
+
+		var bars *tui.Progress
+		if !opts.ciMode {
+			bars = tui.New(ctx, spinnerOut)
+			defer bars.Wait()
+		}
 		for _, appliance := range appliances {
-			qw.Push(appliance)
+			var s chan<- string
+			if !opts.ciMode {
+				var t *tui.Tracker
+				t, s = bars.AddTracker(appliance.GetName(), "cancelled")
+				go t.Watch(appliancepkg.StatusNotBusy, undesiredStatus)
+			}
+			qs := queueStruct{
+				appliance: appliance,
+				status:    s,
+			}
+			qw.Push(qs)
 		}
 		err := qw.Work(func(v interface{}) error {
 			ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 			defer cancel()
-			// When cancling upgrade on a appliance, we will verified that both the upgrade status is OK,
+			// When cancelling upgrade on a appliance, we will verified that both the upgrade status is OK,
 			// and that the apppliance is not busy to avoid race condition When running to many operations
 			// on mulitple appliances at once.
-			appliance := v.(openapi.Appliance)
-			go a.UpgradeStatusWorker.Watch(context.Background(), cancelProgressBars, appliance, appliancepkg.StatusNotBusy, undesiredStatus, statusReport)
-			if err := retryCancel(ctx, appliance); err != nil {
-				return fmt.Errorf("Upgrade cancel for %s failed, %w", appliance.GetName(), err)
+			qs := v.(queueStruct)
+			if err := retryCancel(ctx, qs.appliance); err != nil {
+				return fmt.Errorf("Upgrade cancel for %s failed, %w", qs.appliance.GetName(), err)
 			}
-			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, wantedStatus, undesiredStatus, statusReport); err != nil {
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, undesiredStatus, qs.status); err != nil {
 				return err
 			}
-			return a.ApplianceStats.WaitForApplianceStatus(ctx, appliance, appliancepkg.StatusNotBusy, statusReport)
+			return a.ApplianceStats.WaitForApplianceStatus(ctx, qs.appliance, appliancepkg.StatusNotBusy, qs.status)
 		})
 		if err != nil {
 			return err
 		}
-
-		cancelProgressBars.Wait()
 
 		return nil
 	}

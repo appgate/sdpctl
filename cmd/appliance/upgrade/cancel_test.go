@@ -128,6 +128,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			cmd := NewUpgradeCancelCmd(f)
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
+			cmd.Flags().Bool("ci-mode", false, "")
 
 			argv, err := shlex.Split(tt.cli)
 			if err != nil {
