@@ -159,7 +159,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		var bars *tui.Progress
 		if !opts.ciMode {
 			bars = tui.New(ctx, spinnerOut)
-			defer bars.Wait(3 * time.Second)
+			defer bars.Wait()
 		}
 		for _, appliance := range appliances {
 			var s chan<- string
