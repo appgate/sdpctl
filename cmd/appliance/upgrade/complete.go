@@ -43,6 +43,7 @@ type upgradeCompleteOptions struct {
 	Timeout           time.Duration
 	actualHostname    string
 	defaultFilter     map[string]map[string]string
+	ciMode            bool
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -91,6 +92,11 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 			if len(actualHostname) > 0 {
 				opts.actualHostname = actualHostname
 			}
+			ciModeFlag, err := cmd.Flags().GetBool("ci-mode")
+			if err != nil {
+				return err
+			}
+			opts.ciMode = ciModeFlag
 
 			return nil
 		},
@@ -110,10 +116,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
 	terminal.Lock()
 	defer terminal.Unlock()
-	ciMode, err := cmd.Flags().GetBool("ci-mode")
-	if err != nil {
-		return err
-	}
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
@@ -416,17 +418,16 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
 		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
 		upgradeReadyPrimary := func(ctx context.Context, controller openapi.Appliance) error {
-			var statusReport chan string
-			if !ciMode {
-				primaryP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
-				statusReport = make(chan string)
-				defer close(statusReport)
-				defer primaryP.Wait()
-				go func() {
-					ctx, cancel := context.WithCancel(context.Background())
-					defer cancel()
-					a.UpgradeStatusWorker.Watch(ctx, primaryP, controller, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
-				}()
+			ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
+			defer cancel()
+			var primaryControllerBars *tui.Progress
+			var statusReport chan<- string
+			if !opts.ciMode {
+				primaryControllerBars = tui.New(ctx, spinnerOut)
+				defer primaryControllerBars.Wait()
+				var t *tui.Tracker
+				t, statusReport = primaryControllerBars.AddTracker(controller.GetName(), "upgraded")
+				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
 
 			logEntry := log.WithField("appliance", controller.GetName())
@@ -454,9 +455,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		g, ctx := errgroup.WithContext(ctx)
 		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
-		var p *mpb.Progress
-		if !ciMode {
-			p = mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
+		var p *tui.Progress
+		if !opts.ciMode {
+			p = tui.New(ctx, spinnerOut)
 			defer p.Wait()
 		}
 		for _, appliance := range appliances {
@@ -466,15 +467,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				defer cancel()
 				logEntry := log.WithField("appliance", i.GetName())
 				logEntry.Info("checking if ready")
-				var statusReport chan string
-				if !ciMode {
-					statusReport = make(chan string)
-					defer close(statusReport)
-					go func() {
-						ctx, cancel := context.WithCancel(context.Background())
-						defer cancel()
-						a.UpgradeStatusWorker.Watch(ctx, p, i, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
-					}()
+				var statusReport chan<- string
+				if !opts.ciMode {
+					var t *tui.Tracker
+					t, statusReport = p.AddTracker(i.GetName(), "upgraded")
+					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 				}
 				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
 					return err
@@ -543,21 +540,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if len(additionalControllers) > 0 {
 		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
 
-		upgradeAdditionalController := func(ctx context.Context, controller openapi.Appliance, disable bool) error {
+		upgradeAdditionalController := func(ctx context.Context, controller openapi.Appliance, disable bool, p *tui.Progress) error {
 			log.Infof("Upgrading controller %s", controller.GetName())
 			ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 			defer cancel()
-			var statusReport chan string
-			if !ciMode {
-				p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
-				statusReport = make(chan string)
-				defer close(statusReport)
-				go func() {
-					ctx, cancel := context.WithCancel(context.Background())
-					defer cancel()
-					a.UpgradeStatusWorker.Watch(ctx, p, controller, appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed}, statusReport)
-				}()
-				defer p.Wait()
+			var statusReport chan<- string
+			if !opts.ciMode && p != nil {
+				var t *tui.Tracker
+				t, statusReport = p.AddTracker(controller.GetName(), "upgraded")
+				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
@@ -596,8 +587,16 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			return nil
 		}
 		for _, ctrl := range additionalControllers {
-			if err := upgradeAdditionalController(ctx, ctrl, disableAdditionalControllers); err != nil {
+			var additionalControllerBars *tui.Progress
+			if !opts.ciMode {
+				additionalControllerBars = tui.New(ctx, spinnerOut)
+
+			}
+			if err := upgradeAdditionalController(ctx, ctrl, disableAdditionalControllers, additionalControllerBars); err != nil {
 				return err
+			}
+			if !opts.ciMode {
+				additionalControllerBars.Wait()
 			}
 		}
 		log.Info("done waiting for additional controllers upgrade")
