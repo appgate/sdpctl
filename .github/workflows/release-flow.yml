@@ -3,7 +3,7 @@ name: Release Flow
 on:
   push:
     tags:
-      - v*
+      - '*.*.*'
 
 jobs:
   test:

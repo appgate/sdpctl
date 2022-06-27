@@ -72,7 +72,7 @@ nfpms:
       - src: ./build/man/*.gz
         dst: /usr/share/man/man3/
 snapshot:
-  name_template: "v{{ incpatch .Version }}"
+  name_template: "{{ incpatch .Version }}"
 changelog:
   sort: asc
   filters:
