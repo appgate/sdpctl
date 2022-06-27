@@ -68,12 +68,12 @@ func (p *Progress) Abort() {
 // Wait will wait for all progress bars to complete with a timeout
 // If deadline is reached before the bars are complete, it will abort
 // all bars remaining and return
-func (p *Progress) Wait(timeout time.Duration) {
+func (p *Progress) Wait() {
 	// wait one refresh cycle to give bars a chance to complete
 	time.Sleep(defaultRefreshRate)
 
 	done := make(chan bool)
-	ctx, cancel := context.WithTimeout(p.ctx, timeout)
+	ctx, cancel := context.WithTimeout(p.ctx, 2*defaultRefreshRate)
 	defer cancel()
 
 	go func() {
