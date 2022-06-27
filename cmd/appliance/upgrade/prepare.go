@@ -27,6 +27,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/terminal"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
@@ -357,7 +358,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
 			),
 		)
-		waitSpinner := prompt.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
+		waitSpinner := tui.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
 		proxyReader := bar.ProxyReader(reader)
 		log.WithField("file", imageFile.Name()).Info("Uploading file")
 		headers := map[string]string{
@@ -474,9 +475,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err != nil {
 				log.WithError(err).WithField("applianceID", appliance.GetId()).Debug("Failed to determine current upgrade status")
 			}
-			preparedVersion, err := appliancepkg.ParseVersionString(status.GetDetails())
-			if err != nil {
-				log.WithError(err).Warn("Failed to determine currently prepared version")
+			details := status.GetDetails()
+			var preparedVersion *version.Version
+			if len(details) > 0 {
+				preparedVersion, err = appliancepkg.ParseVersionString(details)
+				if err != nil {
+					log.WithError(err).Warn("Failed to determine currently prepared version")
+				}
 			}
 			uploadVersion, _ := appliancepkg.ParseVersionString(opts.image)
 

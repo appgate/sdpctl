@@ -1,7 +1,7 @@
 //go:build !windows
 // +build !windows
 
-package prompt
+package tui
 
 var SpinnerStyle = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 

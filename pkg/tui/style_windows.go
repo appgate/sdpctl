@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package prompt
+package tui
 
 // SpinnerStyle for Windows has no special unicode characters, to support cmd.exe out-of-the-box.
 var SpinnerStyle = []string{"-", "\\", "|", "/"}

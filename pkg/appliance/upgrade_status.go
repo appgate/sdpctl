@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
@@ -43,9 +43,9 @@ type UpgradeStatus struct {
 
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, currentStatus chan<- string) backoff.Operation {
 	name := appliance.GetName()
-	fields := log.Fields{"appliance": name}
+	logEntry := log.WithField("appliance", name)
+	logEntry.WithField("want", desiredStatuses).Info("polling for upgrade status")
 	hasRebooted := false
-	isInitialState := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -61,28 +61,24 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 					currentStatus <- "installing"
 				}
 			}
+			logEntry.WithError(err).Debug("appliance unreachable")
 			return err
 		}
 		var s string
 		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			if !isInitialState {
-				isInitialState = true
-				return errors.New("initial state throwaway")
-			}
+			logEntry.WithField("current", s).Debug("recieved upgrade status")
 			if currentStatus != nil {
 				currentStatus <- s
 			}
 			if util.InSlice(s, undesiredStatuses) {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
-		}
-		fields["image"] = details
-		fields["status"] = s
-		log.WithFields(fields).Infof("waiting for '%s' status", desiredStatuses)
-		if util.InSlice(s, desiredStatuses) && s != UpgradeStatusFailed {
-			return nil
+			if util.InSlice(s, desiredStatuses) {
+				logEntry.Info("reached wanted upgrade status")
+				return nil
+			}
 		}
 		return fmt.Errorf(
 			"%s never reached %s, got %q %s",
@@ -107,12 +103,13 @@ func (u *UpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance open
 // Watch will print the spinner progress bar and listen for message from <-current and present it to the statusbar
 func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
 	name := appliance.GetName()
-	log.WithField("appliance", name).Debug("watching status on appliance")
+	logEntry := log.WithField("appliance", name)
+	logEntry.Info("watching status on appliance")
 	// we will lock each time we add a new bar to avoid duplicates
 	u.mu.Lock()
 	barMessage := make(chan string, 1)
 	bar := p.New(1,
-		mpb.SpinnerStyle(prompt.SpinnerStyle...),
+		mpb.SpinnerStyle(tui.SpinnerStyle...),
 		mpb.AppendDecorators(
 			func(cond string) decor.Decorator {
 				var (
@@ -149,7 +146,7 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 			}(name),
 		),
 		mpb.BarFillerMiddleware(
-			prompt.CheckBarFiller(ctx, func(c context.Context) bool {
+			tui.CheckBarFiller(ctx, func(c context.Context) bool {
 				return ctx.Err() == nil
 			}),
 		),
@@ -168,10 +165,6 @@ func (u *UpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance op
 	// each time we update it, we will lock to avoid duplicate
 	for !bar.Completed() {
 		v, ok := <-current
-		log.WithFields(log.Fields{
-			"appliance": name,
-			"status":    v,
-		}).Debug("recieved status")
 		if !ok {
 			bar.Abort(true)
 			break
