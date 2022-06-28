@@ -78,8 +78,7 @@ nfpms:
         dst: /usr/share/bash-completion/completions/sdpctl
         file_info:
           mode: 0644
-          group: notRoot
-          owner: notRoot
+          group: root
       - src: ./build/man/*.gz
         dst: /usr/share/man/man3/
     deb:

@@ -16,7 +16,7 @@ deps:
 	go run main.go completion bash > build/bash_completion
 	go run main.go generate man
 
-snapshot:
+snapshot: clean
 	goreleaser release --snapshot --rm-dist
 
 fmtcheck:
