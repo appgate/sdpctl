@@ -3,6 +3,8 @@ env:
 before:
   hooks:
     - make deps
+github_urls:
+  download: https://github.com/appgate/sdpctl/releases
 builds:
   - id: sdpctl_linux
     main: ./main.go
@@ -90,6 +92,15 @@ snapshot:
   name_template: "{{ incpatch .Version }}"
 changelog:
   sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug Fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Other
+      order: 999
   filters:
     exclude:
       - "^docs:"
