@@ -10,7 +10,7 @@ require (
 	github.com/billgraziano/dpapi v0.4.0
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/cheynewallace/tabby v1.1.1
-	github.com/creack/pty v1.1.17
+	github.com/creack/pty v1.1.18
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/enriquebris/goconcurrentqueue v0.6.3
 	github.com/google/go-cmp v0.5.8
