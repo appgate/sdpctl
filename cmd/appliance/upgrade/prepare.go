@@ -394,7 +394,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
-		fmt.Fprintf(opts.Out, "Primary controller as host. Uploading upgrade image:\n")
+		fmt.Fprintf(opts.Out, "[%s] Primary controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 
 		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 		if err := a.UploadToController(fileStatusCtx, opts.image, opts.filename); err != nil {
@@ -609,7 +609,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if workers <= 0 {
 		workers = len(appliances)
 	}
-	fmt.Fprint(opts.Out, "\nPreparing image on appliances:\n")
+	fmt.Fprintf(opts.Out, "[%s] Preparing image on appliances:\n", time.Now().Format(time.RFC3339))
 	if err := prepare(ctx, remoteFilePath, appliances, workers); err != nil {
 		return err
 	}
