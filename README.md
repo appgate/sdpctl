@@ -2,7 +2,9 @@
 
 ---
 # sdpctl documentation
-sdpctl is a command line tool for managing your Appgate SDP collective.
+An Appgate SDP Collective can be managed by a number of different means. Prior to v6.0 scripts were used for a number of these tasks. From v6.0 a new command line tool "sdpctl" has been introduced for managing various aspects of your Appgate SDP Collective. The most critical of these being backups (of the Controller) and upgrades (of the Collective). sdpctl is the recommended tool for managing these aspects of SDP once you are running v6.0.
+Over time we will add more tools to sdpctl so please be sure to always use the latest version. 
+See https://sdphelp.appgate.com/adminguide/v6.0/backup-and-restore.html and https://sdphelp.appgate.com/adminguide/v6.0/upgrading-appliances.html.
 
 ---
 # Installing
