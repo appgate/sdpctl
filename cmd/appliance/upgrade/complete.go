@@ -635,7 +635,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(opts.Out, "\n%s\n", postSummary)
+	fmt.Fprintf(opts.Out, "\n[%s] %s\n", time.Now().Format(time.RFC3339), postSummary)
 
 	return nil
 }
