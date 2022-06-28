@@ -1,31 +1,17 @@
-<img src="./appgate_sdp_logo.svg" width="400">
+<p align="center">
+  <img src="./appgate.svg" width="400">
+</p>
 
----
-# sdpctl documentation
-sdpctl is a command line tool for managing your Appgate SDP collective.
 
----
-# Installing
+# Introduction
 
-## Linux
-**Debian based distributions:**
-Download the latest [debian package](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install it:
-```bash
-$ sudo dpkg -i <path-to-downloaded-debian-package>
-```
+An Appgate SDP Collective can be managed by a number of different means. Prior to v6.0 scripts were used for a number of these tasks. From v6.0 a new command line tool "sdpctl" has been introduced for managing various aspects of your Appgate SDP Collective. The most critical of these being backups (of the Controller) and upgrades (of the Collective). sdpctl is the recommended tool for managing these aspects of SDP once you are running v6.0.
 
-**Red Hat/Fedora:**
-Download the latest [rpm package](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using this command:
-```bash
-$ sudo rpm -i <path-to-downloaded-rpm-package>
-```
+Over time we will add more features to sdpctl so please be sure to always use the latest version.
 
-**Binary (Cross-platform)**
-Download the appropriate version for your platform from sdpctl [releases](https://github.com/appgate/sdpctl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a specific location. This works well for shared hosts and other systems where you don’t have a privileged account.
+# Installation
 
-Ideally, you should install it somewhere in your PATH for easy use. /usr/local/bin is the most probable location.
-
-## MacOS
+## macOS
 Download the latest [macOS build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using the command line:
 ```bash
 # Unpack the downloaded package in the current directory
@@ -50,14 +36,33 @@ PS> [Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";<folder-path>", 
 ```
 Then restart Powershell to make the changes take effect.
 
+## Linux
+**Debian based distributions:**
+Download the latest [debian package](https://github.com/appgate/sdpctl/releases/latest) from the releases. Then install it:
+```bash
+$ sudo dpkg -i <path-to-downloaded-debian-package>
+```
+
+**Red Hat/Fedora:**
+Download the latest [rpm package](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using this command:
+```bash
+$ sudo rpm -i <path-to-downloaded-rpm-package>
+```
+
+**Binary (Cross-platform)**
+Download the appropriate version for your platform from sdpctl [releases](https://github.com/appgate/sdpctl/releases/latest). Once downloaded, the binary can be run from anywhere. You don’t need to install it into a specific location. This works well for shared hosts and other systems where you don’t have a privileged account.
+
+Ideally, you should install it somewhere in your PATH for easy use. /usr/local/bin is the most probable location.
+
 # Shell completion
+
 The `sdpctl` tool supports shell completions for `bash`, `zsh`, `fish` and `PowerShell`. See the completion help command for more information on shell completions:
 ```
 $ sdpctl completion --help
 ```
 
----
 # Usage
+
 ## Initial setup
 To start using `sdpctl`, you'll need to authenticate with your Appgate SDP Collective. The authentication process has two steps; first configure `sdpctl` and then authenticate by signing in to the Collective configured in the first step.
 
@@ -126,3 +131,7 @@ The help command will print the help page for any command that follows.
 | `--api-version` | none | peer API version override |
 | `--debug` | none | Enable debug output and logging |
 | `--no-verify` | none | Don't verify TLS on for this particular command, overriding settings from config file. USE WITH CAUTION! |
+
+# Support
+
+You can open a [github issue](https://github.com/appgate/sdpctl/issues) or contact support@appgate.com

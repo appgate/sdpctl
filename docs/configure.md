@@ -14,19 +14,27 @@ $ sdpctl configure --pem=<path/to/pem>
 After the host and TLS verification options are set, you'll need to authenticate to the controller:
 
 ```bash
-$ # using the signin command will prompt for username and password
+$ # Using default credentials prompt
 $ sdpctl configure signin
-? Username: <your username>
-? Password: <your password>
+? Username: <username>
+? Password: <password>
+? What credentials should be saved? [Use arrows to move, type to filter]
+> both
+  only username
+  only password
+  nothing
 
 $ # skip the prompting by setting the username and password as environment variables. This is only supported when using local provider for authentication.
 $ SDPCTL_USERNAME=<username> SDPCTL_PASSWORD=<password> sdpctl configure signin
+? What credentials should be saved? [Use arrows to move, type to filter]
+> both
+  only username
+  only password
+  nothing
 
 $ # setting only one of the environment variables will make the signin command prompt for the missing information. For example:
 $ SDPCTL_USERNAME=<username> sdpctl configure signin
 ? Password: <password>
-```
-
 ```
 
 ## Working with multiple appgate sdp collectives
