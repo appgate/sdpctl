@@ -335,7 +335,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				},
 			}
 		}
-		fmt.Fprint(opts.Out, "\nBacking up:\n")
+		fmt.Fprintf(opts.Out, "\n[%s] Backing up:\n", time.Now().Format(time.RFC3339))
 		if err := appliancepkg.PrepareBackup(&bOpts); err != nil {
 			return err
 		}
@@ -351,7 +351,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// 1. Disable Controller function on the following appliance
 	// we will run this sequencelly, since this is a sensitive operation
 	// so that we can leave the collective gracefully.
-	fmt.Fprint(opts.Out, "\nInitializing upgrade:\n")
+	fmt.Fprintf(opts.Out, "\n[%s] Initializing upgrade:\n", time.Now().Format(time.RFC3339))
 	initP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
 	if disableAdditionalControllers {
@@ -416,7 +416,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	initP.Wait()
 
 	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
-		fmt.Fprint(opts.Out, "\nUpgrading primary controller:\n")
+		fmt.Fprintf(opts.Out, "\n[%s] Upgrading primary controller:\n", time.Now().Format(time.RFC3339))
 		upgradeReadyPrimary := func(ctx context.Context, controller openapi.Appliance) error {
 			ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 			defer cancel()
@@ -538,7 +538,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	if len(additionalControllers) > 0 {
-		fmt.Fprint(opts.Out, "\nUpgrading additional controllers:\n")
+		fmt.Fprintf(opts.Out, "\n[%s] Upgrading additional controllers:\n", time.Now().Format(time.RFC3339))
 
 		upgradeAdditionalController := func(ctx context.Context, controller openapi.Appliance, disable bool, p *tui.Progress) error {
 			log.Infof("Upgrading controller %s", controller.GetName())
@@ -603,7 +603,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	for index, chunk := range chunks {
-		fmt.Fprintf(opts.Out, "\nUpgrading additional appliances (Batch %d / %d):\n", index+1, chunkLength)
+		fmt.Fprintf(opts.Out, "\n[%s] Upgrading additional appliances (Batch %d / %d):\n", time.Now().Format(time.RFC3339), index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunk, false); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
 		}
@@ -635,7 +635,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(opts.Out, "\n%s\n", postSummary)
+	fmt.Fprintf(opts.Out, "\n[%s] %s\n", time.Now().Format(time.RFC3339), postSummary)
 
 	return nil
 }

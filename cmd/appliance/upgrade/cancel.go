@@ -195,7 +195,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 
 		return nil
 	}
-	fmt.Fprintln(opts.Out, "Cancelling pending upgrades...")
+	fmt.Fprintf(opts.Out, "[%s] Cancelling pending upgrades:\n", time.Now().Format(time.RFC3339))
 	// workers is intentionally a fixed value of 2
 	// because otherwise its a high risk of triggering failure from 1 or more appliances
 	if err := cancel(ctx, noneIdleAppliances, 2); err != nil {
