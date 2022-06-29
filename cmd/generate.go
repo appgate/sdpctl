@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"compress/flate"
 	"compress/gzip"
 	"errors"
 	"fmt"
@@ -82,7 +83,11 @@ func generateManPages(cmd *cobra.Command) error {
 		}
 		defer out.Close()
 
-		w := gzip.NewWriter(out)
+		out.Chmod(0644)
+		w, err := gzip.NewWriterLevel(out, flate.BestCompression)
+		if err != nil {
+			return err
+		}
 		defer w.Close()
 		b, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", path, f.Name()))
 		if err != nil {
