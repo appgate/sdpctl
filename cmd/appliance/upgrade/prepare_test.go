@@ -19,7 +19,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v7"
 )
 
 func init() {
@@ -32,23 +31,11 @@ type mockUpgradeStatus struct{}
 func (u *mockUpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, status chan<- string) error {
 	return nil
 }
-func (u *mockUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
-	return nil
-}
-
-func (u *mockUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
-}
 
 type errorUpgradeStatus struct{}
 
 func (u *errorUpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, status chan<- string) error {
 	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
-}
-func (u *errorUpgradeStatus) Subscribe(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
-	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
-}
-
-func (u *errorUpgradeStatus) Watch(ctx context.Context, p *mpb.Progress, appliance openapi.Appliance, endStates []string, failStates []string, current <-chan string) {
 }
 
 func NewApplianceCmd(f *factory.Factory) *cobra.Command {

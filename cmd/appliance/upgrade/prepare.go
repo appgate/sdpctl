@@ -402,16 +402,24 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		fileUploadStatus := func(controller openapi.Appliance, p *mpb.Progress) error {
 			status := ""
-			statusChan := make(chan string)
-			defer close(statusChan)
-			go a.UpgradeStatusWorker.Watch(ctx, p, controller, []string{appliancepkg.FileReady}, []string{appliancepkg.FileFailed}, statusChan)
+			var uploadProgress *tui.Progress
+			var statusChan chan<- string
+			if !opts.ciMode {
+				var t *tui.Tracker
+				uploadProgress = tui.New(ctx, spinnerOut)
+				defer uploadProgress.Wait()
+				t, statusChan = uploadProgress.AddTracker(controller.GetName(), "uploaded")
+				go t.Watch([]string{appliancepkg.FileReady}, []string{appliancepkg.FileFailed})
+			}
 			for status != appliancepkg.FileReady {
 				remoteFile, err := a.FileStatus(ctx, opts.filename)
 				if err != nil {
 					return err
 				}
 				status = remoteFile.GetStatus()
-				statusChan <- status
+				if statusChan != nil {
+					statusChan <- status
+				}
 				if status == appliancepkg.FileReady {
 					break
 				}
