@@ -23,4 +23,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SDPCTL_VERSION: ${{ github.ref_name }}
         with:
+          distribution: goreleaser
+          version: v1.9.2
           args: "release"
