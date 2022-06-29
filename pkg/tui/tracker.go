@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/vbauerster/mpb/v7"
@@ -98,5 +99,14 @@ func (t *Tracker) barFillerFunc() func(mpb.BarFiller) mpb.BarFiller {
 			}
 			bf.Fill(w, reqWidth, st)
 		})
+	}
+}
+
+func (t *Tracker) Update(s string) {
+	select {
+	case t.statusReport <- s:
+		// wait one refresh cycle to give bars a chance to update properly
+		time.Sleep(defaultRefreshRate)
+	default:
 	}
 }

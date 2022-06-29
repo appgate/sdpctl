@@ -403,12 +403,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		fileUploadStatus := func(controller openapi.Appliance, p *mpb.Progress) error {
 			status := ""
 			var uploadProgress *tui.Progress
-			var statusChan chan<- string
+			var t *tui.Tracker
 			if !opts.ciMode {
-				var t *tui.Tracker
 				uploadProgress = tui.New(ctx, spinnerOut)
 				defer uploadProgress.Wait()
-				t, statusChan = uploadProgress.AddTracker(controller.GetName(), "uploaded")
+				t = uploadProgress.AddTracker(controller.GetName(), "uploaded")
 				go t.Watch([]string{appliancepkg.FileReady}, []string{appliancepkg.FileFailed})
 			}
 			for status != appliancepkg.FileReady {
@@ -417,8 +416,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					return err
 				}
 				status = remoteFile.GetStatus()
-				if statusChan != nil {
-					statusChan <- status
+				if t != nil {
+					t.Update(status)
 				}
 				if status == appliancepkg.FileReady {
 					break
@@ -486,10 +485,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 
 		type queueStruct struct {
-			appliance    openapi.Appliance
-			statusReport chan<- string
-			deadline     time.Time
-			err          error
+			appliance openapi.Appliance
+			tracker   *tui.Tracker
+			deadline  time.Time
+			err       error
 		}
 
 		for _, ap := range appliances {
@@ -529,16 +528,15 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 			}
 
-			var s chan<- string
+			var t *tui.Tracker
 			if !opts.ciMode {
-				var t *tui.Tracker
-				t, s = updateProgressBars.AddTracker(appliance.GetName(), "ready")
+				t = updateProgressBars.AddTracker(appliance.GetName(), "ready")
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 
 			qs := queueStruct{
-				appliance:    appliance,
-				statusReport: s,
+				appliance: appliance,
+				tracker:   t,
 			}
 			qw.Push(qs)
 		}
@@ -562,14 +560,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					queueContinue <- queueStruct{err: err}
 					return err
 				}
-				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {
 					queueContinue <- queueStruct{err: err}
 					return err
 				}
 				queueContinue <- queueStruct{
-					appliance:    qs.appliance,
-					statusReport: qs.statusReport,
-					deadline:     deadline,
+					appliance: qs.appliance,
+					tracker:   qs.tracker,
+					deadline:  deadline,
 				}
 				return nil
 			})
@@ -590,7 +588,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 				ctx, cancel := context.WithDeadline(ctx, qs.deadline)
 				defer cancel()
-				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, prepareReady, unwantedStatus, qs.statusReport); err != nil {
+				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, prepareReady, unwantedStatus, qs.tracker); err != nil {
 					errChan <- err
 					return
 				}
@@ -617,7 +615,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if workers <= 0 {
 		workers = len(appliances)
 	}
-	fmt.Fprintf(opts.Out, "[%s] Preparing image on appliances:\n", time.Now().Format(time.RFC3339))
+	fmt.Fprintf(opts.Out, "\n[%s] Preparing image on appliances:\n", time.Now().Format(time.RFC3339))
 	if err := prepare(ctx, remoteFilePath, appliances, workers); err != nil {
 		return err
 	}

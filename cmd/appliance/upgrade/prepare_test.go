@@ -17,6 +17,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
 )
@@ -28,13 +29,13 @@ func init() {
 
 type mockUpgradeStatus struct{}
 
-func (u *mockUpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, status chan<- string) error {
+func (u *mockUpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) error {
 	return nil
 }
 
 type errorUpgradeStatus struct{}
 
-func (u *errorUpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, status chan<- string) error {
+func (u *errorUpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) error {
 	return fmt.Errorf("gateway never reached %s, got failed", strings.Join(desiredStatuses, ", "))
 }
 

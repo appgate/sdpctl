@@ -6,22 +6,23 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
 )
 
 type WaitForApplianceStatus interface {
-	WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error
+	WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error
 	// WaitForStatus tries appliance stats until the appliance has want status or it reaches the timeout
-	WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error
+	WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error
 }
 
 type ApplianceStatus struct {
 	Appliance *Appliance
 }
 
-func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error {
 	logEntry := log.WithFields(log.Fields{
 		"appliance": appliance.GetName(),
 	})
@@ -37,8 +38,8 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 				logEntry.WithFields(log.Fields{
 					"current": current,
 				}).Debug("recieved appliance status")
-				if status != nil {
-					status <- current
+				if tracker != nil {
+					tracker.Update(current)
 				}
 				if !util.InSlice(current, want) {
 					return fmt.Errorf("Want status %s, got %s", want, current)
@@ -51,7 +52,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 }
 
-func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error {
 	b := backoff.WithContext(&backoff.ExponentialBackOff{
 		InitialInterval:     10 * time.Second,
 		RandomizationFactor: 0.7,
@@ -80,8 +81,8 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 					"current": state,
 				}
 				logEntry.WithFields(fields).Debug("recieved appliance state")
-				if status != nil {
-					status <- state
+				if tracker != nil {
+					tracker.Update(state)
 				}
 				if !util.InSlice(state, want) {
 					return fmt.Errorf("never reached desired state %s", want)

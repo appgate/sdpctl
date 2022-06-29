@@ -30,7 +30,7 @@ func New(ctx context.Context, out io.Writer, options ...mpb.ContainerOption) *Pr
 
 // AddTracker will add a status tracker to the appliance
 // the returned channel is to be used by other functions to update the tracker progress
-func (p *Progress) AddTracker(name, endMsg string) (*Tracker, chan<- string) {
+func (p *Progress) AddTracker(name, endMsg string) *Tracker {
 	t := Tracker{
 		container:    p,
 		name:         name,
@@ -48,7 +48,7 @@ func (p *Progress) AddTracker(name, endMsg string) (*Tracker, chan<- string) {
 	t.mu.Unlock()
 
 	p.trackers = append(p.trackers, &t)
-	return &t, t.statusReport
+	return &t
 }
 
 // Complete will complete all currently active trackers and wait for them to finish before returning
@@ -69,9 +69,6 @@ func (p *Progress) Abort() {
 // If deadline is reached before the bars are complete, it will abort
 // all bars remaining and return
 func (p *Progress) Wait() {
-	// wait one refresh cycle to give bars a chance to complete
-	time.Sleep(defaultRefreshRate)
-
 	done := make(chan bool)
 	ctx, cancel := context.WithTimeout(p.ctx, 2*defaultRefreshRate)
 	defer cancel()
