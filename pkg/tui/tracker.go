@@ -102,6 +102,7 @@ func (t *Tracker) barFillerFunc() func(mpb.BarFiller) mpb.BarFiller {
 	}
 }
 
+// Update is used to send strings for the tracker to present in the progress tracking
 func (t *Tracker) Update(s string) {
 	select {
 	case t.statusReport <- s:
