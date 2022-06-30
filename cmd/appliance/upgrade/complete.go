@@ -69,11 +69,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceUpgradeCompleteDoc.Long,
 		Example: docs.ApplianceUpgradeCompleteDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
-			var err error
-			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
-				return err
-			}
-
 			minTimeout := 5 * time.Minute
 			flagTimeout, err := cmd.Flags().GetDuration("timeout")
 			if err != nil {
@@ -116,6 +111,12 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
 	terminal.Lock()
 	defer terminal.Unlock()
+
+	var err error
+	if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
+		return err
+	}
+
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
