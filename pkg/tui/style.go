@@ -3,7 +3,11 @@
 
 package tui
 
-var SpinnerStyle = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+var (
+	SpinnerStyle []string = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-var SpinnerDone = "✓"
-var SpinnerErr = "⨯"
+	Check string = "✓"
+	Cross string = "⨯"
+	Yes   string = Check
+	No    string = Cross
+)
