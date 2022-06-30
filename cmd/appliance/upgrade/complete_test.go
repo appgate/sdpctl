@@ -379,6 +379,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 		name                  string
 		primaryController     *openapi.Appliance
 		additionalControllers []openapi.Appliance
+		logServersForwarders  []openapi.Appliance
 		chunks                [][]openapi.Appliance
 		skipped               []openapi.Appliance
 		backup                []openapi.Appliance
@@ -396,6 +397,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 					Name: "secondary-controller",
 				},
 			},
+			logServersForwarders: []openapi.Appliance{},
 			chunks: [][]openapi.Appliance{
 				{
 					{
@@ -411,7 +413,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in three steps:
+Upgrade will be completed in four steps:
 
  1. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.
@@ -422,7 +424,10 @@ Upgrade will be completed in three steps:
     the upgrade is completed.
     This step will also reboot the upgraded controllers for the upgrade to take effect.
 
- 3. The remaining appliances will be upgraded. The additional appliances will be split into
+ 3. Appliances with LogForwarder/LogServer functions are updated
+    Other appliances need a connection to to these appliances for logging.
+
+ 4. The remaining appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
@@ -436,8 +441,6 @@ The following appliances will be upgraded to version 5.5.4:
     Batch #1:
     - gateway
     - gateway-2
-
-
 `,
 		},
 		{
@@ -446,6 +449,7 @@ The following appliances will be upgraded to version 5.5.4:
 				Name: "primary-controller",
 			},
 			additionalControllers: []openapi.Appliance{},
+			logServersForwarders:  []openapi.Appliance{},
 			chunks: [][]openapi.Appliance{
 				{
 					{
@@ -474,7 +478,7 @@ The following appliances will be upgraded to version 5.5.4:
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in three steps:
+Upgrade will be completed in four steps:
 
  1. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.
@@ -485,12 +489,92 @@ Upgrade will be completed in three steps:
     the upgrade is completed.
     This step will also reboot the upgraded controllers for the upgrade to take effect.
 
- 3. The remaining appliances will be upgraded. The additional appliances will be split into
+ 3. Appliances with LogForwarder/LogServer functions are updated
+    Other appliances need a connection to to these appliances for logging.
+
+ 4. The remaining appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
 The following appliances will be upgraded to version 5.5.4:
   Primary Controller: primary-controller
+
+  Additional Appliances:
+    Batch #1:
+    - gateway
+    - gateway-2
+
+Appliances that will be skipped:
+  - secondary-controller
+  - additional-controller
+
+Appliances that will be backed up before completing upgrade:
+  - primary-controller
+Backup destination is: /tmp/appgate/backup
+`,
+		},
+		{
+			name: "with logserver and forwarders",
+			primaryController: &openapi.Appliance{
+				Name: "primary-controller",
+			},
+			additionalControllers: []openapi.Appliance{},
+			logServersForwarders: []openapi.Appliance{
+				{Name: "logforwarder1"},
+				{Name: "logforwarder2"},
+			},
+			chunks: [][]openapi.Appliance{
+				{
+					{
+						Name: "gateway",
+					},
+					{
+						Name: "gateway-2",
+					},
+				},
+			},
+			skipped: []openapi.Appliance{
+				{
+					Name: "secondary-controller",
+				},
+				{
+					Name: "additional-controller",
+				},
+			},
+			backup: []openapi.Appliance{
+				{
+					Name: "primary-controller",
+				},
+			},
+			backupDestination: "/tmp/appgate/backup",
+			toVersion:         "5.5.4",
+			expect: `
+UPGRADE COMPLETE SUMMARY
+
+Upgrade will be completed in four steps:
+
+ 1. The primary controller will be upgraded.
+    This will result in the API being unreachable while completing the primary controller upgrade.
+
+ 2. Additional controllers will be upgraded.
+    In some cases, the controller function on additional controllers will need to be disabled
+    before proceeding with the upgrade. The disabled controllers will then be re-enabled once
+    the upgrade is completed.
+    This step will also reboot the upgraded controllers for the upgrade to take effect.
+
+ 3. Appliances with LogForwarder/LogServer functions are updated
+    Other appliances need a connection to to these appliances for logging.
+
+ 4. The remaining appliances will be upgraded. The additional appliances will be split into
+    batches to keep the collective as available as possible during the upgrade process.
+    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
+
+The following appliances will be upgraded to version 5.5.4:
+  Primary Controller: primary-controller
+
+  LogServers/LogForwarders:
+  - logforwarder1
+  - logforwarder2
 
   Additional Appliances:
     Batch #1:
@@ -512,7 +596,7 @@ Backup destination is: /tmp/appgate/backup
 		t.Run(tt.name, func(t *testing.T) {
 			var b bytes.Buffer
 			version, _ := version.NewVersion(tt.toVersion)
-			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
+			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.logServersForwarders, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}
