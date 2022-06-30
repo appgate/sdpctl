@@ -667,11 +667,11 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []o
 				i := applianceData{
 					Name:           a.GetName(),
 					CurrentVersion: version.String(),
-					Online:         "Offline ⨯",
+					Online:         "Online " + tui.No,
 				}
 
 				if appliancepkg.StatsIsOnline(stat) {
-					i.Online = "Online ✓"
+					i.Online = "Online " + tui.Yes
 				}
 				data.Appliances = append(data.Appliances, i)
 			}
@@ -685,10 +685,10 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []o
 				i := applianceData{
 					Name:           s.GetName(),
 					CurrentVersion: version.String(),
-					Online:         "Offline ⨯",
+					Online:         "Online " + tui.No,
 				}
 				if appliancepkg.StatsIsOnline(stat) {
-					i.Online = "Online ✓"
+					i.Online = "Online " + tui.Yes
 				}
 				data.SkipAppliances = append(data.SkipAppliances, i)
 			}
