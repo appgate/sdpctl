@@ -350,36 +350,61 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 
-		reader := io.LimitReader(body, int64(body.Len()))
-		uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
-		bar := uploadProgress.AddBar(int64(body.Len()),
-			mpb.BarWidth(50),
-			mpb.BarFillerOnComplete("uploaded"),
-			mpb.PrependDecorators(
-				decor.OnComplete(decor.Name(" uploading"), " ✓"),
-				decor.Name(fileStat.Name(), decor.WC{W: len(fileStat.Name()) + 1}),
-			),
-			mpb.AppendDecorators(
-				decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
-				decor.OnComplete(decor.Name(" | "), ""),
-				decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
-			),
-		)
-		waitSpinner := tui.AddDefaultSpinner(uploadProgress, fileStat.Name(), "waiting for server ok", "uploaded", mpb.BarQueueAfter(bar, false))
-		proxyReader := bar.ProxyReader(reader)
-		log.WithField("file", imageFile.Name()).Info("Uploading file")
+		uploadWithProgress := func(ctx context.Context, body *bytes.Buffer, headers map[string]string) error {
+			uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
+			defer uploadProgress.Wait()
+			barName := fileStat.Name() + ":"
+			bar := uploadProgress.AddBar(int64(body.Len()),
+				mpb.BarWidth(50),
+				mpb.BarFillerOnComplete("uploaded"),
+				mpb.PrependDecorators(
+					decor.Spinner(tui.SpinnerStyle, decor.WC{W: 2}),
+					decor.Name(barName, decor.WC{W: len(barName) + 1}),
+				),
+				mpb.AppendDecorators(
+					decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
+					decor.OnComplete(decor.Name(" | "), ""),
+					decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+				),
+			)
+			waitSpinner := tui.AddDefaultSpinner(
+				uploadProgress,
+				fileStat.Name(),
+				"waiting for server ok",
+				"upload complete",
+				mpb.BarQueueAfter(bar, false),
+			)
+
+			reader := io.LimitReader(body, int64(body.Len()))
+			proxyReader := bar.ProxyReader(reader)
+			defer func() {
+				proxyReader.Close()
+				bar.Wait()
+				waitSpinner.Increment()
+			}()
+
+			log.WithField("file", imageFile.Name()).Info("Uploading file")
+			if err := a.UploadFile(ctx, proxyReader, headers); err != nil {
+				bar.Abort(false)
+				return err
+			}
+			return nil
+		}
+
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
 			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
 		}
-		if err := a.UploadFile(ctx, proxyReader, headers); err != nil {
-			bar.Abort(false)
+
+		fmt.Fprintf(opts.Out, "[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
+		if !opts.ciMode {
+			err = uploadWithProgress(ctx, body, headers)
+		} else {
+			err = a.UploadFile(ctx, body, headers)
+		}
+		if err != nil {
 			return err
 		}
-		proxyReader.Close()
-		bar.Wait()
-		waitSpinner.Increment()
-		uploadProgress.Wait()
 
 		log.WithField("file", imageFile.Name()).Info("Uploaded file")
 
@@ -630,6 +655,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		log.Infof("File %s deleted from Controller", opts.filename)
 	}
+	fmt.Fprintf(opts.Out, "\n[%s] PREPARE COMPLETE\n", time.Now().Format(time.RFC3339))
 	return nil
 }
 

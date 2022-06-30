@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
@@ -182,7 +183,7 @@ func Execute() exitCode {
 func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config) io.Writer {
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:   true,
-		TimestampFormat: "2006-01-02 15:04:05",
+		TimestampFormat: time.RFC3339,
 		PadLevelText:    true,
 	})
 	if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {

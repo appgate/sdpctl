@@ -1,9 +1,6 @@
 package tui
 
 import (
-	"context"
-	"io"
-
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 )
@@ -21,33 +18,4 @@ func AddDefaultSpinner(p *mpb.Progress, name string, stage string, cmsg string, 
 	options = append(options, opts...)
 
 	return p.New(1, mpb.SpinnerStyle(SpinnerStyle...), options...)
-}
-
-func CheckBarFiller(
-	waitCtx context.Context,
-	success func(context.Context) bool,
-) func(mpb.BarFiller) mpb.BarFiller {
-	return func(base mpb.BarFiller) mpb.BarFiller {
-		done := false
-		var doneText string
-		return mpb.BarFillerFunc(func(w io.Writer, reqWidth int, st decor.Statistics) {
-			if done {
-				io.WriteString(w, doneText)
-				return
-			}
-
-			if st.Completed || waitCtx.Err() != nil {
-				done = true
-				if success(waitCtx) {
-					doneText = Check
-				} else {
-					doneText = Cross
-				}
-				io.WriteString(w, doneText)
-			} else {
-				base.Fill(w, reqWidth, st)
-			}
-
-		})
-	}
 }
