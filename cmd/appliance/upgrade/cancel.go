@@ -153,7 +153,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 
 		type queueStruct struct {
 			appliance openapi.Appliance
-			status    chan<- string
+			tracker   *tui.Tracker
 		}
 
 		var bars *tui.Progress
@@ -162,15 +162,14 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			defer bars.Wait()
 		}
 		for _, appliance := range appliances {
-			var s chan<- string
+			var t *tui.Tracker
 			if !opts.ciMode {
-				var t *tui.Tracker
-				t, s = bars.AddTracker(appliance.GetName(), "cancelled")
+				t = bars.AddTracker(appliance.GetName(), "cancelled")
 				go t.Watch(appliancepkg.StatusNotBusy, undesiredStatus)
 			}
 			qs := queueStruct{
 				appliance: appliance,
-				status:    s,
+				tracker:   t,
 			}
 			qw.Push(qs)
 		}
@@ -184,10 +183,10 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			if err := retryCancel(ctx, qs.appliance); err != nil {
 				return fmt.Errorf("Upgrade cancel for %s failed, %w", qs.appliance.GetName(), err)
 			}
-			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, undesiredStatus, qs.status); err != nil {
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, undesiredStatus, qs.tracker); err != nil {
 				return err
 			}
-			return a.ApplianceStats.WaitForApplianceStatus(ctx, qs.appliance, appliancepkg.StatusNotBusy, qs.status)
+			return a.ApplianceStats.WaitForApplianceStatus(ctx, qs.appliance, appliancepkg.StatusNotBusy, qs.tracker)
 		})
 		if err != nil {
 			return err

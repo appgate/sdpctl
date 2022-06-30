@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
@@ -27,14 +28,14 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 
 type WaitForUpgradeStatus interface {
 	// WaitForUpgradeStatus does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
-	WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error
+	WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) error
 }
 
 type UpgradeStatus struct {
 	Appliance *Appliance
 }
 
-func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, currentStatus chan<- string) backoff.Operation {
+func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) backoff.Operation {
 	name := appliance.GetName()
 	logEntry := log.WithField("appliance", name)
 	logEntry.WithField("want", desiredStatuses).Info("polling for upgrade status")
@@ -44,14 +45,14 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
-			if currentStatus != nil {
+			if tracker != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
-					currentStatus <- "rebooting, waiting for appliance to come back online"
+					tracker.Update("rebooting, waiting for appliance to come back online")
 					hasRebooted = true
 				} else if hasRebooted {
-					currentStatus <- "switching partition"
+					tracker.Update("switching partition")
 				} else {
-					currentStatus <- "installing"
+					tracker.Update("installing")
 				}
 			}
 			logEntry.WithError(err).Debug("appliance unreachable")
@@ -62,8 +63,8 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
 			logEntry.WithField("current", s).Debug("recieved upgrade status")
-			if currentStatus != nil {
-				currentStatus <- s
+			if tracker != nil {
+				tracker.Update(s)
 			}
 			if util.InSlice(s, undesiredStatuses) {
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
@@ -83,12 +84,12 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	}
 }
 
-func (u *UpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, current chan<- string) error {
+func (u *UpgradeStatus) WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) error {
 	b := backoff.WithContext(defaultExponentialBackOff, ctx)
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
-		return backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatuses, undesiredStatuses, current), b)
+		return backoff.Retry(u.upgradeStatus(ctx, appliance, desiredStatuses, undesiredStatuses, tracker), b)
 	}
 }

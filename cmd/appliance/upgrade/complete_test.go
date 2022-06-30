@@ -15,25 +15,26 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/google/shlex"
 	"github.com/hashicorp/go-version"
 )
 
 type mockApplianceStatus struct{}
 
-func (u *mockApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+func (u *mockApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error {
 	return nil
 }
-func (u *mockApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+func (u *mockApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error {
 	return nil
 }
 
 type errApplianceStatus struct{}
 
-func (u *errApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+func (u *errApplianceStatus) WaitForApplianceState(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error {
 	return fmt.Errorf("never reached expected state %s", want)
 }
-func (u *errApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, status chan<- string) error {
+func (u *errApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance openapi.Appliance, want []string, tracker *tui.Tracker) error {
 	return fmt.Errorf("Never reached expected status %s", want)
 }
 
