@@ -268,6 +268,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
+
+	// isolate additional controllers
 	additionalControllers := groups[appliancepkg.FunctionController]
 	additionalAppliances := appliances
 	for _, ctrls := range additionalControllers {
@@ -277,6 +279,20 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 		}
 	}
+
+	// isolate log forwarders and log servers
+	logForwardersAndServers := groups[appliancepkg.FunctionLogServer]
+	for _, lf := range groups[appliancepkg.FunctionLogForwarder] {
+		logForwardersAndServers = appliancepkg.AppendUniqueAppliance(logForwardersAndServers, lf)
+	}
+	for _, lfs := range logForwardersAndServers {
+		for i, app := range additionalAppliances {
+			if lfs.GetId() == app.GetId() {
+				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
+			}
+		}
+	}
+
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
@@ -598,6 +614,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 		}
 		log.Info("done waiting for additional controllers upgrade")
+	}
+
+	if len(logForwardersAndServers) > 0 {
+		fmt.Fprintf(opts.Out, "\n[%s] Upgrading LogForwarder/LogServer appliances:\n", time.Now().Format(time.RFC3339))
+		if err := batchUpgrade(ctx, logForwardersAndServers, false); err != nil {
+			return err
+		}
 	}
 
 	for index, chunk := range chunks {
