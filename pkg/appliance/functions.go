@@ -486,7 +486,7 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 }
 
 func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.Appliance) []openapi.Appliance {
-	filteredAppliances := []openapi.Appliance{}
+	filteredAppliances := make([]openapi.Appliance, len(appliances))
 	copy(filteredAppliances, appliances)
 
 	appID := appliance.GetId()
