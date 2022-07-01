@@ -83,6 +83,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		if err != nil {
 			return err
 		}
+		settings.SetBackupApiEnabled(true)
 		settings.SetBackupPassphrase(answer)
 		message = "Backup API and passphrase has been updated."
 	}
