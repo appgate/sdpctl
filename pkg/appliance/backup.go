@@ -257,13 +257,12 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 
 	for _, a := range toBackup {
-		appliance := a
-		var bar *mpb.Bar
-		if !opts.CiMode {
-			bar = tui.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
-		}
 		go func(appliance openapi.Appliance) {
 			defer wg.Done()
+			var bar *mpb.Bar
+			if !opts.CiMode {
+				bar = tui.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
+			}
 			backedUp, err := b(appliance)
 			if err != nil {
 				if !opts.CiMode {
@@ -276,7 +275,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				bar.Increment()
 			}
 			backups <- backedUp
-		}(appliance)
+		}(a)
 	}
 
 	go func() {
