@@ -76,6 +76,7 @@ func TestBackupCmd(t *testing.T) {
 
 	cmd := NewCmdBackup(f)
 	cmd.Flags().Bool("no-interactive", false, "usage")
+	cmd.Flags().Bool("ci-mode", false, "ci-mode")
 	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing", "--primary", "--no-interactive"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -128,6 +129,7 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 
 	cmd := NewCmdBackup(f)
 	cmd.Flags().Bool("no-interactive", false, "usage")
+	cmd.Flags().Bool("ci-mode", false, "ci-mode")
 	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing", "--no-interactive"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -170,6 +172,7 @@ func TestBackupCmdNoState(t *testing.T) {
 
 	cmd := NewCmdBackup(f)
 	cmd.Flags().Bool("no-interactive", false, "usage")
+	cmd.Flags().Bool("ci-mode", false, "ci-mode")
 	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing", "--no-interactive"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)

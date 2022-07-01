@@ -49,6 +49,7 @@ type BackupOpts struct {
 	NoInteractive bool
 	FilterFlag    map[string]map[string]string
 	Quiet         bool
+	CiMode        bool
 }
 
 func PrepareBackup(opts *BackupOpts) error {
@@ -70,6 +71,13 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	backupIDs := make(map[string]string)
 	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
+
+	var err error
+	opts.CiMode, err = cmd.Flags().GetBool("ci-mode")
+	if err != nil {
+		return nil, err
+	}
+
 	audit := util.InSlice("audit", opts.With)
 	logs := util.InSlice("logs", opts.With)
 
@@ -196,9 +204,13 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		backups      = make(chan backedUp, count)
 		errorChannel = make(chan error, count)
 		backupAPI    = backup.New(app.APIClient, app.Token, opts.Config.Version)
-		progressBars = mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
+		progressBars *mpb.Progress
 	)
 
+	if !opts.CiMode {
+		progressBars = mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
+		defer progressBars.Wait()
+	}
 	wg.Add(count)
 
 	retryStatus := func(ctx context.Context, applianceID, backupID string) error {
@@ -246,16 +258,23 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 	for _, a := range toBackup {
 		appliance := a
-		bar := tui.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
+		var bar *mpb.Bar
+		if !opts.CiMode {
+			bar = tui.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
+		}
 		go func(appliance openapi.Appliance) {
 			defer wg.Done()
 			backedUp, err := b(appliance)
 			if err != nil {
-				bar.Abort(false)
+				if !opts.CiMode {
+					bar.Abort(false)
+				}
 				errorChannel <- fmt.Errorf("could not backup %s %s", appliance.GetName(), err)
 				return
 			}
-			bar.Increment()
+			if !opts.CiMode {
+				bar.Increment()
+			}
 			backups <- backedUp
 		}(appliance)
 	}
@@ -266,7 +285,6 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		close(errorChannel)
 	}()
 
-	progressBars.Wait()
 	for b := range backups {
 		backupIDs[b.applianceID] = b.backupID
 		log.WithField("file", b.destination).Info("Wrote backup file")
@@ -299,19 +317,18 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		ID := appID
 		backupID := bckID
 		g.Go(func() error {
-			entry := log.WithField("applianceID", ID).WithField("backupID", backupID)
 			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(token).Execute()
 			if err != nil {
-				return err
+				return api.HTTPErrorResponse(res, err)
 			}
-			entry.Debug(res)
 			return nil
 		})
 	}
+	g.Wait()
 	log.Info("Finished cleanup")
 	fmt.Fprint(opts.Out, "Backup complete!\n\n")
 
-	return g.Wait()
+	return nil
 }
 
 func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Appliance) ([]openapi.Appliance, error) {
