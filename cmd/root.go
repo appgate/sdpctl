@@ -224,6 +224,17 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if cfg.Debug {
 			log.SetLevel(log.DebugLevel)
 		}
+
+		if !cmdutil.IsTTY(os.Stdout) {
+			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
+				return err
+			}
+			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
+				return err
+			}
+			log.Info("Output is not TTY. Using no-interactive and ci-mode")
+		}
+
 		if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
 			f.SetSpinnerOutput(io.Discard)
 		}
@@ -232,13 +243,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 
 		log.SetOutput(logOutput(cmd, f, cfg))
-
-		if !cmdutil.IsTTY(os.Stdout) {
-			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
-				return err
-			}
-			log.Info("Output is not TTY. Using no-interactive mode")
-		}
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
