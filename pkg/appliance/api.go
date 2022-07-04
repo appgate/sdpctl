@@ -206,8 +206,12 @@ func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 
 func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devKeyring bool) error {
 	u := openapi.ApplianceUpgrade{
-		ImageUrl:   filename,
-		DevKeyring: openapi.PtrBool(devKeyring),
+		ImageUrl: filename,
+	}
+	if devKeyring {
+		// Only set dev keyring if it is true
+		// will prevent errors with older api-version that don't support dev-keyring
+		u.DevKeyring = openapi.PtrBool(devKeyring)
 	}
 	_, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
 	if err != nil {
