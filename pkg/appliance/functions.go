@@ -485,20 +485,25 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 	return result
 }
 
+func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.Appliance) []openapi.Appliance {
+	filteredAppliances := make([]openapi.Appliance, len(appliances))
+	copy(filteredAppliances, appliances)
+
+	appID := appliance.GetId()
+	inFiltered := []string{}
+	for _, a := range filteredAppliances {
+		inFiltered = append(inFiltered, a.GetId())
+	}
+	if !util.InSlice(appID, inFiltered) {
+		filteredAppliances = append(filteredAppliances, appliance)
+	}
+
+	return filteredAppliances
+}
+
 func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) []openapi.Appliance {
 	var filteredAppliances []openapi.Appliance
 	var warnings []string
-
-	appendUnique := func(app openapi.Appliance) {
-		appID := app.GetId()
-		inFiltered := []string{}
-		for _, a := range filteredAppliances {
-			inFiltered = append(inFiltered, a.GetId())
-		}
-		if !util.InSlice(appID, inFiltered) {
-			filteredAppliances = append(filteredAppliances, app)
-		}
-	}
 
 	for _, a := range appliances {
 		for k, s := range filter {
@@ -508,7 +513,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, name := range nameList {
 					regex := regexp.MustCompile(name)
 					if regex.MatchString(a.GetName()) {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			case "id":
@@ -516,7 +521,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, id := range ids {
 					regex := regexp.MustCompile(id)
 					if regex.MatchString(a.GetId()) {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			case "tags", "tag":
@@ -524,7 +529,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				appTags := a.GetTags()
 				for _, t := range tagSlice {
 					if res := util.SearchSlice(t, appTags, false); len(res) > 0 {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			case "version":
@@ -534,7 +539,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					version := a.GetVersion()
 					versionString := fmt.Sprintf("%d", version)
 					if regex.MatchString(versionString) {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			case "hostname", "host":
@@ -542,7 +547,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, host := range hostList {
 					regex := regexp.MustCompile(host)
 					if regex.MatchString(a.GetHostname()) {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			case "active", "activated":
@@ -554,14 +559,14 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					}
 				}
 				if a.GetActivated() == b {
-					appendUnique(a)
+					filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 				}
 			case "site", "site-id":
 				siteList := strings.Split(s, FilterDelimiter)
 				for _, site := range siteList {
 					regex := regexp.MustCompile(site)
 					if regex.MatchString(a.GetSite()) {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			case "function":
@@ -569,7 +574,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, function := range functionList {
 					functions := GetActiveFunctions(a)
 					if results := util.SearchSlice(function, functions, true); len(results) > 0 {
-						appendUnique(a)
+						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
 			default:
