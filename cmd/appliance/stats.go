@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -65,14 +65,14 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 		fmt.Fprintf(opts.Out, "\n%s\n", string(j))
 		return nil
 	}
-	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
-	fmt.Fprintln(w, "Name\tStatus\tFunction\tCPU\tMemory\tNetwork out/in\tDisk\tVersion")
+	w := util.NewPrinter(opts.Out, 4)
+	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", "Disk", "Version")
 	for _, s := range stats.GetData() {
 		version := s.GetVersion()
 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
 			version = v.String()
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		w.AddLine(
 			s.GetName(),
 			s.GetStatus(),
 			statsActiveFunction(s),
@@ -83,7 +83,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 			version,
 		)
 	}
-	w.Flush()
+	w.Print()
 	return nil
 }
 

@@ -213,7 +213,7 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 	}
 
 	if len(result.GetData()) > 0 {
-		p := util.NewPrinter(out)
+		p := util.NewPrinter(out, 2)
 		p.AddHeader("ID", "Type", "Distinguished Name", "Issued", "Expires", "Revoked", "Site ID", "Site Name", "Revocation Time", "Device ID", "Username", "Provider Name", "Controller Hostname")
 		for _, t := range result.GetData() {
 			p.AddLine(

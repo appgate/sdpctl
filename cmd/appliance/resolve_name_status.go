@@ -102,7 +102,7 @@ func resolveNameStatusRun(cmd *cobra.Command, args []string, opts *resolveNameSt
 		return util.PrintJSON(opts.Out, result)
 	}
 
-	p := util.NewPrinter(opts.Out)
+	p := util.NewPrinter(opts.Out, 4)
 	p.AddHeader("Partial", "Finals", "Partials", "Errors")
 	for _, r := range result.GetResolutions() {
 		p.AddLine(r.GetPartial(), r.GetFinals(), r.GetPartials(), r.GetErrors())

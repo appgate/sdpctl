@@ -39,7 +39,7 @@ func tokenListRun(opts *TokenOptions) error {
 		return util.PrintJSON(opts.Out, distinguishedNames)
 	}
 
-	p := util.NewPrinter(opts.Out)
+	p := util.NewPrinter(opts.Out, 4)
 	p.AddHeader("Distinguished Name", "Device ID", "Last Token Issued At", "Provider Name", "Username")
 	for _, dn := range distinguishedNames {
 		p.AddLine(dn.GetDistinguishedName(), dn.GetDeviceId(), dn.GetLastTokenIssuedAt(), dn.GetProviderName(), dn.GetUsername())
