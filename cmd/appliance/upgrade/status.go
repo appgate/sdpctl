@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"text/tabwriter"
 
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -113,11 +112,11 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 		return nil
 	}
 
-	w := tabwriter.NewWriter(opts.Out, 4, 4, 8, ' ', tabwriter.DiscardEmptyColumns)
-	fmt.Fprintln(w, "ID\tName\tStatus\tUpgrade Status\tDetails")
+	w := util.NewPrinter(opts.Out, 4)
+	w.AddHeader("ID", "Name", "Status", "Upgrade Status", "Details")
 	for _, s := range statuses {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n", s.ID, s.Name, s.Status, s.UpgradeStatus, s.Details)
+		w.AddLine(s.ID, s.Name, s.Status, s.UpgradeStatus, s.Details)
 	}
-	w.Flush()
+	w.Print()
 	return nil
 }

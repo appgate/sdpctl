@@ -39,10 +39,10 @@ func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 			want: `
 WARNING: Some appliances have very little space available
 
-Name         Disk Usage
-----         ----------
-controller   90%
-controller2  75%
+Name           Disk Usage
+----           ----------
+controller     90%
+controller2    75%
 
 Upgrading requires the upload and decompression of big images.
 To avoid problems during the upgrade process it's recommended to

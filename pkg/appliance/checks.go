@@ -17,7 +17,7 @@ import (
 )
 
 func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) {
-	p := util.NewPrinter(out)
+	p := util.NewPrinter(out, 4)
 	p.AddHeader("Name", "Disk Usage")
 	for _, a := range stats {
 		p.AddLine(a.GetName(), fmt.Sprintf("%v%%", a.GetDisk()))

@@ -3,20 +3,20 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cheynewallace/tabby"
 	"io"
 	"text/tabwriter"
+
+	"github.com/cheynewallace/tabby"
 )
 
 const (
 	MinWidth = 0
 	TabWidth = 0
-	Padding  = 2
 	PadChar  = ' '
 )
 
-func NewPrinter(output io.Writer) *tabby.Tabby {
-	w := tabwriter.NewWriter(output, MinWidth, TabWidth, Padding, PadChar, tabwriter.DiscardEmptyColumns)
+func NewPrinter(output io.Writer, padding int) *tabby.Tabby {
+	w := tabwriter.NewWriter(output, MinWidth, TabWidth, padding, PadChar, tabwriter.DiscardEmptyColumns)
 	return tabby.NewCustom(w)
 }
 

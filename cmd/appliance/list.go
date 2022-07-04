@@ -60,7 +60,7 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 		return util.PrintJSON(opts.Out, allAppliances)
 	}
 
-	p := util.NewPrinter(opts.Out)
+	p := util.NewPrinter(opts.Out, 4)
 	p.AddHeader("Name", "ID", "Hostname", "Site", "Activated")
 	for _, a := range allAppliances {
 		p.AddLine(a.GetName(), a.GetId(), a.GetHostname(), a.GetSiteName(), a.GetActivated())
