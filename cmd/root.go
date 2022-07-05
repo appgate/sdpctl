@@ -225,6 +225,8 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.DebugLevel)
 		}
 
+		log.SetOutput(logOutput(cmd, f, cfg))
+
 		if !cmdutil.IsTTY(os.Stdout) {
 			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
 				return err
@@ -241,8 +243,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
 			f.SetSpinnerOutput(io.Discard)
 		}
-
-		log.SetOutput(logOutput(cmd, f, cfg))
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
