@@ -230,6 +230,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	} else if opts.Config.Version == 15 {
 		autoScalingWarning = true
 	}
+	if opts.Config.Version <= 13 {
+		// Versions before v13 does not have dev-keyring functionality
+		opts.DevKeyring = false
+	}
 	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 && !opts.NoInteractive {
 		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
 		if err != nil {
