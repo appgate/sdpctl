@@ -18,7 +18,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.5.0
+	github.com/hashicorp/go-version v1.6.0
 	github.com/hinshun/vt10x v0.0.0-20220119200601-820417d04eec
 	github.com/mattn/go-isatty v0.0.14
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
