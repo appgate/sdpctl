@@ -6,53 +6,30 @@ before:
 github_urls:
   download: https://github.com/appgate/sdpctl/releases
 builds:
-  - id: sdpctl_linux
+  - id: sdpctl
     main: ./main.go
     mod_timestamp: "{{ .CommitTimestamp }}"
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-    goarch:
-      - amd64
-      - arm64
-    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
-    ldflags:
-      - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
-      - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
-      - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
-  - id: sdpctl_windows
-    main: ./main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    env:
-      - CGO_ENABLED=0
-    goos:
       - windows
-    goarch:
-      - amd64
-      - arm64
-    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
-    ldflags:
-      - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
-      - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
-      - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
-  - id: sdpctl_darwin
-    main: ./main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    env:
-      - CGO_ENABLED=0
-    goos:
       - darwin
     goarch:
       - amd64
-    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
+      - arm64
+    no_unique_dist_dir: true
+    binary: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
     ldflags:
       - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
       - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
       - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+    ignore:
+      - goos: darwin
+        goarch: arm64
 universal_binaries:
   - replace: false
-    id: sdpctl_darwin
+    id: sdpctl
 archives:
   - format_overrides:
       - goos: windows
