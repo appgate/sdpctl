@@ -281,15 +281,22 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// isolate log forwarders and log servers
-	logForwardersAndServers := groups[appliancepkg.FunctionLogServer]
-	for _, lf := range groups[appliancepkg.FunctionLogForwarder] {
-		logForwardersAndServers = appliancepkg.AppendUniqueAppliance(logForwardersAndServers, lf)
-	}
-	for _, lfs := range logForwardersAndServers {
+	logForwardersAndServersAll := append(groups[appliancepkg.FunctionLogServer], groups[appliancepkg.FunctionLogForwarder]...)
+	logForwardersAndServers := []openapi.Appliance{}
+	for _, lfs := range logForwardersAndServersAll {
 		for i, app := range additionalAppliances {
 			if lfs.GetId() == app.GetId() {
 				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
 			}
+		}
+		isAlsoInControllers := false
+		for _, ctrl := range additionalControllers {
+			if lfs.GetId() == ctrl.GetId() {
+				isAlsoInControllers = true
+			}
+		}
+		if !isAlsoInControllers {
+			logForwardersAndServers = append(logForwardersAndServers, lfs)
 		}
 	}
 
