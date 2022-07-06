@@ -408,6 +408,8 @@ func TestPrintCompleteSummary(t *testing.T) {
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
+Appliances will be upgraded to version 5.5.4
+
 Upgrade will be completed in steps:
 
  1. The primary controller will be upgraded.
@@ -469,6 +471,8 @@ Upgrade will be completed in steps:
 			toVersion:         "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
+
+Appliances will be upgraded to version 5.5.4
 
 Upgrade will be completed in steps:
 
@@ -535,6 +539,8 @@ Appliances that will be skipped:
 			toVersion:         "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
+
+Appliances will be upgraded to version 5.5.4
 
 Upgrade will be completed in steps:
 
