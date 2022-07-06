@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	Appliance54Constraints, _ = version.NewConstraint(">= 5.4.0-beta, < 5.5.0")
-	Appliance55Constraints, _ = version.NewConstraint(">= 5.5.0-beta, < 5.6.0")
-	Appliance50Constraints, _ = version.NewConstraint(">= 5.0.0-beta, < 5.1.0")
+	Appliance54Constraints, _ = version.NewConstraint(">= 5.4.0-beta")
+	Appliance55Constraints, _ = version.NewConstraint(">= 5.5.0-beta")
+	Appliance50Constraints, _ = version.NewConstraint(">= 5.0.0-beta")
 )
 
 func TestParseVersionString(t *testing.T) {
@@ -31,15 +31,14 @@ func TestParseVersionString(t *testing.T) {
 			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
-		// FIX: test is broken upstream
-		// {
-		// 	name: "5.5 beta",
-		// 	args: args{
-		// 		"appgate-5.5.0-26245-beta.img.zip",
-		// 	},
-		// 	constraints: Appliance55Constraints,
-		// 	wantErr:     false,
-		// },
+		{
+			name: "5.5 beta",
+			args: args{
+				"appgate-5.5.0-26245-beta.img.zip",
+			},
+			constraints: Appliance55Constraints,
+			wantErr:     false,
+		},
 		{
 			name: "Full file path",
 			args: args{
@@ -48,15 +47,14 @@ func TestParseVersionString(t *testing.T) {
 			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
-		// FIX: test is broken upstream
-		// {
-		// 	name: "Swapped meta and pre",
-		// 	args: args{
-		// 		"appgate-5.4-beta-26245.img.zip",
-		// 	},
-		// 	constraints: Appliance54Constraints,
-		// 	wantErr:     false,
-		// },
+		{
+			name: "Swapped meta and pre",
+			args: args{
+				"appgate-5.4-beta-26245.img.zip",
+			},
+			constraints: Appliance54Constraints,
+			wantErr:     false,
+		},
 		{
 			name: "plus instead of minus",
 			args: args{
