@@ -66,6 +66,7 @@ nfpms:
 snapshot:
   name_template: "{{ incpatch .Version }}"
 changelog:
+  use: github
   sort: asc
   groups:
     - title: Features
