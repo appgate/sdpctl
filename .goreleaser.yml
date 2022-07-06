@@ -18,8 +18,7 @@ builds:
     goarch:
       - amd64
       - arm64
-    no_unique_dist_dir: true
-    binary: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
+    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
     ldflags:
       - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
       - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
@@ -67,6 +66,7 @@ nfpms:
 snapshot:
   name_template: "{{ incpatch .Version }}"
 changelog:
+  use: github
   sort: asc
   groups:
     - title: Features
