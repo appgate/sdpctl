@@ -127,14 +127,9 @@ func IsUUID(str string) bool {
 func PrefixStringLines(s, prefixChar string, prefixLength int) string {
 	split := strings.Split(s, "\n")
 	for i, l := range split {
-		if len(l) <= 0 {
-			continue
+		if len(l) > 0 {
+			split[i] = strings.Repeat(string(prefixChar), prefixLength) + l
 		}
-		res := l
-		for i := 0; i < prefixLength; i++ {
-			res = prefixChar + res
-		}
-		split[i] = res
 	}
 	return strings.Join(split, "\n")
 }
