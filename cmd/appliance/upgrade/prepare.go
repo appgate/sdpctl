@@ -204,12 +204,25 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	appliances, _, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
-	skipAppliances := []openapi.Appliance{}
+	skipAppliances := []skipStruct{}
+	appliances, offline, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
+	for _, a := range offline {
+		skipAppliances = append(skipAppliances, skipStruct{
+			Reason:    "appliance is offline",
+			Appliance: a,
+		})
+	}
 	if !opts.forcePrepare {
-		appliances, skipAppliances = appliancepkg.CheckVersionsEqual(ctx, initialStats, appliances, targetVersion)
+		var skip []openapi.Appliance
+		appliances, skip = appliancepkg.CheckVersionsEqual(ctx, initialStats, appliances, targetVersion)
 		if len(appliances) <= 0 {
 			return errors.New("No appliances to prepare for upgrade. All appliances are already at the same version as the upgrade image")
+		}
+		for _, a := range skip {
+			skipAppliances = append(skipAppliances, skipStruct{
+				Reason:    "version is already greater or equal to prepare version",
+				Appliance: a,
+			})
 		}
 	}
 
@@ -223,7 +236,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	autoScalingWarning := false
 	if targetVersion != nil {
-		constraints, _ := version.NewConstraint(">= 5.5.0-alpha")
+		constraints, _ := version.NewConstraint(">= 5.5.0")
 		if constraints.Check(targetVersion) {
 			autoScalingWarning = true
 		}
@@ -663,73 +676,78 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	return nil
 }
 
-const prepareUpgradeMessage = `
+const prepareUpgradeMessage = `PREPARE SUMMARY
+
 1. Upload upgrade image {{.Filepath}} to Controller
 2. Prepare upgrade on the following appliances:
-{{range .Appliances }}
-  - Current Version: {{.CurrentVersion }}{{"\t"}}{{.Online -}}{{"\t"}} {{.Name -}}
-{{end}}
 
-3. Delete upgrade image from Controller
+{{ .ApplianceTable }}
 
-{{ if gt (len .SkipAppliances) 0 }}These appliances will be skipped:
-{{- range .SkipAppliances }}
-  - Current Version: {{.CurrentVersion }}{{"\t"}}{{.Online -}}{{"\t"}} {{.Name -}}
-{{- end }}
-{{ end }}`
+3. Delete upgrade image from Controller{{ if .SkipTable }}
 
-func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
-	type applianceData struct {
-		Name           string
-		CurrentVersion string
-		Online         string
-	}
+The following appliances will be skipped:
+
+{{ .SkipTable }}{{ end }}
+`
+
+type skipStruct struct {
+	Reason    string
+	Appliance openapi.Appliance
+}
+
+func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []skipStruct, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
 	type stub struct {
 		Filepath       string
-		Appliances     []applianceData
-		SkipAppliances []applianceData
+		ApplianceTable string
+		SkipTable      string
 	}
 	data := stub{Filepath: f}
+
+	prepareVersion, _ := appliancepkg.ParseVersionString(f)
+
+	abuf := &bytes.Buffer{}
+	at := util.NewPrinter(abuf, 4)
+	at.AddHeader("Name", "Online", "Current version", "Prepare version")
 	for _, a := range appliance {
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
 				version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
-				i := applianceData{
-					Name:           a.GetName(),
-					CurrentVersion: version.String(),
-					Online:         "Online " + tui.No,
+				online := tui.No
+				if stat.GetOnline() {
+					online = tui.Yes
 				}
-
-				if appliancepkg.StatsIsOnline(stat) {
-					i.Online = "Online " + tui.Yes
-				}
-				data.Appliances = append(data.Appliances, i)
+				at.AddLine(a.GetName(), online, version.String(), prepareVersion.String())
 			}
 		}
 	}
+	at.Print()
+	data.ApplianceTable = abuf.String()
 
-	for _, s := range skip {
-		for _, stat := range stats {
-			if s.GetId() == stat.GetId() {
-				version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
-				i := applianceData{
-					Name:           s.GetName(),
-					CurrentVersion: version.String(),
-					Online:         "Online " + tui.No,
+	if len(skip) > 0 {
+		bbuf := &bytes.Buffer{}
+		bt := util.NewPrinter(bbuf, 4)
+		bt.AddHeader("Name", "Online", "Current version", "Reason")
+		for _, s := range skip {
+			for _, stat := range stats {
+				if s.Appliance.GetId() == stat.GetId() {
+					version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
+					online := tui.No
+					if stat.GetOnline() {
+						online = tui.Yes
+					}
+					bt.AddLine(s.Appliance.GetName(), online, version.String(), s.Reason)
 				}
-				if appliancepkg.StatsIsOnline(stat) {
-					i.Online = "Online " + tui.Yes
-				}
-				data.SkipAppliances = append(data.SkipAppliances, i)
 			}
 		}
+		bt.Print()
+		data.SkipTable = bbuf.String()
 	}
 
-	t := template.Must(template.New("").Parse(prepareUpgradeMessage))
-	var tpl bytes.Buffer
-	if err := t.Execute(&tpl, data); err != nil {
+	tpl := template.Must(template.New("").Parse(prepareUpgradeMessage))
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
 		return "", err
 	}
 
-	return tpl.String(), nil
+	return buf.String(), nil
 }
