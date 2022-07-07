@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	Appliance54Constraints, _ = version.NewConstraint(">= 5.4.0-*, < 5.5.0")
-	Appliance55Constraints, _ = version.NewConstraint(">= 5.5.0-*, < 5.6.0")
+	Appliance54Constraints, _ = version.NewConstraint(">= 5.4.0-beta")
+	Appliance55Constraints, _ = version.NewConstraint(">= 5.5.0-beta")
+	Appliance50Constraints, _ = version.NewConstraint(">= 5.0.0-beta")
 )
 
 func TestParseVersionString(t *testing.T) {
@@ -43,7 +44,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"/full/file/path/is/not/allowed/appgate-5.4-26245-release.img.zip",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
 		{
@@ -51,7 +52,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"appgate-5.4-beta-26245.img.zip",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
 		{
@@ -59,7 +60,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"appgate-5.4+release+26245.img.zip",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
 		{
@@ -67,7 +68,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"5.4.img.zip",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
 		{
@@ -75,7 +76,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"5.img.zip",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance50Constraints,
 			wantErr:     false,
 		},
 		{
@@ -83,7 +84,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"5.4.4",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
 		{
@@ -91,7 +92,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"5.4",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance54Constraints,
 			wantErr:     false,
 		},
 		{
@@ -99,7 +100,7 @@ func TestParseVersionString(t *testing.T) {
 			args: args{
 				"5",
 			},
-			constraints: Appliance55Constraints,
+			constraints: Appliance50Constraints,
 			wantErr:     false,
 		},
 		{

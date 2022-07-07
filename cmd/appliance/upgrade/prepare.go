@@ -223,7 +223,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	autoScalingWarning := false
 	if targetVersion != nil {
-		constraints, _ := version.NewConstraint(">= 5.5.0-*")
+		constraints, _ := version.NewConstraint(">= 5.5.0-alpha")
 		if constraints.Check(targetVersion) {
 			autoScalingWarning = true
 		}
