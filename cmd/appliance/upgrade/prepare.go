@@ -707,7 +707,7 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []s
 
 	abuf := &bytes.Buffer{}
 	at := util.NewPrinter(abuf, 4)
-	at.AddHeader("Name", "Online", "Current version", "Prepare version")
+	at.AddHeader("Appliance", "Online", "Current version", "Prepare version")
 	for _, a := range appliance {
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
@@ -726,7 +726,7 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []s
 	if len(skip) > 0 {
 		bbuf := &bytes.Buffer{}
 		bt := util.NewPrinter(bbuf, 4)
-		bt.AddHeader("Name", "Online", "Current version", "Reason")
+		bt.AddHeader("Appliance", "Online", "Current version", "Reason")
 		for _, s := range skip {
 			for _, stat := range stats {
 				if s.Appliance.GetId() == stat.GetId() {

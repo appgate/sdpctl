@@ -723,8 +723,8 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
 2. Prepare upgrade on the following appliances:
 
-Name           Online    Current version    Prepare version
-----           ------    ---------------    ---------------
+Appliance      Online    Current version    Prepare version
+---------      ------    ---------------    ---------------
 controller1    ✓         5.5.7+28767        6.0.0+29426
 controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
@@ -734,8 +734,8 @@ gateway        ✓         5.5.7+28767        6.0.0+29426
 
 The following appliances will be skipped:
 
-Name           Online    Current version    Reason
-----           ------    ---------------    ------
+Appliance      Online    Current version    Reason
+---------      ------    ---------------    ------
 controller3    ⨯         5.5.7+28767        appliance is offline
 gateway2       ✓         6.0.0+29426        version is already greater or equal to prepare version
 
@@ -785,8 +785,8 @@ gateway2       ✓         6.0.0+29426        version is already greater or equa
 1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
 2. Prepare upgrade on the following appliances:
 
-Name           Online    Current version    Prepare version
-----           ------    ---------------    ---------------
+Appliance      Online    Current version    Prepare version
+---------      ------    ---------------    ---------------
 controller1    ✓         5.5.7+28767        6.0.0+29426
 controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
