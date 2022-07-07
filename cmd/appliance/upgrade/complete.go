@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -725,7 +726,7 @@ Appliances that will be skipped:{{ range .Skipped }}
 			"Other appliances need a connection to to these appliances for logging.",
 		}
 		AdditionalAppliancesDescription = []string{
-			"The remaining appliances will be upgraded. The additional appliances will be split into",
+			"Additional appliances will be upgraded. The additional appliances will be split into",
 			"batches to keep the collective as available as possible during the upgrade process.",
 			"Some of the additional appliances may need to be rebooted for the upgrade to take effect.",
 		}
@@ -829,20 +830,34 @@ Appliances that will be skipped:{{ range .Skipped }}
 }
 
 func printPostCompleteSummary(applianceVersions map[string]string, hasDiff bool) (string, error) {
-	type tplStub struct {
-		ApplianceVersions map[string]string
-		HasDiff           bool
+	keys := make([]string, 0, len(applianceVersions))
+	for k := range applianceVersions {
+		keys = append(keys, k)
 	}
+	sort.Strings(keys)
+
+	type tplStub struct {
+		VersionTable string
+		HasDiff      bool
+	}
+
 	tpl := `UPGRADE COMPLETE
 
-{{ if .HasDiff }}WARNING: Upgrade was completed, but not all appliances are running the same version.{{ end }}
-Appliances are now running these versions:
-{{- range $appliance, $version := .ApplianceVersions }}
-  {{ $appliance }}: {{ $version }}{{ end }}
+{{ .VersionTable }}{{ if .HasDiff }}
+WARNING: Upgrade was completed, but not all appliances are running the same version.{{ end }}
 `
+
+	tb := &bytes.Buffer{}
+	tp := util.NewPrinter(tb, 4)
+	tp.AddHeader("Appliance", "Upgraded to")
+	for _, k := range keys {
+		tp.AddLine(k, applianceVersions[k])
+	}
+	tp.Print()
+
 	tplData := tplStub{
-		ApplianceVersions: applianceVersions,
-		HasDiff:           hasDiff,
+		VersionTable: tb.String(),
+		HasDiff:      hasDiff,
 	}
 	t := template.Must(template.New("").Parse(tpl))
 	var buf bytes.Buffer

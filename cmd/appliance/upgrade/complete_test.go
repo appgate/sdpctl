@@ -427,7 +427,7 @@ Upgrade will be completed in steps:
     - secondary-controller
 
 
- 3. The remaining appliances will be upgraded. The additional appliances will be split into
+ 3. Additional appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
@@ -488,7 +488,7 @@ Upgrade will be completed in steps:
     - primary-controller
 
 
- 3. The remaining appliances will be upgraded. The additional appliances will be split into
+ 3. Additional appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
@@ -563,7 +563,7 @@ Upgrade will be completed in steps:
     - logforwarder2
 
 
- 4. The remaining appliances will be upgraded. The additional appliances will be split into
+ 4. Additional appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
@@ -608,10 +608,11 @@ func TestPrintPostCompleteSummary(t *testing.T) {
 			hasDiff: false,
 			expect: `UPGRADE COMPLETE
 
+Appliance     Upgraded to
+---------     -----------
+controller    6.0.0+12345
+gateway       6.0.0+12345
 
-Appliances are now running these versions:
-  controller: 6.0.0+12345
-  gateway: 6.0.0+12345
 `,
 		},
 		{
@@ -624,11 +625,13 @@ Appliances are now running these versions:
 			hasDiff: true,
 			expect: `UPGRADE COMPLETE
 
+Appliance               Upgraded to
+---------               -----------
+gateway                 6.0.0+23456
+primary-controller      6.0.0-beta+12345
+secondary-controller    6.0.0+23456
+
 WARNING: Upgrade was completed, but not all appliances are running the same version.
-Appliances are now running these versions:
-  gateway: 6.0.0+23456
-  primary-controller: 6.0.0-beta+12345
-  secondary-controller: 6.0.0+23456
 `,
 		},
 	}
@@ -638,9 +641,7 @@ Appliances are now running these versions:
 			if err != nil {
 				t.Fatal("error printing summary")
 			}
-			if res != tt.expect {
-				t.Fatalf("Output don't match expected:\nWANT: %s\nGOT: %s", tt.expect, res)
-			}
+			assert.Equal(t, tt.expect, res)
 		})
 	}
 }

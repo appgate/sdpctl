@@ -20,6 +20,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -633,6 +634,176 @@ func TestCheckImageFilename(t *testing.T) {
 			if err := checkImageFilename(tt.args.i); (err != nil) != tt.wantErr {
 				t.Errorf("checkImageFilename() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func Test_showPrepareUpgradeMessage(t *testing.T) {
+	type args struct {
+		f         string
+		appliance []openapi.Appliance
+		skip      []skipStruct
+		stats     []openapi.StatsAppliancesListAllOfData
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "prepare appliance default",
+			args: args{
+				f: "appgate-6.0.0-29426-release.img.zip",
+				appliance: []openapi.Appliance{
+					{
+						Id:   openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name: "controller1",
+					},
+					{
+						Id:   openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name: "controller2",
+					},
+					{
+						Id:   openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name: "gateway",
+					},
+				},
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:    openapi.PtrString("controller1"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:    openapi.PtrString("controller2"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:    openapi.PtrString("gateway"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),
+						Name:    openapi.PtrString("controller3"),
+						Online:  openapi.PtrBool(false),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("57a06ae4-8204-4780-a7c2-a9cdf03e5a0f"),
+						Name:    openapi.PtrString("gateway2"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("6.0.0+29426"),
+					},
+				},
+				skip: []skipStruct{
+					{
+						Appliance: openapi.Appliance{
+							Id:   openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),
+							Name: "controller3",
+						},
+						Reason: "appliance is offline",
+					},
+					{
+						Appliance: openapi.Appliance{
+							Id:   openapi.PtrString("57a06ae4-8204-4780-a7c2-a9cdf03e5a0f"),
+							Name: "gateway2",
+						},
+						Reason: "version is already greater or equal to prepare version",
+					},
+				},
+			},
+			want: `PREPARE SUMMARY
+
+1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
+2. Prepare upgrade on the following appliances:
+
+Appliance      Online    Current version    Prepare version
+---------      ------    ---------------    ---------------
+controller1    ✓         5.5.7+28767        6.0.0+29426
+controller2    ✓         5.5.7+28767        6.0.0+29426
+gateway        ✓         5.5.7+28767        6.0.0+29426
+
+
+3. Delete upgrade image from Controller
+
+The following appliances will be skipped:
+
+Appliance      Online    Current version    Reason
+---------      ------    ---------------    ------
+controller3    ⨯         5.5.7+28767        appliance is offline
+gateway2       ✓         6.0.0+29426        version is already greater or equal to prepare version
+
+`,
+		},
+		{
+			name: "prepare appliance no-skipped",
+			args: args{
+				f: "appgate-6.0.0-29426-release.img.zip",
+				appliance: []openapi.Appliance{
+					{
+						Id:   openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name: "controller1",
+					},
+					{
+						Id:   openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name: "controller2",
+					},
+					{
+						Id:   openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name: "gateway",
+					},
+				},
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:    openapi.PtrString("controller1"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:    openapi.PtrString("controller2"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:    openapi.PtrString("gateway"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+				},
+			},
+			want: `PREPARE SUMMARY
+
+1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
+2. Prepare upgrade on the following appliances:
+
+Appliance      Online    Current version    Prepare version
+---------      ------    ---------------    ---------------
+controller1    ✓         5.5.7+28767        6.0.0+29426
+controller2    ✓         5.5.7+28767        6.0.0+29426
+gateway        ✓         5.5.7+28767        6.0.0+29426
+
+
+3. Delete upgrade image from Controller
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := showPrepareUpgradeMessage(tt.args.f, tt.args.appliance, tt.args.skip, tt.args.stats)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("showPrepareUpgradeMessage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
