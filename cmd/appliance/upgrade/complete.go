@@ -669,99 +669,138 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 }
 
 func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers, logForwardersServers []openapi.Appliance, chunks [][]openapi.Appliance, skipped, backup []openapi.Appliance, backupDestination string, toVersion *version.Version) (string, error) {
-	type tplStub struct {
-		PrimaryController       string
-		AdditionalControllers   []string
-		LogServersAndForwarders []string
-		Chunks                  map[int][]string
-		Skipped                 []string
-		Backup                  []string
-		BackupDestination       string
-		Version                 string
-	}
-	completeSummaryTpl := `
-UPGRADE COMPLETE SUMMARY
+	var (
+		completeSummaryTpl = `
+UPGRADE COMPLETE SUMMARY{{ if .Version }}
 
-Upgrade will be completed in four steps:
+Appliances will be upgraded to version {{ .Version }}{{ end }}
 
- 1. The primary controller will be upgraded.
-    This will result in the API being unreachable while completing the primary controller upgrade.
+Upgrade will be completed in steps:
+{{ range $i, $s := .Steps }}
+ {{ sum $i 1 }}. {{ $s.Description }}
 
- 2. Additional controllers will be upgraded.
-    In some cases, the controller function on additional controllers will need to be disabled
-    before proceeding with the upgrade. The disabled controllers will then be re-enabled once
-    the upgrade is completed.
-    This step will also reboot the upgraded controllers for the upgrade to take effect.
-
- 3. Appliances with LogForwarder/LogServer functions are updated
-    Other appliances need a connection to to these appliances for logging.
-
- 4. The remaining appliances will be upgraded. The additional appliances will be split into
-    batches to keep the collective as available as possible during the upgrade process.
-    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
-
-{{ if .Version -}}The following appliances will be upgraded to version {{ .Version }}:{{ else }}The following appliances will be upgraded:{{ end }}
-{{- with .PrimaryController }}
-  Primary Controller: {{ . }}
-{{ end }}{{- with .AdditionalControllers }}
-  Additional Controllers:{{ range . }}
+{{ $s.TableString }}
+{{ end }}{{ if .Skipped }}
+Appliances that will be skipped:{{ range .Skipped }}
   - {{ . }}{{ end }}
-{{ end }}{{ with .LogServersAndForwarders }}
-  LogServers/LogForwarders:{{ range . }}
-  - {{ . }}{{ end }}
-{{ end }}{{ if .Chunks }}
-  Additional Appliances:{{ range $i, $v := .Chunks }}
-    Batch #{{$i}}:{{ range $v }}
-    - {{.}}{{end}}{{ end }}{{ end }}{{- with .Skipped }}
-
-Appliances that will be skipped:{{ range . }}
-  - {{ . }}{{ end }}{{ end }}{{ with .Backup }}
-
-Appliances that will be backed up before completing upgrade:{{ range . }}
-  - {{ . }}{{ end }}{{ end }}
-{{ if .Backup -}}Backup destination is: {{ .BackupDestination }}
-{{ end -}}
-`
-	additionalControllerNames := []string{}
-	for _, a := range additionalControllers {
-		additionalControllerNames = append(additionalControllerNames, a.GetName())
-	}
-	logForwarderServerNames := []string{}
-	for _, a := range logForwardersServers {
-		logForwarderServerNames = append(logForwarderServerNames, a.GetName())
-	}
-	upgradeChunks := map[int][]string{}
-	for i, chunk := range chunks {
-		chunkSlice := []string{}
-		for _, a := range chunk {
-			chunkSlice = append(chunkSlice, a.GetName())
+{{ end }}`
+		DescriptionIndent = "\n    "
+		BackupDescription = []string{
+			"Backup will be performed on the selected appliances",
+			fmt.Sprintf("and downloaded to %s:", backupDestination),
 		}
-		index := i + 1
-		upgradeChunks[index] = chunkSlice
+		PrimaryControllerDescription = []string{
+			"The primary controller will be upgraded.",
+			"This will result in the API being unreachable while completing the primary controller upgrade.",
+		}
+		AdditionalControllerDescription = []string{
+			"Additional controllers will be upgraded.",
+			"In some cases, the controller function on additional controllers will need to be disabled",
+			"before proceeding with the upgrade. The disabled controllers will then be re-enabled once",
+			"the upgrade is completed.",
+			"This step will also reboot the upgraded controllers for the upgrade to take effect.",
+		}
+		LogForwardersAndServersDescription = []string{
+			"Appliances with LogForwarder/LogServer functions are updated",
+			"Other appliances need a connection to to these appliances for logging.",
+		}
+		AdditionalAppliancesDescription = []string{
+			"The remaining appliances will be upgraded. The additional appliances will be split into",
+			"batches to keep the collective as available as possible during the upgrade process.",
+			"Some of the additional appliances may need to be rebooted for the upgrade to take effect.",
+		}
+	)
+	type step struct {
+		Description string
+		TableString string
 	}
+
+	type tplStub struct {
+		Steps   []step
+		Skipped []string
+		Version string
+	}
+
+	tplSteps := []step{}
+
+	if len(backup) > 0 {
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		for _, a := range backup {
+			t.AddLine(fmt.Sprintf("- %s", a.GetName()))
+		}
+		t.Print()
+		tplSteps = append(tplSteps, step{
+			Description: strings.Join(BackupDescription, DescriptionIndent),
+			TableString: util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+
+	if primaryController != nil {
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		t.AddLine(fmt.Sprintf("- %s", primaryController.GetName()))
+		t.Print()
+		tplSteps = append(tplSteps, step{
+			Description: strings.Join(PrimaryControllerDescription, DescriptionIndent),
+			TableString: util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+
+	if len(additionalControllers) > 0 {
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		for _, a := range additionalControllers {
+			t.AddLine(fmt.Sprintf("- %s", a.GetName()))
+		}
+		t.Print()
+		tplSteps = append(tplSteps, step{
+			Description: strings.Join(AdditionalControllerDescription, DescriptionIndent),
+			TableString: util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+
+	if len(logForwardersServers) > 0 {
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		for _, a := range logForwardersServers {
+			t.AddLine(fmt.Sprintf("- %s", a.GetName()))
+		}
+		t.Print()
+		tplSteps = append(tplSteps, step{
+			Description: strings.Join(LogForwardersAndServersDescription, DescriptionIndent),
+			TableString: util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+
+	if len(chunks) > 0 {
+		tb := &bytes.Buffer{}
+		for i, c := range chunks {
+			fmt.Fprintf(tb, "Batch #%d:\n", i+1)
+			t := util.NewPrinter(tb, 4)
+			for _, a := range c {
+				t.AddLine(fmt.Sprintf("- %s", a.GetName()))
+			}
+			t.Print()
+		}
+		tplSteps = append(tplSteps, step{
+			Description: strings.Join(AdditionalAppliancesDescription, DescriptionIndent),
+			TableString: util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+
 	toSkip := []string{}
 	for _, a := range skipped {
 		toSkip = append(toSkip, a.GetName())
 	}
-	toBackup := []string{}
-	for _, a := range backup {
-		toBackup = append(toBackup, a.GetName())
-	}
 	tplData := tplStub{
-		AdditionalControllers:   additionalControllerNames,
-		LogServersAndForwarders: logForwarderServerNames,
-		Chunks:                  upgradeChunks,
-		Skipped:                 toSkip,
-		Backup:                  toBackup,
-		BackupDestination:       backupDestination,
-	}
-	if primaryController != nil {
-		tplData.PrimaryController = primaryController.GetName()
+		Steps:   tplSteps,
+		Skipped: toSkip,
 	}
 	if toVersion != nil {
 		tplData.Version = toVersion.String()
 	}
-	t := template.Must(template.New("").Parse(completeSummaryTpl))
+	t := template.Must(template.New("").Funcs(util.TPLFuncMap).Parse(completeSummaryTpl))
 	var tpl bytes.Buffer
 	if err := t.Execute(&tpl, tplData); err != nil {
 		return "", err

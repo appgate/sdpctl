@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/spf13/pflag"
@@ -121,4 +122,14 @@ func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[stri
 func IsUUID(str string) bool {
 	_, err := uuid.Parse(str)
 	return err == nil
+}
+
+func PrefixStringLines(s, prefixChar string, prefixLength int) string {
+	split := strings.Split(s, "\n")
+	for i, l := range split {
+		if len(l) > 0 {
+			split[i] = strings.Repeat(string(prefixChar), prefixLength) + l
+		}
+	}
+	return strings.Join(split, "\n")
 }

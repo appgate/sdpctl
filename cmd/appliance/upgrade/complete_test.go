@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/google/shlex"
 	"github.com/hashicorp/go-version"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockApplianceStatus struct{}
@@ -393,19 +394,13 @@ func TestPrintCompleteSummary(t *testing.T) {
 				Name: "primary-controller",
 			},
 			additionalControllers: []openapi.Appliance{
-				{
-					Name: "secondary-controller",
-				},
+				{Name: "secondary-controller"},
 			},
 			logServersForwarders: []openapi.Appliance{},
 			chunks: [][]openapi.Appliance{
 				{
-					{
-						Name: "gateway",
-					},
-					{
-						Name: "gateway-2",
-					},
+					{Name: "gateway"},
+					{Name: "gateway-2"},
 				},
 			},
 			skipped:   []openapi.Appliance{},
@@ -413,10 +408,15 @@ func TestPrintCompleteSummary(t *testing.T) {
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in four steps:
+Appliances will be upgraded to version 5.5.4
+
+Upgrade will be completed in steps:
 
  1. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.
+
+    - primary-controller
+
 
  2. Additional controllers will be upgraded.
     In some cases, the controller function on additional controllers will need to be disabled
@@ -424,23 +424,17 @@ Upgrade will be completed in four steps:
     the upgrade is completed.
     This step will also reboot the upgraded controllers for the upgrade to take effect.
 
- 3. Appliances with LogForwarder/LogServer functions are updated
-    Other appliances need a connection to to these appliances for logging.
+    - secondary-controller
 
- 4. The remaining appliances will be upgraded. The additional appliances will be split into
+
+ 3. The remaining appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
-The following appliances will be upgraded to version 5.5.4:
-  Primary Controller: primary-controller
-
-  Additional Controllers:
-  - secondary-controller
-
-  Additional Appliances:
     Batch #1:
     - gateway
     - gateway-2
+
 `,
 		},
 		{
@@ -478,39 +472,34 @@ The following appliances will be upgraded to version 5.5.4:
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in four steps:
+Appliances will be upgraded to version 5.5.4
 
- 1. The primary controller will be upgraded.
+Upgrade will be completed in steps:
+
+ 1. Backup will be performed on the selected appliances
+    and downloaded to /tmp/appgate/backup:
+
+    - primary-controller
+
+
+ 2. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.
 
- 2. Additional controllers will be upgraded.
-    In some cases, the controller function on additional controllers will need to be disabled
-    before proceeding with the upgrade. The disabled controllers will then be re-enabled once
-    the upgrade is completed.
-    This step will also reboot the upgraded controllers for the upgrade to take effect.
+    - primary-controller
 
- 3. Appliances with LogForwarder/LogServer functions are updated
-    Other appliances need a connection to to these appliances for logging.
 
- 4. The remaining appliances will be upgraded. The additional appliances will be split into
+ 3. The remaining appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
-The following appliances will be upgraded to version 5.5.4:
-  Primary Controller: primary-controller
-
-  Additional Appliances:
     Batch #1:
     - gateway
     - gateway-2
 
+
 Appliances that will be skipped:
   - secondary-controller
   - additional-controller
-
-Appliances that will be backed up before completing upgrade:
-  - primary-controller
-Backup destination is: /tmp/appgate/backup
 `,
 		},
 		{
@@ -551,43 +540,41 @@ Backup destination is: /tmp/appgate/backup
 			expect: `
 UPGRADE COMPLETE SUMMARY
 
-Upgrade will be completed in four steps:
+Appliances will be upgraded to version 5.5.4
 
- 1. The primary controller will be upgraded.
+Upgrade will be completed in steps:
+
+ 1. Backup will be performed on the selected appliances
+    and downloaded to /tmp/appgate/backup:
+
+    - primary-controller
+
+
+ 2. The primary controller will be upgraded.
     This will result in the API being unreachable while completing the primary controller upgrade.
 
- 2. Additional controllers will be upgraded.
-    In some cases, the controller function on additional controllers will need to be disabled
-    before proceeding with the upgrade. The disabled controllers will then be re-enabled once
-    the upgrade is completed.
-    This step will also reboot the upgraded controllers for the upgrade to take effect.
+    - primary-controller
+
 
  3. Appliances with LogForwarder/LogServer functions are updated
     Other appliances need a connection to to these appliances for logging.
+
+    - logforwarder1
+    - logforwarder2
+
 
  4. The remaining appliances will be upgraded. The additional appliances will be split into
     batches to keep the collective as available as possible during the upgrade process.
     Some of the additional appliances may need to be rebooted for the upgrade to take effect.
 
-The following appliances will be upgraded to version 5.5.4:
-  Primary Controller: primary-controller
-
-  LogServers/LogForwarders:
-  - logforwarder1
-  - logforwarder2
-
-  Additional Appliances:
     Batch #1:
     - gateway
     - gateway-2
 
+
 Appliances that will be skipped:
   - secondary-controller
   - additional-controller
-
-Appliances that will be backed up before completing upgrade:
-  - primary-controller
-Backup destination is: /tmp/appgate/backup
 `,
 		},
 	}
@@ -600,9 +587,7 @@ Backup destination is: /tmp/appgate/backup
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}
-			if res != tt.expect {
-				t.Errorf("printCompleteSummary() fail\nEXPECT:%s\nGOT:%s", tt.expect, res)
-			}
+			assert.Equal(t, tt.expect, res)
 		})
 	}
 }
