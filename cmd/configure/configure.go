@@ -2,13 +2,12 @@ package configure
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -58,10 +57,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 
 	if len(opts.PEM) > 0 {
-		opts.PEM = os.ExpandEnv(opts.PEM)
-		if absPath, err := filepath.Abs(opts.PEM); err == nil {
-			opts.PEM = absPath
-		}
+		opts.PEM = filesystem.AbsolutePath(opts.PEM)
 		if ok, err := util.FileExists(opts.PEM); err != nil || !ok {
 			return fmt.Errorf("File not found: %s", opts.PEM)
 		}

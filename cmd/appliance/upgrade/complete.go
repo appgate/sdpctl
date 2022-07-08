@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -18,6 +17,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
@@ -160,7 +160,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		if opts.backup {
 			destPrompt := &survey.Input{
 				Message: "Path to where backup should be saved",
-				Default: os.ExpandEnv(opts.backupDestination),
+				Default: filesystem.AbsolutePath(opts.backupDestination),
 			}
 
 			if err := survey.AskOne(destPrompt, &opts.backupDestination, nil); err != nil {
