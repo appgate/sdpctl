@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/adrg/xdg"
 )
@@ -14,6 +15,20 @@ const (
 	XdgConfigHome = "XDG_CONFIG_HOME"
 	AppData       = "AppData"
 )
+
+func AbsolutePath(s string) string {
+	cs := s
+	if strings.HasPrefix(cs, "~") {
+		// remove tilde and replace with homedir
+		h, _ := os.UserHomeDir()
+		cs = h + cs[1:]
+	}
+	cs = os.ExpandEnv(cs)
+	if absPath, err := filepath.Abs(cs); err == nil {
+		cs = absPath
+	}
+	return cs
+}
 
 func ConfigDir() string {
 	if path := os.Getenv(AgConfigDir); len(path) > 0 {

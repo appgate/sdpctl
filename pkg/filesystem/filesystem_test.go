@@ -61,3 +61,40 @@ func TestConfigDir(t *testing.T) {
 		})
 	}
 }
+
+func TestAbsolutePath(t *testing.T) {
+	tests := []struct {
+		name string
+		arg  string
+		want string
+	}{
+		{
+			name: "absolute path",
+			arg:  "/tmp/path",
+			want: "/tmp/path",
+		},
+		{
+			name: "relative path",
+			arg:  "tmp/path",
+			want: os.ExpandEnv("${PWD}/tmp/path"),
+		},
+		{
+			name: "path with env variable",
+			arg:  "${HOME}/tmp/path",
+			want: os.ExpandEnv("${HOME}/tmp/path"),
+		},
+		{
+			name: "path with tilde",
+			arg:  "~/tmp/path",
+			want: os.ExpandEnv("${HOME}/tmp/path"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := AbsolutePath(tt.arg)
+			if got != tt.want {
+				t.Errorf("AbsolutePath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

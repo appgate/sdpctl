@@ -59,6 +59,7 @@ func PrepareBackup(opts *BackupOpts) error {
 		return fmt.Errorf("This should not be executed on an appliance")
 	}
 
+	opts.Destination = filesystem.AbsolutePath(opts.Destination)
 	if err := os.MkdirAll(opts.Destination, 0700); err != nil {
 		return err
 	}
