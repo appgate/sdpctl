@@ -42,10 +42,13 @@ release:
 #   - artifacts: checksum
 nfpms:
   - homepage: https://www.appgate.com
-    maintainer: Appgate Cybersecurity, Inc <appgatesdp.support@appgate.com>
+    maintainer: Appgate Cybersecurity Inc <appgatesdp.support@appgate.com>
     description: |-
-      Command line tool for managing Appgate SDP collectives
+      Official command line tool for managing
+      Appgate SDP Collectives
     license: MIT
+    vendor: Appgate Cybersecurity, Inc
+    section: utils
     formats:
       - deb
       - rpm
@@ -57,12 +60,20 @@ nfpms:
           group: root
       - src: ./build/man/*.gz
         dst: /usr/share/man/man3/
+        type: documentation
+      - src: LICENSE
+        dst: /usr/share/doc/sdpctl/copyright
+        type: documentation
+        file_info:
+          group: root
+          mode: 0644
     deb:
       lintian_overrides:
         - statically-linked-binary
         - changelog-file-missing-in-native-package
+        - groff-message
     rpm:
-      compression: lzma
+      compression: gzip
 snapshot:
   name_template: "{{ incpatch .Version }}"
 changelog:
