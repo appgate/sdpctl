@@ -582,7 +582,10 @@ Appliances that will be skipped:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var b bytes.Buffer
-			version, _ := version.NewVersion(tt.toVersion)
+			version, err := version.NewVersion(tt.toVersion)
+			if err != nil {
+				t.Fatalf("Failed to parse toVersion %s", err)
+			}
 			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.logServersForwarders, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)

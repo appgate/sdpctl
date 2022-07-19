@@ -549,7 +549,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					log.WithError(err).Warn("Failed to determine currently prepared version")
 				}
 			}
-			uploadVersion, _ := appliancepkg.ParseVersionString(opts.image)
+			uploadVersion, err := appliancepkg.ParseVersionString(opts.image)
+			if err != nil {
+				return err
+			}
 
 			if preparedVersion != nil && uploadVersion != nil {
 				// Cancel current prepared version if the one uploaded is equal or newer
@@ -703,7 +706,10 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []s
 	}
 	data := stub{Filepath: f}
 
-	prepareVersion, _ := appliancepkg.ParseVersionString(f)
+	prepareVersion, err := appliancepkg.ParseVersionString(f)
+	if err != nil {
+		return "", err
+	}
 
 	abuf := &bytes.Buffer{}
 	at := util.NewPrinter(abuf, 4)
@@ -711,12 +717,18 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []s
 	for _, a := range appliance {
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
-				version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
+				var v string
+				version, err := appliancepkg.ParseVersionString(stat.GetVersion())
+				if err != nil {
+					v = "N/A"
+				} else if version != nil {
+					v = version.String()
+				}
 				online := tui.No
 				if stat.GetOnline() {
 					online = tui.Yes
 				}
-				at.AddLine(a.GetName(), online, version.String(), prepareVersion.String())
+				at.AddLine(a.GetName(), online, v, prepareVersion.String())
 			}
 		}
 	}
@@ -730,12 +742,18 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []s
 		for _, s := range skip {
 			for _, stat := range stats {
 				if s.Appliance.GetId() == stat.GetId() {
-					version, _ := appliancepkg.ParseVersionString(stat.GetVersion())
+					var v string
+					version, err := appliancepkg.ParseVersionString(stat.GetVersion())
+					if err != nil {
+						v = "N/A"
+					} else if version != nil {
+						v = version.String()
+					}
 					online := tui.No
 					if stat.GetOnline() {
 						online = tui.Yes
 					}
-					bt.AddLine(s.Appliance.GetName(), online, version.String(), s.Reason)
+					bt.AddLine(s.Appliance.GetName(), online, v, s.Reason)
 				}
 			}
 		}
