@@ -25,11 +25,11 @@ func New(c *openapi.APIClient, t string, v int) *Backup {
 
 // Initiate an Appliance Backup. The progress can be followed by polling the Appliance via "GET appliances/{id}/backup/{backupId}/status".
 func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit bool) (string, error) {
-	o := openapi.InlineObject14{
+	o := openapi.AppliancesIdBackupPostRequest{
 		Logs:  &logs,
 		Audit: &audit,
 	}
-	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, applianceID).Authorization(b.Token).InlineObject14(o).Execute()
+	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, applianceID).Authorization(b.Token).AppliancesIdBackupPostRequest(o).Execute()
 	if err != nil {
 		return "", api.HTTPErrorResponse(response, err)
 	}
@@ -44,7 +44,7 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID string) (*o
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return file, nil
+	return *file, nil
 }
 
 const (

@@ -225,7 +225,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, initialStats)
+	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, *initialStats)
 	if err != nil {
 		return err
 	}
@@ -290,7 +290,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		if err != nil {
 			return err
 		}
-		currentVersion, err := appliancepkg.GetApplianceVersion(lfs, initialStats)
+		currentVersion, err := appliancepkg.GetApplianceVersion(lfs, *initialStats)
 		if err != nil {
 			return err
 		}
