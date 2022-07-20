@@ -70,7 +70,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 	}{
 		{
 			name:                     "with existing file",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // peer_warning message
@@ -86,7 +86,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/files/appgate-5.5.1.img.zip",
+					URL:       "/files/appgate-5.5.1-9876.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
@@ -122,7 +122,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 				{
@@ -130,7 +130,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 			},
@@ -138,7 +138,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:                     "with gateway filter",
-			cli:                      `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1.img.zip'`,
+			cli:                      `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1-9876.img.zip'`,
 			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // peer_warning message
@@ -154,7 +154,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/files/appgate-5.5.1.img.zip",
+					URL:       "/files/appgate-5.5.1-9876.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
@@ -190,7 +190,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 				{
@@ -198,7 +198,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 			},
@@ -206,7 +206,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:                     "error upgrade status",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			primaryControllerVersion: "5.3.4+24950",
 			upgradeStatusWorker:      &errorUpgradeStatus{},
 			wantErrOut:               regexp.MustCompile(`gateway never reached verifying, ready, got failed`),
@@ -228,7 +228,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 				},
 				{
-					URL:       "/files/appgate-5.5.1.img.zip",
+					URL:       "/files/appgate-5.5.1-9876.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
@@ -283,7 +283,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:                     "timeout flag",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip' --timeout 0s",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip' --timeout 0s",
 			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubOne(true) // peer_warning message
@@ -299,7 +299,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/files/appgate-5.5.1.img.zip",
+					URL:       "/files/appgate-5.5.1-9876.img.zip",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
@@ -335,7 +335,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 				{
@@ -343,7 +343,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 			},
@@ -352,7 +352,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:                     "disagree with peer warning",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
@@ -373,7 +373,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:                     "no prepare confirmation",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1.img.zip'",
+			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			primaryControllerVersion: "5.3.4+24950",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // peer_warning message
@@ -483,7 +483,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 				{
@@ -491,7 +491,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 			},

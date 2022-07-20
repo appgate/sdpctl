@@ -550,14 +550,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 			}
 			uploadVersion, err := appliancepkg.ParseVersionString(opts.image)
-			if err != nil {
-				return err
-			}
-
-			if preparedVersion != nil && uploadVersion != nil {
+			if err == nil && preparedVersion != nil && uploadVersion != nil {
 				// Cancel current prepared version if the one uploaded is equal or newer
-				preparedBuildNr, _ := strconv.ParseInt(preparedVersion.Metadata(), 10, 64)
-				uploadBuildNr, _ := strconv.ParseInt(uploadVersion.Metadata(), 10, 64)
+				preparedBuildNr, err := strconv.ParseInt(preparedVersion.Metadata(), 10, 64)
+				if err != nil {
+					return err
+				}
+				uploadBuildNr, err := strconv.ParseInt(uploadVersion.Metadata(), 10, 64)
+				if err != nil {
+					return err
+				}
 				if uploadVersion.LessThanOrEqual(preparedVersion) && uploadBuildNr <= preparedBuildNr {
 					log.WithFields(log.Fields{
 						"uploadVersion":   uploadVersion.String(),
