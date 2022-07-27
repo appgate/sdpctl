@@ -466,7 +466,7 @@ func TestFilterAndExclude(t *testing.T) {
 			Hostname:  "foo.devops",
 			Site:      openapi.PtrString("640039ab-8b13-494a-af9e-20a48846674a"),
 			Activated: openapi.PtrBool(true),
-			Tags: &[]string{
+			Tags: []string{
 				"primary",
 				"Jebediah Kerman",
 			},
@@ -483,7 +483,7 @@ func TestFilterAndExclude(t *testing.T) {
 			},
 			Site:      openapi.PtrString("3976e914-ccf4-4704-80e1-18b7de87ff07"),
 			Activated: openapi.PtrBool(false),
-			Tags: &[]string{
+			Tags: []string{
 				"secondary",
 				"crap",
 			},
@@ -500,7 +500,7 @@ func TestFilterAndExclude(t *testing.T) {
 			},
 			Activated: openapi.PtrBool(false),
 			Site:      openapi.PtrString("15dd5630-aaf5-4d74-8c75-205e438db9a3"),
-			Tags: &[]string{
+			Tags: []string{
 				"stargate",
 			},
 			Version: openapi.PtrInt32(15),
@@ -1381,6 +1381,7 @@ func TestChunkApplianceGroup(t *testing.T) {
 		name string
 		args args
 		want [][]openapi.Appliance
+		opts []cmp.Option // Input options
 	}{
 		{
 			name: "test empty",
@@ -1862,6 +1863,7 @@ func TestChunkApplianceGroup(t *testing.T) {
 					},
 				},
 			},
+			opts: []cmp.Option{cmp.AllowUnexported(openapi.NullableElasticsearch{})},
 		},
 	}
 	for _, tt := range tests {
@@ -1883,7 +1885,7 @@ func TestChunkApplianceGroup(t *testing.T) {
 			if wantAppliances != gotAppliances {
 				t.Fatalf("Got %d appliances, expected %d", gotAppliances, wantAppliances)
 			}
-			if !cmp.Equal(got, tt.want) {
+			if !cmp.Equal(got, tt.want, tt.opts...) {
 				t.Errorf("Got diff in\n%s\n", cmp.Diff(tt.want, got, cmpopts.IgnoreFields(openapi.Appliance{}, "Controller")))
 			}
 		})

@@ -408,7 +408,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 				return false, err
 			}
 			settings.SetBackupPassphrase(password)
-			result, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(settings).Authorization(token).Execute()
+			result, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(token).Execute()
 			if err != nil {
 				return false, api.HTTPErrorResponse(result, err)
 			}

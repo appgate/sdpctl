@@ -186,7 +186,7 @@ func (o OpenIDConnect) refreshToken(clientID, tokenURL, refreshToken string) (*o
 
 var ErrPlatformNotSupported = errors.New("Provider with OpenID Connect is not supported on your system")
 
-func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
+func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.IdentityProvidersNamesGet200ResponseDataInner) (*signInResponse, error) {
 	// Due to macOS being un-tested for oidc provider, we will disable support for oidc provider.
 	// The oidc implementation won't work for macOS until we have resolved the issue
 	// of storing big values in the keychain.

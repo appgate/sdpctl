@@ -48,7 +48,7 @@ const (
 	FileFailed               = "Failed"
 )
 
-func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (openapi.InlineResponse20015, error) {
+func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (*openapi.AppliancesIdUpgradeDelete200Response, error) {
 	status, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, api.HTTPErrorResponse(response, err)
@@ -113,7 +113,7 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 	return nil
 }
 
-func (a *Appliance) Stats(ctx context.Context) (openapi.StatsAppliancesList, *http.Response, error) {
+func (a *Appliance) Stats(ctx context.Context) (*openapi.StatsAppliancesList, *http.Response, error) {
 	status, response, err := a.APIClient.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
@@ -124,7 +124,7 @@ func (a *Appliance) Stats(ctx context.Context) (openapi.StatsAppliancesList, *ht
 var ErrFileNotFound = errors.New("File not found")
 
 // FileStatus Get the status of a File uploaded to the current Controller.
-func (a *Appliance) FileStatus(ctx context.Context, filename string) (openapi.File, error) {
+func (a *Appliance) FileStatus(ctx context.Context, filename string) (*openapi.File, error) {
 	f, r, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameGet(ctx, filename).Authorization(a.Token).Execute()
 	if err != nil {
 		if r.StatusCode == http.StatusNotFound {
@@ -170,7 +170,7 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 }
 
 func (a *Appliance) UploadToController(ctx context.Context, url, filename string) error {
-	response, err := a.APIClient.ApplianceUpgradeApi.FilesPost(ctx).Authorization(a.Token).InlineObject13(openapi.InlineObject13{
+	response, err := a.APIClient.ApplianceUpgradeApi.FilesPost(ctx).Authorization(a.Token).FilesGetRequest1(openapi.FilesGetRequest1{
 		Url:      url,
 		Filename: filename,
 	}).Execute()
@@ -247,10 +247,10 @@ func (a *Appliance) EnableController(ctx context.Context, id string, appliance o
 }
 
 func (a *Appliance) UpdateMaintenanceMode(ctx context.Context, id string, value bool) (string, error) {
-	o := openapi.InlineObject10{
+	o := openapi.AppliancesIdMaintenancePostRequest{
 		Enabled: value,
 	}
-	m, response, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).InlineObject10(o).Authorization(a.Token).Execute()
+	m, response, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).AppliancesIdMaintenancePostRequest(o).Authorization(a.Token).Execute()
 	if err != nil {
 		return "", api.HTTPErrorResponse(response, err)
 	}
@@ -266,10 +266,10 @@ func (a *Appliance) DisableMaintenanceMode(ctx context.Context, id string) (stri
 }
 
 func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartition bool) error {
-	o := openapi.InlineObject11{
+	o := openapi.AppliancesIdUpgradeCompletePostRequest{
 		SwitchPartition: openapi.PtrBool(SwitchPartition),
 	}
-	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeCompletePost(ctx, id).InlineObject11(o).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeCompletePost(ctx, id).AppliancesIdUpgradeCompletePostRequest(o).Authorization(a.Token).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
