@@ -1,5 +1,6 @@
 BIN_NAME=sdpctl
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
+GORELEASER_CROSS_VERSION=v1.18.3
 DESTDIR :=
 prefix  := /usr/local
 bindir  := ${prefix}/bin
@@ -41,3 +42,26 @@ install: build
 	install -d ${DESTDIR}${bindir}
 	install -m755 build/$(BIN_NAME) ${DESTDIR}${bindir}/
 
+.PHONY: release-dry-run
+release-dry-run:
+	docker run \
+		--rm \
+		--env-file .release-env \
+		-v $(PWD):/go/src/github.com/user/repo \
+		-w /go/src/github.com/user/repo \
+		goreleaser/goreleaser-cross:$(GORELEASER_CROSS_VERSION) \
+		--skip-validate --rm-dist --skip-publish
+
+.PHONY: release
+release:
+	@if [ ! -f ".release-env" ]; then \
+		echo "\033[91m.release-env is required for release\033[0m";\
+		exit 1;\
+	fi
+	docker run \
+        --rm \
+        --env-file .release-env \
+		-v $(PWD):/go/src/github.com/user/repo \
+		-w /go/src/github.com/user/repo \
+		goreleaser/goreleaser-cross:$(GORELEASER_CROSS_VERSION) \
+		release --rm-dist
