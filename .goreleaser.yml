@@ -14,7 +14,6 @@ builds:
     goos:
       - linux
       - windows
-      - darwin
     goarch:
       - amd64
       - arm64
@@ -23,9 +22,6 @@ builds:
       - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
       - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
       - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
-    ignore:
-      - goos: darwin
-        goarch: arm64
 universal_binaries:
   - replace: false
     id: sdpctl
