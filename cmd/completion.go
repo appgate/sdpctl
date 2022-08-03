@@ -14,13 +14,11 @@ func NewCmdCompletion() *cobra.Command {
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},
-		Short:                 docs.CompletionDocs.Short,
-		Long:                  docs.CompletionDocs.Long,
-		DisableFlagsInUseLine: true,
-		DisableFlagParsing:    true,
-		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-		Args:                  cobra.ExactValidArgs(1),
-		Example:               docs.CompletionDocs.ExampleString(),
+		Short:     docs.CompletionDocs.Short,
+		Long:      docs.CompletionDocs.Long,
+		ValidArgs: []string{"bash", "zsh", "fish", "powershell"},
+		Args:      cobra.ExactValidArgs(1),
+		Example:   docs.CompletionDocs.ExampleString(),
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "bash":
