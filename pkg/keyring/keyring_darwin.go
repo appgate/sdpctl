@@ -56,7 +56,7 @@ func AddKeychain(key string, value string) error {
 	item.SetSynchronizable(keychain.SynchronizableNo)
 	item.SetAccessible(keychain.AccessibleWhenUnlocked)
 	err := keychain.AddItem(item)
-	if err != nil {
+	if err != nil && err != keychain.ErrorDuplicateItem {
 		return err
 	}
 	return nil
