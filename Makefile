@@ -7,9 +7,14 @@ bindir  := ${prefix}/bin
 commit=$$(git rev-parse HEAD)
 commitPath=github.com/appgate/sdpctl/cmd.commit=${commit}
 
+CGO := 0
+ifeq ($(shell uname),Darwin)
+	CGO = 1
+endif
+
 .PHONY: build
 build:
-	CGO_ENABLED=0 go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}'"
+	CGO_ENABLED=$(CGO) go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}'"
 
 .PHONY: deps
 deps:
