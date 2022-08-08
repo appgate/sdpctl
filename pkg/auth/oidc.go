@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"runtime"
 	"strings"
 	"time"
 
@@ -187,31 +186,6 @@ func (o OpenIDConnect) refreshToken(clientID, tokenURL, refreshToken string) (*o
 var ErrPlatformNotSupported = errors.New("Provider with OpenID Connect is not supported on your system")
 
 func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
-	// Due to macOS being un-tested for oidc provider, we will disable support for oidc provider.
-	// The oidc implementation won't work for macOS until we have resolved the issue
-	// of storing big values in the keychain.
-	//
-	// We will add support to save the oidc Refresh token in the keychain on Windows & Linux.
-	// And this approach won't work for mac, so we need to resolve the upstream issues before we can support macOS.
-	//
-	// The root issue is that we use zalando/go-keyring as our cross platform support for keyrings.
-	// and the current implementation of go-keyring for darwin passes the value through stdin to shellcommand
-	// /usr/bin/security add-generic-password
-	// and the limit on BSD stdin size is 256k
-	// this payload size is not enough for our needs, so we need to find a alternative approach for this on darwin.
-	//
-	// A alternative is to use https://github.com/keybase/go-keychain or https://github.com/99designs/go-keychain
-	// but these packages are depeneded on CGO, which introudces new obstacles,
-	// maybe a option is to only use it for darwin in /pkg/keyring/keyring_darwin.go
-	//
-	// since darwin ARM64 requires CGO bindings anyway to work (See: SA-19363, https://github.com/golang/go/issues/12524)
-	//
-	// Related issue:
-	// Internal issue tracker number: SA-19422
-	// https://github.com/zalando/go-keyring/issues/24
-	if runtime.GOOS == "darwin" {
-		return nil, errors.New("macOS is not supported with oidc")
-	}
 	authenticator := NewAuth(o.Client)
 	prefix, err := o.Factory.Config.GetHost()
 	if err != nil {

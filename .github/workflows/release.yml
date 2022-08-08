@@ -22,12 +22,14 @@ jobs:
           go-version: ^1.18
         id: go
 
-      - name: "Goreleaser build"
-        uses: goreleaser/goreleaser-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SDPCTL_VERSION: ${{ github.ref_name }}
-        with:
-          distribution: goreleaser
-          version: v1.9.2
-          args: "release"
+      - name: GoReleaser release dry run
+        run: make release-dry-run
+
+      - name: Setup release environment
+        run: |-
+          echo 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}' >> .release-env
+          echo 'SDPCTL_VERSION=${{ github.ref_name }}' >> .release-env
+          echo 'SDPCTL_CONFIG_DIR=/go/src/github.com/user/repo' >> .release-env
+
+      - name: GoReleaser release
+        run: make release
