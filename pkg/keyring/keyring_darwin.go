@@ -56,9 +56,39 @@ func AddKeychain(key string, value string) error {
 	item.SetSynchronizable(keychain.SynchronizableNo)
 	item.SetAccessible(keychain.AccessibleWhenUnlocked)
 	err := keychain.AddItem(item)
-	if err != nil && err != keychain.ErrorDuplicateItem {
+
+	// Overwrite the item if it already exists
+	if err == keychain.ErrorDuplicateItem {
+		return UpdateKeychain(item, key)
+	}
+
+	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func UpdateKeychain(updateItem keychain.Item, key string) error {
+	queryItem := keychain.NewItem()
+	queryItem.SetService(keyringService)
+	queryItem.SetSecClass(keychain.SecClassGenericPassword)
+	queryItem.SetMatchLimit(keychain.MatchLimitOne)
+	queryItem.SetAccessGroup(keyringService)
+	queryItem.SetAccount(key)
+	queryItem.SetReturnAttributes(true)
+
+	results, err := keychain.QueryItem(queryItem)
+	if err != nil {
+		return errors.New(fmt.Sprintf("failed to query keychain: %s", err))
+	}
+	if len(results) != 1 {
+		return errors.New(fmt.Sprintf("could not find key: %s", key))
+	}
+
+	if err = keychain.UpdateItem(queryItem, updateItem); err != nil {
+		return errors.New(fmt.Sprintf("failed to update item: %s", err))
+	}
+
 	return nil
 }
 
