@@ -7,7 +7,6 @@
 //
 // By default, the bearer token file will be located in %APPDATA%/sdpctl
 // if not overwritten by SDPCTL_CONFIG_DIR
-//
 package keyring
 
 import (
