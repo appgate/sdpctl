@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -72,7 +71,7 @@ func generateManPages(cmd *cobra.Command) error {
 		return err
 	}
 
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}
@@ -89,7 +88,7 @@ func generateManPages(cmd *cobra.Command) error {
 			return err
 		}
 		defer w.Close()
-		b, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", path, f.Name()))
+		b, err := os.ReadFile(fmt.Sprintf("%s/%s", path, f.Name()))
 		if err != nil {
 			return err
 		}

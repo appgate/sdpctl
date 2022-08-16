@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -198,7 +197,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 }
 
 func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) error {
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
