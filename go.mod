@@ -21,7 +21,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hinshun/vt10x v0.0.0-20220119200601-820417d04eec
 	github.com/keybase/go-keychain v0.0.0-20220610143837-c2ce06069005
-	github.com/mattn/go-isatty v0.0.14
+	github.com/mattn/go-isatty v0.0.16
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/sirupsen/logrus v1.9.0
@@ -32,6 +32,6 @@ require (
 	github.com/vbauerster/mpb/v7 v7.4.2
 	github.com/zalando/go-keyring v0.2.1
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8
+	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )
