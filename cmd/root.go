@@ -179,7 +179,7 @@ func Execute() exitCode {
 }
 
 // logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
-// if no TTY is avaliable, stdout will be used
+// if no TTY is available, stdout will be used
 func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config) io.Writer {
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:   true,

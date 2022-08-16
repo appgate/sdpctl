@@ -178,7 +178,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			defer cancel()
 			// When cancelling upgrade on a appliance, we will verified that both the upgrade status is OK,
 			// and that the apppliance is not busy to avoid race condition When running to many operations
-			// on mulitple appliances at once.
+			// on multiple appliances at once.
 			qs := v.(queueStruct)
 			if err := retryCancel(ctx, qs.appliance); err != nil {
 				return fmt.Errorf("Upgrade cancel for %s failed, %w", qs.appliance.GetName(), err)

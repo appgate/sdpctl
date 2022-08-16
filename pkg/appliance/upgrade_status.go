@@ -62,7 +62,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			logEntry.WithField("current", s).Debug("recieved upgrade status")
+			logEntry.WithField("current", s).Debug("received upgrade status")
 			if tracker != nil {
 				tracker.Update(s)
 			}

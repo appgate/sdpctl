@@ -416,7 +416,7 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 			ips = append(ips, i.String())
 		}
 		return fmt.Errorf(`The given hostname %s does not resolve to a unique IP.
-A unique IP is necessary to ensure that the upgrade scipt
+A unique IP is necessary to ensure that the upgrade script
 connects to only the (primary) administration controller.
 The hostname resolves to the following IPs: %s`, nHost, strings.Join(ips, ", "))
 	}
@@ -635,7 +635,7 @@ func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	if util.InSlice(s.GetStatus(), []string{statusNotAvailable, statusOffline}) {
 		return false
 	}
-	// unkown or empty status will report appliance as offline.
+	// unknown or empty status will report appliance as offline.
 	return util.InSlice(s.GetStatus(), []string{statusHealthy, statusBusy, statusWarning, statusError})
 }
 
