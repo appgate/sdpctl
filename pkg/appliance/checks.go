@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -175,9 +174,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					log.Warn("failed to parse version from stats")
 					continue
 				}
-				statBuildNr, _ := strconv.ParseInt(statV.Metadata(), 10, 64)
-				uploadBuildNr, _ := strconv.ParseInt(v.Metadata(), 10, 64)
-				if v.LessThanOrEqual(statV) && uploadBuildNr <= statBuildNr {
+				if CompareVersionsAndBuildNumber(statV, v) < 1 {
 					skip = append(skip, appliance)
 				} else {
 					keep = append(keep, appliance)
