@@ -4,3 +4,5 @@
 4089e935928aa61025ab2c11abb14609152a0717
 # Upgrade API to v17
 ac6ba79f37e7aae839cad10036cb50b07f682c4b
+# updated sdp go sdk to v17 based on openapi-generator-cli:v6.0.0
+c6a16941940a8b465aede9ee7ee4af2c30b90d38

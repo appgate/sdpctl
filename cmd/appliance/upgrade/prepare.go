@@ -214,7 +214,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	if !opts.forcePrepare {
 		var skip []openapi.Appliance
-		appliances, skip = appliancepkg.CheckVersionsEqual(ctx, initialStats, appliances, targetVersion)
+		appliances, skip = appliancepkg.CheckVersionsEqual(ctx, *initialStats, appliances, targetVersion)
 		if len(appliances) <= 0 {
 			return errors.New("No appliances to prepare for upgrade. All appliances are already at the same version as the upgrade image")
 		}
@@ -271,7 +271,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, initialStats)
+	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, *initialStats)
 	if err != nil {
 		return err
 	}

@@ -141,7 +141,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	}
 
 	if len(opts.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = &opts.SpecificDistinguishedNames
+		body.SpecificDistinguishedNames = opts.SpecificDistinguishedNames
 	}
 
 	response, err := t.RevokeByDistinguishedName(request, body)
@@ -180,7 +180,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 	}
 
 	if len(opts.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = &opts.SpecificDistinguishedNames
+		body.SpecificDistinguishedNames = opts.SpecificDistinguishedNames
 	}
 
 	response, err := t.RevokeByTokenType(request, body)
