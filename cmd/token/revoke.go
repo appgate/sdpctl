@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -142,7 +141,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	}
 
 	if len(opts.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = &opts.SpecificDistinguishedNames
+		body.SpecificDistinguishedNames = opts.SpecificDistinguishedNames
 	}
 
 	response, err := t.RevokeByDistinguishedName(request, body)
@@ -181,7 +180,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 	}
 
 	if len(opts.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = &opts.SpecificDistinguishedNames
+		body.SpecificDistinguishedNames = opts.SpecificDistinguishedNames
 	}
 
 	response, err := t.RevokeByTokenType(request, body)
@@ -198,7 +197,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 }
 
 func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) error {
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}

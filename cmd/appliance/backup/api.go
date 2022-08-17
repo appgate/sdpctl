@@ -88,7 +88,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		message = "Backup API and passphrase has been updated."
 	}
 
-	response, err = client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(settings).Authorization(t).Execute()
+	response, err = client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(t).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}

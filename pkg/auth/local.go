@@ -19,7 +19,7 @@ func NewLocal(f *factory.Factory) *Local {
 	}
 }
 
-func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
+func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.IdentityProvidersNamesGet200ResponseDataInner) (*signInResponse, error) {
 	cfg := l.Factory.Config
 
 	client, err := l.Factory.APIClient(cfg)

@@ -28,7 +28,7 @@ type signInResponse struct {
 type Authenticate interface {
 	// signin should include context with correct Accept header and provider metadata
 	// if successful, it should return the bearer token value and expiration date.
-	signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error)
+	signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.IdentityProvidersNamesGet200ResponseDataInner) (*signInResponse, error)
 }
 
 // mandatoryEnvVariables if no TTY is enable
@@ -109,7 +109,7 @@ func Signin(f *factory.Factory) error {
 	if len(providers) == 1 && len(loginOpts.ProviderName) <= 0 {
 		loginOpts.ProviderName = providers[0].GetName()
 	}
-	providerMap := make(map[string]openapi.InlineResponse200Data, 0)
+	providerMap := make(map[string]openapi.IdentityProvidersNamesGet200ResponseDataInner, 0)
 	providerNames := make([]string, 0)
 	for _, p := range providers {
 		providerMap[p.GetName()] = p
@@ -194,7 +194,7 @@ func Signin(f *factory.Factory) error {
 	if err != nil {
 		return err
 	}
-	v, err := appliancepkg.GetApplianceVersion(*primaryController, stats)
+	v, err := appliancepkg.GetApplianceVersion(*primaryController, *stats)
 	if err != nil {
 		return err
 	}

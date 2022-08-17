@@ -185,7 +185,7 @@ func (o OpenIDConnect) refreshToken(clientID, tokenURL, refreshToken string) (*o
 
 var ErrPlatformNotSupported = errors.New("Provider with OpenID Connect is not supported on your system")
 
-func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.InlineResponse200Data) (*signInResponse, error) {
+func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.IdentityProvidersNamesGet200ResponseDataInner) (*signInResponse, error) {
 	authenticator := NewAuth(o.Client)
 	prefix, err := o.Factory.Config.GetHost()
 	if err != nil {
@@ -196,21 +196,23 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 		if err != nil {
 			return nil, err
 		}
+		if t != nil && len(t.IDToken) > 0 && len(t.AccessToken) > 0 {
+			loginOpts.IdToken = &t.IDToken
+			loginOpts.AccessToken = &t.AccessToken
 
-		loginOpts.IdToken = &t.IDToken
-		loginOpts.AccessToken = &t.AccessToken
+			loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
+			if err != nil {
+				return nil, err
+			}
 
-		loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
-		if err != nil {
-			return nil, err
+			response := &signInResponse{
+				Token:     loginResponse.GetToken(),
+				Expires:   time.Now().Local().Add(time.Second * time.Duration(t.ExpiresIn)),
+				LoginOpts: &loginOpts,
+			}
+			return response, nil
 		}
 
-		response := &signInResponse{
-			Token:     loginResponse.GetToken(),
-			Expires:   time.Now().Local().Add(time.Second * time.Duration(t.ExpiresIn)),
-			LoginOpts: &loginOpts,
-		}
-		return response, nil
 	}
 
 	mux := http.NewServeMux()

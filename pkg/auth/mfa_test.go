@@ -17,7 +17,7 @@ func TestAuthProviderNames(t *testing.T) {
 	tests := []struct {
 		name      string
 		httpStubs []httpmock.Stub
-		want      []openapi.InlineResponse200Data
+		want      []openapi.IdentityProvidersNamesGet200ResponseDataInner
 		wantErr   bool
 	}{
 		{
@@ -51,17 +51,17 @@ func TestAuthProviderNames(t *testing.T) {
 					},
 				},
 			},
-			want: []openapi.InlineResponse200Data{
+			want: []openapi.IdentityProvidersNamesGet200ResponseDataInner{
 				{
 					Name:                  openapi.PtrString("SAML Admin"),
 					RedirectUrl:           openapi.PtrString("https://login.microsoftonline.com/321312"),
 					Type:                  openapi.PtrString("Saml"),
-					CertificatePriorities: &[]map[string]interface{}{},
+					CertificatePriorities: []map[string]interface{}{},
 				},
 				{
 					Name:                  openapi.PtrString("local"),
 					Type:                  openapi.PtrString("Credentials"),
-					CertificatePriorities: &[]map[string]interface{}{},
+					CertificatePriorities: []map[string]interface{}{},
 				},
 			},
 			wantErr: false,
