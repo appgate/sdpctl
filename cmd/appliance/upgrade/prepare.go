@@ -214,9 +214,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	if !opts.forcePrepare {
 		var skip []openapi.Appliance
-		appliances, skip = appliancepkg.CheckVersionsEqual(ctx, initialStats, appliances, targetVersion)
+		appliances, skip = appliancepkg.CheckVersions(ctx, initialStats, appliances, targetVersion)
 		if len(appliances) <= 0 {
-			return errors.New("No appliances to prepare for upgrade. All appliances are already at the same version as the upgrade image")
+			return errors.New("No appliances to prepare for upgrade. All appliances are already greater or equal to the upgrade image")
 		}
 		for _, a := range skip {
 			skipAppliances = append(skipAppliances, skipStruct{
@@ -274,23 +274,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, initialStats)
 	if err != nil {
 		return err
-	}
-
-	// Check if trying to prepare a lower version than current
-	// build number check is to make sure even pre-release versions are included if the build number is higher than current
-	targetBuild, _ := strconv.ParseInt(targetVersion.Metadata(), 10, 64)
-	primaryControllerBuild, _ := strconv.ParseInt(currentPrimaryControllerVersion.Metadata(), 10, 64)
-	if targetVersion.LessThan(currentPrimaryControllerVersion) && targetBuild < primaryControllerBuild {
-		logEntry := log.WithFields(log.Fields{
-			"currentPrimaryControllerVersion": currentPrimaryControllerVersion.String(),
-			"targetVersion":                   targetVersion.String(),
-		})
-		if !opts.forcePrepare {
-			logEntry.Error("invalid upgrade version")
-			return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
-		}
-		fmt.Fprintf(opts.Out, "\nWARNING: forcing preparation of an older appliance version than currently running\nCurrent version: %s\nPrepare version: %s\n", currentPrimaryControllerVersion.String(), targetVersion.String())
-		logEntry.Warn("preparing an older appliance version using the --force flag")
 	}
 
 	// if we have an existing config with the primary controller version, check if we need to re-authenticate

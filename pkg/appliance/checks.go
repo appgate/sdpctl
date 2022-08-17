@@ -161,9 +161,9 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 	return tpl.String(), nil
 }
 
-// CheckVersionsEqual will check if appliance versions are equal to the version being uploaded on all appliances
+// CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
-func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance) {
+func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance) {
 	skip := []openapi.Appliance{}
 	keep := []openapi.Appliance{}
 
@@ -177,8 +177,7 @@ func CheckVersionsEqual(ctx context.Context, stats openapi.StatsAppliancesList, 
 				}
 				statBuildNr, _ := strconv.ParseInt(statV.Metadata(), 10, 64)
 				uploadBuildNr, _ := strconv.ParseInt(v.Metadata(), 10, 64)
-				if statV.Equal(v) && statBuildNr == uploadBuildNr {
-					log.WithField("appliance", appliance.GetName()).Info("Appliance is already at the same version. Skipping.")
+				if v.LessThanOrEqual(statV) && uploadBuildNr <= statBuildNr {
 					skip = append(skip, appliance)
 				} else {
 					keep = append(keep, appliance)
