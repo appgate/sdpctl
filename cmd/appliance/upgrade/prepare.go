@@ -214,7 +214,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	if !opts.forcePrepare {
 		var skip []openapi.Appliance
-		appliances, skip = appliancepkg.CheckVersions(ctx, initialStats, appliances, targetVersion)
+		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, targetVersion)
 		if len(appliances) <= 0 {
 			return errors.New("No appliances to prepare for upgrade. All appliances are already greater or equal to the upgrade image")
 		}
