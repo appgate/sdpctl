@@ -427,7 +427,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances are already at the same version as the upgrade image`),
+			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances are already greater or equal to the upgrade image`),
 		},
 		{
 			name:                     "force prepare same version",
