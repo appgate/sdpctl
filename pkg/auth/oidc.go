@@ -196,21 +196,23 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 		if err != nil {
 			return nil, err
 		}
+		if t != nil && len(t.IDToken) > 0 && len(t.AccessToken) > 0 {
+			loginOpts.IdToken = &t.IDToken
+			loginOpts.AccessToken = &t.AccessToken
 
-		loginOpts.IdToken = &t.IDToken
-		loginOpts.AccessToken = &t.AccessToken
+			loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
+			if err != nil {
+				return nil, err
+			}
 
-		loginResponse, _, err := authenticator.Authentication(ctx, loginOpts)
-		if err != nil {
-			return nil, err
+			response := &signInResponse{
+				Token:     loginResponse.GetToken(),
+				Expires:   time.Now().Local().Add(time.Second * time.Duration(t.ExpiresIn)),
+				LoginOpts: &loginOpts,
+			}
+			return response, nil
 		}
 
-		response := &signInResponse{
-			Token:     loginResponse.GetToken(),
-			Expires:   time.Now().Local().Add(time.Second * time.Duration(t.ExpiresIn)),
-			LoginOpts: &loginOpts,
-		}
-		return response, nil
 	}
 
 	mux := http.NewServeMux()
