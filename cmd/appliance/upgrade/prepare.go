@@ -289,7 +289,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			logEntry.Error("invalid upgrade version")
 			return fmt.Errorf("Downgrading is not allowed.\n\t\tCurrent version:\t%s\n\t\tPrepare version:\t%s\n\t  Please restore a backup instead.", currentPrimaryControllerVersion.String(), targetVersion.String())
 		}
-		fmt.Fprintf(opts.Out, "\nWARNING: forcing preperation of an older appliance version than currently running\nCurrent version: %s\nPrepare version: %s\n", currentPrimaryControllerVersion.String(), targetVersion.String())
+		fmt.Fprintf(opts.Out, "\nWARNING: forcing preparation of an older appliance version than currently running\nCurrent version: %s\nPrepare version: %s\n", currentPrimaryControllerVersion.String(), targetVersion.String())
 		logEntry.Warn("preparing an older appliance version using the --force flag")
 	}
 
@@ -588,7 +588,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			qw.Push(qs)
 		}
 
-		// Process the inital queue and wait until the status check has passed the 'downloading' stage,
+		// Process the initial queue and wait until the status check has passed the 'downloading' stage,
 		// once it has past the 'downloading' stage, we will go to the next item in the queue.
 		queueContinue := make(chan queueStruct)
 		go func() {

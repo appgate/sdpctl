@@ -11,7 +11,7 @@ The `sdpctl appliance` is the base command for managing appliance resource speci
 ### Flags:
 | Flag | Shorthand | Description | Syntax | Default |
 |---|---|---|---|---|
-| `--include` | `-f` | Filter appliances that should be included in the command | Filter appliances using a comma seperated list of key-value pairs. Example: `--include name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
+| `--include` | `-f` | Filter appliances that should be included in the command | Filter appliances using a comma separated list of key-value pairs. Example: `--include name=controller,site=<site-id>` etc. Available keywords to filter on are: **name**, **id**, **tags\|tag**, **version**, **hostname\|host**, **active\|activated**, **site\|site-id**, **function\|roles\|role** | null |
 | `--exclude` | `-e` | The opposite of the filter flag, but uses the same syntax | Se syntax description on the `--include` flag | null |
 | `--no-interactive` | none | Using this flag will attempt to skip all user interaction otherwise required by accepting the default values | `sdpctl appliance --no-interactive [action]` | null |
 
@@ -108,7 +108,7 @@ ID                                          Name                    Status      
 ### Cancelling a prepared upgrade
 Once an upgrade is prepared, you can choose to abort the upgrade using the `upgrade cancel` command. Running the `cancel` command will remove the uploaded upgrade image and return the appliances to the 'idle' state.
 
-The `--include` and `--exclude` can be used to control wether to cancel upgrades on a specified set of appliances.
+The `--include` and `--exclude` can be used to control whether to cancel upgrades on a specified set of appliances.
 
 In case there are upgrade images uploaded to the primary controller file repository (such as when using the `--host-on-controller` flag while preparing), specifying the `--delete` flag when cancelling will remove all lingering images from the repository as well.
 
@@ -120,7 +120,7 @@ $ # using the delete flag
 $ sdpctl appliance upgrade cancel --delete
 
 $ # using filter when cancelling will only cancel upgrades on appliances that matches the filter
-$ # in this example, the upgrade will only be cancelles on the gateway appliance
+$ # in this example, the upgrade will only be cancels on the gateway appliance
 $ sdpctl appliance upgrade cancel --include name=gateway-site1
 
 $ # the --exclude works the same as the filter, but in reverse

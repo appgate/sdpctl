@@ -37,7 +37,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 				current := stat.GetStatus()
 				logEntry.WithFields(log.Fields{
 					"current": current,
-				}).Debug("recieved appliance status")
+				}).Debug("received appliance status")
 				if tracker != nil {
 					tracker.Update(current)
 				}
@@ -80,7 +80,7 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 				fields := log.Fields{
 					"current": state,
 				}
-				logEntry.WithFields(fields).Debug("recieved appliance state")
+				logEntry.WithFields(fields).Debug("received appliance state")
 				if tracker != nil {
 					tracker.Update(state)
 				}
