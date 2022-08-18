@@ -30,7 +30,6 @@ type Tracker struct {
 func (t *Tracker) Watch(until, failOn []string) {
 	defer func() {
 		t.done = true
-		close(t.statusReport)
 		if !t.bar.Completed() || !t.bar.Aborted() {
 			t.abort(false)
 		}
