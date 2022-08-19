@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes.Buffer) {
+func setupListTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes.Buffer) {
 	t.Helper()
 	registry := httpmock.NewRegistry(t)
 	registry.Register("/files", httpmock.JSONResponse("../../pkg/files/fixtures/list.json"))
@@ -51,7 +51,7 @@ func setupTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes.Buffe
 }
 
 func TestFilesList(t *testing.T) {
-	registry, f, out := setupTest(t)
+	registry, f, out := setupListTest(t)
 	defer registry.Teardown()
 
 	cmd := NewFilesCmd(f)
@@ -78,7 +78,7 @@ appgate-5.5.1-29983.img.zip         Ready     2022-08-18 11:26:52.494572 +0000 U
 }
 
 func TestFilesListJSON(t *testing.T) {
-	registry, f, out := setupTest(t)
+	registry, f, out := setupListTest(t)
 	defer registry.Teardown()
 
 	cmd := NewFilesCmd(f)

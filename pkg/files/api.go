@@ -56,3 +56,34 @@ func (f *FilesAPI) List(ctx context.Context) ([]openapi.File, error) {
 
 	return respBody.Data, nil
 }
+
+func (f *FilesAPI) Delete(ctx context.Context, filename string) error {
+	url := fmt.Sprintf("%s/files/%s", f.Config.URL, filename)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	token, err := f.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", token)
+	req.Header.Set("Accept", fmt.Sprintf("application/vnd.appgate.peer-v%d+json", f.Config.Version))
+
+	resp, err := f.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(body))
+	}
+
+	return nil
+}

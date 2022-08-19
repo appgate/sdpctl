@@ -26,6 +26,7 @@ func NewFilesCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	filesCmd.AddCommand(NewFilesListCmd(f))
+	filesCmd.AddCommand(NewFilesDeleteCmd(f))
 
 	return filesCmd
 }
