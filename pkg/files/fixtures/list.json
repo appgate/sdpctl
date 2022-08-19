@@ -1,0 +1,17 @@
+{
+    "data": [
+        {
+            "name": "appgate-6.0.1-29983-beta.img.zip",
+            "creationTime": "2022-08-18T11:25:52.494572Z",
+            "lastModifiedTime": "2022-08-18T11:25:52.494572Z",
+            "status": "Failed",
+            "failureReason": "401 Unauthorized"
+        },
+        {
+            "name": "appgate-5.5.1-29983.img.zip",
+            "creationTime": "2022-08-18T11:26:52.494572Z",
+            "lastModifiedTime": "2022-08-18T12:25:52.494572Z",
+            "status": "Ready"
+        }
+    ]
+}

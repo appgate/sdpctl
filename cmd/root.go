@@ -17,6 +17,7 @@ import (
 
 	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
 	cfgcmd "github.com/appgate/sdpctl/cmd/configure"
+	filescmd "github.com/appgate/sdpctl/cmd/files"
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -98,6 +99,7 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.AddCommand(NewOpenCmd(f))
+	rootCmd.AddCommand(filescmd.NewFilesCmd(f))
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())

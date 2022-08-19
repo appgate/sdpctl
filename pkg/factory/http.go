@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/token"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -25,6 +26,7 @@ type Factory struct {
 	APIClient   func(c *configuration.Config) (*openapi.APIClient, error)
 	Appliance   func(c *configuration.Config) (*appliance.Appliance, error)
 	Token       func(c *configuration.Config) (*token.Token, error)
+	Files       func(c *configuration.Config) (*files.FilesAPI, error)
 	Config      *configuration.Config
 	IOOutWriter io.Writer
 	Stdin       io.ReadCloser
@@ -39,6 +41,7 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.APIClient = apiClientFunc(f, appVersion) // depends on config
 	f.Appliance = applianceFunc(f, appVersion) // depends on config
 	f.Token = tokenFunc(f, appVersion)         // depends on config
+	f.Files = filesAPIFunc(f, appVersion)      // depends on config
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
 	f.StdErr = os.Stderr
@@ -183,5 +186,19 @@ func tokenFunc(f *Factory, appVersion string) func(c *configuration.Config) (*to
 			Token:      bearerToken,
 		}
 		return t, nil
+	}
+}
+
+func filesAPIFunc(f *Factory, appVersion string) func(c *configuration.Config) (*files.FilesAPI, error) {
+	return func(cfg *configuration.Config) (*files.FilesAPI, error) {
+		httpClient, _, err := getClients(f, appVersion, cfg)
+		if err != nil {
+			return nil, err
+		}
+		f := &files.FilesAPI{
+			Config:     cfg,
+			HTTPClient: httpClient,
+		}
+		return f, nil
 	}
 }
