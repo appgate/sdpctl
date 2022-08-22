@@ -116,17 +116,6 @@ $ sdpctl token revoke CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local
 More details on the token command can be found in [the token command documentation](./docs/token.md)
 
 ---
-## The `files` command
-The files command lets you manage the file repository of the currently connected Controller. It supports basic file operations, such as listing files, deleting files and uploading files.
-```bash
-# List files in the repository
-$ sdpctl files list
-Name                                Status    Created                                 Modified                                Failure Reason
-----                                ------    -------                                 --------                                --------------
-appgate-6.0.1-29983-beta.img.zip    Ready     2022-08-19 08:06:20.909002 +0000 UTC    2022-08-19 08:06:20.909002 +0000 UTC
-```
-
----
 ## Other available commands
 
 ### `sdpctl open`

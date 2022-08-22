@@ -18,7 +18,7 @@ import (
 func setupListTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes.Buffer) {
 	t.Helper()
 	registry := httpmock.NewRegistry(t)
-	registry.Register("/files", httpmock.JSONResponse("../../pkg/appliance/fixtures/file_list.json"))
+	registry.Register("/files", httpmock.JSONResponse("../../../pkg/appliance/fixtures/file_list.json"))
 	registry.Serve()
 
 	stdout := &bytes.Buffer{}
