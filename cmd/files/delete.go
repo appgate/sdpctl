@@ -9,6 +9,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
@@ -34,12 +35,16 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 
 			ctx := context.Background()
 
-			if len(args) == 1 {
-				if err := a.DeleteFile(ctx, args[0]); err != nil {
-					return err
+			var errs error
+			if len(args) > 0 {
+				for _, arg := range args {
+					if err := a.DeleteFile(ctx, arg); err != nil {
+						errs = multierror.Append(err, errs)
+						continue
+					}
+					fmt.Fprintf(opts.Out, "%s: deleted\n", arg)
 				}
-				fmt.Fprintf(opts.Out, "%s: deleted\n", args[0])
-				return nil
+				return errs
 			}
 
 			allFlag, err := cmd.Flags().GetBool("all")
@@ -55,11 +60,12 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 			if allFlag {
 				for _, file := range fileList {
 					if err := a.DeleteFile(ctx, file.GetName()); err != nil {
-						return err
+						errs = multierror.Append(err, errs)
+						continue
 					}
 					fmt.Fprintf(opts.Out, "%s: deleted\n", file.GetName())
 				}
-				return nil
+				return errs
 			}
 
 			noInteractive, err := cmd.Flags().GetBool("no-interactive")
@@ -87,12 +93,13 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 				}
 				for _, s := range selected {
 					if err := a.DeleteFile(ctx, s); err != nil {
-						return err
+						errs = multierror.Append(err, errs)
+						continue
 					}
 					fmt.Fprintf(opts.Out, "%s: deleted\n", s)
 				}
 
-				return nil
+				return errs
 			}
 
 			return errors.New("No files were deleted")
