@@ -38,18 +38,18 @@ appgate-6.0.1-29983-beta.img.zip    Ready     2022-08-19 08:06:20.909002 +0000 U
 		Examples: []ExampleDoc{
 			{
 				Description: "delete a single file using the filename as a parameter",
-				Command:     "sdpctl files delete file-to-delete.img.zip",
+				Command:     "sdpctl appliance files delete file-to-delete.img.zip",
 				Output:      "file-to-delete.img.zip: deleted",
 			},
 			{
 				Description: "delete all files in the repository",
-				Command:     "sdpctl files delete --all",
+				Command:     "sdpctl appliance files delete --all",
 				Output: `deleted1.img.zip: deleted
 deleted2.img.zip: deleted`,
 			},
 			{
 				Description: "no arguments will prompt for which files to delete",
-				Command:     "sdpctl files delete",
+				Command:     "sdpctl appliance files delete",
 				Output: `? select files to delete:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
 > [ ]  file1.img.zip
   [ ]  file2.img.zip

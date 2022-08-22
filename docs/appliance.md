@@ -154,7 +154,7 @@ $ sdpctl appliance upgrade complete --exclude function=controller
 The files command lets you manage the file repository of the currently connected Controller. It supports basic file operations, such as listing files, deleting files and uploading files.
 ```bash
 # List files in the repository
-$ sdpctl files list
+$ sdpctl appliance files list
 Name                                Status    Created                                 Modified                                Failure Reason
 ----                                ------    -------                                 --------                                --------------
 appgate-6.0.1-29983-beta.img.zip    Ready     2022-08-19 08:06:20.909002 +0000 UTC    2022-08-19 08:06:20.909002 +0000 UTC
