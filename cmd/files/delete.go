@@ -14,20 +14,20 @@ import (
 
 func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 	opts := &FilesOptions{
-		Config: f.Config,
-		Out:    f.IOOutWriter,
-		API:    f.Files,
+		Config:    f.Config,
+		Out:       f.IOOutWriter,
+		Appliance: f.Appliance,
 	}
 
 	deleteCmd := &cobra.Command{
 		Use:       "delete",
-		Aliases:   []string{"remove", "rm"},
+		Aliases:   []string{"del", "remove", "rm"},
 		Short:     docs.FilesDeleteDocs.Short,
 		Long:      docs.FilesDeleteDocs.Long,
 		Example:   docs.FilesDeleteDocs.ExampleString(),
 		ValidArgs: []string{"filename"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			api, err := opts.API(f.Config)
+			a, err := opts.Appliance(f.Config)
 			if err != nil {
 				return err
 			}
@@ -35,7 +35,7 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 			ctx := context.Background()
 
 			if len(args) == 1 {
-				if err := api.Delete(ctx, args[0]); err != nil {
+				if err := a.DeleteFile(ctx, args[0]); err != nil {
 					return err
 				}
 				fmt.Fprintf(opts.Out, "%s: deleted\n", args[0])
@@ -47,14 +47,14 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			fileList, err := api.List(ctx)
+			fileList, err := a.ListFiles(ctx)
 			if err != nil {
 				return err
 			}
 
 			if allFlag {
 				for _, file := range fileList {
-					if err := api.Delete(ctx, file.GetName()); err != nil {
+					if err := a.DeleteFile(ctx, file.GetName()); err != nil {
 						return err
 					}
 					fmt.Fprintf(opts.Out, "%s: deleted\n", file.GetName())
@@ -82,8 +82,11 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 
+				if len(selected) <= 0 {
+					return errors.New("No files were selected for deletion")
+				}
 				for _, s := range selected {
-					if err := api.Delete(ctx, s); err != nil {
+					if err := a.DeleteFile(ctx, s); err != nil {
 						return err
 					}
 					fmt.Fprintf(opts.Out, "%s: deleted\n", s)

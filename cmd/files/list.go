@@ -11,9 +11,9 @@ import (
 
 func NewFilesListCmd(f *factory.Factory) *cobra.Command {
 	opts := &FilesOptions{
-		Config: f.Config,
-		Out:    f.IOOutWriter,
-		API:    f.Files,
+		Config:    f.Config,
+		Out:       f.IOOutWriter,
+		Appliance: f.Appliance,
 	}
 	var listCmd = &cobra.Command{
 		Use:     "list",
@@ -22,13 +22,13 @@ func NewFilesListCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.FilesListDocs.Long,
 		Example: docs.FilesListDocs.ExampleString(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-			f, err := opts.API(opts.Config)
+			a, err := opts.Appliance(f.Config)
 			if err != nil {
 				return err
 			}
 
-			files, err := f.List(ctx)
+			ctx := context.Background()
+			files, err := a.ListFiles(ctx)
 			if err != nil {
 				return err
 			}

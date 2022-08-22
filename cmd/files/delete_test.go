@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,13 +36,15 @@ func setupDeleteTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
 	}
-	f.Files = func(c *configuration.Config) (*files.FilesAPI, error) {
+	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
-		filesAPI := &files.FilesAPI{
-			Config:     c,
+
+		a := &appliance.Appliance{
+			APIClient:  api,
 			HTTPClient: api.GetConfig().HTTPClient,
+			Token:      "",
 		}
-		return filesAPI, nil
+		return a, nil
 	}
 
 	return registry, f, stdout
@@ -83,7 +85,7 @@ func TestDeleteSingleFile(t *testing.T) {
 func TestDeleteAllFiles(t *testing.T) {
 	registry, f, out := setupDeleteTest(t)
 	defer registry.Teardown()
-	registry.Register("/files", httpmock.JSONResponse("../../pkg/files/fixtures/list.json"))
+	registry.Register("/files", httpmock.JSONResponse("../../pkg/appliance/fixtures/file_list.json"))
 	registry.Register("/files/appgate-6.0.1-29983-beta.img.zip", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
 			w.WriteHeader(http.StatusNoContent)
@@ -125,7 +127,7 @@ appgate-5.5.1-29983.img.zip: deleted
 func TestFilesDeleteNoInteractive(t *testing.T) {
 	registry, f, out := setupDeleteTest(t)
 	defer registry.Teardown()
-	registry.Register("/files", httpmock.JSONResponse("../../pkg/files/fixtures/list.json"))
+	registry.Register("/files", httpmock.JSONResponse("../../pkg/appliance/fixtures/file_list.json"))
 	registry.Serve()
 
 	cmd := NewFilesCmd(f)

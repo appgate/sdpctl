@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +18,7 @@ import (
 func setupListTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes.Buffer) {
 	t.Helper()
 	registry := httpmock.NewRegistry(t)
-	registry.Register("/files", httpmock.JSONResponse("../../pkg/files/fixtures/list.json"))
+	registry.Register("/files", httpmock.JSONResponse("../../pkg/appliance/fixtures/file_list.json"))
 	registry.Serve()
 
 	stdout := &bytes.Buffer{}
@@ -34,17 +34,18 @@ func setupListTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes.B
 		Stdin:       in,
 		StdErr:      stderr,
 	}
-
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
 	}
-	f.Files = func(c *configuration.Config) (*files.FilesAPI, error) {
+	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
-		filesAPI := &files.FilesAPI{
-			Config:     c,
+
+		a := &appliance.Appliance{
+			APIClient:  api,
 			HTTPClient: api.GetConfig().HTTPClient,
+			Token:      "",
 		}
-		return filesAPI, nil
+		return a, nil
 	}
 
 	return registry, f, stdout
