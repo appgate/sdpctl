@@ -41,5 +41,5 @@ func HTTPErrorResponse(response *http.Response, err error) error {
 		}
 		return errors
 	}
-	return multierror.Append(errors, err)
+	return err
 }
