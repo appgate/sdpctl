@@ -385,9 +385,9 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 }
 
 func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteraction bool) (bool, error) {
-	settings, _, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
+	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
 	if err != nil {
-		return false, err
+		return false, api.HTTPErrorResponse(response, err)
 	}
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
