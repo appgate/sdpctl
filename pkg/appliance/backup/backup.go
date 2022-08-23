@@ -2,6 +2,7 @@ package backup
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -44,7 +45,10 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID string) (*o
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return *file, nil
+	if file != nil {
+		return *file, nil
+	}
+	return nil, errors.New("cz-backup interrupted")
 }
 
 const (
