@@ -31,7 +31,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 		defaultFilter: map[string]map[string]string{
-			"filter": {},
+			"include": {},
 			"exclude": {
 				"active": "false",
 			},
