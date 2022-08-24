@@ -142,9 +142,21 @@ func Execute() exitCode {
 	root := NewCmdRoot()
 	cmd, err := root.ExecuteC()
 	if err != nil {
-		var result error
-		errorString := err.Error()
-		result = multierror.Append(result, err)
+		var result *multierror.Error
+		// Unwrap error and check if we have a nested multierr
+		// if we do, we will make the errors flat for 1 level
+		// otherwise, append error to new multierr list
+		if we := errors.Unwrap(err); we != nil {
+			if merr, ok := we.(*multierror.Error); ok {
+				for _, e := range merr.Errors {
+					result = multierror.Append(result, e)
+				}
+			} else {
+				result = multierror.Append(result, err)
+			}
+		} else {
+			result = multierror.Append(result, err)
+		}
 
 		// if error is DeadlineExceeded, add custom ErrCommandTimeout
 		if errors.Is(err, context.DeadlineExceeded) {
@@ -158,7 +170,7 @@ func Execute() exitCode {
 		}
 
 		// print all multierrors to stderr, then return correct exitcode based on error type
-		fmt.Fprintln(os.Stderr, result)
+		fmt.Fprintln(os.Stderr, result.ErrorOrNil())
 
 		if errors.Is(err, ErrExitAuth) {
 			return exitAuth
@@ -167,6 +179,7 @@ func Execute() exitCode {
 			return exitCancel
 		}
 		// only show usage prompt if we get invalid args / flags
+		errorString := err.Error()
 		if strings.Contains(errorString, "arg(s)") || strings.Contains(errorString, "flag") || strings.Contains(errorString, "command") {
 			fmt.Fprintln(os.Stderr)
 			fmt.Fprintln(os.Stderr, cmd.UsageString())
