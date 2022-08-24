@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type Config struct {
@@ -168,6 +170,21 @@ func (c *Config) ClearCredentials() error {
 	}
 	c.BearerToken = ""
 	c.ExpiresAt = ""
+	keys := []string{"bearer", "expires_at"}
+	allKeys := viper.AllKeys()
+	for _, k := range keys {
+		if util.InSlice(k, allKeys) {
+			viper.Set(k, "")
+		}
+	}
+	if err := viper.WriteConfig(); err != nil {
+		// only return error if there is a config file to write to
+		// as is the case when using environment variables for configuration
+		// or in testing
+		if !errors.As(err, &viper.ConfigFileNotFoundError{}) {
+			return err
+		}
+	}
 	return nil
 }
 
