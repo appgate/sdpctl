@@ -45,7 +45,6 @@ type BackupOpts struct {
 	AllFlag       bool
 	PrimaryFlag   bool
 	CurrentFlag   bool
-	Timeout       time.Duration
 	NoInteractive bool
 	FilterFlag    map[string]map[string]string
 	Quiet         bool
@@ -70,8 +69,7 @@ func PrepareBackup(opts *BackupOpts) error {
 func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	spinnerOut := opts.SpinnerOut()
 	backupIDs := make(map[string]string)
-	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
-	defer cancel()
+	ctx := context.Background()
 
 	var err error
 	opts.CiMode, err = cmd.Flags().GetBool("ci-mode")
@@ -215,6 +213,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	wg.Add(count)
 
 	retryStatus := func(ctx context.Context, applianceID, backupID string) error {
+		bo := backoff.NewExponentialBackOff()
+		bo.MaxElapsedTime = 0
 		return backoff.Retry(func() error {
 			status, err := backupAPI.Status(ctx, applianceID, backupID)
 			if err != nil {
@@ -224,7 +224,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status)
 			}
 			return nil
-		}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+		}, bo)
 	}
 
 	b := func(appliance openapi.Appliance) (backedUp, error) {
