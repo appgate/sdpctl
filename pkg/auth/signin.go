@@ -46,6 +46,42 @@ func hasRequiredEnv() bool {
 	return true
 }
 
+// GetMinMaxAPIVersion sends a invalid authentication request
+// to use the error response body to determine min, max supported version for the current api
+//
+// # Example response body
+//
+//	{
+//	    "id": "not acceptable",
+//	    "maxSupportedVersion": 17,
+//	    "message": "Invalid 'Accept' header. Current version: application/vnd.appgate.peer-v17+json, Received: application/vnd.appgate.peer-v5+json",
+//	    "minSupportedVersion": 13
+//	}
+func GetMinMaxAPIVersion(f *factory.Factory) (*MinMax, error) {
+	cfg := f.Config
+	client, err := f.APIClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	ctx := context.Background()
+	loginOpts := openapi.LoginRequest{
+		ProviderName: cfg.Provider,
+		DeviceId:     cfg.DeviceID,
+	}
+	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
+	authenticator := NewAuth(client)
+	// initial authentication, this will fail, since we will use the signin response
+	// to compute the correct peerVersion used in the selected appgate sdp collective.
+	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
+	if err != nil && minMax == nil {
+		return nil, fmt.Errorf("invalid credentials %w", err)
+	}
+	if minMax != nil {
+		return minMax, nil
+	}
+	return nil, errors.New("could not automatically determine api version to use")
+}
+
 var ErrSignInNotSupported = errors.New("no TTY present, and missing required environment variables to authenticate")
 
 // Signin support interactive signin if a valid TTY is present, otherwise it requires environment variables to authenticate,
@@ -73,32 +109,26 @@ func Signin(f *factory.Factory) error {
 		cfg.DeviceID = configuration.DefaultDeviceID()
 	}
 
-	// if we already have a valid bearer token, we will continue without
-	// without any additional checks.
-	if cfg.ExpiredAtValid() && len(cfg.BearerToken) > 0 {
-		return nil
-	}
-	authenticator := NewAuth(client)
-	// Get credentials from credentials file
-	// Overwrite credentials with values set through environment variables
-
 	loginOpts := openapi.LoginRequest{
 		ProviderName: cfg.Provider,
 		DeviceId:     cfg.DeviceID,
 	}
+
+	// if we already have a valid bearer token, we will continue without
+	// without any additional checks.
+	bearer, err := cfg.GetBearTokenHeaderValue()
+	if err == nil && cfg.ExpiredAtValid() && len(bearer) > 0 && cfg.Version > 0 {
+		return nil
+	}
+	minMax, err := GetMinMaxAPIVersion(f)
+	if err != nil {
+		return err
+	}
+	viper.Set("api_version", minMax.Max)
+	cfg.Version = int(minMax.Max)
 	ctx := context.Background()
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
-	// initial authtentication, this will fail, since we will use the singin response
-	// to compute the correct peerVersion used in the selected appgate sdp collective.
-	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
-	if err != nil && minMax == nil {
-		return fmt.Errorf("invalid credentials %w", err)
-	}
-	if minMax != nil {
-		viper.Set("api_version", minMax.Max)
-		cfg.Version = int(minMax.Max)
-	}
-
+	authenticator := NewAuth(client)
 	acceptValue := fmt.Sprintf(acceptHeaderFormatString, minMax.Max)
 	ctxWithAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, acceptValue)
 	providers, err := authenticator.ProviderNames(ctxWithAccept)

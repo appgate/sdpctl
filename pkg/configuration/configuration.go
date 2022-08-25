@@ -92,6 +92,15 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 	return true
 }
 
+func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {
+	for c := cmd; c.Parent() != nil; c = c.Parent() {
+		if c.Annotations != nil && c.Annotations["updateAPIConfig"] == "true" {
+			return true
+		}
+	}
+	return false
+}
+
 var ErrNoAddr = errors.New("no valid address set, run 'sdpctl configure' or set SDPCTL_URL")
 
 func NormalizeURL(u string) (string, error) {
