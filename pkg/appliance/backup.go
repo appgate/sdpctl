@@ -216,20 +216,15 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 	retryStatus := func(ctx context.Context, applianceID, backupID string) error {
 		return backoff.Retry(func() error {
-			select {
-			case <-ctx.Done():
-				return backoff.Permanent(ctx.Err())
-			default:
-				status, err := backupAPI.Status(ctx, applianceID, backupID)
-				if err != nil {
-					return err
-				}
-				if status != backup.Done {
-					return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status)
-				}
-				return nil
+			status, err := backupAPI.Status(ctx, applianceID, backupID)
+			if err != nil {
+				return err
 			}
-		}, backoff.NewExponentialBackOff())
+			if status != backup.Done {
+				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status)
+			}
+			return nil
+		}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 	}
 
 	b := func(appliance openapi.Appliance) (backedUp, error) {
