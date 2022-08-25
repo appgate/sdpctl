@@ -139,7 +139,7 @@ func (c *Config) ExpiredAtValid() bool {
 		return false
 	}
 	t1 := time.Now()
-	return t1.Before(d)
+	return t1.Add(-time.Hour * 2).Before(d)
 }
 
 func (c *Config) LoadCredentials() (*Credentials, error) {
