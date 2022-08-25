@@ -9,7 +9,6 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
-	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -208,30 +207,9 @@ func Signin(f *factory.Factory) error {
 		}
 	}
 
-	a, err := f.Appliance(cfg)
-	if err != nil {
-		return err
-	}
-	allAppliances, err := a.List(ctx, nil)
-	if err != nil {
-		return err
-	}
-	primaryController, err := appliancepkg.FindPrimaryController(allAppliances, host)
-	if err != nil {
-		return err
-	}
-	stats, _, err := a.Stats(ctx)
-	if err != nil {
-		return err
-	}
-	v, err := appliancepkg.GetApplianceVersion(*primaryController, *stats)
-	if err != nil {
-		return err
-	}
 	viper.Set("provider", selectedProvider.GetName())
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
-	viper.Set("primary_controller_version", v.String())
 
 	// saving the config file is not a fatal error, we will only show a error message
 	if err := viper.WriteConfig(); err != nil {

@@ -305,9 +305,8 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			in := io.NopCloser(stdin)
 			f := &factory.Factory{
 				Config: &configuration.Config{
-					Debug:                    false,
-					URL:                      fmt.Sprintf("http://appgate.com:%d", registry.Port),
-					PrimaryControllerVersion: "5.3.4+24950",
+					Debug: false,
+					URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,
