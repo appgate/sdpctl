@@ -51,7 +51,12 @@ func (t *Tracker) Watch(until, failOn []string) {
 		}
 		if util.InSlice(msg, failOn) {
 			if failCount > 0 {
+				// on failure, we expect the next update to be the details of the failure
+				msg, ok = <-t.statusReport
 				t.current = "failed"
+				if ok {
+					t.current += " - " + msg
+				}
 				t.abort(false)
 				break
 			}
