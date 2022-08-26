@@ -193,7 +193,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		Destination:   opts.backupDestination,
 		AllFlag:       false,
 		PrimaryFlag:   false,
-		Timeout:       5 * time.Minute,
 		Out:           opts.Out,
 		SpinnerOut:    opts.SpinnerOut,
 		NoInteractive: opts.NoInteractive,
