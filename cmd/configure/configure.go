@@ -46,11 +46,6 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 }
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
-	// Clear old credentials when configuring
-	if err := opts.Config.ClearCredentials(); err != nil {
-		return err
-	}
-
 	q := &survey.Input{
 		Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
 		Default: opts.Config.URL,
@@ -70,8 +65,13 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 
 	viper.Set("url", URL)
+	opts.Config.URL = URL
 	viper.Set("device_id", configuration.DefaultDeviceID())
 	if err := viper.WriteConfig(); err != nil {
+		return err
+	}
+	// Clear old credentials when configuring
+	if err := opts.Config.ClearCredentials(); err != nil {
 		return err
 	}
 	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
