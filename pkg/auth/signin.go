@@ -203,7 +203,8 @@ func Signin(f *factory.Factory) error {
 	// store username and password if any in keyring, in practice only applicable on local provider
 	if len(response.LoginOpts.GetUsername()) > 1 && len(response.LoginOpts.GetPassword()) > 1 {
 		if err := cfg.StoreCredentials(response.LoginOpts.GetUsername(), response.LoginOpts.GetPassword()); err != nil {
-			return err
+			fmt.Fprintf(f.StdErr, "[warning] %s\n", err)
+			return nil
 		}
 	}
 
