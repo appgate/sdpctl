@@ -12,7 +12,10 @@ jobs:
   lint:
     if: ${{ github.event.base_ref == 'refs/heads/main' }}
     uses: ./.github/workflows/lint.yml
+  dry-run:
+    if: ${{ github.event.base_ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/dry-run.yml
   release:
     if: ${{ github.event.base_ref == 'refs/heads/main' }}
     uses: ./.github/workflows/release.yml
-    needs: [test, lint]
+    needs: [test, lint, dry-run]
