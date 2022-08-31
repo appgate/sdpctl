@@ -28,5 +28,5 @@ jobs:
           echo 'SDPCTL_VERSION=${{ github.ref_name }}' >> .release-env
           echo 'SDPCTL_CONFIG_DIR=/go/src/github.com/user/repo' >> .release-env
 
-      - name: GoReleaser release
-        run: make release
+      - name: GoReleaser release dry run
+        run: make release-dry-run
