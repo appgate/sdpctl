@@ -16,17 +16,16 @@ import (
 )
 
 type Config struct {
-	URL                      string `mapstructure:"url"`
-	Provider                 string `mapstructure:"provider"`
-	Insecure                 bool   `mapstructure:"insecure"`
-	Debug                    bool   `mapstructure:"debug"`       // http debug flag
-	Version                  int    `mapstructure:"api_version"` // api peer interface version
-	BearerToken              string `mapstructure:"bearer"`      // current logged in user token
-	ExpiresAt                string `mapstructure:"expires_at"`
-	DeviceID                 string `mapstructure:"device_id"`
-	PemFilePath              string `mapstructure:"pem_filepath"`
-	PrimaryControllerVersion string `mapstructure:"primary_controller_version"`
-	Timeout                  int    // HTTP timeout, not supported in the config file.
+	URL         string `mapstructure:"url"`
+	Provider    string `mapstructure:"provider"`
+	Insecure    bool   `mapstructure:"insecure"`
+	Debug       bool   `mapstructure:"debug"`       // http debug flag
+	Version     int    `mapstructure:"api_version"` // api peer interface version
+	BearerToken string `mapstructure:"bearer"`      // current logged in user token
+	ExpiresAt   string `mapstructure:"expires_at"`
+	DeviceID    string `mapstructure:"device_id"`
+	PemFilePath string `mapstructure:"pem_filepath"`
+	Timeout     int    // HTTP timeout, not supported in the config file.
 }
 
 type Credentials struct {
@@ -90,6 +89,15 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 		}
 	}
 	return true
+}
+
+func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {
+	for c := cmd; c.Parent() != nil; c = c.Parent() {
+		if c.Annotations != nil && c.Annotations["updateAPIConfig"] == "true" {
+			return true
+		}
+	}
+	return false
 }
 
 var ErrNoAddr = errors.New("no valid address set, run 'sdpctl configure' or set SDPCTL_URL")

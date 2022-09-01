@@ -14,17 +14,16 @@ func TestConfigCheckAuth(t *testing.T) {
 		t.Fatalf("unable to mock keyring in TestConfigCheckAuth() %v", err)
 	}
 	type fields struct {
-		URL                      string
-		Provider                 string
-		Insecure                 bool
-		Debug                    bool
-		Version                  int
-		BearerToken              string
-		ExpiresAt                string
-		CredentialsFile          string
-		DeviceID                 string
-		PemFilePath              string
-		PrimaryControllerVersion string
+		URL             string
+		Provider        string
+		Insecure        bool
+		Debug           bool
+		Version         int
+		BearerToken     string
+		ExpiresAt       string
+		CredentialsFile string
+		DeviceID        string
+		PemFilePath     string
 	}
 	tests := []struct {
 		name   string
@@ -76,16 +75,15 @@ func TestConfigCheckAuth(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Config{
-				URL:                      tt.fields.URL,
-				Provider:                 tt.fields.Provider,
-				Insecure:                 tt.fields.Insecure,
-				Debug:                    tt.fields.Debug,
-				Version:                  tt.fields.Version,
-				BearerToken:              tt.fields.BearerToken,
-				ExpiresAt:                tt.fields.ExpiresAt,
-				DeviceID:                 tt.fields.DeviceID,
-				PemFilePath:              tt.fields.PemFilePath,
-				PrimaryControllerVersion: tt.fields.PrimaryControllerVersion,
+				URL:         tt.fields.URL,
+				Provider:    tt.fields.Provider,
+				Insecure:    tt.fields.Insecure,
+				Debug:       tt.fields.Debug,
+				Version:     tt.fields.Version,
+				BearerToken: tt.fields.BearerToken,
+				ExpiresAt:   tt.fields.ExpiresAt,
+				DeviceID:    tt.fields.DeviceID,
+				PemFilePath: tt.fields.PemFilePath,
 			}
 			if got := c.CheckAuth(); got != tt.want {
 				t.Errorf("Config.CheckAuth() = %v, want %v", got, tt.want)

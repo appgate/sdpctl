@@ -27,7 +27,6 @@ import (
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/vbauerster/mpb/v7"
 	"golang.org/x/sync/errgroup"
 )
@@ -69,6 +68,9 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.ApplianceUpgradeCompleteDoc.Short,
 		Long:    docs.ApplianceUpgradeCompleteDoc.Long,
 		Example: docs.ApplianceUpgradeCompleteDoc.ExampleString(),
+		Annotations: map[string]string{
+			"updateAPIConfig": "true",
+		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			minTimeout := 5 * time.Minute
 			flagTimeout, err := cmd.Flags().GetDuration("timeout")
@@ -228,17 +230,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	// if we have an existing config with the primary controller version, check if we need to re-authetnicate
-	// before we continue with the upgrade to update the peer API version.
-	if len(opts.Config.PrimaryControllerVersion) > 0 {
-		preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
-		if err != nil {
-			return err
-		}
-		if !preV.Equal(currentPrimaryControllerVersion) {
-			return fmt.Errorf("version mismatch: run sdpctl configure signin")
-		}
-	}
 
 	f := log.Fields{
 		"appliance": primaryController.GetName(),
@@ -328,10 +319,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.GetDetails())
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
-	}
-	var newPeerAPIVersion int
-	if newVersion != nil {
-		newPeerAPIVersion = a.GetPeerAPIVersion(newVersion)
 	}
 
 	if primaryControllerUpgradeStatus.GetStatus() != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
@@ -654,20 +641,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		fmt.Fprintf(opts.Out, "\n[%s] Upgrading additional appliances (Batch %d / %d):\n", time.Now().Format(time.RFC3339), index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunk, false); err != nil {
 			return fmt.Errorf("failed during upgrade of additional appliances %w", err)
-		}
-	}
-
-	if newVersion != nil && newVersion.GreaterThan(currentPrimaryControllerVersion) {
-		cfg.PrimaryControllerVersion = newVersion.String()
-		cfg.Version = newPeerAPIVersion
-		viper.Set("primary_controller_version", newVersion.String())
-		viper.Set("api_version", newPeerAPIVersion)
-		if err := viper.WriteConfig(); err != nil {
-			log.WithFields(log.Fields{
-				"primary_controller_version": newVersion.String(),
-				"api_version":                newPeerAPIVersion,
-			}).WithError(err).Warn("failed to write config file")
-			fmt.Fprintln(opts.Out, "WARNING: Failed to write to config file. Please run 'sdpctl configure signin' to reconfigure.")
 		}
 	}
 

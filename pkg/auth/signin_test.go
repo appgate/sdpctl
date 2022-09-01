@@ -128,9 +128,8 @@ var (
 func TestSignInNoPromptOrEnv(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
-			Debug:                    false,
-			URL:                      "http://localhost",
-			PrimaryControllerVersion: "5.3.4-24950",
+			Debug: false,
+			URL:   "http://localhost",
 		},
 		IOOutWriter: os.Stdout,
 		Stdin:       os.Stdin,
@@ -164,14 +163,6 @@ func TestSignin(t *testing.T) {
 				authenticationResponse,
 				identityProviderNames,
 				authorizationGET,
-				{
-					URL:       "/appliances",
-					Responder: httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"),
-				},
-				{
-					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"),
-				},
 			},
 		},
 		{
@@ -181,14 +172,6 @@ func TestSignin(t *testing.T) {
 				authenticationResponse,
 				identityProviderNames,
 				authorizationGET,
-				{
-					URL:       "/appliances",
-					Responder: httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"),
-				},
-				{
-					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"),
-				},
 			},
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubPrompt("Username:").AnswerWith("bob")
@@ -272,14 +255,6 @@ func TestSignin(t *testing.T) {
 						}
 					},
 				},
-				{
-					URL:       "/appliances",
-					Responder: httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"),
-				},
-				{
-					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"),
-				},
 			},
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubPrompt("Username:").AnswerWith("bob")
@@ -322,9 +297,8 @@ func TestSignin(t *testing.T) {
 
 			f := &factory.Factory{
 				Config: &configuration.Config{
-					Debug:                    false,
-					URL:                      fmt.Sprintf("http://appgate.com:%d", registry.Port),
-					PrimaryControllerVersion: "5.3.4-24950",
+					Debug: false,
+					URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 				},
 				IOOutWriter: tty,
 				Stdin:       pty,

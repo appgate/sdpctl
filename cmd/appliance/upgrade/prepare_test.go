@@ -58,20 +58,18 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 func TestUpgradePrepareCommand(t *testing.T) {
 
 	tests := []struct {
-		name                     string
-		cli                      string
-		primaryControllerVersion string
-		askStubs                 func(*prompt.AskStubber)
-		httpStubs                []httpmock.Stub
-		upgradeStatusWorker      appliancepkg.WaitForUpgradeStatus
-		wantOut                  *regexp.Regexp
-		wantErr                  bool
-		wantErrOut               *regexp.Regexp
+		name                string
+		cli                 string
+		askStubs            func(*prompt.AskStubber)
+		httpStubs           []httpmock.Stub
+		upgradeStatusWorker appliancepkg.WaitForUpgradeStatus
+		wantOut             *regexp.Regexp
+		wantErr             bool
+		wantErrOut          *regexp.Regexp
 	}{
 		{
-			name:                     "with existing file",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
-			primaryControllerVersion: "5.3.4+24950",
+			name: "with existing file",
+			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // upgrade_confirm
@@ -137,9 +135,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:                     "with gateway filter",
-			cli:                      `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1-9876.img.zip'`,
-			primaryControllerVersion: "5.3.4+24950",
+			name: "with gateway filter",
+			cli:  `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1-9876.img.zip'`,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // upgrade_confirm
@@ -205,11 +202,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:                     "error upgrade status",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
-			primaryControllerVersion: "5.3.4+24950",
-			upgradeStatusWorker:      &errorUpgradeStatus{},
-			wantErrOut:               regexp.MustCompile(`gateway never reached verifying, ready, got failed`),
+			name:                "error upgrade status",
+			cli:                 "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
+			upgradeStatusWorker: &errorUpgradeStatus{},
+			wantErrOut:          regexp.MustCompile(`gateway never reached verifying, ready, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // upgrade_confirm
@@ -274,17 +270,15 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:                     "no image argument",
-			cli:                      "upgrade prepare",
-			primaryControllerVersion: "5.3.4+24950",
-			httpStubs:                []httpmock.Stub{},
-			wantErr:                  true,
-			wantErrOut:               regexp.MustCompile(`--image is mandatory`),
+			name:       "no image argument",
+			cli:        "upgrade prepare",
+			httpStubs:  []httpmock.Stub{},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`--image is mandatory`),
 		},
 		{
-			name:                     "timeout flag",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip' --timeout 0s",
-			primaryControllerVersion: "5.3.4+24950",
+			name: "timeout flag",
+			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip' --timeout 0s",
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubOne(true) // peer_warning message
 				as.StubOne(true) // upgrade_confirm
@@ -351,9 +345,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile("WARNING: timeout is less than the allowed minimum. Using default timeout instead: 30m0s"),
 		},
 		{
-			name:                     "disagree with peer warning",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
-			primaryControllerVersion: "5.3.4+24950",
+			name: "disagree with peer warning",
+			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(false) // peer_warning message
@@ -372,9 +365,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Cancelled by user`),
 		},
 		{
-			name:                     "no prepare confirmation",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
-			primaryControllerVersion: "5.3.4+24950",
+			name: "no prepare confirmation",
+			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true)  // peer_warning message
 				s.StubOne(false) // upgrade_confirm
@@ -392,30 +384,26 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:                     "image file not found",
-			cli:                      "upgrade prepare --image 'abc123456'",
-			primaryControllerVersion: "5.3.4+24950",
-			wantErr:                  true,
-			wantErrOut:               regexp.MustCompile(`Image file not found "abc123456"`),
+			name:       "image file not found",
+			cli:        "upgrade prepare --image 'abc123456'",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`Image file not found "abc123456"`),
 		},
 		{
-			name:                     "file name error",
-			cli:                      "upgrade prepare --image './testdata/appgate.img'",
-			primaryControllerVersion: "5.3.4+24950",
-			wantErr:                  true,
-			wantErrOut:               regexp.MustCompile(`Invalid mimetype on image file. The format is expected to be a .img.zip archive.`),
+			name:       "file name error",
+			cli:        "upgrade prepare --image './testdata/appgate.img'",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`Invalid mimetype on image file. The format is expected to be a .img.zip archive.`),
 		},
 		{
-			name:                     "invalid zip file error",
-			cli:                      "upgrade prepare --image './testdata/invalid-5.5.1.img.zip'",
-			primaryControllerVersion: "5.3.4+24950",
-			wantErr:                  true,
-			wantErrOut:               regexp.MustCompile(`zip: not a valid zip file`),
+			name:       "invalid zip file error",
+			cli:        "upgrade prepare --image './testdata/invalid-5.5.1.img.zip'",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`zip: not a valid zip file`),
 		},
 		{
-			name:                     "prepare same version",
-			cli:                      "upgrade prepare --image './testdata/appgate-5.5.1-12345.img.zip'",
-			primaryControllerVersion: "5.5.1+12345",
+			name: "prepare same version",
+			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-12345.img.zip'",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -430,9 +418,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances are already greater or equal to the upgrade image`),
 		},
 		{
-			name:                     "force prepare same version",
-			cli:                      "upgrade prepare --force --image './testdata/appgate-5.5.1-12345.img.zip'",
-			primaryControllerVersion: "5.5.1+12345",
+			name: "force prepare same version",
+			cli:  "upgrade prepare --force --image './testdata/appgate-5.5.1-12345.img.zip'",
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubOne(true) // peer_warning message
 				as.StubOne(true) // upgrade_confirm
@@ -513,9 +500,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			in := io.NopCloser(stdin)
 			f := &factory.Factory{
 				Config: &configuration.Config{
-					Debug:                    false,
-					URL:                      fmt.Sprintf("http://appgate.com:%d", registry.Port),
-					PrimaryControllerVersion: tt.primaryControllerVersion,
+					Debug: false,
+					URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,

@@ -258,9 +258,23 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
-		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
+		if configuration.IsAuthCheckEnabled(cmd) {
+			var result error
+			// For certain sub-commands we want to make sure that we are using the
+			// latest api version available (appliance upgrade prepare and complete)
+			// we wont use this check for all commands, and fallback to the config value
+			// so we can reduce number oh http requests to the controller.
+			if configuration.NeedUpdatedAPIVersionConfig(cmd) {
+				minMax, err := auth.GetMinMaxAPIVersion(f)
+				if err == nil && minMax != nil {
+					viper.Set("api_version", minMax.Max)
+					f.Config.Version = int(minMax.Max)
+					if err := viper.WriteConfig(); err != nil {
+						fmt.Fprintf(f.StdErr, "[error] %s\n", err)
+					}
+				}
+			}
 			if err := auth.Signin(f); err != nil {
-				var result error
 				result = multierror.Append(result, err)
 				return result
 			}
@@ -273,7 +287,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			result = multierror.Append(result, ErrExitAuth)
 			return result
 		}
-
 		return nil
 	}
 }

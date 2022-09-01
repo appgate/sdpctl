@@ -77,6 +77,9 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.ApplianceUpgradePrepareDoc.Short,
 		Long:    docs.ApplianceUpgradePrepareDoc.Long,
 		Example: docs.ApplianceUpgradePrepareDoc.ExampleString(),
+		Annotations: map[string]string{
+			"updateAPIConfig": "true",
+		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
@@ -158,8 +161,6 @@ func checkImageFilename(i string) error {
 	}
 	return nil
 }
-
-var ErrPrimaryControllerVersionErr = errors.New("version mismatch: run sdpctl configure signin")
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
 	terminal.Lock()
@@ -274,18 +275,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, *initialStats)
 	if err != nil {
 		return err
-	}
-
-	// if we have an existing config with the primary controller version, check if we need to re-authenticate
-	// before we continue with the upgrade to update the peer API version.
-	if len(opts.Config.PrimaryControllerVersion) > 0 {
-		preV, err := version.NewVersion(opts.Config.PrimaryControllerVersion)
-		if err != nil {
-			return fmt.Errorf("%s %w", ErrPrimaryControllerVersionErr, err)
-		}
-		if !preV.Equal(currentPrimaryControllerVersion) {
-			return ErrPrimaryControllerVersionErr
-		}
 	}
 
 	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
