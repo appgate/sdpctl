@@ -265,10 +265,11 @@ Not disabling the health checks in those auto-scaled gateways could cause them t
 
 func TestCompareVersionAndBuildNumber(t *testing.T) {
 	testCases := []struct {
-		desc string
-		v1   string
-		v2   string
-		want int
+		desc    string
+		v1      string
+		v2      string
+		want    int
+		wantErr bool
 	}{
 		{
 			desc: "should equal",
@@ -306,12 +307,34 @@ func TestCompareVersionAndBuildNumber(t *testing.T) {
 			v2:   "6.0.1",
 			want: IsEqual,
 		},
+		{
+			desc:    "no v1 version",
+			v1:      "",
+			v2:      "6.0.1",
+			wantErr: true,
+		},
+		{
+			desc:    "no v2 version",
+			v1:      "6.0.1",
+			v2:      "",
+			wantErr: true,
+		},
+		{
+			desc:    "no version",
+			v1:      "",
+			v2:      "",
+			wantErr: true,
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			v1, _ := version.NewVersion(tC.v1)
 			v2, _ := version.NewVersion(tC.v2)
-			if res := CompareVersionsAndBuildNumber(v1, v2); res != tC.want {
+			res, err := CompareVersionsAndBuildNumber(v1, v2)
+			if err != nil && !tC.wantErr {
+				t.Fatal("unexpected error in CompareVersionAndBuildNumber()", err)
+			}
+			if res != tC.want {
 				t.Fatalf("Unexpected version compare:\nWANT\t%d\nGOT\t%d", tC.want, res)
 			}
 		})
@@ -361,27 +384,6 @@ func TestHasDiffVersions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if res, _ := HasDiffVersions(tt.stats); res != tt.expect {
 				t.Fatalf("HasDiffVersions() failed\nWANT: %v\nGOT: %v", tt.expect, res)
-			}
-		})
-	}
-}
-
-func TestCompareVersionsAndBuildNumber(t *testing.T) {
-	type args struct {
-		x *version.Version
-		y *version.Version
-	}
-	tests := []struct {
-		name string
-		args args
-		want int
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := CompareVersionsAndBuildNumber(tt.args.x, tt.args.y); got != tt.want {
-				t.Errorf("CompareVersionsAndBuildNumber() = %v, want %v", got, tt.want)
 			}
 		})
 	}

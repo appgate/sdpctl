@@ -162,7 +162,7 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
-func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance) {
+func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance, error) {
 	skip := []openapi.Appliance{}
 	keep := []openapi.Appliance{}
 
@@ -174,7 +174,11 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					log.Warn("failed to parse version from stats")
 					continue
 				}
-				if CompareVersionsAndBuildNumber(statV, v) < 1 {
+				res, err := CompareVersionsAndBuildNumber(statV, v)
+				if err != nil {
+					return nil, nil, err
+				}
+				if res < 1 {
 					skip = append(skip, appliance)
 				} else {
 					keep = append(keep, appliance)
@@ -183,7 +187,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 		}
 	}
 
-	return keep, skip
+	return keep, skip, nil
 }
 
 const (
@@ -196,18 +200,27 @@ const (
 // -1 if y is lower than x
 // 0 if versions match
 // 1 if y is greater than x
-func CompareVersionsAndBuildNumber(x, y *version.Version) int {
+func CompareVersionsAndBuildNumber(x, y *version.Version) (int, error) {
+	if x == nil || y == nil {
+		return 0, fmt.Errorf("failed to compare versions, got nil version - x=%v, y=%v", x, y)
+	}
 	res := y.Compare(x)
 
 	// if res is 0, we also compare build number
 	// both x and y needs to have a parsable build number for this check to run
 	if res == IsEqual && len(y.Metadata()) > 0 && len(x.Metadata()) > 0 {
-		buildX, _ := version.NewVersion(x.Metadata())
-		buildY, _ := version.NewVersion(y.Metadata())
+		buildX, err := version.NewVersion(x.Metadata())
+		if err != nil {
+			return res, err
+		}
+		buildY, err := version.NewVersion(y.Metadata())
+		if err != nil {
+			return res, err
+		}
 		res = buildY.Compare(buildX)
 	}
 
-	return res
+	return res, nil
 }
 
 func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {
