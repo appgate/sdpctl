@@ -288,6 +288,24 @@ func TestCompareVersionAndBuildNumber(t *testing.T) {
 			v2:   "6.0.0-beta+23456",
 			want: IsGreater,
 		},
+		{
+			desc: "v2 no build number",
+			v1:   "6.0.1+30125",
+			v2:   "6.0.1",
+			want: IsEqual,
+		},
+		{
+			desc: "v1 no build number",
+			v1:   "6.0.1",
+			v2:   "6.0.1+30125",
+			want: IsEqual,
+		},
+		{
+			desc: "no build number",
+			v1:   "6.0.1",
+			v2:   "6.0.1",
+			want: IsEqual,
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
@@ -343,6 +361,27 @@ func TestHasDiffVersions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if res, _ := HasDiffVersions(tt.stats); res != tt.expect {
 				t.Fatalf("HasDiffVersions() failed\nWANT: %v\nGOT: %v", tt.expect, res)
+			}
+		})
+	}
+}
+
+func TestCompareVersionsAndBuildNumber(t *testing.T) {
+	type args struct {
+		x *version.Version
+		y *version.Version
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CompareVersionsAndBuildNumber(tt.args.x, tt.args.y); got != tt.want {
+				t.Errorf("CompareVersionsAndBuildNumber() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -200,7 +200,8 @@ func CompareVersionsAndBuildNumber(x, y *version.Version) int {
 	res := y.Compare(x)
 
 	// if res is 0, we also compare build number
-	if res == IsEqual {
+	// both x and y needs to have a parsable build number for this check to run
+	if res == IsEqual && len(y.Metadata()) > 0 && len(x.Metadata()) > 0 {
 		buildX, _ := version.NewVersion(x.Metadata())
 		buildY, _ := version.NewVersion(y.Metadata())
 		res = buildY.Compare(buildX)
