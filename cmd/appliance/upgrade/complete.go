@@ -44,6 +44,7 @@ type upgradeCompleteOptions struct {
 	actualHostname    string
 	defaultFilter     map[string]map[string]string
 	ciMode            bool
+	batchSize         int
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -107,14 +108,13 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
 	flags.String("actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
-
+	flags.IntVar(&opts.batchSize, "batch-size", 0, "number of batch groups, default to number of sites")
 	return upgradeCompleteCmd
 }
 
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
 	terminal.Lock()
 	defer terminal.Unlock()
-
 	var err error
 	if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
 		return err
@@ -327,10 +327,16 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	// chunks include slices of slices, divided in chunkSize,
 	// the chunkSize represent the number of goroutines used
-	// for pararell upgrades, each chunk the slice has tried to split
+	// for parallel upgrades, each chunk the slice has tried to split
 	// the appliances based on site and function to avoid downtime
 	// the chunkSize is determined by the number of active sites.
-	chunkSize := appliancepkg.ActiveSitesInAppliances(additionalAppliances)
+	//
+	// users can overwrite chunkSize with chunkSize '--batch-size' flag otherwise, default to active sites count
+	chunkSize := opts.batchSize
+	if chunkSize == 0 {
+		chunkSize = appliancepkg.ActiveSitesInAppliances(additionalAppliances)
+	}
+
 	chunks := appliancepkg.ChunkApplianceGroup(chunkSize, appliancepkg.SplitAppliancesByGroup(additionalAppliances))
 	chunkLength := len(chunks)
 
