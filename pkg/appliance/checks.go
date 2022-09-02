@@ -160,10 +160,15 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 	return tpl.String(), nil
 }
 
+type SkipStruct struct {
+	Reason    string
+	Appliance openapi.Appliance
+}
+
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
-func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []openapi.Appliance, error) {
-	skip := []openapi.Appliance{}
+func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipStruct) {
+	skip := []SkipStruct{}
 	keep := []openapi.Appliance{}
 
 	for _, appliance := range appliances {
@@ -172,14 +177,26 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 				statV, err := ParseVersionString(stat.GetVersion())
 				if err != nil {
 					log.Warn("failed to parse version from stats")
+					skip = append(skip, SkipStruct{
+						Appliance: appliance,
+						Reason:    "failed to parse version from stats",
+					})
 					continue
 				}
 				res, err := CompareVersionsAndBuildNumber(statV, v)
 				if err != nil {
-					return nil, nil, err
+					log.Warn("failed to compare versions")
+					skip = append(skip, SkipStruct{
+						Appliance: appliance,
+						Reason:    "failed to compare versions",
+					})
+					continue
 				}
 				if res < 1 {
-					skip = append(skip, appliance)
+					skip = append(skip, SkipStruct{
+						Appliance: appliance,
+						Reason:    "appliance version is already greater or equal to prepare version",
+					})
 				} else {
 					keep = append(keep, appliance)
 				}
@@ -187,7 +204,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 		}
 	}
 
-	return keep, skip, nil
+	return keep, skip
 }
 
 const (
