@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 )
 
@@ -26,20 +25,23 @@ func HTTPErrorResponse(response *http.Response, err error) error {
 		return fmt.Errorf("No response %w", err)
 	}
 	var errors error
-	if util.InBetween(response.StatusCode, 400, 499) {
-		responseBody, errRead := io.ReadAll(response.Body)
-		if errRead != nil {
-			return fmt.Errorf("%d Could not read response body %w", response.StatusCode, err)
-		}
-		errBody := GenericErrorResponse{}
-		if err := json.Unmarshal(responseBody, &errBody); err != nil {
-			return fmt.Errorf("%d %w", response.StatusCode, err)
-		}
-		errors = multierror.Append(errors, stderrors.New(errBody.Message))
-		for _, e := range errBody.Errors {
-			errors = multierror.Append(errors, fmt.Errorf("%s %s", e.Field, e.Message))
-		}
-		return errors
+
+	responseBody, errRead := io.ReadAll(response.Body)
+	if errRead != nil {
+		return fmt.Errorf("%d Could not read response body %w", response.StatusCode, err)
 	}
-	return err
+	errBody := GenericErrorResponse{}
+	if errMarshal := json.Unmarshal(responseBody, &errBody); errMarshal != nil {
+		return fmt.Errorf("HTTP %d - %w", response.StatusCode, err)
+	}
+	if len(errBody.Message) > 0 {
+		errors = multierror.Append(errors, stderrors.New(errBody.Message))
+	}
+	for _, e := range errBody.Errors {
+		errors = multierror.Append(errors, fmt.Errorf("%s %s", e.Field, e.Message))
+	}
+	if errors == nil {
+		errors = multierror.Append(errors, err)
+	}
+	return errors
 }
