@@ -1197,8 +1197,6 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 					}
 				}
 				t.Errorf("\n Diff \n %s", cmp.Diff(got, tt.want, opts...))
-				// t.Errorf("SplitAppliancesByGroup() = %v, want %v", got, tt.want)
-
 			}
 		})
 	}
