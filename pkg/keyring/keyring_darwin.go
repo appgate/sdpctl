@@ -13,14 +13,17 @@ import (
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
-	for _, k := range []string{username, password, bearer} {
-		item := keychain.NewItem()
-		item.SetSecClass(keychain.SecClassGenericPassword)
-		item.SetService(keyringService)
-		item.SetAccount(format(prefix, k))
-		err := keychain.DeleteItem(item)
-		if err != nil {
-			return errors.New("failed to delete credential from keychain")
+	for _, k := range []string{username, password, bearer, refreshToken} {
+		key := format(prefix, k)
+		if _, err := QueryKeychain(key); err == nil {
+			item := keychain.NewItem()
+			item.SetSecClass(keychain.SecClassGenericPassword)
+			item.SetService(keyringService)
+			item.SetAccount(key)
+			err := keychain.DeleteItem(item)
+			if err != nil {
+				return errors.New("failed to delete credential from keychain")
+			}
 		}
 	}
 	return nil
