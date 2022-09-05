@@ -205,16 +205,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	skipAppliances := []appliancepkg.SkipStruct{}
+	skipAppliances := []appliancepkg.SkipUpgrade{}
 	appliances, offline, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
 	for _, a := range offline {
-		skipAppliances = append(skipAppliances, appliancepkg.SkipStruct{
+		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Reason:    "appliance is offline",
 			Appliance: a,
 		})
 	}
 	if !opts.forcePrepare {
-		var skip []appliancepkg.SkipStruct
+		var skip []appliancepkg.SkipUpgrade
 		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, targetVersion)
 		skipAppliances = append(skipAppliances, skip...)
 		if len(appliances) <= 0 {
@@ -669,7 +669,7 @@ The following appliances will be skipped:
 {{ .SkipTable }}{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []appliancepkg.SkipStruct, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
 	type stub struct {
 		Filepath       string
 		ApplianceTable string

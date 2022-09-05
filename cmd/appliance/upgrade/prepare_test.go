@@ -628,7 +628,7 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 	type args struct {
 		f         string
 		appliance []openapi.Appliance
-		skip      []appliancepkg.SkipStruct
+		skip      []appliancepkg.SkipUpgrade
 		stats     []openapi.StatsAppliancesListAllOfData
 	}
 	tests := []struct {
@@ -687,7 +687,7 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 						Version: openapi.PtrString("6.0.0+29426"),
 					},
 				},
-				skip: []appliancepkg.SkipStruct{
+				skip: []appliancepkg.SkipUpgrade{
 					{
 						Appliance: openapi.Appliance{
 							Id:   openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),
