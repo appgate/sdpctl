@@ -72,7 +72,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 	// Clear old credentials when configuring
 	if err := opts.Config.ClearCredentials(); err != nil {
-		return err
+		log.Warnf("ran configure command, unable to clear credentials %s", err)
 	}
 	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
 	fmt.Println("Configuration updated successfully")
