@@ -160,7 +160,7 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
-	if chunkSize == 0 {
+	if chunkSize <= 0 {
 		chunkSize = 2
 	}
 
@@ -267,18 +267,6 @@ func applianceGroupHash(appliance openapi.Appliance) int {
 	}
 
 	return hashcode.String(buf.String())
-}
-
-func ActiveSitesInAppliances(slice []openapi.Appliance) int {
-	keys := make(map[string]bool)
-	for _, a := range slice {
-		if v, ok := a.GetSiteOk(); ok {
-			if _, ok := keys[*v]; !ok {
-				keys[*v] = true
-			}
-		}
-	}
-	return len(keys)
 }
 
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
