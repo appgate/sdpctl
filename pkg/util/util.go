@@ -76,14 +76,6 @@ func FileExists(name string) (bool, error) {
 	return false, err
 }
 
-func InBetween(i, min, max int) bool {
-	if (i >= min) && (i <= max) {
-		return true
-	} else {
-		return false
-	}
-}
-
 func IsJSON(str string) bool {
 	var js json.RawMessage
 	return json.Unmarshal([]byte(str), &js) == nil
