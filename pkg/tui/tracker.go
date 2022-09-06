@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ type Tracker struct {
 	success      bool
 	done         bool
 	statusReport chan string
+	failReason   chan string
 }
 
 // Watch initiates the progress tracking for each appliance update
@@ -35,14 +37,15 @@ func (t *Tracker) Watch(until, failOn []string) {
 		}
 	}()
 
-	// failCount keeps track of the amount of failed status updates
-	// the status needs to be reported as failed at least twice before
-	// failing the spinner. This avoids pre-mature spinner abort when
-	// the initial status is also part of the failOn status
-	failCount := 0
 	var msg string
 	var ok bool
 	for {
+		msg, ok = <-t.statusReport
+		if !ok {
+			t.abort(false)
+			break
+		}
+		t.current = msg
 		if util.InSlice(msg, until) {
 			t.current = t.endMsg
 			t.success = true
@@ -50,25 +53,19 @@ func (t *Tracker) Watch(until, failOn []string) {
 			break
 		}
 		if util.InSlice(msg, failOn) {
-			if failCount > 0 {
-				// on failure, we expect the next update to be the details of the failure
-				msg, ok = <-t.statusReport
-				t.current = msg
-				if !ok {
-					t.current = "failed"
-				}
-				t.abort(false)
-				break
+			// on failure, we expect to get the reason from this channel
+			reason, ok := <-t.failReason
+			if ok {
+				// Tracker does not deal well with multiple lines, so we need some string sanitation
+				// Just grab the first line and trim trailing special chars, such as ':'
+				firstLine := strings.Split(reason, "\n")[0]
+				re := regexp.MustCompile(`[^\w]$`)
+				show := re.ReplaceAllString(firstLine, "")
+				t.current = show
 			}
-			failCount++
-			continue
-		}
-		msg, ok = <-t.statusReport
-		if !ok {
-			t.abort(false)
+			t.complete()
 			break
 		}
-		t.current = msg
 	}
 }
 
@@ -110,6 +107,15 @@ func (t *Tracker) barFillerFunc() func(mpb.BarFiller) mpb.BarFiller {
 func (t *Tracker) Update(s string) {
 	select {
 	case t.statusReport <- s:
+		// wait one refresh cycle to give bars a chance to update properly
+		time.Sleep(defaultRefreshRate)
+	default:
+	}
+}
+
+func (t *Tracker) Fail(s string) {
+	select {
+	case t.failReason <- s:
 		// wait one refresh cycle to give bars a chance to update properly
 		time.Sleep(defaultRefreshRate)
 	default:
