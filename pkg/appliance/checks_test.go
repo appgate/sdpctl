@@ -305,44 +305,74 @@ func TestHasDiffVersions(t *testing.T) {
 		name   string
 		stats  []openapi.StatsAppliancesListAllOfData
 		expect bool
+		count  int // the number of keys in the map that should be returned.
 	}{
 		{
 			name: "should not have diff versions",
 			stats: []openapi.StatsAppliancesListAllOfData{
 				{
-					Name:    openapi.PtrString("controller"),
+					Name:    openapi.PtrString("controller one"),
 					Id:      openapi.PtrString(uuid.NewString()),
 					Version: openapi.PtrString("6.0.0-12345-release"),
 				},
 				{
-					Name:    openapi.PtrString("controller"),
+					Name:    openapi.PtrString("controller two"),
 					Id:      openapi.PtrString(uuid.NewString()),
 					Version: openapi.PtrString("6.0.0-12345-release"),
 				},
 			},
 			expect: false,
+			count:  2,
 		},
 		{
 			name: "should have diff versions",
 			stats: []openapi.StatsAppliancesListAllOfData{
 				{
-					Name:    openapi.PtrString("controller"),
+					Name:    openapi.PtrString("controller primary"),
 					Id:      openapi.PtrString(uuid.NewString()),
 					Version: openapi.PtrString("6.0.0-12345-release"),
 				},
 				{
-					Name:    openapi.PtrString("controller"),
+					Name:    openapi.PtrString("controller secondary"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("6.0.0-23456-release"),
+				},
+				{
+					Name:    openapi.PtrString("portal - the cake is a lie"),
 					Id:      openapi.PtrString(uuid.NewString()),
 					Version: openapi.PtrString("6.0.0-23456-release"),
 				},
 			},
 			expect: true,
+			count:  3,
+		},
+		{
+			name: "one offline appliance",
+			stats: []openapi.StatsAppliancesListAllOfData{
+				{
+					Name:    openapi.PtrString("gateway"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("unkown"),
+				},
+				{
+					Name:    openapi.PtrString("controller one"),
+					Id:      openapi.PtrString(uuid.NewString()),
+					Version: openapi.PtrString("6.0.0-23456-release"),
+				},
+			},
+			expect: true,
+			count:  2,
 		},
 	}
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			if res, _ := HasDiffVersions(tt.stats); res != tt.expect {
-				t.Fatalf("HasDiffVersions() failed\nWANT: %v\nGOT: %v", tt.expect, res)
+			res, list := HasDiffVersions(tt.stats)
+
+			if res != tt.expect || len(list) != tt.count {
+				for key, value := range list {
+					t.Logf("%s %s", key, value)
+				}
+				t.Fatalf("HasDiffVersions() got list count %d, expect %d - got res %v expected %v", len(list), tt.count, res, tt.expect)
 			}
 		})
 	}
