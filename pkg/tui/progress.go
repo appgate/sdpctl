@@ -37,6 +37,7 @@ func (p *Progress) AddTracker(name, endMsg string) *Tracker {
 		current:      "waiting",
 		endMsg:       endMsg,
 		statusReport: make(chan string, 1),
+		failReason:   make(chan string, 1),
 	}
 
 	t.mu.Lock()
