@@ -32,6 +32,15 @@ func (a *Appliance) List(ctx context.Context, filter map[string]map[string]strin
 	return FilterAppliances(appliances.GetData(), filter), nil
 }
 
+// Get return a single appliance based on applianceID
+func (a *Appliance) Get(ctx context.Context, applianceID string) (*openapi.Appliance, error) {
+	appliance, response, err := a.APIClient.AppliancesApi.AppliancesIdGet(ctx, applianceID).Authorization(a.Token).Execute()
+	if err != nil {
+		return nil, api.HTTPErrorResponse(response, err)
+	}
+	return appliance, nil
+}
+
 const (
 	//lint:file-ignore U1000 All available upgrade statuses
 	UpgradeStatusIdle        = "idle"
