@@ -393,7 +393,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name:       "file name error",
 			cli:        "upgrade prepare --image './testdata/appgate.img'",
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`Invalid mimetype on image file. The format is expected to be a .img.zip archive.`),
+			wantErrOut: regexp.MustCompile(`Invalid name on image file. The format is expected to be a .img.zip archive.`),
 		},
 		{
 			name:       "invalid zip file error",
@@ -415,7 +415,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances are already greater or equal to the upgrade image`),
+			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade.`),
 		},
 		{
 			name: "force prepare same version",
@@ -628,7 +628,7 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 	type args struct {
 		f         string
 		appliance []openapi.Appliance
-		skip      []skipStruct
+		skip      []appliancepkg.SkipUpgrade
 		stats     []openapi.StatsAppliancesListAllOfData
 	}
 	tests := []struct {
@@ -687,7 +687,7 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 						Version: openapi.PtrString("6.0.0+29426"),
 					},
 				},
-				skip: []skipStruct{
+				skip: []appliancepkg.SkipUpgrade{
 					{
 						Appliance: openapi.Appliance{
 							Id:   openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),

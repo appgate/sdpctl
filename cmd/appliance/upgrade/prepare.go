@@ -157,7 +157,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 func checkImageFilename(i string) error {
 	// Check if its a valid filename
 	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip`); !rg.MatchString(i) {
-		return errors.New("Invalid mimetype on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
+		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
 	}
 	return nil
 }
@@ -205,25 +205,27 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	skipAppliances := []skipStruct{}
+	skipAppliances := []appliancepkg.SkipUpgrade{}
 	appliances, offline, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
 	for _, a := range offline {
-		skipAppliances = append(skipAppliances, skipStruct{
+		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Reason:    "appliance is offline",
 			Appliance: a,
 		})
 	}
 	if !opts.forcePrepare {
-		var skip []openapi.Appliance
+		var skip []appliancepkg.SkipUpgrade
 		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, targetVersion)
+		skipAppliances = append(skipAppliances, skip...)
 		if len(appliances) <= 0 {
-			return errors.New("No appliances to prepare for upgrade. All appliances are already greater or equal to the upgrade image")
-		}
-		for _, a := range skip {
-			skipAppliances = append(skipAppliances, skipStruct{
-				Reason:    "version is already greater or equal to prepare version",
-				Appliance: a,
-			})
+			var errs *multierr.Error
+			if len(skipAppliances) > 0 {
+				for _, skip := range skipAppliances {
+					errs = multierr.Append(fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason), errs)
+				}
+			}
+			errs = multierr.Append(errors.New("No appliances to prepare for upgrade."), errs)
+			return errs
 		}
 	}
 
@@ -667,12 +669,7 @@ The following appliances will be skipped:
 {{ .SkipTable }}{{ end }}
 `
 
-type skipStruct struct {
-	Reason    string
-	Appliance openapi.Appliance
-}
-
-func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []skipStruct, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
 	type stub struct {
 		Filepath       string
 		ApplianceTable string
