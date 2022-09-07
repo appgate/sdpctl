@@ -160,14 +160,10 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
-	logrus.WithFields(logrus.Fields{
-		"chunkSize":       chunkSize,
-		"applianceGroups": applianceGroups,
-	}).Debug("Group input log")
-	if chunkSize == 0 {
+	if chunkSize <= 0 {
 		chunkSize = 2
 	}
-	// var chunks [][]openapi.Appliance
+
 	chunks := make([][]openapi.Appliance, chunkSize)
 	for i := range chunks {
 		chunks[i] = make([]openapi.Appliance, 0)
@@ -191,7 +187,6 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 			count += 1
 		}
 	}
-
 	for i := 0; i <= count; i++ {
 		// select which initial slice we are going to put the appliance in
 		// the appliance may be moved later if the slice ends up to big.
@@ -210,6 +205,15 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 		chunks[index] = chunk
 	}
 
+	candidates := make([]openapi.Appliance, 0)
+	for index, slice := range chunks {
+		if len(slice) == 1 {
+			item, org := slice[len(slice)-1], slice[:len(slice)-1]
+			chunks[index] = org
+			candidates = append(candidates, item)
+		}
+	}
+	chunks = append(chunks, candidates)
 	// make sure we sort each slice for a consistent output and remove any empty slices.
 	var r [][]openapi.Appliance
 	for index := range chunks {
@@ -262,25 +266,7 @@ func applianceGroupHash(appliance openapi.Appliance) int {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&portal", v.GetEnabled()))
 	}
 
-	str := buf.String()
-	hash := hashcode.String(str)
-	logrus.WithFields(logrus.Fields{
-		"string":   str,
-		"hashcode": hash,
-	}).Debug("generated hash group")
-	return hash
-}
-
-func ActiveSitesInAppliances(slice []openapi.Appliance) int {
-	keys := make(map[string]bool)
-	for _, a := range slice {
-		if v, ok := a.GetSiteOk(); ok {
-			if _, ok := keys[*v]; !ok {
-				keys[*v] = true
-			}
-		}
-	}
-	return len(keys)
+	return hashcode.String(buf.String())
 }
 
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
