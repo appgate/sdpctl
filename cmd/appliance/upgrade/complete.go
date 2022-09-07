@@ -600,16 +600,22 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 			}
-			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
-				log.WithFields(f).WithError(err).Error("Controller never reached desired state")
-				return err
-			}
 			if cfg.Version >= 15 {
-				_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
-				if err != nil {
+				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
+					return err
+				}
+				if _, err := a.DisableMaintenanceMode(ctx, controller.GetId()); err != nil {
 					return err
 				}
 				log.WithFields(f).Info("Disabled maintenance mode")
+				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, controller, appliancepkg.StatusNotBusy, t); err != nil {
+					return err
+				}
+			} else {
+				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
+					log.WithFields(f).WithError(err).Error("Controller never reached desired state")
+					return err
+				}
 			}
 			log.Infof("Upgraded controller %s", controller.GetName())
 			return nil
