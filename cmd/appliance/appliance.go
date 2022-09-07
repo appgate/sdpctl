@@ -3,6 +3,7 @@ package appliance
 import (
 	"github.com/appgate/sdpctl/cmd/appliance/backup"
 	"github.com/appgate/sdpctl/cmd/appliance/files"
+	"github.com/appgate/sdpctl/cmd/appliance/maintenance"
 	"github.com/appgate/sdpctl/cmd/appliance/upgrade"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -35,6 +36,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewResolveNameCmd(f))
 	cmd.AddCommand(NewResolveNameStatusCmd(f))
 	cmd.AddCommand(files.NewFilesCmd(f))
+	cmd.AddCommand(maintenance.NewToggleCmd(f))
 
 	return cmd
 }
