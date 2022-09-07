@@ -209,22 +209,30 @@ func CompareVersionsAndBuildNumber(x, y *version.Version) int {
 	return res
 }
 
+// unknownStat is the response given by the appliance stats api if the appliance is offline.
+const unknownStat = "unknown"
+
 func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {
 	res := map[string]string{}
 	versionList := []string{}
 	for _, stat := range stats {
 		statVersionString := stat.GetVersion()
-		v, err := ParseVersionString(statVersionString)
-		if err != nil {
-			log.WithError(err).WithFields(log.Fields{
-				"appliance": stat.GetName(),
-				"version":   statVersionString,
-			}).Warn("failed to parse version string")
-			return false, res
+		if statVersionString != unknownStat {
+			v, err := ParseVersionString(statVersionString)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"appliance": stat.GetName(),
+					"version":   statVersionString,
+				}).Warn("failed to parse version string")
+			}
+			versionString := statVersionString
+			if v != nil {
+				versionString = v.String()
+			}
+			res[stat.GetName()] = versionString
+			versionList = append(versionList, versionString)
 		}
-		versionString := v.String()
-		res[stat.GetName()] = versionString
-		versionList = append(versionList, versionString)
+
 	}
 	unique := uniqueString(versionList)
 	return len(unique) != 1, res
