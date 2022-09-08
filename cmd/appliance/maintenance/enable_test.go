@@ -16,7 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 )
 
-func TestNewToggleCmd(t *testing.T) {
+func TestNewEnableCmd(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       []string
@@ -28,7 +28,7 @@ func TestNewToggleCmd(t *testing.T) {
 	}{
 		{
 			name: "two arguments no interactive json format",
-			args: []string{"20e75a08-96c6-4ea3-833e-cdbac346e2ae", "true", "--no-interactive", "--json"},
+			args: []string{"20e75a08-96c6-4ea3-833e-cdbac346e2ae", "--no-interactive", "--json"},
 			httpStubs: []httpmock.Stub{
 				{
 					URL: "/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/maintenance",
@@ -108,7 +108,7 @@ func TestNewToggleCmd(t *testing.T) {
 				}
 				return a, nil
 			}
-			cmd := NewToggleCmd(f)
+			cmd := NewEnableCmd(f)
 			cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 			cmd.SetArgs(tt.args)
 
@@ -117,7 +117,7 @@ func TestNewToggleCmd(t *testing.T) {
 
 			_, err := cmd.ExecuteC()
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("NewToggleCmd() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("NewEnableCmd() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil && tt.wantErrOut != nil {
 				if !tt.wantErrOut.MatchString(err.Error()) {

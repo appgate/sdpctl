@@ -1,13 +1,8 @@
 package maintenance
 
 import (
-	"context"
-	"errors"
-
-	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -27,39 +22,7 @@ func NewDisableCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.MaintenanceDisable.Long,
 		Example: docs.MaintenanceDisable.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
-			noInteractive, err := cmd.Flags().GetBool("no-interactive")
-			if err != nil {
-				return err
-			}
-			opts.noInteractive = noInteractive
-			a, err := opts.Appliance(opts.Config)
-			if err != nil {
-				return err
-			}
-			ctx := context.Background()
-			primaryControllerHostname, err := opts.Config.GetHost()
-			if err != nil {
-				return err
-			}
-			switch len(args) {
-			case 0:
-				if opts.noInteractive {
-					return errors.New("provide controller UUID when using --no-interactive, sdpctl appliance maintenance disable controllerUUID")
-				}
-				applianceID, err := appliancepkg.PromptSelect(ctx, a, filter(primaryControllerHostname))
-				if err != nil {
-					return err
-				}
-				opts.controllerID = applianceID
-			case 1:
-				if util.IsUUID(args[0]) {
-					opts.controllerID = args[0]
-					return nil
-				}
-				return errors.New("expected first argument to be appliance UUID")
-			}
-
-			return nil
+			return toggleArgs(cmd, &opts, args)
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return toggleRun(c, args, &opts)
