@@ -180,6 +180,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			Appliance: a,
 		}
 	}
+	if a.ApplianceStats == nil {
+		a.ApplianceStats = &appliancepkg.ApplianceStatus{
+			Appliance: a,
+		}
+	}
 
 	targetVersion, err := appliancepkg.ParseVersionString(opts.filename)
 	if err != nil {
@@ -576,6 +581,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				deadline, ok := ctx.Deadline()
 				if !ok {
 					log.WithContext(ctx).Warning("no deadline in context")
+				}
+				// wait for appliance to be ready before preparing
+				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, qs.appliance, appliancepkg.StatusNotBusy, qs.tracker); err != nil {
+					errs = multierr.Append(errs, err)
 				}
 				if err := a.PrepareFileOn(ctx, remoteFilePath, qs.appliance.GetId(), opts.DevKeyring); err != nil {
 					queueContinue <- queueStruct{err: err}
