@@ -36,7 +36,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewResolveNameCmd(f))
 	cmd.AddCommand(NewResolveNameStatusCmd(f))
 	cmd.AddCommand(files.NewFilesCmd(f))
-	cmd.AddCommand(maintenance.NewToggleCmd(f))
+	cmd.AddCommand(maintenance.NewMaintenanceCmd(f))
 
 	return cmd
 }

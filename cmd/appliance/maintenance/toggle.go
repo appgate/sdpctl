@@ -59,7 +59,7 @@ func NewToggleCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	var cmd = &cobra.Command{
-		Use:     "maintenance-toggle <applianceUUID> <true|false>",
+		Use:     "toggle <applianceUUID> <true|false>",
 		Short:   docs.MaintenanceToggle.Short,
 		Long:    docs.MaintenanceToggle.Long,
 		Example: docs.MaintenanceToggle.ExampleString(),
