@@ -14,36 +14,6 @@ var (
 		Short: "Manually mange maintenance mode on controllers",
 		Long:  ``,
 	}
-	MaintenanceToggle = CommandDoc{
-		Short: "Toggle maintenance mode on a single controller",
-		Long:  MaintenanceModeLongDescription,
-
-		Examples: []ExampleDoc{
-			{
-				Description: "Toggle maintenance mode to false on a fixed controller UUID",
-				Command:     "sdpctl appliance maintenance-toggle 20e75a08-96c6-4ea3-833e-cdbac346e2ae false",
-				Output:      "Change result: success\nChange Status: completed",
-			},
-
-			{
-				Description: "Toggle maintenance mode interactive prompt",
-				Command:     "sdpctl appliance maintenance-toggle",
-				Output: `
-? select appliance: controller-two - Default Site - []
-? Toggle maintenance mode to: true
-
-A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.
-This is a superuser function and should only be used if you know what you are doing.
-
-? Are you really sure you want to enable maintenance mode on controller2-dac9d906-e5ba-4ef6-8485-bf56bc64cada-site1?
-
-Do you want to continue? Yes
-Change result: success
-Change Status: completed
-                `,
-			},
-		},
-	}
 
 	MaintenanceDisable = CommandDoc{
 		Short: "Disable maintenance mode on a single controller",
@@ -51,7 +21,7 @@ Change Status: completed
 
 		Examples: []ExampleDoc{
 			{
-				Description: "Toggle maintenance mode to false on a fixed controller UUID",
+				Description: "Disable maintenance mode on a fixed controller UUID",
 				Command:     "sdpctl appliance maintenance disable 20e75a08-96c6-4ea3-833e-cdbac346e2ae",
 				Output:      "Change result: success\nChange Status: completed",
 			},
@@ -61,7 +31,6 @@ Change Status: completed
 				Command:     "sdpctl appliance maintenance disable",
 				Output: `
 ? select appliance: controller-two - Default Site - []
-? Toggle maintenance mode to: false
 
 A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.
 
@@ -91,7 +60,6 @@ Change Status: completed
 				Command:     "sdpctl appliance maintenance enable",
 				Output: `
 ? select appliance: controller-two - Default Site - []
-? Toggle maintenance mode to: false
 
 This is a superuser function and should only be used if you know what you are doing.
 
