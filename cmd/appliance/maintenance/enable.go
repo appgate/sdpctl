@@ -37,17 +37,17 @@ func NewEnableCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			ctx := context.Background()
-			filter := map[string]map[string]string{
-				"include": {
-					"function": "controller",
-				},
+			primaryControllerHostname, err := opts.Config.GetHost()
+			if err != nil {
+				return err
 			}
+
 			switch len(args) {
 			case 0:
 				if opts.noInteractive {
 					return errors.New("provide controller UUID when using --no-interactive, sdpctl appliance maintenance enable controllerUUID")
 				}
-				applianceID, err := appliancepkg.PromptSelect(ctx, a, filter)
+				applianceID, err := appliancepkg.PromptSelect(ctx, a, filter(primaryControllerHostname))
 				if err != nil {
 					return err
 				}

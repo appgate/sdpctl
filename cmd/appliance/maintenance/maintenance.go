@@ -6,6 +6,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func filter(hostname string) map[string]map[string]string {
+	return map[string]map[string]string{
+		"include": {
+			"function": "controller",
+		},
+		"exclude": {
+			"hostname": hostname,
+		},
+	}
+}
+
 // NewMaintenanceCmd return a new subcommand for maintenance
 func NewMaintenanceCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
