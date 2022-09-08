@@ -30,12 +30,12 @@ var (
 				Command:     "sdpctl appliance maintenance-toggle",
 				Output: `
 ? select appliance: controller-two - Default Site - []
-? Toggle maintenance mode to: false
+? Toggle maintenance mode to: true
 
-An appliance in maintenance mode won't allow to perform POST, PUT, PATCH or DELETE methods.
+A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.
 This is a superuser function and should only be used if you know what you are doing.
 
-? Are you really sure you want to set maintenance mode to false on controller-two?
+? Are you really sure you want to enable maintenance mode on controller2-dac9d906-e5ba-4ef6-8485-bf56bc64cada-site1?
 
 Do you want to continue? Yes
 Change result: success
@@ -63,10 +63,9 @@ Change Status: completed
 ? select appliance: controller-two - Default Site - []
 ? Toggle maintenance mode to: false
 
-An appliance in maintenance mode won't allow to perform POST, PUT, PATCH or DELETE methods.
-This is a superuser function and should only be used if you know what you are doing.
+A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.
 
-? Are you really sure you want to set maintenance mode to false on controller-two?
+? Are you really sure you want to disable maintenance mode on controller-two?
 
 Do you want to continue? Yes
 Change result: success
@@ -94,10 +93,9 @@ Change Status: completed
 ? select appliance: controller-two - Default Site - []
 ? Toggle maintenance mode to: false
 
-An appliance in maintenance mode won't allow to perform POST, PUT, PATCH or DELETE methods.
 This is a superuser function and should only be used if you know what you are doing.
 
-? Are you really sure you want to set maintenance mode to false on controller-two?
+? Are you really sure you want to enable maintenance mode on controller-two?
 
 Do you want to continue? Yes
 Change result: success

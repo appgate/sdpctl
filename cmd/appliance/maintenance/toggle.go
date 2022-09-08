@@ -142,13 +142,17 @@ func toggleRun(cmd *cobra.Command, args []string, opts *toggleOptions) error {
 	ctx := context.Background()
 
 	if !opts.noInteractive {
-		fmt.Fprintf(opts.Out, "\n%s\n\n", `An appliance in maintenance mode won't allow to perform POST, PUT, PATCH or DELETE methods.
+		fmt.Fprintf(opts.Out, "\n%s\n\n", `A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.
 This is a superuser function and should only be used if you know what you are doing.`)
 		appliance, err := a.Get(ctx, opts.controllerID)
 		if err != nil {
 			return err
 		}
-		confirmation := fmt.Sprintf("Are you really sure you want to set maintenance mode to %t on %s?", opts.enabled, appliance.GetName())
+
+		confirmation := fmt.Sprintf("Are you really sure you want to disable maintenance mode on %s?", appliance.GetName())
+		if opts.enabled {
+			confirmation = fmt.Sprintf("Are you really sure you want to enable maintenance mode on %s?", appliance.GetName())
+		}
 		if err := prompt.AskConfirmation(confirmation); err != nil {
 			return err
 		}
