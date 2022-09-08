@@ -11,6 +11,7 @@ import (
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -57,11 +58,11 @@ func NewToggleCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 
-	var listCmd = &cobra.Command{
-		Use:     "maintenance-toggle",
-		Short:   "",
-		Long:    "",
-		Example: "",
+	var cmd = &cobra.Command{
+		Use:     "maintenance-toggle <applianceUUID> <true|false>",
+		Short:   docs.MaintenanceToggle.Short,
+		Long:    docs.MaintenanceToggle.Long,
+		Example: docs.MaintenanceToggle.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			noInteractive, err := cmd.Flags().GetBool("no-interactive")
 			if err != nil {
@@ -122,8 +123,8 @@ func NewToggleCmd(f *factory.Factory) *cobra.Command {
 			return toggleRun(c, args, &opts)
 		},
 	}
-	listCmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
-	return listCmd
+	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	return cmd
 }
 
 func toggleRun(cmd *cobra.Command, args []string, opts *toggleOptions) error {
