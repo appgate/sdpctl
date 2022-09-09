@@ -2,7 +2,7 @@ package docs
 
 var (
 	MaintenanceModeLongDescription = `
-    This function is a advance function, and should be used with care,
+    For advanced users only.
     enabling maintenance mode on the primary controller can leave you with a unreachable environment.
 
     USE WITH CAUTION
