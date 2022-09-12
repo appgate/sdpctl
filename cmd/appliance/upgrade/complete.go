@@ -14,6 +14,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -135,6 +136,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
 			Appliance: a,
 		}
+	}
+	ac := change.ApplianceChange{
+		APIClient: a.APIClient,
+		Token:     a.Token,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -604,7 +609,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
 					return err
 				}
-				if _, err := a.DisableMaintenanceMode(ctx, controller.GetId()); err != nil {
+				changeID, err := a.DisableMaintenanceMode(ctx, controller.GetId())
+				if err != nil {
+					return err
+				}
+				if _, err = ac.RetryUntilCompleted(ctx, changeID, controller.GetId()); err != nil {
 					return err
 				}
 				log.WithFields(f).Info("Disabled maintenance mode")
