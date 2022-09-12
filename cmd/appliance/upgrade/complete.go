@@ -14,6 +14,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -135,6 +136,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
 			Appliance: a,
 		}
+	}
+	ac := change.ApplianceChange{
+		APIClient: a.APIClient,
+		Token:     a.Token,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -600,16 +605,26 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 			}
-			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
-				log.WithFields(f).WithError(err).Error("Controller never reached desired state")
-				return err
-			}
 			if cfg.Version >= 15 {
-				_, err := a.DisableMaintenanceMode(ctx, controller.GetId())
+				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
+					return err
+				}
+				changeID, err := a.DisableMaintenanceMode(ctx, controller.GetId())
 				if err != nil {
 					return err
 				}
+				if _, err = ac.RetryUntilCompleted(ctx, changeID, controller.GetId()); err != nil {
+					return err
+				}
 				log.WithFields(f).Info("Disabled maintenance mode")
+				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, controller, appliancepkg.StatusNotBusy, t); err != nil {
+					return err
+				}
+			} else {
+				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
+					log.WithFields(f).WithError(err).Error("Controller never reached desired state")
+					return err
+				}
 			}
 			log.Infof("Upgraded controller %s", controller.GetName())
 			return nil
