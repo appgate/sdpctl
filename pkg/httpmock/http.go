@@ -121,6 +121,30 @@ func setup() (*openapi.APIClient, *openapi.Configuration, *http.ServeMux, *httpt
 	return c, clientCfg, mux, server, port, server.Close
 }
 
+func MutatingResponse(filename string, callback func(count int, i []byte) ([]byte, error)) http.HandlerFunc {
+	count := 0
+	return func(w http.ResponseWriter, r *http.Request) {
+		f, err := os.Open(filename)
+		if err != nil {
+			panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
+		}
+		defer f.Close()
+		reader := bufio.NewReader(f)
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			panic(fmt.Sprintf("Internal testing error; could not read %q", filename))
+		}
+		mutated, err := callback(count, content)
+		if err != nil {
+			panic(fmt.Sprintf("Internal testing error; request mutation failed %q", err))
+		}
+		count++
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, string(mutated))
+	}
+}
+
 func JSONResponse(filename string) http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		f, err := os.Open(filename)

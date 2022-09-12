@@ -3,6 +3,7 @@ package upgrade
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,6 +44,22 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 	applianceUUID := "4c07bc67-57ea-42dd-b702-c2d6c45419fc"
 	backupUUID := "fd5ea380-496b-41eb-8bc8-2c84eb36b605"
 
+	mutatingFunc := func(count int, b []byte) ([]byte, error) {
+		stats := &openapi.StatsAppliancesList{}
+		if err := json.Unmarshal(b, stats); err != nil {
+			return nil, err
+		}
+		data := stats.GetData()
+		for i := 0; i < len(data); i++ {
+			data[i].VolumeNumber = openapi.PtrFloat32(float32(count))
+		}
+		bytes, err := json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+		return bytes, nil
+	}
+
 	tests := []struct {
 		name                        string
 		cli                         string
@@ -66,7 +83,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -105,7 +122,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -129,7 +146,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -169,7 +186,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/global-settings",
@@ -224,7 +241,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
@@ -249,7 +266,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
@@ -282,12 +299,44 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_stats_offline_controller.json"),
+					Responder: httpmock.MutatingResponse("../../../pkg/appliance/fixtures/appliance_stats_offline_controller.json", mutatingFunc),
 				},
 			},
 			upgradeStatusWorker: &errorUpgradeStatus{},
 			wantErrOut:          regexp.MustCompile(`Could not complete upgrade operation 1 error occurred`),
 			wantErr:             true,
+		},
+		{
+			name: "no volume switch",
+			cli:  "upgrade complete --backup=false --no-interactive",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/complete",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+					},
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile("never switched partition"),
 		},
 	}
 	for _, tt := range tests {
