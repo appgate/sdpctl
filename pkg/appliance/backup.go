@@ -220,6 +220,12 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			if err != nil {
 				return err
 			}
+			log.WithFields(log.Fields{
+				"appliance": applianceID,
+				"backup_id": backupID,
+				"status":    status,
+			}).Info("backup status")
+
 			if status != backup.Done {
 				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status)
 			}
@@ -229,13 +235,18 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 	b := func(appliance openapi.Appliance) (backedUp, error) {
 		b := backedUp{applianceID: appliance.GetId()}
+		f := log.Fields{
+			"appliance": b.applianceID,
+		}
 		b.backupID, err = backupAPI.Initiate(ctx, b.applianceID, logs, audit)
 		if err != nil {
 			return b, err
 		}
+		log.WithFields(f).Info("Initiated backup")
 		if err := retryStatus(ctx, b.applianceID, b.backupID); err != nil {
 			return b, err
 		}
+		log.WithFields(f).Infof("starting download for backup id %s", b.backupID)
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		if err != nil {
 			return b, err
