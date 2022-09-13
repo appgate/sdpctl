@@ -57,7 +57,7 @@ func deleteRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 
 	profiles.List = list
 
-	foo := filepath.Join(configuration.ProfileDirecty, key)
+	foo := filepath.Join(configuration.ProfileDirecty(), key)
 	if ok, err := util.FileExists(foo); err == nil && ok {
 		if err := os.RemoveAll(foo); err != nil {
 			fmt.Fprintf(opts.Out, "could not remove profile directory %s %s", foo, err)
@@ -69,7 +69,7 @@ func deleteRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		return err
 	}
 
-	if err := os.WriteFile(configuration.ProfileFilePath, file, 0644); err != nil {
+	if err := os.WriteFile(configuration.ProfileFilePath(), file, 0644); err != nil {
 		return err
 	}
 

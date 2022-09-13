@@ -11,10 +11,13 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 )
 
-var (
-	ProfileFilePath = filepath.Join(filesystem.ConfigDir(), "profiles.json")
-	ProfileDirecty  = filepath.Join(filesystem.ConfigDir(), "profiles")
-)
+func ProfileFilePath() string {
+	return filepath.Join(filesystem.ConfigDir(), "profiles.json")
+}
+
+func ProfileDirecty() string {
+	return filepath.Join(filesystem.ConfigDir(), "profiles")
+}
 
 type Profiles struct {
 	Current *string   `json:"current,omitempty"`
@@ -76,32 +79,32 @@ func (p *Profile) CurrentConfig() (*Config, error) {
 }
 
 func ProfileDirectoryExists() bool {
-	if ok, err := util.FileExists(ProfileDirecty); err == nil && ok {
+	if ok, err := util.FileExists(ProfileDirecty()); err == nil && ok {
 		return true
 	}
 	return false
 }
 
 func ProfileFileExists() bool {
-	if ok, err := util.FileExists(ProfileFilePath); err == nil && ok {
+	if ok, err := util.FileExists(ProfileFilePath()); err == nil && ok {
 		return true
 	}
 	return false
 }
 
 func CreateProfileDirectory() error {
-	return os.Mkdir(ProfileDirecty, os.ModePerm)
+	return os.Mkdir(ProfileDirecty(), os.ModePerm)
 }
 
 func ReadProfiles() (*Profiles, error) {
-	content, err := os.ReadFile(ProfileFilePath)
+	content, err := os.ReadFile(ProfileFilePath())
 	if err != nil {
-		return nil, fmt.Errorf("Can't read profiles: %s %s\n", ProfileFilePath, err)
+		return nil, fmt.Errorf("Can't read profiles: %s %s\n", ProfileFilePath(), err)
 	}
 
 	var profiles Profiles
 	if err := json.Unmarshal(content, &profiles); err != nil {
-		return nil, fmt.Errorf("%s file is corrupt: %s \n", ProfileFilePath, err)
+		return nil, fmt.Errorf("%s file is corrupt: %s \n", ProfileFilePath(), err)
 	}
 	return &profiles, nil
 }
@@ -112,7 +115,7 @@ func WriteProfiles(p *Profiles) error {
 		return err
 	}
 
-	if err := os.WriteFile(ProfileFilePath, file, 0644); err != nil {
+	if err := os.WriteFile(ProfileFilePath(), file, 0644); err != nil {
 		return err
 	}
 	return nil
