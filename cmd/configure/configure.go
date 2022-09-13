@@ -1,6 +1,7 @@
 package configure
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -71,6 +72,9 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	opts.Config.URL = u
 	viper.Set("device_id", configuration.DefaultDeviceID())
 	if err := viper.WriteConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			return errors.New("collective profile does not have a valid config directory")
+		}
 		return err
 	}
 	// Clear old credentials when configuring
