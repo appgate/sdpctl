@@ -1,10 +1,12 @@
 package configuration
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -26,6 +28,50 @@ type Config struct {
 	DeviceID    string `mapstructure:"device_id"`
 	PemFilePath string `mapstructure:"pem_filepath"`
 	Timeout     int    // HTTP timeout, not supported in the config file.
+}
+
+// UnmarshalJSON is a custom json Marshal to handle correct type casting on boolean values
+// they can be stored as string if they sourced from environment variables
+// https://github.com/spf13/viper/issues/937
+func (c *Config) UnmarshalJSON(data []byte) error {
+	raw := make(map[string]interface{}, 0)
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if v, ok := raw["insecure"].(string); ok {
+		boolValue, err := strconv.ParseBool(v)
+		if err != nil {
+			return err
+		}
+		delete(raw, "insecure")
+		raw["insecure"] = boolValue
+	}
+	if v, ok := raw["debug"].(string); ok {
+		boolValue, err := strconv.ParseBool(v)
+		if err != nil {
+			return err
+		}
+		delete(raw, "debug")
+		raw["debug"] = boolValue
+	}
+
+	new, err := json.Marshal(raw)
+	if err != nil {
+		return err
+	}
+
+	type Cfg Config
+	aux := &struct {
+		Insecure bool `json:"insecure"`
+		Debug    bool `json:"debug"`
+		*Cfg
+	}{
+		Cfg: (*Cfg)(c),
+	}
+	if err := json.Unmarshal(new, &aux); err != nil {
+		return err
+	}
+	return nil
 }
 
 type Credentials struct {
