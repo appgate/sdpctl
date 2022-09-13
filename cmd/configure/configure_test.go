@@ -82,8 +82,9 @@ func TestConfigCmd(t *testing.T) {
 	if !ok {
 		t.Fatal("could not read url key from config")
 	}
-	if v != "controller.appgate.com" {
-		t.Fatalf("wrong addr stored in config, expected %q got %q", "controller.appgate.com", v)
+	want := "https://controller.appgate.com:8443/admin"
+	if v != want {
+		t.Fatalf("wrong addr stored in config, expected %q got %q", want, v)
 	}
 }
 
@@ -152,8 +153,9 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 	if !ok {
 		t.Fatal("could not read url key from config")
 	}
-	if v != "another.appgate.com" {
-		t.Fatalf("wrong addr stored in config, expected %q got %q", "another.appgate.com", v)
+	want := "https://another.appgate.com:8443/admin"
+	if v != want {
+		t.Fatalf("wrong addr stored in config, expected %q got %q", want, v)
 	}
 	t.Logf("Computed config %+v\n", result)
 	pem, ok := result["pem_filepath"].(string)
@@ -248,7 +250,8 @@ func TestConfigCmdWithExistingAddr(t *testing.T) {
 	if !ok {
 		t.Fatal("could not read url key from config")
 	}
-	if v != "new.appgate.com" {
-		t.Fatalf("wrong addr stored in config, expected %q got %q", "controller.appgate.com", v)
+	want := "https://new.appgate.com:8443/admin"
+	if v != want {
+		t.Fatalf("wrong addr stored in config, expected %q got %q", want, v)
 	}
 }
