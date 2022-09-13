@@ -28,6 +28,7 @@ func NewCollectiveCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewListCmd(opts))
 	cmd.AddCommand(NewAddCmd(opts))
 	cmd.AddCommand(NewDeleteCmd(opts))
+	cmd.AddCommand(NewSetCmd(opts))
 
 	return cmd
 }
