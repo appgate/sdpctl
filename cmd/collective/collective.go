@@ -26,6 +26,7 @@ func NewCollectiveCmd(f *factory.Factory) *cobra.Command {
 		Out: f.IOOutWriter,
 	}
 	cmd.AddCommand(NewListCmd(opts))
+	cmd.AddCommand(NewAddCmd(opts))
 
 	return cmd
 }
