@@ -3,7 +3,7 @@ module github.com/appgate/sdpctl
 go 1.16
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.3.5
+	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/adrg/xdg v0.4.0
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20220905142808-43e1f52bd4f6
