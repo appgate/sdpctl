@@ -51,15 +51,15 @@ func initConfig() {
 	}
 
 	if configuration.ProfileFileExists() {
-		content, err := os.ReadFile(configuration.ProfileFilePath)
+		content, err := os.ReadFile(configuration.ProfileFilePath())
 		if err != nil {
-			fmt.Printf("Can't read profiles: %s %s\n", configuration.ProfileFilePath, err)
+			fmt.Printf("Can't read profiles: %s %s\n", configuration.ProfileFilePath(), err)
 			os.Exit(1)
 		}
 
 		var profiles configuration.Profiles
 		if err := json.Unmarshal(content, &profiles); err != nil {
-			fmt.Printf("%s file is corrupt: %s \n", configuration.ProfileFilePath, err)
+			fmt.Printf("%s file is corrupt: %s \n", configuration.ProfileFilePath(), err)
 			os.Exit(1)
 		}
 		if profiles.CurrentExists() {

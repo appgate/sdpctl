@@ -48,7 +48,7 @@ const defaultCollectiveName string = "default"
 
 func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	if !configuration.ProfileFileExists() {
-		profileFile, err := os.Create(configuration.ProfileFilePath)
+		profileFile, err := os.Create(configuration.ProfileFilePath())
 		if err != nil {
 			return fmt.Errorf("unable to create profiles directory %w", err)
 		}
@@ -74,7 +74,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		rootConfig := filepath.Join(filesystem.ConfigDir(), "config.json")
 		if ok, err := util.FileExists(rootConfig); err == nil && ok {
 			// move to profile default
-			directory := filepath.Join(configuration.ProfileDirecty, defaultCollectiveName)
+			directory := filepath.Join(configuration.ProfileDirecty(), defaultCollectiveName)
 			if err := os.Mkdir(directory, os.ModePerm); err != nil {
 				return fmt.Errorf("could not create new default config profile directory %w", err)
 			}
@@ -93,7 +93,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		}
 	}
 	name := args[0]
-	directory := filepath.Join(configuration.ProfileDirecty, name)
+	directory := filepath.Join(configuration.ProfileDirecty(), name)
 	if err := os.Mkdir(directory, os.ModePerm); err != nil {
 		return fmt.Errorf("profile already exists with the name %s", name)
 	}

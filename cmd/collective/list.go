@@ -29,14 +29,14 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		return nil
 	}
 
-	content, err := os.ReadFile(configuration.ProfileFilePath)
+	content, err := os.ReadFile(configuration.ProfileFilePath())
 	if err != nil {
-		return fmt.Errorf("Can't read profiles: %s %s\n", configuration.ProfileFilePath, err)
+		return fmt.Errorf("Can't read profiles: %s %s\n", configuration.ProfileFilePath(), err)
 	}
 
 	var profiles configuration.Profiles
 	if err := json.Unmarshal(content, &profiles); err != nil {
-		return fmt.Errorf("%s file is corrupt: %s \n", configuration.ProfileFilePath, err)
+		return fmt.Errorf("%s file is corrupt: %s \n", configuration.ProfileFilePath(), err)
 	}
 
 	currentProfile, err := profiles.CurrentProfile()
