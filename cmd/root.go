@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appgate/sdpctl/cmd/collective"
 	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
 
@@ -120,6 +121,7 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.AddCommand(NewOpenCmd(f))
+	rootCmd.AddCommand(collective.NewCollectiveCmd(f))
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
