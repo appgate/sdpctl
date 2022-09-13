@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -42,13 +43,34 @@ build date: %s`, version, commit, buildDate)
 func initConfig() {
 	dir := filesystem.ConfigDir()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.MkdirAll(dir, os.ModePerm)
-		if err != nil {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			fmt.Printf("Can't create config dir: %s %s\n", dir, err)
 			os.Exit(1)
 		}
 	}
-	viper.AddConfigPath(dir)
+
+	if configuration.ProfileFileExists() {
+		content, err := os.ReadFile(configuration.ProfileFilePath)
+		if err != nil {
+			fmt.Printf("Can't read profiles: %s %s\n", configuration.ProfileFilePath, err)
+			os.Exit(1)
+		}
+
+		var profiles configuration.Profiles
+		if err := json.Unmarshal(content, &profiles); err != nil {
+			fmt.Printf("%s file is corrupt: %s \n", configuration.ProfileFilePath, err)
+			os.Exit(1)
+		}
+		if profiles.CurrentExists() {
+			viper.AddConfigPath(*profiles.Current)
+		}
+	} else {
+		// if we don't have any profiles
+		// we will assume there is only one collective to respect
+		// and we will default to base dir.
+		viper.AddConfigPath(dir)
+	}
+
 	viper.SafeWriteConfig()
 	viper.SetConfigName("config")
 	viper.SetEnvPrefix("SDPCTL")
