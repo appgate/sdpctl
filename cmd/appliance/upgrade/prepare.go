@@ -584,7 +584,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 				// wait for appliance to be ready before preparing
 				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, qs.appliance, appliancepkg.StatusNotBusy, nil); err != nil {
-					errs = multierr.Append(errs, err)
+					queueContinue <- queueStruct{err: err}
+					return err
 				}
 				if err := a.PrepareFileOn(ctx, remoteFilePath, qs.appliance.GetId(), opts.DevKeyring); err != nil {
 					queueContinue <- queueStruct{err: err}
