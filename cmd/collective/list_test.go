@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -43,31 +43,31 @@ func setupExistingProfiles(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	t.Setenv("SDPCTL_CONFIG_DIR", dir)
-	profileFile, err := os.Create(configuration.ProfileFilePath())
+	profileFile, err := os.Create(profiles.FilePath())
 	if err != nil {
 		t.Fatalf("could not create testing profile %s", err)
 	}
 	defer profileFile.Close()
-	if err := configuration.CreateProfileDirectory(); err != nil {
+	if err := profiles.CreateDirectories(); err != nil {
 		t.Fatal(err)
 	}
 
-	profiles := configuration.Profiles{}
+	p := profiles.Profiles{}
 	names := []string{"staging", "production"}
 	for _, name := range names {
-		directory := filepath.Join(configuration.ProfileDirecty(), name)
+		directory := filepath.Join(profiles.Directories(), name)
 		if err := os.Mkdir(directory, os.ModePerm); err != nil {
 			t.Fatalf("profile already exists with the name %s", name)
 		}
 
-		profiles.List = append(profiles.List, configuration.Profile{
+		p.List = append(p.List, profiles.Profile{
 			Name:      name,
 			Directory: directory,
 		})
-		profiles.Current = &directory
+		p.Current = &directory
 	}
 
-	bytes, err := json.Marshal(profiles)
+	bytes, err := json.Marshal(p)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,12 +105,12 @@ func TestNewListCmdTwoProfilesOneCurrent(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-
 	params := map[string]interface{}{
 		"dir": dir,
 	}
 
-	want := Nprintf(`current profile is not configured, run 'sdpctl configure'
+	want := Nprintf(`Current profile production is not configure, run 'sdpctl configure'
+
 Available collective profiles
 Name          Config directory
 ----          ----------------

@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -60,11 +60,11 @@ func TestNewDeleteCmdNotFound(t *testing.T) {
 
 func TestDeleteProfile(t *testing.T) {
 	setupExistingProfiles(t)
-	if !configuration.ProfileFileExists() {
+	if !profiles.FileExists() {
 		t.Fatal("expected profile file to exists, found none")
 	}
 	// count number of profiles before deleting
-	profilesPre, err := configuration.ReadProfiles()
+	profilesPre, err := profiles.Read()
 	if err != nil {
 		t.Fatalf("could not read profiles.json %s", err)
 	}
@@ -86,7 +86,7 @@ func TestDeleteProfile(t *testing.T) {
 		t.Fatalf("executeC %s", err)
 	}
 
-	post, err := configuration.ReadProfiles()
+	post, err := profiles.Read()
 	if err != nil {
 		t.Fatalf("could not read profiles.json POST deletion %s", err)
 	}

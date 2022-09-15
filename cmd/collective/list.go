@@ -1,11 +1,10 @@
 package collective
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
+	"path/filepath"
 
-	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -24,29 +23,23 @@ func NewListCmd(opts *commandOpts) *cobra.Command {
 }
 
 func listRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
-	if !configuration.ProfileFileExists() {
+	if !profiles.FileExists() {
 		fmt.Fprintln(opts.Out, "no profiles added")
 		return nil
 	}
 
-	content, err := os.ReadFile(configuration.ProfileFilePath())
+	p, err := profiles.Read()
 	if err != nil {
-		return fmt.Errorf("Can't read profiles: %s %s\n", configuration.ProfileFilePath(), err)
+		return err
 	}
-
-	var profiles configuration.Profiles
-	if err := json.Unmarshal(content, &profiles); err != nil {
-		return fmt.Errorf("%s file is corrupt: %s \n", configuration.ProfileFilePath(), err)
-	}
-
-	currentProfile, err := profiles.CurrentProfile()
+	currentProfile, err := p.CurrentProfile()
 	if err != nil {
 		fmt.Fprintf(opts.Out, "%s\n", err.Error())
 	}
 	if currentProfile != nil {
-		currentConfig, err := currentProfile.CurrentConfig()
+		currentConfig, err := readConfig(filepath.Join(currentProfile.Directory, "config.json"))
 		if err != nil {
-			fmt.Fprintf(opts.Out, "%s, run 'sdpctl configure'", err.Error())
+			fmt.Fprintf(opts.Out, "Current profile %s is not configure, run 'sdpctl configure'\n", currentProfile.Name)
 		}
 
 		if currentConfig != nil {
@@ -58,13 +51,12 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			}
 		}
 	}
-
 	fmt.Fprintf(opts.Out, "\nAvailable collective profiles\n")
-	p := util.NewPrinter(opts.Out, 4)
-	p.AddHeader("Name", "Config directory")
-	for _, profile := range profiles.List {
-		p.AddLine(profile.Name, profile.Directory)
+	printer := util.NewPrinter(opts.Out, 4)
+	printer.AddHeader("Name", "Config directory")
+	for _, profile := range p.List {
+		printer.AddLine(profile.Name, profile.Directory)
 	}
-	p.Print()
+	printer.Print()
 	return nil
 }

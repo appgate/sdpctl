@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/google/go-cmp/cmp"
 )
@@ -74,7 +74,8 @@ func TestNewAddCmdMigrateExistingRootConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer profileFile.Close()
-	if _, err := profileFile.WriteString("{}"); err != nil {
+	data := `{ "url": "https://appgate.controller.com:444/admin" }`
+	if _, err := profileFile.WriteString(data); err != nil {
 		t.Fatal(err)
 	}
 	stdout := &bytes.Buffer{}
@@ -102,15 +103,15 @@ run 'sdpctl collective set europe' to select the new collective profile
 	if diff := cmp.Diff(want, gotStr); diff != "" {
 		t.Errorf("List output mismatch (-want +got):\n%s", diff)
 	}
-	if !configuration.ProfileFileExists() {
+	if !profiles.FileExists() {
 		t.Fatal("expected profile file to exists, found none")
 	}
-	profiles, err := configuration.ReadProfiles()
+	p, err := profiles.Read()
 	if err != nil {
 		t.Fatalf("could not read profiles.json %s", err)
 	}
-	if len(profiles.List) != 2 {
-		t.Fatalf("expect 2 profiles, 'default' and 'testing' got %d - %+v", len(profiles.List), profiles.List)
+	if len(p.List) != 2 {
+		t.Fatalf("expect 2 profiles, 'default' and 'testing' got %d - %+v", len(p.List), p.List)
 	}
 
 	ok, err := util.FileExists(rootConfigFile)
