@@ -13,7 +13,6 @@ import (
 
 // NewDeleteCmd return a new collective delete command
 func NewDeleteCmd(opts *commandOpts) *cobra.Command {
-
 	return &cobra.Command{
 		Use:     "delete",
 		Aliases: []string{"rm"},
@@ -57,10 +56,10 @@ func deleteRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 
 	profiles.List = list
 
-	foo := filepath.Join(configuration.ProfileDirecty(), key)
-	if ok, err := util.FileExists(foo); err == nil && ok {
-		if err := os.RemoveAll(foo); err != nil {
-			fmt.Fprintf(opts.Out, "could not remove profile directory %s %s", foo, err)
+	profileDir := filepath.Join(configuration.ProfileDirecty(), key)
+	if ok, err := util.FileExists(profileDir); err == nil && ok {
+		if err := os.RemoveAll(profileDir); err != nil {
+			fmt.Fprintf(opts.Out, "could not remove profile directory %s %s", profileDir, err)
 		}
 	}
 
