@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"crypto/x509"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +23,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -50,20 +50,14 @@ func initConfig() {
 		}
 	}
 
-	if configuration.ProfileFileExists() {
-		content, err := os.ReadFile(configuration.ProfileFilePath())
+	if profiles.FileExists() {
+		p, err := profiles.Read()
 		if err != nil {
-			fmt.Printf("Can't read profiles: %s %s\n", configuration.ProfileFilePath(), err)
+			fmt.Printf("Can't read profiles: %s %s\n", profiles.FilePath(), err)
 			os.Exit(1)
 		}
-
-		var profiles configuration.Profiles
-		if err := json.Unmarshal(content, &profiles); err != nil {
-			fmt.Printf("%s file is corrupt: %s \n", configuration.ProfileFilePath(), err)
-			os.Exit(1)
-		}
-		if profiles.CurrentExists() {
-			viper.AddConfigPath(*profiles.Current)
+		if p.CurrentExists() {
+			viper.AddConfigPath(*p.Current)
 		}
 	} else {
 		// if we don't have any profiles
@@ -102,7 +96,6 @@ func NewCmdRoot() *cobra.Command {
 	cobra.OnInitialize(initConfig)
 	cfg := &configuration.Config{}
 
-	viper.SetDefault("debug", false)
 	pFlags := rootCmd.PersistentFlags()
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")

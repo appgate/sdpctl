@@ -1,12 +1,11 @@
 package collective
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -26,17 +25,17 @@ func NewDeleteCmd(opts *commandOpts) *cobra.Command {
 }
 
 func deleteRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
-	if !configuration.ProfileFileExists() {
+	if !profiles.FileExists() {
 		fmt.Fprintln(opts.Out, "no profiles added")
 		return nil
 	}
 	key := args[0]
 
-	profiles, err := configuration.ReadProfiles()
+	p, err := profiles.Read()
 	if err != nil {
 		return err
 	}
-	list := profiles.List
+	list := p.List
 
 	found := false
 	for index, profile := range list {
@@ -44,8 +43,8 @@ func deleteRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			target := list[index]
 			list = append(list[:index], list[index+1:]...)
 			found = true
-			if profiles.Current != nil && *profiles.Current == target.Directory {
-				profiles.Current = nil
+			if p.Current != nil && *p.Current == target.Directory {
+				p.Current = nil
 			}
 			break
 		}
@@ -54,21 +53,16 @@ func deleteRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		return fmt.Errorf("Did not find %q as a existing profile", key)
 	}
 
-	profiles.List = list
+	p.List = list
 
-	profileDir := filepath.Join(configuration.ProfileDirecty(), key)
+	profileDir := filepath.Join(profiles.Directories(), key)
 	if ok, err := util.FileExists(profileDir); err == nil && ok {
 		if err := os.RemoveAll(profileDir); err != nil {
 			fmt.Fprintf(opts.Out, "could not remove profile directory %s %s", profileDir, err)
 		}
 	}
 
-	file, err := json.MarshalIndent(profiles, "", " ")
-	if err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(configuration.ProfileFilePath(), file, 0644); err != nil {
+	if err := profiles.Write(p); err != nil {
 		return err
 	}
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/spf13/cobra"
 )
@@ -22,25 +22,25 @@ func NewSetCmd(opts *commandOpts) *cobra.Command {
 }
 
 func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
-	if !configuration.ProfileFileExists() {
+	if !profiles.FileExists() {
 		fmt.Fprintln(opts.Out, "no profiles added")
 		fmt.Fprintln(opts.Out, "run 'sdpctl collective add' first")
 		return nil
 	}
-	profiles, err := configuration.ReadProfiles()
+	p, err := profiles.Read()
 	if err != nil {
 		return err
 	}
-	length := len(profiles.List)
+	length := len(p.List)
 	list := make([]string, 0, length)
-	for _, p := range profiles.List {
+	for _, p := range p.List {
 		list = append(list, p.Name)
 	}
 	index := 0
 	if len(args) == 1 {
 		found := false
 		q := args[0]
-		for i, profile := range profiles.List {
+		for i, profile := range p.List {
 			if q == profile.Name {
 				index = i
 				found = true
@@ -59,14 +59,14 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			return err
 		}
 	}
-	profiles.Current = &profiles.List[index].Directory
-	fmt.Fprintf(opts.Out, "%s (%s) is selected as current sdp collective profile\n", profiles.List[index].Name, profiles.List[index].Directory)
+	p.Current = &p.List[index].Directory
+	fmt.Fprintf(opts.Out, "%s (%s) is selected as current sdp collective profile\n", p.List[index].Name, p.List[index].Directory)
 
-	if err := configuration.WriteProfiles(profiles); err != nil {
+	if err := profiles.Write(p); err != nil {
 		return err
 	}
-	if !profiles.CurrentConfigExists() {
-		fmt.Fprintf(opts.Out, "%s is not configured yet, run 'sdpctl configure'\n", profiles.List[index].Name)
+	if !p.CurrentConfigExists() {
+		fmt.Fprintf(opts.Out, "%s is not configured yet, run 'sdpctl configure'\n", p.List[index].Name)
 	}
 
 	return nil
