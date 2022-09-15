@@ -105,12 +105,12 @@ func TestNewListCmdTwoProfilesOneCurrent(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-
 	params := map[string]interface{}{
 		"dir": dir,
 	}
 
-	want := Nprintf(`current profile is not configured, run 'sdpctl configure'
+	want := Nprintf(`Current profile production is not configure, run 'sdpctl configure'
+
 Available collective profiles
 Name          Config directory
 ----          ----------------
