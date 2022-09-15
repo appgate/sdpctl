@@ -165,7 +165,7 @@ func moveDefaultConfigFiles(root, target string) ([]string, error) {
 	}
 
 	files := make(chan result)
-	excludes := []string{"default", "(profiles(.json)?)"}
+	excludes := []string{"default", "(profiles(.json)?)", `(\w+\.log)`}
 	g.Go(func() error {
 		defer close(files)
 		return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
