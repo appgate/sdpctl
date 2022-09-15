@@ -2,7 +2,6 @@ package collective
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -10,11 +9,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/errgroup"
@@ -74,23 +71,29 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		// migrate the existing profile to a profile before adding a new one
 		rootConfig := filepath.Join(filesystem.ConfigDir(), "config.json")
 		if ok, err := util.FileExists(rootConfig); err == nil && ok {
-			// move to profile default
-			directory := filepath.Join(profiles.Directories(), defaultCollectiveName)
-			if err := os.Mkdir(directory, os.ModePerm); err != nil {
-				return fmt.Errorf("could not create new default config profile directory %w", err)
-			}
-			files, err := moveDefaultConfigFiles(filesystem.ConfigDir(), directory)
+			// move to profile default if it has a address in the config
+			config, err := readConfig(rootConfig)
 			if err != nil {
 				return err
 			}
-			if err := updatePemPath(directory, files); err != nil {
-				fmt.Fprintf(opts.Out, "could not update PEM file path for default config %s\n", err)
+			if h, err := config.GetHost(); len(h) > 0 && err == nil {
+				directory := filepath.Join(profiles.Directories(), defaultCollectiveName)
+				if err := os.Mkdir(directory, os.ModePerm); err != nil {
+					return fmt.Errorf("could not create new default config profile directory %w", err)
+				}
+				files, err := moveDefaultConfigFiles(filesystem.ConfigDir(), directory)
+				if err != nil {
+					return err
+				}
+				if err := updatePemPath(directory, files); err != nil {
+					fmt.Fprintf(opts.Out, "could not update PEM file path for default config %s\n", err)
+				}
+				p.List = append(p.List, profiles.Profile{
+					Name:      defaultCollectiveName,
+					Directory: directory,
+				})
+				p.Current = &directory
 			}
-			p.List = append(p.List, profiles.Profile{
-				Name:      defaultCollectiveName,
-				Directory: directory,
-			})
-			p.Current = &directory
 		}
 	}
 	name := args[0]
@@ -132,20 +135,11 @@ func updatePemPath(targetDir string, files []string) error {
 	}
 
 	if ok, err := util.FileExists(ConfigFilePath); err == nil && ok {
-		content, err := os.ReadFile(ConfigFilePath)
+		config, err := readConfig(ConfigFilePath)
 		if err != nil {
 			return err
 		}
-		raw := make(map[string]interface{})
-		if err := json.Unmarshal(content, &raw); err != nil {
-			return err
-		}
-		var config configuration.Config
-		if err := mapstructure.Decode(raw, &config); err != nil {
-			return fmt.Errorf("%s file is corrupt: %s \n", ConfigFilePath, err)
-		}
-		currentPemName := filepath.Base(config.PemFilePath)
-		if currentPemName == pemFileName {
+		if len(config.PemFilePath) > 0 && filepath.Base(config.PemFilePath) == pemFileName {
 			config.PemFilePath = pemFilePath
 			viper.Set("pem_filepath", pemFilePath)
 			viper.SetConfigFile(filepath.Join(targetDir, "config.json"))

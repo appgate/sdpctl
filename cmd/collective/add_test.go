@@ -74,7 +74,8 @@ func TestNewAddCmdMigrateExistingRootConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer profileFile.Close()
-	if _, err := profileFile.WriteString("{}"); err != nil {
+	data := `{ "url": "https://appgate.controller.com:444/admin" }`
+	if _, err := profileFile.WriteString(data); err != nil {
 		t.Fatal(err)
 	}
 	stdout := &bytes.Buffer{}
