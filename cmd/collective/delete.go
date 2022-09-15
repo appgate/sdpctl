@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -15,8 +16,8 @@ func NewDeleteCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:     "delete",
 		Aliases: []string{"rm"},
-		Short:   "",
-		Long:    "",
+		Short:   docs.CollectiveDeleteDoc.Short,
+		Long:    docs.CollectiveDeleteDoc.Long,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			return deleteRun(c, args, opts)

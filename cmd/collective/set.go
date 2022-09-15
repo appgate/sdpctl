@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/spf13/cobra"
@@ -12,9 +13,10 @@ import (
 // NewSetCmd return a new collective set command
 func NewSetCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set",
-		Short: "",
-		Long:  "",
+		Use:     "set",
+		Short:   docs.CollectiveSetDoc.Short,
+		Long:    docs.CollectiveSetDoc.Long,
+		Example: docs.CollectiveSetDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return setRun(c, args, opts)
 		},

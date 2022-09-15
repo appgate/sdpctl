@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
@@ -25,8 +26,8 @@ func NewCollectiveCmd(f *factory.Factory) *cobra.Command {
 			"skipAuthCheck": "true",
 		},
 		TraverseChildren: true,
-		Short:            "",
-		Long:             "",
+		Short:            docs.CollectiveRootDoc.Short,
+		Long:             docs.CollectiveRootDoc.Long,
 	}
 	opts := &commandOpts{
 		Out: f.IOOutWriter,

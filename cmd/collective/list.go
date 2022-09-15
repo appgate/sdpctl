@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -14,8 +15,8 @@ func NewListCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
-		Short:   "",
-		Long:    "",
+		Short:   docs.CollectiveListDoc.Short,
+		Long:    docs.CollectiveListDoc.Long,
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, opts)
 		},

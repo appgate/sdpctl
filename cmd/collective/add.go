@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -22,9 +23,9 @@ var validCollectiveName = regexp.MustCompile(`^[A-Za-z0-9_.]+$`)
 // NewAddCmd return a new collective add command
 func NewAddCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
-		Use:   "add",
-		Short: "",
-		Long:  "",
+		Use:   "add [<name>]",
+		Short: docs.CollectiveAddDoc.Short,
+		Long:  docs.CollectiveAddDoc.Long,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires one argument [profile-name]")
