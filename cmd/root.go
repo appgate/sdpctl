@@ -20,6 +20,7 @@ import (
 
 	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
 	cfgcmd "github.com/appgate/sdpctl/cmd/configure"
+	"github.com/appgate/sdpctl/cmd/serviceusers"
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -141,6 +142,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	rootCmd.AddCommand(NewOpenCmd(f))
 	rootCmd.AddCommand(cmdprofile.NewProfileCmd(f))
 	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(serviceusers.NewServiceUsersCMD(f))
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
