@@ -15,7 +15,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/billgraziano/dpapi"
 	zkeyring "github.com/zalando/go-keyring"
@@ -31,7 +31,7 @@ func ClearCredentials(prefix string) error {
 			}
 		}
 	}
-	p, err := filepath.Abs(fmt.Sprintf("%s/%s", filesystem.ConfigDir(), format(prefix, bearer)))
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, bearer)))
 	if err != nil {
 		return err
 	}
@@ -71,10 +71,7 @@ func saveEncryptedFile(name, prefix, secret string) error {
 	if err != nil {
 		return fmt.Errorf("could not encrypt token to Windows DPAPI %w", err)
 	}
-	dir := filesystem.ConfigDir()
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return err
-	}
+	dir := profiles.GetStorageDirectory()
 	p, err := filepath.Abs(fmt.Sprintf("%s/%s", dir, format(prefix, name)))
 	if err != nil {
 		return err
@@ -92,7 +89,7 @@ func saveEncryptedFile(name, prefix, secret string) error {
 }
 
 func getSecretFile(name, prefix string) (string, error) {
-	p, err := filepath.Abs(fmt.Sprintf("%s/%s", filesystem.ConfigDir(), format(prefix, name)))
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, name)))
 	if err != nil {
 		return "", err
 	}

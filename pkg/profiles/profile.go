@@ -11,6 +11,17 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 )
 
+func GetStorageDirectory() string {
+	p, err := Read()
+	if err != nil {
+		return filesystem.ConfigDir()
+	}
+	if p.CurrentExists() {
+		return *p.Current
+	}
+	return filesystem.ConfigDir()
+}
+
 func FilePath() string {
 	return filepath.Join(filesystem.ConfigDir(), "profiles.json")
 }
