@@ -9,9 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/keyring"
-	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
@@ -74,17 +72,6 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	return nil
-}
-
-func GetStorageDirectory() string {
-	p, err := profiles.Read()
-	if err != nil {
-		return filesystem.ConfigDir()
-	}
-	if p.CurrentExists() {
-		return *p.Current
-	}
-	return filesystem.ConfigDir()
 }
 
 type Credentials struct {
