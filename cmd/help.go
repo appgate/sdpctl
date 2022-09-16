@@ -74,7 +74,7 @@ Available Variables:
   SDPCTL_PEM_FILEPATH:
     Description: If sdpctl is configured insecure:false, you need to append this configuration and point
                  to a valid PEM file used by the controller.
-  SDPCTL_VERSION:
+  SDPCTL_API_VERSION:
     Description: Client peer version used to communicate with the controller API, default value will be computed based on the
                  primary controller appliance version.
   SDPCTL_BEARER:
