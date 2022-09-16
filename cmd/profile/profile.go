@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"encoding/json"
@@ -18,16 +18,16 @@ type commandOpts struct {
 	Out io.Writer
 }
 
-// NewCollectiveCmd return a new collective subcommand
-func NewCollectiveCmd(f *factory.Factory) *cobra.Command {
+// NewProfileCmd return a new profile subcommand
+func NewProfileCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "collective",
+		Use: "profile",
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},
 		TraverseChildren: true,
-		Short:            docs.CollectiveRootDoc.Short,
-		Long:             docs.CollectiveRootDoc.Long,
+		Short:            docs.ProfileRootDoc.Short,
+		Long:             docs.ProfileRootDoc.Long,
 	}
 	opts := &commandOpts{
 		Out: f.IOOutWriter,
@@ -40,7 +40,7 @@ func NewCollectiveCmd(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-// readConfig read the config file from the a collective settings directory
+// readConfig read the config file from the profile settings directory
 // it tries to respect environment variable and parse boolean values correctly
 //
 // See: https://github.com/spf13/viper/issues/937

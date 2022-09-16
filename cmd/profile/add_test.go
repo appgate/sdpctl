@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"bytes"
@@ -33,8 +33,8 @@ func TestNewAddCmdWithExistingProfiles(t *testing.T) {
 	}
 	gotStr := string(got)
 
-	want := `Created profile testing, run 'sdpctl collective list' to see all available profiles
-run 'sdpctl collective set testing' to select the new collective profile
+	want := `Created profile testing, run 'sdpctl profile list' to see all available profiles
+run 'sdpctl profile set testing' to select the new profile profile
 `
 
 	if diff := cmp.Diff(want, gotStr); diff != "" {
@@ -96,8 +96,8 @@ func TestNewAddCmdMigrateExistingRootConfig(t *testing.T) {
 	}
 	gotStr := string(got)
 
-	want := `Created profile europe, run 'sdpctl collective list' to see all available profiles
-run 'sdpctl collective set europe' to select the new collective profile
+	want := `Created profile europe, run 'sdpctl profile list' to see all available profiles
+run 'sdpctl profile set europe' to select the new profile profile
 `
 
 	if diff := cmp.Diff(want, gotStr); diff != "" {

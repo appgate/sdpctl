@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"fmt"
@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewSetCmd return a new collective set command
+// NewSetCmd return a new profile set command
 func NewSetCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:     "set",
-		Short:   docs.CollectiveSetDoc.Short,
-		Long:    docs.CollectiveSetDoc.Long,
-		Example: docs.CollectiveSetDoc.ExampleString(),
+		Short:   docs.ProfileSetDoc.Short,
+		Long:    docs.ProfileSetDoc.Long,
+		Example: docs.ProfileSetDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return setRun(c, args, opts)
 		},
@@ -26,7 +26,7 @@ func NewSetCmd(opts *commandOpts) *cobra.Command {
 func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	if !profiles.FileExists() {
 		fmt.Fprintln(opts.Out, "no profiles added")
-		fmt.Fprintln(opts.Out, "run 'sdpctl collective add' first")
+		fmt.Fprintln(opts.Out, "run 'sdpctl profile add' first")
 		return nil
 	}
 	p, err := profiles.Read()
@@ -54,7 +54,7 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	} else {
 		qs := &survey.Select{
 			PageSize: length,
-			Message:  "select collective:",
+			Message:  "select profile:",
 			Options:  list,
 		}
 		if err := prompt.SurveyAskOne(qs, &index, survey.WithValidator(survey.Required)); err != nil {
@@ -62,7 +62,7 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		}
 	}
 	p.Current = &p.List[index].Directory
-	fmt.Fprintf(opts.Out, "%s (%s) is selected as current sdp collective profile\n", p.List[index].Name, p.List[index].Directory)
+	fmt.Fprintf(opts.Out, "%s (%s) is selected as current sdp profile profile\n", p.List[index].Name, p.List[index].Directory)
 
 	if err := profiles.Write(p); err != nil {
 		return err

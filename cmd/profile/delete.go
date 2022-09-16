@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"fmt"
@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewDeleteCmd return a new collective delete command
+// NewDeleteCmd return a new profile delete command
 func NewDeleteCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:     "delete",
 		Aliases: []string{"rm"},
-		Short:   docs.CollectiveDeleteDoc.Short,
-		Long:    docs.CollectiveDeleteDoc.Long,
+		Short:   docs.ProfileDeleteDoc.Short,
+		Long:    docs.ProfileDeleteDoc.Long,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
 			return deleteRun(c, args, opts)

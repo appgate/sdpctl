@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ func TestNewSetCmdNoProfilesFile(t *testing.T) {
 	}
 	gotStr := string(got)
 	want := `no profiles added
-run 'sdpctl collective add' first
+run 'sdpctl profile add' first
 `
 	if gotStr != want {
 		t.Fatalf(cmp.Diff(want, gotStr))
@@ -57,7 +57,7 @@ func TestNewSetCmdSetValid(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := Nprintf(`staging (%{dir}/profiles/staging) is selected as current sdp collective profile
+	want := Nprintf(`staging (%{dir}/profiles/staging) is selected as current sdp profile profile
 staging is not configured yet, run 'sdpctl configure'
 `, map[string]interface{}{"dir": dir})
 

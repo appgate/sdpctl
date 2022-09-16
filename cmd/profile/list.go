@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"fmt"
@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewListCmd return a new collective list command
+// NewListCmd return a new profile list command
 func NewListCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
-		Short:   docs.CollectiveListDoc.Short,
-		Long:    docs.CollectiveListDoc.Long,
+		Short:   docs.ProfileListDoc.Short,
+		Long:    docs.ProfileListDoc.Long,
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, opts)
 		},
@@ -52,7 +52,7 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			}
 		}
 	}
-	fmt.Fprintf(opts.Out, "\nAvailable collective profiles\n")
+	fmt.Fprintf(opts.Out, "\nAvailable profiles\n")
 	printer := util.NewPrinter(opts.Out, 4)
 	printer.AddHeader("Name", "Config directory")
 	for _, profile := range p.List {

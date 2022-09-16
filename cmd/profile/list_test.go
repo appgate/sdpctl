@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"bytes"
@@ -111,7 +111,7 @@ func TestNewListCmdTwoProfilesOneCurrent(t *testing.T) {
 
 	want := Nprintf(`Current profile production is not configure, run 'sdpctl configure'
 
-Available collective profiles
+Available profiles
 Name          Config directory
 ----          ----------------
 staging       %{dir}/profiles/staging

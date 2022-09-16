@@ -59,7 +59,7 @@ func (p *Profiles) CurrentConfigExists() bool {
 	return false
 }
 
-var ErrNoCurrentProfile = errors.New("no current profile is set, run 'sdpctl collective set'")
+var ErrNoCurrentProfile = errors.New("no current profile is set, run 'sdpctl profile set'")
 
 func (p *Profiles) CurrentProfile() (*Profile, error) {
 	if p.Current == nil {

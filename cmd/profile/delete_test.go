@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"bytes"

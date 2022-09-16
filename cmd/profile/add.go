@@ -1,4 +1,4 @@
-package collective
+package profile
 
 import (
 	"context"
@@ -18,20 +18,20 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var validCollectiveName = regexp.MustCompile(`^[A-Za-z0-9_.]+$`)
+var validProfileName = regexp.MustCompile(`^[A-Za-z0-9_.]+$`)
 
-// NewAddCmd return a new collective add command
+// NewAddCmd return a new profile add command
 func NewAddCmd(opts *commandOpts) *cobra.Command {
 	return &cobra.Command{
 		Use:   "add [<name>]",
-		Short: docs.CollectiveAddDoc.Short,
-		Long:  docs.CollectiveAddDoc.Long,
+		Short: docs.ProfileAddDoc.Short,
+		Long:  docs.ProfileAddDoc.Long,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires one argument [profile-name]")
 			}
-			if !validCollectiveName.MatchString(args[0]) {
-				return fmt.Errorf("%q is not a valid collective name", args[0])
+			if !validProfileName.MatchString(args[0]) {
+				return fmt.Errorf("%q is not a valid profile name", args[0])
 			}
 			return nil
 		},
@@ -41,9 +41,9 @@ func NewAddCmd(opts *commandOpts) *cobra.Command {
 	}
 }
 
-// defaultCollectiveName is the profile name if already have a config populated
+// defaultProfileName is the profile name if already have a config populated
 // before we run the command
-const defaultCollectiveName string = "default"
+const defaultProfileName string = "default"
 
 func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	if !profiles.FileExists() {
@@ -78,7 +78,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 				return err
 			}
 			if h, err := config.GetHost(); len(h) > 0 && err == nil {
-				directory := filepath.Join(profiles.Directories(), defaultCollectiveName)
+				directory := filepath.Join(profiles.Directories(), defaultProfileName)
 				if err := os.Mkdir(directory, os.ModePerm); err != nil {
 					return fmt.Errorf("could not create new default config profile directory %w", err)
 				}
@@ -90,7 +90,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 					fmt.Fprintf(opts.Out, "could not update PEM file path for default config %s\n", err)
 				}
 				p.List = append(p.List, profiles.Profile{
-					Name:      defaultCollectiveName,
+					Name:      defaultProfileName,
 					Directory: directory,
 				})
 				p.Current = &directory
@@ -111,8 +111,8 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	if err := profiles.Write(p); err != nil {
 		return err
 	}
-	fmt.Fprintf(opts.Out, "Created profile %s, run 'sdpctl collective list' to see all available profiles\n", name)
-	fmt.Fprintf(opts.Out, "run 'sdpctl collective set %s' to select the new collective profile\n", name)
+	fmt.Fprintf(opts.Out, "Created profile %s, run 'sdpctl profile list' to see all available profiles\n", name)
+	fmt.Fprintf(opts.Out, "run 'sdpctl profile set %s' to select the new profile profile\n", name)
 	return nil
 }
 
