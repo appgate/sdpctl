@@ -57,18 +57,23 @@ func initConfig(currentProfile *string) {
 			fmt.Printf("Can't read profiles: %s %s\n", profiles.FilePath(), err)
 			os.Exit(1)
 		}
-
+		var selectedProfile string
 		if currentProfile != nil && len(*currentProfile) > 0 {
+			selectedProfile = *currentProfile
+		} else if v := os.Getenv("SDPCTL_PROFILE"); len(v) > 0 {
+			selectedProfile = v
+		}
+		if len(selectedProfile) > 0 {
 			found := false
 			for _, profile := range p.List {
-				if *currentProfile == profile.Name {
+				if selectedProfile == profile.Name {
 					viper.AddConfigPath(profile.Directory)
 					found = true
 					break
 				}
 			}
 			if !found {
-				fmt.Printf("Invalid profile name, got %s, available %s\n", *currentProfile, p.Available())
+				fmt.Printf("Invalid profile name, got %s, available %s\n", selectedProfile, p.Available())
 				os.Exit(1)
 			}
 		} else if p.CurrentExists() {

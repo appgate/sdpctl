@@ -96,6 +96,9 @@ Available Variables:
     Description: application log level
     Default: INFO
     Options: PANIC,FATAL, INFO, TRACE
+  SDPCTL_PROFILE:
+    Description: Profile name to use
+    Options:  See 'sdpctl profile list'
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 
