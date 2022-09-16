@@ -116,6 +116,19 @@ $ sdpctl token revoke CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local
 More details on the token command can be found in [the token command documentation](./docs/token.md)
 
 ---
+
+### logs
+
+A log file is generated and store locally, the location differs depending on your operating system.
+
+For Unix `$HOME/.config/sdpctl/sdpctl.log` (or `$HOME/.config/sdpctl/profiles/{name}/sdpctl.log`)
+
+For Windows `%LocalAppData%\sdpctl` (or `%LocalAppData%\sdpctl\profiles\{name}\sdpctl.log`)
+
+For macOS `~/Library/Application\ Support/sdpctl/sdpctl.log` (or `~/Library/Application\ Support/sdpctl/profiles/{name}/sdpctl.log`)
+
+---
+
 ## Other available commands
 
 ### `sdpctl open`
