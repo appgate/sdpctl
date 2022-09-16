@@ -73,6 +73,14 @@ func (p *Profiles) CurrentProfile() (*Profile, error) {
 	return nil, errors.New("could not get current profile")
 }
 
+func (p *Profiles) Available() []string {
+	names := make([]string, 0)
+	for _, profile := range p.List {
+		names = append(names, profile.Name)
+	}
+	return names
+}
+
 func DirectoryExists() bool {
 	if ok, err := util.FileExists(Directories()); err == nil && ok {
 		return true

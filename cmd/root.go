@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/pflag"
+
 	cmdprofile "github.com/appgate/sdpctl/cmd/profile"
 	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
@@ -41,7 +43,7 @@ commit: %s
 build date: %s`, version, commit, buildDate)
 )
 
-func initConfig() {
+func initConfig(currentProfile *string) {
 	dir := filesystem.ConfigDir()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -49,14 +51,27 @@ func initConfig() {
 			os.Exit(1)
 		}
 	}
-
 	if profiles.FileExists() {
 		p, err := profiles.Read()
 		if err != nil {
 			fmt.Printf("Can't read profiles: %s %s\n", profiles.FilePath(), err)
 			os.Exit(1)
 		}
-		if p.CurrentExists() {
+
+		if currentProfile != nil && len(*currentProfile) > 0 {
+			found := false
+			for _, profile := range p.List {
+				if *currentProfile == profile.Name {
+					viper.AddConfigPath(profile.Directory)
+					found = true
+					break
+				}
+			}
+			if !found {
+				fmt.Printf("Invalid profile name, got %s, available %s\n", *currentProfile, p.Available())
+				os.Exit(1)
+			}
+		} else if p.CurrentExists() {
 			viper.AddConfigPath(*p.Current)
 		}
 	} else {
@@ -66,7 +81,6 @@ func initConfig() {
 		viper.AddConfigPath(dir)
 	}
 
-	viper.SafeWriteConfig()
 	viper.SetConfigName("config")
 	viper.SetEnvPrefix("SDPCTL")
 	viper.AutomaticEnv()
@@ -82,7 +96,7 @@ func initConfig() {
 	}
 }
 
-func NewCmdRoot() *cobra.Command {
+func NewCmdRoot(currentProfile *string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:               "sdpctl",
 		Short:             "sdpctl is a command line tool to control and handle Appgate SDP using the CLI",
@@ -93,7 +107,6 @@ func NewCmdRoot() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	cobra.OnInitialize(initConfig)
 	cfg := &configuration.Config{}
 
 	pFlags := rootCmd.PersistentFlags()
@@ -103,7 +116,14 @@ func NewCmdRoot() *cobra.Command {
 	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	pFlags.Bool("ci-mode", false, "log to stderr instead of file and disable progress-bars")
 
-	initConfig()
+	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
+	// in Execute() because we need to parse it first before the others to be able
+	// to resolve factory.New
+	var dummy string
+	pFlags.StringVarP(&dummy, "profile", "p", "", "profile configuration to use")
+
+	initConfig(currentProfile)
+
 	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
 
@@ -156,7 +176,12 @@ const (
 )
 
 func Execute() exitCode {
-	root := NewCmdRoot()
+	var currentProfile string
+	rFlag := pflag.NewFlagSet("", pflag.ContinueOnError)
+	rFlag.StringVarP(&currentProfile, "profile", "p", "", "")
+	rFlag.Parse(os.Args[1:])
+
+	root := NewCmdRoot(&currentProfile)
 	cmd, err := root.ExecuteC()
 	if err != nil {
 		var result *multierror.Error
