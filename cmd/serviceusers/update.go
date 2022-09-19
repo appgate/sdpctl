@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -62,7 +62,7 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 				if !ok {
 					return fmt.Errorf("file not found: %s", path)
 				}
-				file, err := ioutil.ReadFile(path)
+				file, err := os.ReadFile(path)
 				if err != nil {
 					return err
 				}
