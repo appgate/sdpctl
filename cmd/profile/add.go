@@ -30,6 +30,9 @@ func NewAddCmd(opts *commandOpts) *cobra.Command {
 			if len(args) != 1 {
 				return errors.New("requires one argument [profile-name]")
 			}
+			if args[0] == defaultProfileName {
+				return fmt.Errorf("profile name %q is a reserved name, try another name", defaultProfileName)
+			}
 			if !validProfileName.MatchString(args[0]) {
 				return fmt.Errorf("%q is not a valid profile name", args[0])
 			}
