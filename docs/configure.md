@@ -60,4 +60,4 @@ production is not configured yet, run 'sdpctl configure'
 
 #### Demo
 See:
-https://user-images.githubusercontent.com/1218385/190395866-d3c4f901-5857-4240-a055-b54afd6b1142.mp4
+https://user-images.githubusercontent.com/1218385/190962867-bbc8ea4c-9b88-461f-855a-4b4f3342ce50.mp4
