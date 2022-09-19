@@ -135,6 +135,12 @@ func TestSignInNoPromptOrEnv(t *testing.T) {
 		Stdin:       os.Stdin,
 		StdErr:      os.Stderr,
 	}
+	registry := httpmock.NewRegistry(t)
+	defer registry.Teardown()
+	registry.Serve()
+	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
+		return registry.Client, nil
+	}
 	err := Signin(f)
 	if err == nil {
 		t.Fatal("Expected err ErrSignInNotSupported")
