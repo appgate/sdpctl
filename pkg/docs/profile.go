@@ -10,15 +10,15 @@ var (
 		Long:  `Add creates a new appgate sdp profile configuration directory`,
 	}
 	ProfileDeleteDoc = CommandDoc{
-		Short: "Remove an existing profile profile",
-		Long:  `Remove an existing profile profile from your local configuration settings`,
+		Short: "Remove an existing profile",
+		Long:  `Remove an existing profile from your local configuration settings`,
 	}
 	ProfileListDoc = CommandDoc{
-		Short: "List all existing profile profiles",
+		Short: "List all existing profiles",
 		Long:  ``,
 	}
 	ProfileSetDoc = CommandDoc{
-		Short: "Set which profile profile to use",
+		Short: "Set which profile to use",
 		Long:  ``,
 
 		Examples: []ExampleDoc{

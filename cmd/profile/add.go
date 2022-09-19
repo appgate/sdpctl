@@ -115,7 +115,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 		return err
 	}
 	fmt.Fprintf(opts.Out, "Created profile %s, run 'sdpctl profile list' to see all available profiles\n", name)
-	fmt.Fprintf(opts.Out, "run 'sdpctl profile set %s' to select the new profile profile\n", name)
+	fmt.Fprintf(opts.Out, "run 'sdpctl profile set %s' to select the new profile\n", name)
 	return nil
 }
 

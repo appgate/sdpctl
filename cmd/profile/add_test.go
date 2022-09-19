@@ -34,7 +34,7 @@ func TestNewAddCmdWithExistingProfiles(t *testing.T) {
 	gotStr := string(got)
 
 	want := `Created profile testing, run 'sdpctl profile list' to see all available profiles
-run 'sdpctl profile set testing' to select the new profile profile
+run 'sdpctl profile set testing' to select the new profile
 `
 
 	if diff := cmp.Diff(want, gotStr); diff != "" {
@@ -97,7 +97,7 @@ func TestNewAddCmdMigrateExistingRootConfig(t *testing.T) {
 	gotStr := string(got)
 
 	want := `Created profile europe, run 'sdpctl profile list' to see all available profiles
-run 'sdpctl profile set europe' to select the new profile profile
+run 'sdpctl profile set europe' to select the new profile
 `
 
 	if diff := cmp.Diff(want, gotStr); diff != "" {
