@@ -2,6 +2,7 @@ package serviceusers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -46,9 +47,9 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 			}
 
 			p := util.NewPrinter(opts.Out, 4)
-			p.AddHeader("Name", "ID", "Disabled")
+			p.AddHeader("Name", "ID", "Disabled", "Tags", "Modified")
 			for _, u := range users {
-				p.AddLine(u.GetName(), u.GetId(), u.GetDisabled())
+				p.AddLine(u.GetName(), u.GetId(), u.GetDisabled(), strings.Join(u.GetTags(), ","), u.GetUpdated())
 			}
 			p.Print()
 

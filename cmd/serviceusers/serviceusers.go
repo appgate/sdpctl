@@ -17,6 +17,19 @@ type ServiceUsersOptions struct {
 	JSON   bool
 }
 
+// ServiceUserDTO represents a service users options which are modifiable by the user
+type ServiceUserDTO struct {
+	Name     string            `json:"name,omitempty"`
+	Password string            `json:"password,omitempty"`
+	Disabled bool              `json:"disabled,omitempty"`
+	Notes    string            `json:"notes,omitempty"`
+	Tags     []string          `json:"tags,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
+}
+type ServiceUserArrayDTO []ServiceUserDTO
+
+var InvalidUUIDError = "argument is not a valid UUID"
+
 func NewServiceUsersCMD(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "service-users",
@@ -31,6 +44,7 @@ func NewServiceUsersCMD(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewServiceUsersCreateCMD(f))
 	cmd.AddCommand(NewServiceUsersGetCMD(f))
 	cmd.AddCommand(NewServiceUsersDeleteCMD(f))
+	cmd.AddCommand(NewServiceUsersUpdateCMD(f))
 
 	return cmd
 }

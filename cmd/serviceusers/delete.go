@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
@@ -17,17 +20,19 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 		Out:    f.IOOutWriter,
 	}
 	cmd := &cobra.Command{
-		Use:     "delete [id]",
+		Use:     "delete [id...]",
 		Short:   docs.ServiceUsersDelete.Short,
 		Long:    docs.ServiceUsersDelete.Long,
 		Example: docs.ServiceUsersDelete.ExampleString(),
 		Aliases: []string{"remove", "rm", "del"},
-		Args:    cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !util.IsUUID(args[0]) {
-				return fmt.Errorf("%s: %s", InvalidUUIDError, args[0])
+			var errs *multierror.Error
+			for _, arg := range args {
+				if !util.IsUUID(arg) {
+					errs = multierror.Append(fmt.Errorf("%s: %s", InvalidUUIDError, args[0]), errs)
+				}
 			}
-			return nil
+			return errs.ErrorOrNil()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
@@ -35,14 +40,57 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			id := args[0]
 
-			if err := api.Delete(ctx, id); err != nil {
-				return err
+			ids := []string{}
+			if len(args) > 0 {
+				ids = args
+			} else {
+				noInteractive, err := cmd.Flags().GetBool("no-interactive")
+				if err != nil {
+					return err
+				}
+
+				if !noInteractive {
+					userList, err := api.List(ctx)
+					if err != nil {
+						return err
+					}
+					userNames := []string{}
+					for _, u := range userList {
+						userNames = append(userNames, u.Name)
+					}
+					qs := &survey.MultiSelect{
+						Message:  "select service users to delete:",
+						Options:  userNames,
+						PageSize: len(userNames),
+					}
+					var selected []string
+					if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+						return err
+					}
+					for _, sel := range selected {
+						for _, u := range userList {
+							if sel == u.Name {
+								ids = append(ids, u.GetId())
+							}
+						}
+					}
+				}
 			}
 
-			fmt.Fprint(opts.Out, "user successfully deleted\n")
-			return nil
+			if len(ids) <= 0 {
+				return fmt.Errorf("no service users selected for deletion")
+			}
+
+			var errs *multierror.Error
+			for _, id := range ids {
+				if err := api.Delete(ctx, id); err != nil {
+					errs = multierror.Append(err, errs)
+					continue
+				}
+				fmt.Fprintf(opts.Out, "deleted: %s\n", id)
+			}
+			return errs.ErrorOrNil()
 		},
 	}
 

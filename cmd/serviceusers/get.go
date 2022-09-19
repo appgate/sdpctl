@@ -10,8 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var InvalidUUIDError = "argument is not a valid UUID"
-
 func NewServiceUsersGetCMD(f *factory.Factory) *cobra.Command {
 	opts := ServiceUsersOptions{
 		Config: f.Config,

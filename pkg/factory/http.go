@@ -199,7 +199,6 @@ func serviceUsersFunc(f *Factory, appVersion string) func(c *configuration.Confi
 		if err != nil {
 			return nil, err
 		}
-		api := serviceusers.NewServiceUsersAPI(apiClient.ServiceUsersApi, bearerToken)
-		return api, nil
+		return serviceusers.NewServiceUsersAPI(apiClient.ServiceUsersApi, bearerToken), nil
 	}
 }

@@ -56,7 +56,7 @@ func TestServiceUsersCreate(t *testing.T) {
 		},
 		{
 			desc:    "create with flags",
-			args:    []string{"create", "--username=test-service-user", "--password=newPassword"},
+			args:    []string{"create", "--name=test-service-user", "--passphrase=newPassword"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			httpStubs: []httpmock.Stub{
 				{
@@ -84,7 +84,7 @@ func TestServiceUsersCreate(t *testing.T) {
 		},
 		{
 			desc:    "create with only username flag",
-			args:    []string{"create", "--username=test-service-user"},
+			args:    []string{"create", "--name=test-service-user"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
@@ -116,7 +116,7 @@ func TestServiceUsersCreate(t *testing.T) {
 		},
 		{
 			desc:    "create with only password flag",
-			args:    []string{"create", "--password=password"},
+			args:    []string{"create", "--passphrase=password"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubPrompt("Name for service user:").AnswerWith("test-service-user")

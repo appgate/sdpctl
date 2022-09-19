@@ -2,14 +2,18 @@ package serviceusers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
@@ -31,49 +35,98 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			u := openapi.ServiceUser{}
-
-			username, err := cmd.Flags().GetString("username")
-			if err != nil {
-				return err
-			}
-			password, err := cmd.Flags().GetString("password")
+			fromFile, err := cmd.Flags().GetString("from-file")
 			if err != nil {
 				return err
 			}
 
-			if len(username) <= 0 {
-				qs := &survey.Input{
-					Message: "username for service user",
-				}
-				if err := prompt.SurveyAskOne(qs, &username); err != nil {
+			users := []openapi.ServiceUser{}
+			if len(fromFile) > 0 {
+				path := filesystem.AbsolutePath(fromFile)
+				ok, err := util.FileExists(path)
+				if err != nil {
 					return err
 				}
-			}
-			if len(password) <= 0 {
-				qs := &survey.Password{
-					Message: "password for service user",
+				if !ok {
+					return fmt.Errorf("file not found: %s", path)
 				}
-				if err := prompt.SurveyAskOne(qs, &password); err != nil {
+				file, err := ioutil.ReadFile(path)
+				if err != nil {
 					return err
 				}
+				dto := ServiceUserArrayDTO{}
+				if err := json.Unmarshal(file, &dto); err != nil {
+					return err
+				}
+				for i := 0; i < len(dto); i++ {
+					users = append(users, openapi.ServiceUser{
+						Name:     dto[i].Name,
+						Password: dto[i].Password,
+						Disabled: &dto[i].Disabled,
+						Labels:   &dto[i].Labels,
+						Notes:    &dto[i].Notes,
+						Tags:     dto[i].Tags,
+					})
+				}
+			} else {
+				noInteractive, err := cmd.Flags().GetBool("no-interactive")
+				if err != nil {
+					return err
+				}
+
+				if !noInteractive {
+					single := openapi.ServiceUser{}
+					username, err := cmd.Flags().GetString("name")
+					if err != nil {
+						return err
+					}
+					password, err := cmd.Flags().GetString("passphrase")
+					if err != nil {
+						return err
+					}
+					if len(username) <= 0 {
+						qs := &survey.Input{
+							Message: "Name for service user:",
+						}
+						if err := prompt.SurveyAskOne(qs, &username); err != nil {
+							return err
+						}
+					}
+					if len(password) <= 0 {
+						password, err = prompt.PasswordConfirmation("Passphrase for service user:")
+						if err != nil {
+							return err
+						}
+					}
+
+					single.SetName(username)
+					single.SetPassword(password)
+					users = append(users, single)
+				}
 			}
 
-			u.SetName(username)
-			u.SetPassword(password)
-
-			created, err := api.Create(ctx, u)
-			if err != nil {
-				return err
+			if len(users) <= 0 {
+				return fmt.Errorf("failed to create user(s): no user data provided")
 			}
 
-			fmt.Fprint(opts.Out, "New service user created:\n")
-			return util.PrintJSON(opts.Out, created)
+			var errs *multierror.Error
+			for _, u := range users {
+				created, err := api.Create(ctx, u)
+				if err != nil {
+					errs = multierror.Append(err, errs)
+					continue
+				}
+				fmt.Fprint(opts.Out, "New service user created:\n")
+				util.PrintJSON(opts.Out, created)
+			}
+			return errs.ErrorOrNil()
 		},
 	}
 
-	cmd.Flags().String("username", "", "username for service user")
-	cmd.Flags().String("password", "", "password for service user")
+	flags := cmd.Flags()
+	flags.String("name", "", "name for service user")
+	flags.String("passphrase", "", "passphrase for service user")
+	flags.StringP("from-file", "f", "", "create a user from a valid json file")
 
 	return cmd
 }
