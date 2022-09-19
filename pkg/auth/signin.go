@@ -93,12 +93,6 @@ var ErrSignInNotSupported = errors.New("no TTY present, and missing required env
 // - Store primary controller version in config file
 // - Save config file to $SDPCTL_CONFIG_DIR
 func Signin(f *factory.Factory) error {
-	if !f.CanPrompt() {
-		if !hasRequiredEnv() {
-			return ErrSignInNotSupported
-		}
-	}
-
 	cfg := f.Config
 	client, err := f.APIClient(cfg)
 	if err != nil {
@@ -119,6 +113,12 @@ func Signin(f *factory.Factory) error {
 	if err == nil && cfg.ExpiredAtValid() && len(bearer) > 0 && cfg.Version > 0 {
 		return nil
 	}
+	if !f.CanPrompt() {
+		if !hasRequiredEnv() {
+			return ErrSignInNotSupported
+		}
+	}
+
 	minMax, err := GetMinMaxAPIVersion(f)
 	if err != nil {
 		return err
