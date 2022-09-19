@@ -1,0 +1,16 @@
+{
+    "created": "2022-09-15T14:15:23.542075Z",
+    "disabled": true,
+    "failedLoginAttempts": 0,
+    "id": "1767c791-4001-429b-82cf-0a471cc2f5d2",
+    "labels": {
+        "somelabelkey": "testlabel"
+    },
+    "name": "test-service-user",
+    "notes": "",
+    "password": "",
+    "tags": [
+        "test-tag"
+    ],
+    "updated": "2022-09-16T07:00:23.405316Z"
+}

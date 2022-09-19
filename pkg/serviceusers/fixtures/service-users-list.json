@@ -1,0 +1,53 @@
+{
+    "data": [
+        {
+            "id": "1767c791-4001-429b-82cf-0a471cc2f5d2",
+            "name": "a-user",
+            "notes": "",
+            "created": "2022-09-16T08:19:06.516115Z",
+            "updated": "2022-09-16T08:19:06.516115Z",
+            "tags": [],
+            "labels": {},
+            "disabled": false,
+            "failedLoginAttempts": 0
+        },
+        {
+            "id": "9b3d3652-f36f-46fe-8065-4a3d3cee6ec4",
+            "name": "some-other-user",
+            "notes": "",
+            "created": "2022-09-16T08:20:17.242287Z",
+            "updated": "2022-09-16T08:20:17.242287Z",
+            "tags": [],
+            "labels": {},
+            "disabled": false,
+            "failedLoginAttempts": 0
+        },
+        {
+            "id": "ff3d10ab-2474-4193-b670-86e230495188",
+            "name": "test-service-user",
+            "notes": "",
+            "created": "2022-09-14T11:28:37.547326Z",
+            "updated": "2022-09-16T06:07:02.600422Z",
+            "tags": [],
+            "labels": {},
+            "disabled": false,
+            "failedLoginAttempts": 0
+        },
+        {
+            "id": "e857d763-37d6-4476-a8ce-092bf9ac8537",
+            "name": "disabled-user",
+            "notes": "",
+            "created": "2022-09-14T11:28:37.547326Z",
+            "updated": "2022-09-16T06:07:02.600422Z",
+            "tags": [],
+            "labels": {},
+            "disabled": true,
+            "failedLoginAttempts": 0
+        }
+    ],
+    "queries": [],
+    "range": "0-5/5",
+    "orderBy": "name",
+    "descending": false,
+    "filterBy": []
+}
