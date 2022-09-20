@@ -52,7 +52,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			desc:       "no arguments no-interactive",
 			args:       []string{"create", "--no-interactive"},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`no user data provided`),
+			wantErrOut: regexp.MustCompile(`name is required`),
 		},
 		{
 			desc:    "create with flags",

@@ -3,8 +3,11 @@ package serviceusers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -21,6 +24,7 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 	opts := ServiceUsersOptions{
 		Config: f.Config,
 		API:    f.ServiceUsers,
+		In:     f.Stdin,
 		Out:    f.IOOutWriter,
 	}
 	cmd := &cobra.Command{
@@ -62,28 +66,42 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 					users = append(users, openapi.ServiceUser{
 						Name:     dto[i].Name,
 						Password: dto[i].Password,
-						Disabled: &dto[i].Disabled,
+						Disabled: openapi.PtrBool(dto[i].Disabled),
 						Labels:   &dto[i].Labels,
-						Notes:    &dto[i].Notes,
+						Notes:    openapi.PtrString(dto[i].Notes),
 						Tags:     dto[i].Tags,
 					})
 				}
 			} else {
-				noInteractive, err := cmd.Flags().GetBool("no-interactive")
+				username, err := cmd.Flags().GetString("name")
 				if err != nil {
 					return err
 				}
 
+				var password string
+				var hasStdin bool
+				stat, err := os.Stdin.Stat()
+				if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+					hasStdin = true
+				}
+				if hasStdin {
+					buf, err := io.ReadAll(opts.In)
+					if err != nil {
+						return fmt.Errorf("failed to read from stdin: %w", err)
+					}
+					password = strings.TrimSuffix(string(buf), "\n")
+				} else {
+					password, err = cmd.Flags().GetString("passphrase")
+					if err != nil {
+						return err
+					}
+				}
+
+				noInteractive, err := cmd.Flags().GetBool("no-interactive")
+				if err != nil {
+					return err
+				}
 				if !noInteractive {
-					single := openapi.ServiceUser{}
-					username, err := cmd.Flags().GetString("name")
-					if err != nil {
-						return err
-					}
-					password, err := cmd.Flags().GetString("passphrase")
-					if err != nil {
-						return err
-					}
 					if len(username) <= 0 {
 						qs := &survey.Input{
 							Message: "Name for service user:",
@@ -99,10 +117,23 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 						}
 					}
 
-					single.SetName(username)
-					single.SetPassword(password)
-					users = append(users, single)
 				}
+
+				var errs *multierror.Error
+				if len(username) <= 0 {
+					errs = multierror.Append(errors.New("name is required"), errs)
+				}
+				if len(password) <= 0 {
+					errs = multierror.Append(errors.New("password is required"), errs)
+				}
+				if errs != nil {
+					return errs.ErrorOrNil()
+				}
+
+				users = append(users, openapi.ServiceUser{
+					Name:     username,
+					Password: password,
+				})
 			}
 
 			if len(users) <= 0 {

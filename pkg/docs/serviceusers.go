@@ -93,7 +93,7 @@ var (
 			},
 			{
 				Description: "update multiple values of a service user",
-				Command:     `sdpctl service-users update <id> '{"name": <new-name>, "disabled": true}'`,
+				Command:     `sdpctl service-users update <id> '{"name": "<new-name>", "disabled": true}'`,
 			},
 		},
 	}
