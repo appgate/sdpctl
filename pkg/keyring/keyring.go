@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/viper"
 	zkeyring "github.com/zalando/go-keyring"
 )
 
@@ -76,8 +75,6 @@ func DeleteBearer(prefix string) error {
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		os.Unsetenv("SDPCTL_BEARER")
 	}
-	viper.Set("bearer", "")
-	viper.Set("expires_at", "")
 	return nil
 }
 
