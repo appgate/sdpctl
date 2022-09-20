@@ -196,6 +196,17 @@ func (c *Config) ClearCredentials() error {
 	return nil
 }
 
+func (c *Config) ClearBearer() error {
+	h, err := c.GetHost()
+	if err != nil {
+		return err
+	}
+	if err := keyring.DeleteBearer(h); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Config) StoreCredentials(username, password string) error {
 	h, err := c.GetHost()
 	if err != nil {

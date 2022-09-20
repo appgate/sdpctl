@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/viper"
 	zkeyring "github.com/zalando/go-keyring"
 )
 
@@ -63,6 +64,20 @@ func SetBearer(prefix, secret string) error {
 	if err := setSecret(format(prefix, bearer), secret); err != nil {
 		os.Setenv("SDPCTL_BEARER", secret)
 	}
+	return nil
+}
+
+func DeleteBearer(prefix string) error {
+	if err := deleteSecret(format(prefix, bearer)); err != nil {
+		if err != zkeyring.ErrNotFound {
+			return err
+		}
+	}
+	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
+		os.Unsetenv("SDPCTL_BEARER")
+	}
+	viper.Set("bearer", "")
+	viper.Set("expires_at", "")
 	return nil
 }
 
