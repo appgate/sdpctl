@@ -116,6 +116,20 @@ func SetBearer(prefix, secret string) error {
 	return saveEncryptedFile(bearer, prefix, secret)
 }
 
+func DeleteBearer(prefix string) error {
+	if err := deleteSecret(format(prefix, bearer)); err != nil {
+		if err != zkeyring.ErrNotFound {
+			return err
+		}
+	}
+	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
+		os.Unsetenv("SDPCTL_BEARER")
+	}
+	viper.Set("bearer", "")
+	viper.Set("expires_at", "")
+	return nil
+}
+
 func GetRefreshToken(prefix string) (string, error) {
 	return getSecretFile(refreshToken, prefix)
 }

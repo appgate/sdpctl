@@ -130,6 +130,26 @@ func SetBearer(prefix, secret string) error {
 	return nil
 }
 
+func DeleteBearer(prefix string) error {
+	key := format(prefix, bearer)
+	if _, err := QueryKeychain(key); err == nil {
+		item := keychain.NewItem()
+		item.SetSecClass(keychain.SecClassGenericPassword)
+		item.SetService(keyringService)
+		item.SetAccount(key)
+		err := keychain.DeleteItem(item)
+		if err != nil {
+			return errors.New("failed to delete credential from keychain")
+		}
+	}
+	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
+		os.Unsetenv("SDPCTL_BEARER")
+	}
+	viper.Set("bearer", "")
+	viper.Set("expires_at", "")
+	return nil
+}
+
 func SetUsername(prefix, secret string) error {
 	err := AddKeychain(format(prefix, username), secret)
 	if err != nil {
