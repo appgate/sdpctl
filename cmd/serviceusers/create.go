@@ -124,9 +124,10 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 					errs = multierror.Append(errors.New("name is required"), errs)
 				}
 				if len(password) <= 0 {
-					errs = multierror.Append(errors.New("password is required"), errs)
+					errs = multierror.Append(errors.New("passphrase is required"), errs)
 				}
 				if errs != nil {
+					errs = multierror.Append(errors.New("failed to create user: missing data"), errs)
 					return errs.ErrorOrNil()
 				}
 

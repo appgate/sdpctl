@@ -21,13 +21,13 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 		Out:    f.IOOutWriter,
 	}
 	cmd := &cobra.Command{
-		Use:     "update [id] [key=value,...]",
+		Use:     "update [id] [args...]",
 		Short:   docs.ServiceUsersUpdate.Short,
 		Long:    docs.ServiceUsersUpdate.Long,
 		Example: docs.ServiceUsersUpdate.ExampleString(),
 		Aliases: []string{"edit", "set"},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) <= 0 {
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
 				return fmt.Errorf("not enough arguments")
 			}
 			if !util.IsUUID(args[0]) {
@@ -103,6 +103,8 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 						dto.Labels[keyValue[0]] = keyValue[1]
 					case "tag":
 						dto.Tags = append(toUpdate.GetTags(), value)
+					default:
+						return fmt.Errorf("unknown argument %s", noun)
 					}
 				case "remove", "rm":
 					if len(args) < 4 {
@@ -125,6 +127,8 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 							}
 						}
 						dto.Tags = newTags
+					default:
+						return fmt.Errorf("unknown argument %s", noun)
 					}
 				default:
 					// If no noun is given as an argument, we expect the second argument to be a JSON parsable string
