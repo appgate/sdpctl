@@ -64,6 +64,28 @@ func TestNewAddCmdDuplicateName(t *testing.T) {
 	}
 }
 
+func TestNewAddCmdDReservedName(t *testing.T) {
+	setupExistingProfiles(t)
+
+	stdout := &bytes.Buffer{}
+	opts := &commandOpts{
+		Out: stdout,
+	}
+	cmd := NewAddCmd(opts)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"default"})
+
+	_, err := cmd.ExecuteC()
+	if err == nil {
+		t.Fatal("expected error, got none.")
+	}
+	want := `profile name "default" is a reserved name, try another name`
+	if diff := cmp.Diff(want, err.Error()); diff != "" {
+		t.Fatalf(" (-want +got):\n%s", diff)
+	}
+}
+
 func TestNewAddCmdMigrateExistingRootConfig(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("SDPCTL_CONFIG_DIR", dir)
