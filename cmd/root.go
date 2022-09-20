@@ -12,6 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/pflag"
+
+	cmdprofile "github.com/appgate/sdpctl/cmd/profile"
 	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
 
@@ -22,6 +25,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -39,17 +43,49 @@ commit: %s
 build date: %s`, version, commit, buildDate)
 )
 
-func initConfig() {
+func initConfig(currentProfile *string) {
 	dir := filesystem.ConfigDir()
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err := os.MkdirAll(dir, os.ModePerm)
-		if err != nil {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 			fmt.Printf("Can't create config dir: %s %s\n", dir, err)
 			os.Exit(1)
 		}
 	}
-	viper.AddConfigPath(dir)
-	viper.SafeWriteConfig()
+	if profiles.FileExists() {
+		p, err := profiles.Read()
+		if err != nil {
+			fmt.Printf("Can't read profiles: %s %s\n", profiles.FilePath(), err)
+			os.Exit(1)
+		}
+		var selectedProfile string
+		if currentProfile != nil && len(*currentProfile) > 0 {
+			selectedProfile = *currentProfile
+		} else if v := os.Getenv("SDPCTL_PROFILE"); len(v) > 0 {
+			selectedProfile = v
+		}
+		if len(selectedProfile) > 0 {
+			found := false
+			for _, profile := range p.List {
+				if selectedProfile == profile.Name {
+					viper.AddConfigPath(profile.Directory)
+					found = true
+					break
+				}
+			}
+			if !found {
+				fmt.Printf("Invalid profile name, got %s, available %s\n", selectedProfile, p.Available())
+				os.Exit(1)
+			}
+		} else if p.CurrentExists() {
+			viper.AddConfigPath(*p.Current)
+		}
+	} else {
+		// if we don't have any profiles
+		// we will assume there is only one collective to respect
+		// and we will default to base dir.
+		viper.AddConfigPath(dir)
+	}
+
 	viper.SetConfigName("config")
 	viper.SetEnvPrefix("SDPCTL")
 	viper.AutomaticEnv()
@@ -65,7 +101,7 @@ func initConfig() {
 	}
 }
 
-func NewCmdRoot() *cobra.Command {
+func NewCmdRoot(currentProfile *string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:               "sdpctl",
 		Short:             "sdpctl is a command line tool to control and handle Appgate SDP using the CLI",
@@ -76,10 +112,8 @@ func NewCmdRoot() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	cobra.OnInitialize(initConfig)
 	cfg := &configuration.Config{}
 
-	viper.SetDefault("debug", false)
 	pFlags := rootCmd.PersistentFlags()
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
@@ -87,7 +121,14 @@ func NewCmdRoot() *cobra.Command {
 	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	pFlags.Bool("ci-mode", false, "log to stderr instead of file and disable progress-bars")
 
-	initConfig()
+	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
+	// in Execute() because we need to parse it first before the others to be able
+	// to resolve factory.New
+	var dummy string
+	pFlags.StringVarP(&dummy, "profile", "p", "", "profile configuration to use")
+
+	initConfig(currentProfile)
+
 	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
 
@@ -98,6 +139,7 @@ func NewCmdRoot() *cobra.Command {
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.AddCommand(NewOpenCmd(f))
+	rootCmd.AddCommand(cmdprofile.NewProfileCmd(f))
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
@@ -139,7 +181,12 @@ const (
 )
 
 func Execute() exitCode {
-	root := NewCmdRoot()
+	var currentProfile string
+	rFlag := pflag.NewFlagSet("", pflag.ContinueOnError)
+	rFlag.StringVarP(&currentProfile, "profile", "p", "", "")
+	rFlag.Parse(os.Args[1:])
+
+	root := NewCmdRoot(&currentProfile)
 	cmd, err := root.ExecuteC()
 	if err != nil {
 		var result *multierror.Error

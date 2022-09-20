@@ -63,12 +63,21 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		}
 		viper.Set("pem_filepath", opts.PEM)
 	}
-
-	viper.Set("url", URL)
-	opts.Config.URL = URL
+	u, err := configuration.NormalizeURL(URL)
+	if err != nil {
+		return fmt.Errorf("could not determine URL for %s %s", URL, err)
+	}
+	viper.Set("url", u)
+	opts.Config.URL = u
 	viper.Set("device_id", configuration.DefaultDeviceID())
 	if err := viper.WriteConfig(); err != nil {
-		return err
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// if its a new collective config, and the directory is empty
+			// try to write a plain config
+			if err := viper.SafeWriteConfig(); err != nil {
+				return err
+			}
+		}
 	}
 	// Clear old credentials when configuring
 	if err := opts.Config.ClearCredentials(); err != nil {
