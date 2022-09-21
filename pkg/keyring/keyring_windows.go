@@ -117,8 +117,12 @@ func SetBearer(prefix, secret string) error {
 }
 
 func DeleteBearer(prefix string) error {
-	if err := deleteSecret(format(prefix, bearer)); err != nil {
-		if err != zkeyring.ErrNotFound {
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, bearer)))
+	if err != nil {
+		return err
+	}
+	if ok, err := util.FileExists(p); err == nil && ok {
+		if err := os.Remove(p); err != nil {
 			return err
 		}
 	}
