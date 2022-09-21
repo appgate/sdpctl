@@ -31,14 +31,8 @@ func ClearCredentials(prefix string) error {
 			}
 		}
 	}
-	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, bearer)))
-	if err != nil {
+	if err := deleteSecretFile(bearer, prefix); err != nil {
 		return err
-	}
-	if ok, err := util.FileExists(p); err == nil && ok {
-		if err := os.Remove(p); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -105,6 +99,19 @@ func getSecretFile(name, prefix string) (string, error) {
 	return string(dec), nil
 }
 
+func deleteSecretFile(name, prefix string) error {
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, name)))
+	if err != nil {
+		return err
+	}
+	if ok, err := util.FileExists(p); err == nil && ok {
+		if err := os.Remove(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func GetBearer(prefix string) (string, error) {
 	if v, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		return v, nil
@@ -117,14 +124,8 @@ func SetBearer(prefix, secret string) error {
 }
 
 func DeleteBearer(prefix string) error {
-	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, bearer)))
-	if err != nil {
+	if err := deleteSecretFile(bearer, prefix); err != nil {
 		return err
-	}
-	if ok, err := util.FileExists(p); err == nil && ok {
-		if err := os.Remove(p); err != nil {
-			return err
-		}
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		os.Unsetenv("SDPCTL_BEARER")
