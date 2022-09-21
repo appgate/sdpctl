@@ -26,7 +26,6 @@ func ClearCredentials(prefix string) error {
 			if !errors.Is(err, zkeyring.ErrNotFound) {
 				return err
 			}
-
 		}
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {

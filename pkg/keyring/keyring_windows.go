@@ -31,8 +31,8 @@ func ClearCredentials(prefix string) error {
 			}
 		}
 	}
-	if v, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
-		return v, nil
+	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
+		os.Unsetenv("SDPCTL_BEARER")
 	}
 
 	return nil

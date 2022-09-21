@@ -19,7 +19,9 @@ func deleteSecretKey(prefix, name string) error {
 		item.SetAccount(key)
 		err := keychain.DeleteItem(item)
 		if err != nil {
-			return errors.New("failed to delete credential from keychain")
+			if !errors.Is(err, keychain.ErrorItemNotFound) {
+				return errors.New("failed to delete credential from keychain")
+			}
 		}
 	}
 	return nil
@@ -142,9 +144,7 @@ func SetBearer(prefix, secret string) error {
 
 func DeleteBearer(prefix string) error {
 	if err := deleteSecretKey(prefix, bearer); err != nil {
-		if err != keychain.ErrNotFound {
-			return err
-		}
+		return err
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		os.Unsetenv("SDPCTL_BEARER")
