@@ -31,7 +31,10 @@ func ClearCredentials(prefix string) error {
 			}
 		}
 	}
-	if err := deleteSecretFile(bearer, prefix); err != nil {
+	if err := DeleteBearer(prefix); err != nil {
+		return err
+	}
+	if err := DeleteRefreshToken(prefix); err != nil {
 		return err
 	}
 
@@ -139,4 +142,8 @@ func GetRefreshToken(prefix string) (string, error) {
 
 func SetRefreshToken(prefix, secret string) error {
 	return saveEncryptedFile(refreshToken, prefix, secret)
+}
+
+func DeleteRefreshToken(prefix string) error {
+	return deleteSecretFile(refreshToken, prefix)
 }
