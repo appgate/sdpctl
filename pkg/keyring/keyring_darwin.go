@@ -28,7 +28,7 @@ func deleteSecretKey(prefix, name string) error {
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
-	for _, k := range []string{username, password, bearer, refreshToken} {
+	for _, k := range []string{username, password, bearer} {
 		if err := deleteSecretKey(prefix, k); err != nil {
 			return err
 		}
@@ -142,7 +142,9 @@ func SetBearer(prefix, secret string) error {
 
 func DeleteBearer(prefix string) error {
 	if err := deleteSecretKey(prefix, bearer); err != nil {
-		return err
+		if err != keychain.ErrNotFound {
+			return err
+		}
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		os.Unsetenv("SDPCTL_BEARER")
@@ -183,8 +185,4 @@ func SetRefreshToken(prefix, secret string) error {
 		return err
 	}
 	return nil
-}
-
-func DeleteRefreshToken(prefix string) error {
-	return deleteSecretKey(prefix, refreshToken)
 }

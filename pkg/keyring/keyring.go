@@ -21,7 +21,7 @@ const (
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
-	for _, k := range []string{username, password, bearer, refreshToken} {
+	for _, k := range []string{username, password, bearer} {
 		if err := deleteSecret(format(prefix, k)); err != nil {
 			if !errors.Is(err, zkeyring.ErrNotFound) {
 				return err
@@ -87,15 +87,6 @@ func GetRefreshToken(prefix string) (string, error) {
 
 func SetRefreshToken(prefix, secret string) error {
 	return setSecret(format(prefix, refreshToken), secret)
-}
-
-func DeleteRefreshToken(prefix string) error {
-	if err := deleteSecret(format(prefix, refreshToken)); err != nil {
-		if err != zkeyring.ErrNotFound {
-			return err
-		}
-	}
-	return nil
 }
 
 func SetUsername(prefix, secret string) error {
