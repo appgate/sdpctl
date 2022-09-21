@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-func deleteSecret(prefix, name string) error {
+func deleteSecretKey(prefix, name string) error {
 	key := format(prefix, name)
 	if _, err := QueryKeychain(key); err == nil {
 		item := keychain.NewItem()
@@ -29,7 +29,7 @@ func deleteSecret(prefix, name string) error {
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
 	for _, k := range []string{username, password, bearer, refreshToken} {
-		if err := deleteSecret(prefix, k); err != nil {
+		if err := deleteSecretKey(prefix, k); err != nil {
 			return err
 		}
 	}
@@ -141,7 +141,7 @@ func SetBearer(prefix, secret string) error {
 }
 
 func DeleteBearer(prefix string) error {
-	if err := deleteSecret(prefix, bearer); err != nil {
+	if err := deleteSecretKey(prefix, bearer); err != nil {
 		return err
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
@@ -186,5 +186,5 @@ func SetRefreshToken(prefix, secret string) error {
 }
 
 func DeleteRefreshToken(prefix string) error {
-	return deleteSecret(prefix, refreshToken)
+	return deleteSecretKey(prefix, refreshToken)
 }
