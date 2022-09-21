@@ -196,6 +196,19 @@ func (c *Config) ClearCredentials() error {
 	return nil
 }
 
+func (c *Config) ClearBearer() error {
+	h, err := c.GetHost()
+	if err != nil {
+		return err
+	}
+	if err := keyring.DeleteBearer(h); err != nil {
+		return err
+	}
+	viper.Set("bearer", "")
+	viper.Set("expires_at", "")
+	return nil
+}
+
 func (c *Config) StoreCredentials(username, password string) error {
 	h, err := c.GetHost()
 	if err != nil {
