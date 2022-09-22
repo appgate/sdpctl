@@ -44,7 +44,7 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			users := []openapi.ServiceUser{}
+			users := []openapi.ServiceUsersGetRequest{}
 			if len(fromFile) > 0 {
 				path := filesystem.AbsolutePath(fromFile)
 				ok, err := util.FileExists(path)
@@ -63,7 +63,7 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				for i := 0; i < len(dto); i++ {
-					users = append(users, openapi.ServiceUser{
+					users = append(users, openapi.ServiceUsersGetRequest{
 						Name:     dto[i].Name,
 						Password: dto[i].Password,
 						Disabled: openapi.PtrBool(dto[i].Disabled),
@@ -131,7 +131,7 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 					return errs.ErrorOrNil()
 				}
 
-				users = append(users, openapi.ServiceUser{
+				users = append(users, openapi.ServiceUsersGetRequest{
 					Name:     username,
 					Password: password,
 				})

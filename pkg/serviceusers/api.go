@@ -27,8 +27,8 @@ func (su *ServiceUsersAPI) List(ctx context.Context) ([]openapi.ServiceUser, err
 	return list.GetData(), nil
 }
 
-func (su *ServiceUsersAPI) Create(ctx context.Context, userData openapi.ServiceUser) (*openapi.ServiceUser, error) {
-	result, response, err := su.client.ServiceUsersPost(ctx).ServiceUser(userData).Authorization(su.token).Execute()
+func (su *ServiceUsersAPI) Create(ctx context.Context, userData openapi.ServiceUsersGetRequest) (*openapi.ServiceUser, error) {
+	result, response, err := su.client.ServiceUsersPost(ctx).ServiceUsersGetRequest(userData).Authorization(su.token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

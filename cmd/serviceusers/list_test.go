@@ -25,7 +25,6 @@ var expectedJSONView = `[
     "labels": {},
     "name": "a-user",
     "notes": "",
-    "password": "",
     "tags": [],
     "updated": "2022-09-16T08:19:06.516115Z"
   },
@@ -37,7 +36,6 @@ var expectedJSONView = `[
     "labels": {},
     "name": "some-other-user",
     "notes": "",
-    "password": "",
     "tags": [],
     "updated": "2022-09-16T08:20:17.242287Z"
   },
@@ -49,7 +47,6 @@ var expectedJSONView = `[
     "labels": {},
     "name": "test-service-user",
     "notes": "",
-    "password": "",
     "tags": [],
     "updated": "2022-09-16T06:07:02.600422Z"
   },
@@ -61,7 +58,6 @@ var expectedJSONView = `[
     "labels": {},
     "name": "disabled-user",
     "notes": "",
-    "password": "",
     "tags": [],
     "updated": "2022-09-16T06:07:02.600422Z"
   }
