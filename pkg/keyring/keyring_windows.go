@@ -24,17 +24,16 @@ import (
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {
-	for _, k := range []string{username, password, bearer} {
+	for _, k := range []string{username, password} {
 		if err := deleteSecret(format(prefix, k)); err != nil {
 			if !errors.Is(err, zkeyring.ErrNotFound) {
 				return err
 			}
 		}
 	}
-	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
-		os.Unsetenv("SDPCTL_BEARER")
+	if err := DeleteBearer(prefix); err != nil {
+		return err
 	}
-
 	return nil
 }
 
