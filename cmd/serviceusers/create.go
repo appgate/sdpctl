@@ -17,6 +17,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -58,18 +59,24 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				dto := ServiceUserArrayDTO{}
-				if err := json.Unmarshal(file, &dto); err != nil {
-					return err
+				// Try unmarshal json array first
+				dtoArray := ServiceUserArrayDTO{}
+				if err := json.Unmarshal(file, &dtoArray); err != nil {
+					logrus.WithError(err).Warn("failed to unmarshal json to array")
 				}
-				for i := 0; i < len(dto); i++ {
+				// if the file is a single user object, unmarshal that instead
+				singleDTO := ServiceUserDTO{}
+				if err := json.Unmarshal(file, &singleDTO); err == nil {
+					dtoArray = append(dtoArray, singleDTO)
+				}
+				for i := 0; i < len(dtoArray); i++ {
 					users = append(users, openapi.ServiceUsersGetRequest{
-						Name:     dto[i].Name,
-						Password: dto[i].Password,
-						Disabled: openapi.PtrBool(dto[i].Disabled),
-						Labels:   &dto[i].Labels,
-						Notes:    openapi.PtrString(dto[i].Notes),
-						Tags:     dto[i].Tags,
+						Name:     dtoArray[i].Name,
+						Password: dtoArray[i].Password,
+						Disabled: openapi.PtrBool(dtoArray[i].Disabled),
+						Labels:   &dtoArray[i].Labels,
+						Notes:    openapi.PtrString(dtoArray[i].Notes),
+						Tags:     dtoArray[i].Tags,
 					})
 				}
 			} else {
