@@ -97,11 +97,6 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 						return fmt.Errorf("failed to read from stdin: %w", err)
 					}
 					password = strings.TrimSuffix(string(buf), "\n")
-				} else {
-					password, err = cmd.Flags().GetString("passphrase")
-					if err != nil {
-						return err
-					}
 				}
 
 				noInteractive, err := cmd.Flags().GetBool("no-interactive")
@@ -164,7 +159,6 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.String("name", "", "name for service user")
-	flags.String("passphrase", "", "passphrase for service user")
 	flags.StringP("from-file", "f", "", "create a user from a valid json file")
 
 	return cmd

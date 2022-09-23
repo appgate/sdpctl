@@ -43,7 +43,7 @@ var (
 			},
 			{
 				Description: "create service user with flag input",
-				Command:     "sdpctl service-users create --name=<service-user-name> --passphrase=<service-user-passphrase",
+				Command:     `echo "<passphrase>" | sdpctl service-users create --name=<service-user-name>`,
 			},
 			{
 				Description: "create a service user from a valid JSON file",
