@@ -13,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"sync"
 	"text/template"
 	"time"
@@ -529,28 +528,20 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 			}
 			uploadVersion, err := appliancepkg.ParseVersionString(opts.image)
-			if err == nil && preparedVersion != nil && uploadVersion != nil {
-				// Cancel current prepared version if the one uploaded is equal or newer
-				preparedBuildNr, err := strconv.ParseInt(preparedVersion.Metadata(), 10, 64)
-				if err != nil {
-					return err
+			if err != nil {
+				log.WithError(err).Warn("failed parsing version string")
+			}
+			if versionCheck, err := appliancepkg.CompareVersionsAndBuildNumber(uploadVersion, preparedVersion); err == nil && versionCheck <= 0 {
+				log.WithFields(log.Fields{
+					"uploadVersion":   uploadVersion.String(),
+					"preparedVersion": preparedVersion.String(),
+					"appliance":       appliance.GetName(),
+				}).Info("an older version is already prepared on the appliance. cancelling before proceeding")
+				if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
+					errs = multierr.Append(errs, err)
 				}
-				uploadBuildNr, err := strconv.ParseInt(uploadVersion.Metadata(), 10, 64)
-				if err != nil {
-					return err
-				}
-				if uploadVersion.LessThanOrEqual(preparedVersion) && uploadBuildNr <= preparedBuildNr {
-					log.WithFields(log.Fields{
-						"uploadVersion":   uploadVersion.String(),
-						"preparedVersion": preparedVersion.String(),
-						"appliance":       appliance.GetName(),
-					}).Info("an older version is already prepared on the appliance. cancelling before proceeding")
-					if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
-						errs = multierr.Append(errs, err)
-					}
-					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, nil); err != nil {
-						errs = multierr.Append(errs, err)
-					}
+				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, appliance, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, nil); err != nil {
+					errs = multierr.Append(errs, err)
 				}
 			}
 
