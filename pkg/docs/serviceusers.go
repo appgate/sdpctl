@@ -21,7 +21,7 @@ var (
 		},
 	}
 	ServiceUsersGet = &CommandDoc{
-		Short: "get detailed infomation about a service user",
+		Short: "get detailed information about a service user",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{
