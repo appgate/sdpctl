@@ -253,7 +253,7 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 		return f.StdErr
 	}
 
-	name := filepath.Join(filesystem.DataDir(), "sdpctl.log")
+	name := filepath.Join(profiles.GetStorageDirectory(), "sdpctl.log")
 	file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return f.IOOutWriter
