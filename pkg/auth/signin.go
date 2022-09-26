@@ -15,7 +15,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/pkg/browser"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -108,10 +107,9 @@ func Signin(f *factory.Factory) error {
 		DeviceId:     cfg.DeviceID,
 	}
 
-	// If there's an existing bearer token present, we will clear it and renew the authentication
-	if err := cfg.ClearBearer(); err != nil {
-		// not a fatal error
-		log.WithError(err).Warn("failed to delete auth token")
+	bearer, err := cfg.GetBearTokenHeaderValue()
+	if err == nil && cfg.ExpiredAtValid() && len(bearer) > 0 && cfg.Version > 0 {
+		return nil
 	}
 	if !f.CanPrompt() {
 		if !hasRequiredEnv() {
