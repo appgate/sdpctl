@@ -23,7 +23,16 @@ deps:
 	go run main.go generate man
 
 snapshot: clean
-	goreleaser release --snapshot --rm-dist
+	@if [ ! -f ".release-env" ]; then \
+		touch .release-env;\
+	fi
+	docker run \
+		--rm \
+		--env-file .release-env \
+		-v $(PWD):/go/src/github.com/user/repo \
+		-w /go/src/github.com/user/repo \
+		goreleaser/goreleaser-cross:$(GORELEASER_CROSS_VERSION) \
+		--snapshot
 
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"

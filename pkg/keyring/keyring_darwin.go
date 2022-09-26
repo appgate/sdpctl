@@ -10,21 +10,33 @@ import (
 	"os"
 )
 
-// ClearCredentials removes any existing items in the keychain,
-// it will ignore if not found errors
-func ClearCredentials(prefix string) error {
-	for _, k := range []string{username, password, bearer, refreshToken} {
-		key := format(prefix, k)
-		if _, err := QueryKeychain(key); err == nil {
-			item := keychain.NewItem()
-			item.SetSecClass(keychain.SecClassGenericPassword)
-			item.SetService(keyringService)
-			item.SetAccount(key)
-			err := keychain.DeleteItem(item)
-			if err != nil {
+func deleteSecretKey(prefix, name string) error {
+	key := format(prefix, name)
+	if _, err := QueryKeychain(key); err == nil {
+		item := keychain.NewItem()
+		item.SetSecClass(keychain.SecClassGenericPassword)
+		item.SetService(keyringService)
+		item.SetAccount(key)
+		err := keychain.DeleteItem(item)
+		if err != nil {
+			if !errors.Is(err, keychain.ErrorItemNotFound) {
 				return errors.New("failed to delete credential from keychain")
 			}
 		}
+	}
+	return nil
+}
+
+// ClearCredentials removes any existing items in the keychain,
+// it will ignore if not found errors
+func ClearCredentials(prefix string) error {
+	for _, k := range []string{username, password} {
+		if err := deleteSecretKey(prefix, k); err != nil {
+			return err
+		}
+	}
+	if err := DeleteBearer(prefix); err != nil {
+		return err
 	}
 	return nil
 }
@@ -131,16 +143,8 @@ func SetBearer(prefix, secret string) error {
 }
 
 func DeleteBearer(prefix string) error {
-	key := format(prefix, bearer)
-	if _, err := QueryKeychain(key); err == nil {
-		item := keychain.NewItem()
-		item.SetSecClass(keychain.SecClassGenericPassword)
-		item.SetService(keyringService)
-		item.SetAccount(key)
-		err := keychain.DeleteItem(item)
-		if err != nil {
-			return errors.New("failed to delete credential from keychain")
-		}
+	if err := deleteSecretKey(prefix, bearer); err != nil {
+		return err
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
 		os.Unsetenv("SDPCTL_BEARER")
