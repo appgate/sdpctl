@@ -184,8 +184,8 @@ func Execute() exitCode {
 	var currentProfile string
 	rFlag := pflag.NewFlagSet("", pflag.ContinueOnError)
 	rFlag.StringVarP(&currentProfile, "profile", "p", "", "")
+	rFlag.Usage = func() {}
 	rFlag.Parse(os.Args[1:])
-
 	root := NewCmdRoot(&currentProfile)
 	cmd, err := root.ExecuteC()
 	if err != nil {
