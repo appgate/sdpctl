@@ -287,6 +287,16 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		log.SetOutput(logOutput(cmd, f, cfg))
 
+		// log sdpctl version
+		logFields := log.Fields{
+			"SDPCTL_VERSION": version,
+			"COMMAND":        cmd.CommandPath(),
+		}
+		if len(args) > 0 {
+			logFields["ARGS"] = strings.Join(args, ",")
+		}
+		log.WithFields(logFields).Info()
+
 		if !cmdutil.IsTTY(os.Stdout) {
 			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
 				return err
