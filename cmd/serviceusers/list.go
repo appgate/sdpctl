@@ -2,6 +2,7 @@ package serviceusers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -22,6 +23,12 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 		Short:   docs.ServiceUsersList.Short,
 		Long:    docs.ServiceUsersList.Long,
 		Example: docs.ServiceUsersList.ExampleString(),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.Config.Version <= 16 {
+				return fmt.Errorf("The service user interface is only available from API version 17 or higher. Currently using API version %d", opts.Config.Version)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			api, err := opts.API(opts.Config)
 			if err != nil {

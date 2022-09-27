@@ -41,8 +41,9 @@ func setupServiceUsersTest(t *testing.T, tC *serviceUsersTestStub) (*cobra.Comma
 
 	f := &factory.Factory{
 		Config: &configuration.Config{
-			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			Debug:   false,
+			URL:     fmt.Sprintf("http://localhost:%d", registry.Port),
+			Version: 17,
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
