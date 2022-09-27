@@ -29,7 +29,7 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			var errs *multierror.Error
 			for _, arg := range args {
 				if !util.IsUUID(arg) {
-					errs = multierror.Append(fmt.Errorf("%s: %s", InvalidUUIDError, args[0]), errs)
+					errs = multierror.Append(errs, fmt.Errorf("%s: %s", InvalidUUIDError, args[0]))
 				}
 			}
 			return errs.ErrorOrNil()
@@ -85,7 +85,7 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			var errs *multierror.Error
 			for _, id := range ids {
 				if err := api.Delete(ctx, id); err != nil {
-					errs = multierror.Append(err, errs)
+					errs = multierror.Append(errs, err)
 					continue
 				}
 				fmt.Fprintf(opts.Out, "deleted: %s\n", id)

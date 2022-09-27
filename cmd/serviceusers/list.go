@@ -22,14 +22,6 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 		Short:   docs.ServiceUsersList.Short,
 		Long:    docs.ServiceUsersList.Long,
 		Example: docs.ServiceUsersList.ExampleString(),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var err error
-			if opts.JSON, err = cmd.Flags().GetBool("json"); err != nil {
-				return err
-			}
-
-			return nil
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			api, err := opts.API(opts.Config)
 			if err != nil {
@@ -42,6 +34,9 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			if opts.JSON, err = cmd.Flags().GetBool("json"); err != nil {
+				return err
+			}
 			if opts.JSON {
 				return util.PrintJSON(opts.Out, users)
 			}

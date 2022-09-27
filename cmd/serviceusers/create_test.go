@@ -56,7 +56,7 @@ func TestServiceUsersCreate(t *testing.T) {
 		},
 		{
 			desc:    "create with flags",
-			args:    []string{"create", "--name=test-service-user"},
+			args:    []string{"create", "--name=test-service-user", "--tags=one,two,three"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			askStubs: func(as *prompt.AskStubber) {
 				as.StubPrompt("Passphrase for service user:").AnswerWith("passphrase")
@@ -91,6 +91,39 @@ func TestServiceUsersCreate(t *testing.T) {
 			args:    []string{"create", "--name=test-service-user"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			askStubs: func(as *prompt.AskStubber) {
+				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
+				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
+			},
+			httpStubs: []httpmock.Stub{
+				{
+					URL: "/service-users",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodPost {
+							filename := "../../pkg/serviceusers/fixtures/service-user-create.json"
+							f, err := os.Open(filename)
+							if err != nil {
+								panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
+							}
+							defer f.Close()
+							w.Header().Set("Content-Type", "application/json")
+							w.WriteHeader(http.StatusOK)
+							reader := bufio.NewReader(f)
+							content, err := io.ReadAll(reader)
+							if err != nil {
+								panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
+							}
+							fmt.Fprint(w, string(content))
+						}
+					},
+				},
+			},
+		},
+		{
+			desc:    "create with only tags flag",
+			args:    []string{"create", "--tags=one,two,three"},
+			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubPrompt("Name for service user:").AnswerWith("test-service-user")
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
 				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
 			},

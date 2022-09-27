@@ -76,26 +76,8 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`no key or value provided for label`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							filename := "../../pkg/serviceusers/fixtures/service-user-get.json"
-							f, err := os.Open(filename)
-							if err != nil {
-								panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
-							}
-							defer f.Close()
-							w.Header().Set("Content-Type", "application/json")
-							w.WriteHeader(http.StatusOK)
-							reader := bufio.NewReader(f)
-							content, err := io.ReadAll(reader)
-							if err != nil {
-								panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
-							}
-							fmt.Fprint(w, string(content))
-							return
-						}
-					},
+					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					Responder: defaultUpdateResponseHandler,
 				},
 			},
 		},
@@ -106,26 +88,8 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`not enough arguments`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							filename := "../../pkg/serviceusers/fixtures/service-user-get.json"
-							f, err := os.Open(filename)
-							if err != nil {
-								panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
-							}
-							defer f.Close()
-							w.Header().Set("Content-Type", "application/json")
-							w.WriteHeader(http.StatusOK)
-							reader := bufio.NewReader(f)
-							content, err := io.ReadAll(reader)
-							if err != nil {
-								panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
-							}
-							fmt.Fprint(w, string(content))
-							return
-						}
-					},
+					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					Responder: defaultUpdateResponseHandler,
 				},
 			},
 		},
@@ -161,37 +125,24 @@ func TestServiceUsersUpdate(t *testing.T) {
 }
 
 func defaultUpdateResponseHandler(w http.ResponseWriter, r *http.Request) {
+	var filename string
 	if r.Method == http.MethodGet {
-		filename := "../../pkg/serviceusers/fixtures/service-user-get.json"
-		f, err := os.Open(filename)
-		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
-		}
-		defer f.Close()
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		reader := bufio.NewReader(f)
-		content, err := io.ReadAll(reader)
-		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
-		}
-		fmt.Fprint(w, string(content))
-		return
+		filename = "../../pkg/serviceusers/fixtures/service-user-get.json"
 	}
 	if r.Method == http.MethodPut {
-		filename := "../../pkg/serviceusers/fixtures/service-user-update.json"
-		f, err := os.Open(filename)
-		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
-		}
-		defer f.Close()
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		reader := bufio.NewReader(f)
-		content, err := io.ReadAll(reader)
-		if err != nil {
-			panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
-		}
-		fmt.Fprint(w, string(content))
+		filename = "../../pkg/serviceusers/fixtures/service-user-update.json"
 	}
+	f, err := os.Open(filename)
+	if err != nil {
+		panic(fmt.Sprintf("Internal testing error: could not open %q", filename))
+	}
+	defer f.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	reader := bufio.NewReader(f)
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		panic(fmt.Sprintf("Internal testing error: could not read %q", filename))
+	}
+	fmt.Fprint(w, string(content))
 }
