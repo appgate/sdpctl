@@ -296,7 +296,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			logFields["ARGS"] = strings.Join(args, ",")
 		}
 		log.WithFields(logFields).Info()
-		fmt.Fprintf(os.Stdout, "sdpctl_version: %s\n", version)
 
 		if !cmdutil.IsTTY(os.Stdout) {
 			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
