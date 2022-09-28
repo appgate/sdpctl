@@ -246,12 +246,15 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if err := retryStatus(ctx, b.applianceID, b.backupID); err != nil {
 			return b, err
 		}
-		result, output, err := backupAPI.Result(ctx, b.applianceID, b.backupID)
-		if err != nil {
-			return b, err
-		}
-		if result != backup.Success {
-			return b, errors.New(output)
+		if opts.Config.Version >= 17 {
+			// Check for backup result and output implemented in API version 17
+			result, output, err := backupAPI.Result(ctx, b.applianceID, b.backupID)
+			if err != nil {
+				return b, err
+			}
+			if result != backup.Success {
+				return b, errors.New(output)
+			}
 		}
 		log.WithFields(f).Infof("starting download for backup id %s", b.backupID)
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
