@@ -17,7 +17,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -81,12 +80,11 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		// Try unmarshal json array first
 		dtoArray := ServiceUserArrayDTO{}
 		if err := json.Unmarshal(file, &dtoArray); err != nil {
-			logrus.WithError(err).Warn("failed to unmarshal json to array")
-		}
-		// if the file is a single user object, unmarshal that instead
-		singleDTO := ServiceUserDTO{}
-		if err := json.Unmarshal(file, &singleDTO); err == nil {
-			dtoArray = append(dtoArray, singleDTO)
+			// if the file is a single user object, unmarshal that instead
+			singleDTO := ServiceUserDTO{}
+			if err := json.Unmarshal(file, &singleDTO); err == nil {
+				dtoArray = append(dtoArray, singleDTO)
+			}
 		}
 		for i := 0; i < len(dtoArray); i++ {
 			u := openapi.ServiceUsersGetRequest{
@@ -169,7 +167,6 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			errs = multierror.Append(errs, err)
 			continue
 		}
-		fmt.Fprint(opts.Out, "New service user created:\n")
 		util.PrintJSON(opts.Out, created)
 	}
 	return errs.ErrorOrNil()

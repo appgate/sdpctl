@@ -107,7 +107,7 @@ var (
 			},
 			{
 				Description: "delete multiple service users by providing multiple id:s",
-				Command:     "sdpctl service-users delete <id1> id2>",
+				Command:     "sdpctl service-users delete <id1> <id2>",
 			},
 			{
 				Description: "delete service user(s) using prompt",

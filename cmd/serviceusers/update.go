@@ -34,7 +34,7 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("not enough arguments")
 			}
 			if !util.IsUUID(args[0]) {
-				return fmt.Errorf(InvalidUUIDError)
+				return fmt.Errorf("%s: %s", InvalidUUIDError, args[0])
 			}
 			return nil
 		},
@@ -171,6 +171,5 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		return err
 	}
 
-	fmt.Fprintf(opts.Out, "Updated service user %s:\n", updated.GetName())
 	return util.PrintJSON(opts.Out, updated)
 }
