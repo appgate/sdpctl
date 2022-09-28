@@ -92,13 +92,13 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 	return true
 }
 
-func CheckMinAPIVersionRestriction(cmd *cobra.Command, apiVersion int64) error {
+func CheckMinAPIVersionRestriction(cmd *cobra.Command, currentVersion int) error {
 	c := cmd
 	for c != nil {
 		if c.Annotations != nil {
 			if s, ok := c.Annotations["MinAPIVersion"]; ok {
-				if v, err := strconv.ParseInt(s, 10, 64); err == nil && apiVersion < v {
-					return fmt.Errorf("Minimum API version %d is required to use the '%s' command. Current API version is %d", v, c.Name(), apiVersion)
+				if minVersion, err := strconv.ParseInt(s, 10, 64); err == nil && int64(currentVersion) < minVersion {
+					return fmt.Errorf("Minimum API version %d is required to use the '%s' command. Current API version is %d", minVersion, c.Name(), currentVersion)
 				}
 			}
 		}

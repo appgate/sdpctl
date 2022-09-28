@@ -274,7 +274,7 @@ func TestClearCredentials(t *testing.T) {
 func TestCheckAPIVersionRestriction(t *testing.T) {
 	type args struct {
 		cmd        *cobra.Command
-		apiVersion int64
+		apiVersion int
 	}
 	tests := []struct {
 		name    string

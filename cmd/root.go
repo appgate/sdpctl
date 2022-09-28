@@ -348,7 +348,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 
 		// Check minimum API version requirement for command
-		if err := configuration.CheckMinAPIVersionRestriction(cmd, int64(cfg.Version)); err != nil {
+		if err := configuration.CheckMinAPIVersionRestriction(cmd, cfg.Version); err != nil {
 			return err
 		}
 		return nil
