@@ -114,6 +114,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 }
 
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
+	fmt.Fprintf(opts.Out, "sdpctl_version: %s\n\n", cmd.Root().Version)
 	terminal.Lock()
 	defer terminal.Unlock()
 	var err error
