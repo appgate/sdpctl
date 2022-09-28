@@ -26,9 +26,6 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 		Example: docs.ServiceUsersDelete.ExampleString(),
 		Aliases: []string{"remove", "rm", "del"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if opts.Config.Version <= 16 {
-				return fmt.Errorf("The service user interface is only available from API version 17 or higher. Currently using API version %d", opts.Config.Version)
-			}
 			var errs *multierror.Error
 			for _, arg := range args {
 				if !util.IsUUID(arg) {

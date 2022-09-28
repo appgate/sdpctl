@@ -32,12 +32,6 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 		Short:   docs.ServiceUsersCreate.Short,
 		Long:    docs.ServiceUsersCreate.Long,
 		Example: docs.ServiceUsersCreate.ExampleString(),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if opts.Config.Version <= 16 {
-				return fmt.Errorf("The service user interface is only available from API version 17 or higher. Currently using API version %d", opts.Config.Version)
-			}
-			return nil
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return serviceUserCreateRun(cmd, args, opts)
 		},

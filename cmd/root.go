@@ -346,6 +346,11 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			result = multierror.Append(result, ErrExitAuth)
 			return result
 		}
+
+		// Check minimum API version requirement for command
+		if err := configuration.CheckMinAPIVersionRestriction(cmd, int64(cfg.Version)); err != nil {
+			return err
+		}
 		return nil
 	}
 }

@@ -27,9 +27,6 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 		Example: docs.ServiceUsersUpdate.ExampleString(),
 		Aliases: []string{"edit", "set"},
 		Args: func(cmd *cobra.Command, args []string) error {
-			if opts.Config.Version <= 16 {
-				return fmt.Errorf("The service user interface is only available from API version 17 or higher. Currently using API version %d", opts.Config.Version)
-			}
 			if len(args) < 1 {
 				return fmt.Errorf("not enough arguments")
 			}

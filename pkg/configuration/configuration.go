@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -89,6 +90,25 @@ func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 		}
 	}
 	return true
+}
+
+func CheckMinAPIVersionRestriction(cmd *cobra.Command, apiVersion int64) error {
+	c := cmd
+	for c != nil {
+		if c.Annotations != nil {
+			if s, ok := c.Annotations["MinAPIVersion"]; ok {
+				v, err := strconv.ParseInt(s, 10, 64)
+				if err != nil {
+					return err
+				}
+				if apiVersion < v {
+					return fmt.Errorf("Minimum API version %d is required to use the '%s' command. Current API version is %d", v, c.Name(), apiVersion)
+				}
+			}
+		}
+		c = c.Parent()
+	}
+	return nil
 }
 
 func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {

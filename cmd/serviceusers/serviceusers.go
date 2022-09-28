@@ -29,7 +29,9 @@ type ServiceUserDTO struct {
 }
 type ServiceUserArrayDTO []ServiceUserDTO
 
-var InvalidUUIDError = "argument is not a valid UUID"
+var (
+	InvalidUUIDError = "argument is not a valid UUID"
+)
 
 func NewServiceUsersCMD(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
@@ -37,6 +39,9 @@ func NewServiceUsersCMD(f *factory.Factory) *cobra.Command {
 		Short:   docs.ServiceUsersRoot.Short,
 		Long:    docs.ServiceUsersRoot.Long,
 		Example: docs.ServiceUsersRoot.ExampleString(),
+		Annotations: map[string]string{
+			"MinAPIVersion": "17",
+		},
 		Aliases: []string{"service-user", "su"},
 	}
 
