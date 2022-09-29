@@ -162,6 +162,7 @@ func checkImageFilename(i string) error {
 }
 
 func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
+	fmt.Fprintf(opts.Out, "sdpctl_version: %s\n\n", cmd.Root().Version)
 	terminal.Lock()
 	defer terminal.Unlock()
 	if appliancepkg.IsOnAppliance() {
