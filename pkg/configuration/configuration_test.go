@@ -10,6 +10,8 @@ import (
 
 func TestConfigCheckAuth(t *testing.T) {
 	zkeyring.MockInit()
+	dir := t.TempDir()
+	t.Setenv("SDPCTL_CONFIG_DIR", dir)
 	if err := keyring.SetBearer("controller.appgate.com", "abc123456789"); err != nil {
 		t.Fatalf("unable to mock keyring in TestConfigCheckAuth() %v", err)
 	}
@@ -235,6 +237,8 @@ func TestNormalizeURL(t *testing.T) {
 
 func TestClearCredentials(t *testing.T) {
 	zkeyring.MockInit()
+	dir := t.TempDir()
+	t.Setenv("SDPCTL_CONFIG_DIR", dir)
 	var (
 		prefix   = "test-unit.devops"
 		username = "user"
