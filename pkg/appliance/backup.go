@@ -223,7 +223,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			log.WithFields(log.Fields{
 				"appliance": applianceID,
 				"backup_id": backupID,
-				"status":    status,
+				"status":    status.GetStatus(),
 			}).Info("backup status")
 
 			if status.GetStatus() != backup.Done {
