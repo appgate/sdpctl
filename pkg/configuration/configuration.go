@@ -144,12 +144,12 @@ func (c *Config) CheckAuth() bool {
 
 func (c *Config) ExpiredAtValid() bool {
 	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
-	d, err := time.Parse(layout, c.ExpiresAt)
+	t1, err := time.Parse(layout, c.ExpiresAt)
 	if err != nil {
 		return false
 	}
-	t1 := time.Now()
-	return t1.Add(-time.Hour * 2).Before(d)
+	now := time.Now().Add(-time.Hour * 2)
+	return t1.After(now)
 }
 
 func (c *Config) LoadCredentials() (*Credentials, error) {
