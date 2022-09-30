@@ -698,7 +698,7 @@ func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []a
 					v = version.String()
 				}
 				online := tui.No
-				if stat.GetOnline() {
+				if appliancepkg.StatsIsOnline(stat) {
 					online = tui.Yes
 				}
 				at.AddLine(a.GetName(), online, v, prepareVersion.String())

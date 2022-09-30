@@ -615,7 +615,7 @@ var StatusNotBusy = []string{
 func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	// from appliance 6.0, 'online' field has been removed in favour for status
 	// we will keep GetOnline() for backwards compatibility.
-	if s.GetOnline() {
+	if s.Online != nil && s.GetOnline() {
 		return true
 	}
 	if util.InSlice(s.GetStatus(), []string{statusNotAvailable, statusOffline}) {
