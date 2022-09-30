@@ -327,7 +327,9 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 					viper.Set("api_version", minMax.Max)
 					f.Config.Version = int(minMax.Max)
 					if err := viper.WriteConfig(); err != nil {
-						fmt.Fprintf(f.StdErr, "[error] %s\n", err)
+						if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+							fmt.Fprintf(f.StdErr, "[error] %s\n", err)
+						}
 					}
 				}
 			}
