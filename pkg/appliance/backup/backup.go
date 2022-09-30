@@ -59,18 +59,10 @@ const (
 	Failure    string = "failure"
 )
 
-func (b *Backup) Status(ctx context.Context, applianceID, backupID string) (string, error) {
+func (b *Backup) Status(ctx context.Context, applianceID, backupID string) (*openapi.AppliancesIdBackupBackupIdStatusGet200Response, error) {
 	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, applianceID, backupID).Authorization(b.Token).Execute()
 	if err != nil {
-		return "", api.HTTPErrorResponse(response, err)
+		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return status.GetStatus(), nil
-}
-
-func (b *Backup) Result(ctx context.Context, applianceID, backupID string) (string, string, error) {
-	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, applianceID, backupID).Authorization(b.Token).Execute()
-	if err != nil {
-		return "", "", api.HTTPErrorResponse(response, err)
-	}
-	return status.GetResult(), status.GetOutput(), nil
+	return status, nil
 }

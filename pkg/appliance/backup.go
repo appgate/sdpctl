@@ -226,8 +226,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				"status":    status,
 			}).Info("backup status")
 
-			if status != backup.Done {
-				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status)
+			if status.GetStatus() != backup.Done {
+				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status.GetStatus())
+			}
+			if _, ok := status.GetResultOk(); ok && status.GetResult() != backup.Success {
+				return backoff.Permanent(fmt.Errorf(": %s", status.GetOutput()))
 			}
 			return nil
 		}, bo)
@@ -245,16 +248,6 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		log.WithFields(f).Info("Initiated backup")
 		if err := retryStatus(ctx, b.applianceID, b.backupID); err != nil {
 			return b, err
-		}
-		if opts.Config.Version >= 17 {
-			// Check for backup result and output implemented in API version 17
-			result, output, err := backupAPI.Result(ctx, b.applianceID, b.backupID)
-			if err != nil {
-				return b, err
-			}
-			if result != backup.Success {
-				return b, errors.New(output)
-			}
 		}
 		log.WithFields(f).Infof("starting download for backup id %s", b.backupID)
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
