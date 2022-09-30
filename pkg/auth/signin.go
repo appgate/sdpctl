@@ -186,7 +186,7 @@ func Signin(f *factory.Factory) error {
 	// use the original auth request expires_at value instead of the value from authorization since they can be different
 	// depending on the provider type.
 	cfg.ExpiresAt = response.Expires.String()
-	host, err := cfg.GetHost()
+	prefix, err := cfg.KeyringPrefix()
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func Signin(f *factory.Factory) error {
 	// if the bearer token can't be saved to the keychain, it will be exported as env variable
 	// and saved in the config file as fallback, this should only happened if the system does not
 	// support the keychain integration.
-	if err := keyring.SetBearer(host, cfg.BearerToken); err != nil {
+	if err := keyring.SetBearer(prefix, cfg.BearerToken); err != nil {
 		return err
 	}
 
