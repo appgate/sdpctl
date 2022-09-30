@@ -149,7 +149,6 @@ The help command will print the help page for any command that follows.
 |---|---|---|
 | `--api-version` | none | peer API version override |
 | `--debug` | none | Enable debug output and logging |
-| `--no-verify` | none | Don't verify TLS on for this particular command, overriding settings from config file. USE WITH CAUTION! |
 
 # Support
 
