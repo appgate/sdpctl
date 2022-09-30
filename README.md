@@ -66,12 +66,18 @@ $ sdpctl completion --help
 ## Initial setup
 To start using `sdpctl`, you'll need to authenticate with your Appgate SDP Collective. The authentication process has two steps; first configure `sdpctl` and then authenticate by signing in to the Collective configured in the first step.
 
+In case the Appgate SDP Collective you want to connect to has an unsigned certificate, you can use the `--pem` flag with a path to the certificate PEM when configuring.
+
 See the [configuration documentation](./docs/configure.md) for a more detailed description on how to use the `configure` command.
 
 Example:
 ```bash
 # Initial configuration
 $ sdpctl configure
+? Enter the url for the controller API (example https://appgate.controller.com/admin)
+
+# Configure using an unsigned certificate
+$ sdpctl configure --pem=<path to PEM>
 ? Enter the url for the controller API (example https://appgate.controller.com/admin)
 
 # Sign in
