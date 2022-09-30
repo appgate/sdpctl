@@ -213,9 +213,16 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	retryStatus := func(ctx context.Context, applianceID, backupID string, tracker *tui.Tracker) error {
 		bo := backoff.NewExponentialBackOff()
 		bo.MaxElapsedTime = 0
+		networkErrors := 0
 		return backoff.Retry(func() error {
 			status, err := backupAPI.Status(ctx, applianceID, backupID)
 			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					networkErrors++
+					if networkErrors >= 5 {
+						return backoff.Permanent(err)
+					}
+				}
 				return err
 			}
 			log.WithFields(log.Fields{
