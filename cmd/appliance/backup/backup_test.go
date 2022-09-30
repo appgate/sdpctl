@@ -95,6 +95,77 @@ func TestBackupCmd(t *testing.T) {
 	}
 }
 
+func TestBackupCmdFailedOnServer(t *testing.T) {
+	applianceUUID := "4c07bc67-57ea-42dd-b702-c2d6c45419fc"
+	backupUUID := "fd5ea380-496b-41eb-8bc8-2c84eb36b605"
+	registry := httpmock.NewRegistry(t)
+
+	// Appliance list route
+	registry.Register(
+		"/appliances",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+	)
+	// Appliance stats route
+	registry.Register(
+		"/stats/appliances",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+	)
+	// Backup state
+	registry.Register(
+		"/global-settings",
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_global_options.json"),
+	)
+	// Initiate backup request
+	registry.Register(
+		fmt.Sprintf("/appliances/%s/backup", applianceUUID),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_initiated.json"),
+	)
+	// Backup is done
+	registry.Register(
+		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
+		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_status_failed.json"),
+	)
+	defer registry.Teardown()
+	registry.Serve()
+
+	buf := new(bytes.Buffer)
+	f := &factory.Factory{
+		Config: &configuration.Config{
+			Debug: false,
+			URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
+		},
+		IOOutWriter: buf,
+	}
+	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
+		return registry.Client, nil
+	}
+	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
+		api, _ := f.APIClient(c)
+
+		a := &appliance.Appliance{
+			APIClient:  api,
+			HTTPClient: api.GetConfig().HTTPClient,
+			Token:      "",
+		}
+		return a, nil
+	}
+
+	cmd := NewCmdBackup(f)
+	cmd.Flags().Bool("no-interactive", false, "usage")
+	cmd.Flags().Bool("ci-mode", false, "ci-mode")
+	cmd.SetArgs([]string{"--destination=/tmp/appgate-testing", "--primary", "--no-interactive"})
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+
+	_, err := cmd.ExecuteC()
+	if err == nil {
+		reg := regexp.MustCompile(`could not backup controller: something went wrong`)
+		if res := reg.MatchString(err.Error()); !res {
+			t.Fatalf("result matching failed. WANT: %+v, GOT: %+v", reg.String(), string(err.Error()))
+		}
+	}
+}
+
 func TestBackupCmdDisabledAPI(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	// Backup state
