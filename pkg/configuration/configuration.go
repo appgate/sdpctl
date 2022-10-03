@@ -178,7 +178,8 @@ func (c *Config) ClearCredentials() error {
 	}
 	c.BearerToken = ""
 	c.ExpiresAt = ""
-	keys := []string{"bearer", "expires_at"}
+	c.Provider = ""
+	keys := []string{"bearer", "expires_at", "provider"}
 	allKeys := viper.AllKeys()
 	for _, k := range keys {
 		if util.InSlice(k, allKeys) {
