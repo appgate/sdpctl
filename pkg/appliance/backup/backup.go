@@ -55,12 +55,14 @@ const (
 	// https://github.com/appgate/sdp-api-specification/blob/0cae2de511a135ca1c29beb89fe9d38e83ffc4f1/appliance_backup.yml#L87-L88
 	Processing string = "processing"
 	Done       string = "done"
+	Success    string = "success"
+	Failure    string = "failure"
 )
 
-func (b *Backup) Status(ctx context.Context, applianceID, backupID string) (string, error) {
+func (b *Backup) Status(ctx context.Context, applianceID, backupID string) (*openapi.AppliancesIdBackupBackupIdStatusGet200Response, error) {
 	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, applianceID, backupID).Authorization(b.Token).Execute()
 	if err != nil {
-		return "", api.HTTPErrorResponse(response, err)
+		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return status.GetStatus(), nil
+	return status, nil
 }
