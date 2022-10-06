@@ -11,6 +11,25 @@ Over time we will add more features to sdpctl so please be sure to always use th
 
 # Installation
 
+## Signature verification
+Before installion make sure the verify the signature of the downloaded binaries.
+Releases are signed using a GPG key, the [public key with key id 6F8421F574035654BAF6E51E5635CFCADCF8A718](https://bin.appgate-sdp.com/appgate-inc.pub).
+
+To import and trust the key:
+```bash
+wget https://bin.appgate-sdp.com/appgate-inc.pub
+gpg --import appgate-inc.pub
+gpg --edit-key 6F8421F574035654BAF6E51E5635CFCADCF8A718
+gpg> trust
+gpg> 5
+gpg> quit
+```
+
+On Linux you can verify the checksums signature as well as the checksums of the binaries using the following command:
+```bash
+gpg --output - --verify checksums.txt.asc | sha256sum --check --ignore-missing
+```
+
 ## macOS
 Download the latest [macOS build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using the command line:
 ```bash
