@@ -13,7 +13,7 @@ Over time we will add more features to sdpctl so please be sure to always use th
 
 ## Signature verification
 Before installion make sure the verify the signature of the downloaded binaries.
-Releases are signed using a GPG key, the [public key with key id 6F8421F574035654BAF6E51E5635CFCADCF8A718](https://bin.appgate-sdp.com/appgate-inc.pub).
+Releases are signed using a GPG key, the [public key](https://bin.appgate-sdp.com/appgate-inc.pub) with key id `6F8421F574035654BAF6E51E5635CFCADCF8A718`.
 
 To import and trust the key:
 ```bash
