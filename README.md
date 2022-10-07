@@ -1,7 +1,10 @@
 <p align="center">
-  <img src="./appgate.svg" width="400">
+	<img src="./appgate.svg" width="200">
 </p>
 
+# Quick Start
+
+Recommended starting point for admins is the [Quick Start Guide](https://appgate.github.io/sdpctl).
 
 # Introduction
 
