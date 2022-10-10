@@ -1,58 +1,93 @@
-env:
-  - RELEASE_VERSION={{ if index .Env "SDPCTL_VERSION" }}{{ .Env.SDPCTL_VERSION }}{{ else }}dev{{ end }}
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+project_name: sdpctl
 before:
   hooks:
-    - make deps
+  - make clean
+  - make deps
+snapshot:
+  name_template: "{{ incpatch .Version }}"
+changelog:
+  use: github-native
 github_urls:
   download: https://github.com/appgate/sdpctl/releases
+
 builds:
-  - id: sdpctl
-    main: ./main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - windows
-    goarch:
-      - amd64
-      - arm64
-    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
-    ldflags:
-      - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
-      - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
-      - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
-  - id: sdpctl-darwin
-    main: ./main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
+
+  - <<: &build_defaults
+      binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
+      main: ./main.go
+      ldflags:
+        - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .Tag }}{{ .Tag }}{{ else }}dev{{ end }}"
+        - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
+        - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+    id: macos
+    goos: [darwin]
+    goarch: [arm64, amd64]
     env:
       - CGO_ENABLED=1
-      - CC=oa64-clang
-      - CXX=oa64-clang++
-    goos:
-      - darwin
-    goarch:
-      - arm64
-      - amd64
-    binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
-    ldflags:
-      - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ .Env.RELEASE_VERSION }}"
-      - -X "github.com/appgate/sdpctl/cmd.commit={{ .Commit }}"
-      - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+    hooks:
+      post:
+        - "{{ .Env.HOOK_PATH }}/sign-macos.sh '{{ .Path }}'"
+
+  - <<: *build_defaults
+    id: linux
+    goos: [linux]
+    goarch: [amd64, arm64]
+    env:
+      - CGO_ENABLED=0
+
+  - <<: *build_defaults
+    id: windows
+    goos: [windows]
+    goarch: [amd64]
+    env:
+      - CGO_ENABLED=0
+    hooks:
+      post:
+        - "{{ .Env.HOOK_PATH }}/sign-windows.sh '{{ .Path }}'"
+
+
 universal_binaries:
   - replace: false
-    id: sdpctl-darwin
+    id: macos
 archives:
   - format_overrides:
       - goos: windows
         format: zip
 checksum:
   name_template: "checksums.txt"
-release:
-  draft: true
-  prerelease: auto
+
+
 # signs:
-#   - artifacts: checksum
+#   # TODO add binaries here too, not only checksum
+#   # https://goreleaser.com/ci/actions/?h=sign#signing
+#   - id: macos_binary_sign
+#     artifacts: "{{ if .IsSnapshot }}none{{ else }}binary{{ end }}"
+#     ids:
+#       - macos
+#     cmd: "{{ .Env.HOOK_PATH }}/sign-macos.sh"
+#     args:
+#       - "{{ .Path }}"
+#   - id: windows_binary_sign
+#     artifacts: "{{ if .IsSnapshot }}none{{ else }}binary{{ end }}"
+#     ids:
+#       - windows
+#     cmd: "{{ .Env.HOOK_PATH }}/sign-windows.sh"
+#     args:
+#       - "{{ .Path }}"
+#   - id: linux_binary_sign
+#     artifacts: "{{ if .IsSnapshot }}none{{ else }}binary{{ end }}"
+#     ids:
+#       - linux
+#     args:
+#       - "--batch"
+#       - "--local-user"
+#       - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
+#       - "--output"
+#       - "${signature}"
+#       - "--detach-sign"
+#       - "${artifact}"
+
 nfpms:
   - homepage: https://www.appgate.com
     maintainer: Appgate Cybersecurity Inc <appgatesdp.support@appgate.com>
@@ -87,7 +122,3 @@ nfpms:
         - groff-message
     rpm:
       compression: gzip
-snapshot:
-  name_template: "{{ incpatch .Version }}"
-changelog:
-  use: github-native
