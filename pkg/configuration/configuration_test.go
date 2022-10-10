@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
+	"github.com/spf13/cobra"
 	zkeyring "github.com/zalando/go-keyring"
 )
 
@@ -267,5 +268,50 @@ func TestClearCredentials(t *testing.T) {
 	}
 	if _, err := keyring.GetBearer(prefix); err == nil {
 		t.Error("TEST FAIL: failed to remove bearer")
+	}
+}
+
+func TestCheckAPIVersionRestriction(t *testing.T) {
+	type args struct {
+		cmd        *cobra.Command
+		apiVersion int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "version is ok",
+			args: args{
+				cmd: &cobra.Command{
+					Use: "testCommand",
+					Annotations: map[string]string{
+						"MinAPIVersion": "17",
+					},
+				},
+				apiVersion: 17,
+			},
+		},
+		{
+			name: "version too low",
+			args: args{
+				cmd: &cobra.Command{
+					Use: "testCommand",
+					Annotations: map[string]string{
+						"MinAPIVersion": "17",
+					},
+				},
+				apiVersion: 16,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CheckMinAPIVersionRestriction(tt.args.cmd, tt.args.apiVersion); (err != nil) != tt.wantErr {
+				t.Errorf("CheckAPIVersionRestriction() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

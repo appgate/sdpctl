@@ -20,6 +20,7 @@ import (
 
 	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
 	cfgcmd "github.com/appgate/sdpctl/cmd/configure"
+	"github.com/appgate/sdpctl/cmd/serviceusers"
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -141,6 +142,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	rootCmd.AddCommand(NewOpenCmd(f))
 	rootCmd.AddCommand(cmdprofile.NewProfileCmd(f))
 	rootCmd.AddCommand(generateCmd)
+	rootCmd.AddCommand(serviceusers.NewServiceUsersCMD(f))
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
@@ -345,6 +347,11 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			result = multierror.Append(result, errors.New("To authenticate, please run `sdpctl configure signin`."))
 			result = multierror.Append(result, ErrExitAuth)
 			return result
+		}
+
+		// Check minimum API version requirement for command
+		if err := configuration.CheckMinAPIVersionRestriction(cmd, cfg.Version); err != nil {
+			return err
 		}
 		return nil
 	}

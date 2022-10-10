@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/serviceusers"
 	"github.com/appgate/sdpctl/pkg/token"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -21,24 +22,26 @@ import (
 )
 
 type Factory struct {
-	HTTPClient  func() (*http.Client, error)
-	APIClient   func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance   func(c *configuration.Config) (*appliance.Appliance, error)
-	Token       func(c *configuration.Config) (*token.Token, error)
-	Config      *configuration.Config
-	IOOutWriter io.Writer
-	Stdin       io.ReadCloser
-	StdErr      io.Writer
-	SpinnerOut  io.Writer
+	HTTPClient   func() (*http.Client, error)
+	APIClient    func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance    func(c *configuration.Config) (*appliance.Appliance, error)
+	Token        func(c *configuration.Config) (*token.Token, error)
+	ServiceUsers func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
+	Config       *configuration.Config
+	IOOutWriter  io.Writer
+	Stdin        io.ReadCloser
+	StdErr       io.Writer
+	SpinnerOut   io.Writer
 }
 
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
 	f.Config = config
-	f.HTTPClient = httpClientFunc(f)           // depends on config
-	f.APIClient = apiClientFunc(f, appVersion) // depends on config
-	f.Appliance = applianceFunc(f, appVersion) // depends on config
-	f.Token = tokenFunc(f, appVersion)         // depends on config
+	f.HTTPClient = httpClientFunc(f)                 // depends on config
+	f.APIClient = apiClientFunc(f, appVersion)       // depends on config
+	f.Appliance = applianceFunc(f, appVersion)       // depends on config
+	f.Token = tokenFunc(f, appVersion)               // depends on config
+	f.ServiceUsers = serviceUsersFunc(f, appVersion) // depends on config
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
 	f.StdErr = os.Stderr
@@ -183,5 +186,19 @@ func tokenFunc(f *Factory, appVersion string) func(c *configuration.Config) (*to
 			Token:      bearerToken,
 		}
 		return t, nil
+	}
+}
+
+func serviceUsersFunc(f *Factory, appVersion string) func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error) {
+	return func(cfg *configuration.Config) (*serviceusers.ServiceUsersAPI, error) {
+		_, apiClient, err := getClients(f, appVersion, cfg)
+		if err != nil {
+			return nil, err
+		}
+		bearerToken, err := cfg.GetBearTokenHeaderValue()
+		if err != nil {
+			return nil, err
+		}
+		return serviceusers.NewServiceUsersAPI(apiClient.ServiceUsersApi, bearerToken), nil
 	}
 }
