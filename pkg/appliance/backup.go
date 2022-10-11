@@ -27,7 +27,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	mpb "github.com/vbauerster/mpb/v7"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -203,16 +202,15 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		backups      = make(chan backedUp, count)
 		errorChannel = make(chan error, count)
 		backupAPI    = backup.New(app.APIClient, app.Token, opts.Config.Version)
-		progressBars *mpb.Progress
+		progressBars *tui.Progress
 	)
 
-	if !opts.CiMode {
-		progressBars = mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut), mpb.WithWaitGroup(&wg))
-		defer progressBars.Wait()
-	}
+	progressBars = tui.New(ctx, spinnerOut)
+	defer progressBars.Wait()
+
 	wg.Add(count)
 
-	retryStatus := func(ctx context.Context, applianceID, backupID string) error {
+	retryStatus := func(ctx context.Context, applianceID, backupID string, tracker *tui.Tracker) error {
 		bo := backoff.NewExponentialBackOff()
 		bo.MaxElapsedTime = 0
 		return backoff.Retry(func() error {
@@ -224,19 +222,24 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				"appliance": applianceID,
 				"backup_id": backupID,
 				"status":    status.GetStatus(),
+				"message":   status.GetMessage(),
 			}).Info("backup status")
-
+			message := status.GetStatus()
+			if len(status.GetMessage()) > 0 {
+				message = message + " " + status.GetMessage()
+			}
+			tracker.Update(message)
 			if status.GetStatus() != backup.Done {
 				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status.GetStatus())
 			}
 			if _, ok := status.GetResultOk(); ok && status.GetResult() != backup.Success {
-				return backoff.Permanent(fmt.Errorf(": %s", status.GetOutput()))
+				return backoff.Permanent(fmt.Errorf("%s %s", status.GetResult(), status.GetOutput()))
 			}
 			return nil
 		}, bo)
 	}
 
-	b := func(appliance openapi.Appliance) (backedUp, error) {
+	b := func(appliance openapi.Appliance, tracker *tui.Tracker) (backedUp, error) {
 		b := backedUp{applianceID: appliance.GetId()}
 		f := log.Fields{
 			"appliance": b.applianceID,
@@ -246,10 +249,12 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			return b, err
 		}
 		log.WithFields(f).Info("Initiated backup")
-		if err := retryStatus(ctx, b.applianceID, b.backupID); err != nil {
+		tracker.Update("Initiated backup")
+		if err := retryStatus(ctx, b.applianceID, b.backupID, tracker); err != nil {
 			return b, err
 		}
 		log.WithFields(f).Infof("starting download for backup id %s", b.backupID)
+		tracker.Update("downloading")
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		if err != nil {
 			return b, err
@@ -268,29 +273,22 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if err := os.Remove(file.Name()); err != nil {
 			return b, err
 		}
+		tracker.Update("download complete")
 		return b, nil
 	}
 
 	for _, a := range toBackup {
-		go func(appliance openapi.Appliance) {
+		t := progressBars.AddTracker(a.GetName(), "download complete")
+		go t.Watch([]string{"download complete"}, []string{backup.Failure})
+		go func(appliance openapi.Appliance, tracker *tui.Tracker) {
 			defer wg.Done()
-			var bar *mpb.Bar
-			if !opts.CiMode {
-				bar = tui.AddDefaultSpinner(progressBars, appliance.GetName(), backup.Processing, backup.Done)
-			}
-			backedUp, err := b(appliance)
+			backedUp, err := b(appliance, t)
 			if err != nil {
-				if !opts.CiMode {
-					bar.Abort(false)
-				}
 				errorChannel <- fmt.Errorf("could not backup %s %s", appliance.GetName(), err)
 				return
 			}
-			if !opts.CiMode {
-				bar.Increment()
-			}
 			backups <- backedUp
-		}(a)
+		}(a, t)
 	}
 
 	go func() {
