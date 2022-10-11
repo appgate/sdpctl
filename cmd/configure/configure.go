@@ -2,12 +2,14 @@ package configure
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -18,12 +20,16 @@ import (
 type configureOptions struct {
 	Config *configuration.Config
 	PEM    string
+	Out    io.Writer
+	StdErr io.Writer
 }
 
 // NewCmdConfigure return a new Configure command
 func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 	opts := configureOptions{
 		Config: f.Config,
+		Out:    f.IOOutWriter,
+		StdErr: f.StdErr,
 	}
 	cmd := &cobra.Command{
 		Use: "configure",
@@ -70,6 +76,15 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	viper.Set("url", u)
 	opts.Config.URL = u
 	viper.Set("device_id", configuration.DefaultDeviceID())
+
+	h, err := opts.Config.GetHost()
+	if err != nil {
+		return fmt.Errorf("could not determine hostname for %s %s", URL, err)
+	}
+	if err := network.ValidateHostnameUniqueness(h); err != nil {
+		fmt.Fprintln(opts.StdErr, err.Error())
+	}
+
 	if err := viper.WriteConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// if its a new collective config, and the directory is empty
@@ -84,6 +99,6 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		log.Warnf("ran configure command, unable to clear credentials %s", err)
 	}
 	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
-	fmt.Println("Configuration updated successfully")
+	fmt.Fprintln(opts.Out, "Configuration updated successfully")
 	return nil
 }
