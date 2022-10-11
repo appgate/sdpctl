@@ -37,15 +37,20 @@ func (t *Tracker) Watch(until, failOn []string) {
 		}
 	}()
 
-	var msg string
-	var ok bool
+	var (
+		msg string
+		ok  bool
+	)
 	for {
 		msg, ok = <-t.statusReport
 		if !ok {
 			t.abort(false)
 			break
 		}
+		t.mu.Lock()
+		msg = strings.TrimSpace(msg)
 		t.current = msg
+		t.mu.Unlock()
 		if util.InSlice(msg, until) {
 			t.current = t.endMsg
 			t.success = true
@@ -61,7 +66,9 @@ func (t *Tracker) Watch(until, failOn []string) {
 				firstLine := strings.Split(reason, "\n")[0]
 				re := regexp.MustCompile(`[^\w]$`)
 				show := re.ReplaceAllString(firstLine, "")
+				t.mu.Lock()
 				t.current = show
+				t.mu.Unlock()
 			}
 			t.complete()
 			break
