@@ -38,6 +38,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(NewLogsCmd(f))
 	cmd.AddCommand(files.NewFilesCmd(f))
 	cmd.AddCommand(maintenance.NewMaintenanceCmd(f))
+	cmd.AddCommand(NewSeedCmd(f))
 
 	return cmd
 }
