@@ -23,6 +23,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/terminal"
@@ -138,6 +139,13 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			return errs
 		},
 		RunE: func(c *cobra.Command, args []string) error {
+			h, err := opts.Config.GetHost()
+			if err != nil {
+				return fmt.Errorf("could not determine hostname for %s", err)
+			}
+			if err := network.ValidateHostnameUniqueness(h); err != nil {
+				return err
+			}
 			return prepareRun(c, args, opts)
 		},
 	}
