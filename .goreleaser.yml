@@ -57,37 +57,6 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-
-# signs:
-#   # TODO add binaries here too, not only checksum
-#   # https://goreleaser.com/ci/actions/?h=sign#signing
-#   - id: macos_binary_sign
-#     artifacts: "{{ if .IsSnapshot }}none{{ else }}binary{{ end }}"
-#     ids:
-#       - macos
-#     cmd: "{{ .Env.HOOK_PATH }}/sign-macos.sh"
-#     args:
-#       - "{{ .Path }}"
-#   - id: windows_binary_sign
-#     artifacts: "{{ if .IsSnapshot }}none{{ else }}binary{{ end }}"
-#     ids:
-#       - windows
-#     cmd: "{{ .Env.HOOK_PATH }}/sign-windows.sh"
-#     args:
-#       - "{{ .Path }}"
-#   - id: linux_binary_sign
-#     artifacts: "{{ if .IsSnapshot }}none{{ else }}binary{{ end }}"
-#     ids:
-#       - linux
-#     args:
-#       - "--batch"
-#       - "--local-user"
-#       - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
-#       - "--output"
-#       - "${signature}"
-#       - "--detach-sign"
-#       - "${artifact}"
-
 nfpms:
   - homepage: https://www.appgate.com
     maintainer: Appgate Cybersecurity Inc <appgatesdp.support@appgate.com>
