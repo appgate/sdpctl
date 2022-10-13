@@ -23,6 +23,10 @@ func (s *QuestionStub) AnswerWith(v interface{}) *QuestionStub {
 	s.Value = v
 	return s
 }
+func (s *QuestionStub) AnswerDefault() *QuestionStub {
+	s.Default = true
+	return s
+}
 
 type PromptStub struct {
 	Value   interface{}
