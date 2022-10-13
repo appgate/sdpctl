@@ -110,7 +110,9 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				opts.format = seedformat(selectedFormat)
-
+				if opts.format == isoFormat {
+					opts.iso = true
+				}
 				methods := []string{
 					cloud:      "Use SSH key provided by the cloud instance",
 					publicKey:  "Use SSH public key",
