@@ -226,7 +226,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			}).Info("backup status")
 			message := status.GetStatus()
 			if len(status.GetMessage()) > 0 {
-				message = message + " " + status.GetMessage()
+				message = message + " - " + status.GetMessage()
 			}
 			tracker.Update(message)
 			if status.GetStatus() != backup.Done {
