@@ -300,4 +300,48 @@ NOTE: Although the '--include' and '--exclude' flags are provided as options her
 			},
 		},
 	}
+
+	ApplianceSeedDocs = CommandDoc{
+		Short: "Export seed for an inactive Appliance",
+		Long: `Generate a seed file in JSON (or iso format)
+
+--validity-days
+    Seed Lifetime
+    Seeds contain temporary keys which allow access to the Controllers. The seed lifetime should therefore be kept to a minimum.
+
+--allow-customization
+    Allow appliance customizations
+    Appliance customizations are disabled by default. These can be enabled later using a cz-config command if required.
+
+SSH Authentication Method:
+    --provide-cloud-ssh-key
+    Use SSH key provided by the cloud instance
+    With Cloud based appliances, you should specify a key when launching the instance.
+
+    --ssh-key
+    Use SSH public key
+    Begins with ssh-rsa, ssh-dss, ssh-ed25519, ecdsa-sha2-nistp256, ecdsa-sha2-nistp384 or ecdsa-sha2-nistp521.
+
+    Use password
+    Use a password instead of an SSH key pair. Use a strong password as this gives root access to the appliance.
+    The password should be provided through stdin
+
+
+for More information, see: https://sdphelp.appgate.com/adminguide/new-appliance.html
+        `,
+		Examples: []ExampleDoc{
+			{
+				Description: "export seed file in JSON format with cloud authentication",
+				Command:     "sdpctl appliance export-seed 08cd20c0-f175-4503-96f7-c5b429c19236 --provide-cloud-ssh-key",
+			},
+			{
+				Description: "export seed file in iso format with passphrase",
+				Command:     `echo "YourSuperSecretPassword" | sdpctl appliance export-seed 08cd20c0-f175-4503-96f7-c5b429c19236 --iso-format`,
+			},
+			{
+				Description: "Interactive prompt to configure the seed file",
+				Command:     "sdpctl appliance export-seed",
+			},
+		},
+	}
 )

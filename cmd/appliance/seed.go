@@ -14,6 +14,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -66,9 +67,9 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 	}
 	var cmd = &cobra.Command{
 		Use:     "export-seed",
-		Short:   "",
-		Long:    "",
-		Example: "",
+		Short:   docs.ApplianceSeedDocs.Short,
+		Long:    docs.ApplianceSeedDocs.Long,
+		Example: docs.ApplianceSeedDocs.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			noInteractive, err := cmd.Flags().GetBool("no-interactive")
 			if err != nil {
