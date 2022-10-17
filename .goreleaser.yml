@@ -7,7 +7,7 @@ before:
 snapshot:
   name_template: "{{ incpatch .Version }}"
 changelog:
-  use: github-native
+  skip: true
 github_urls:
   download: https://github.com/appgate/sdpctl/releases
 
