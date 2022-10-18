@@ -212,7 +212,7 @@ func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 	return nil
 }
 
-func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devKeyring bool) error {
+func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devKeyring bool) (string, error) {
 	u := openapi.ApplianceUpgrade{
 		ImageUrl: filename,
 	}
@@ -221,17 +221,18 @@ func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devK
 		// will prevent errors with older api-version that don't support dev-keyring
 		u.DevKeyring = openapi.PtrBool(devKeyring)
 	}
-	_, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
+	change, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
 	if err != nil {
 		if r == nil {
-			return fmt.Errorf("No response during prepare %w", err)
+			return "", fmt.Errorf("No response during prepare %w", err)
 		}
 		if r.StatusCode == http.StatusConflict {
-			return fmt.Errorf("Upgrade in progress on %s %w", id, err)
+			return "", fmt.Errorf("Upgrade in progress on %s %w", id, err)
 		}
-		return api.HTTPErrorResponse(r, err)
+		return "", api.HTTPErrorResponse(r, err)
 	}
-	return nil
+
+	return change.GetId(), nil
 }
 
 func (a *Appliance) UpdateAppliance(ctx context.Context, id string, appliance openapi.Appliance) error {
