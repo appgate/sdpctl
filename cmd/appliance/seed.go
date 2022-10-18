@@ -93,7 +93,8 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 				}
 				applianceID, err := appliancepkg.PromptSelectAll(ctx, a, filter)
 				if err != nil {
-					return err
+					// no inactive appliance found
+					return nil
 				}
 				opts.applianceID = applianceID
 				format := []string{
@@ -176,6 +177,10 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 }
 
 func seedRun(cmd *cobra.Command, args []string, opts *seedOpts) error {
+	if len(opts.applianceID) == 0 {
+		fmt.Fprintln(opts.Out, "no inactive appliance found")
+		return nil
+	}
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
