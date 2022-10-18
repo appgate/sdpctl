@@ -608,8 +608,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						queueContinue <- queueStruct{err: err}
 						return err
 					}
+					unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				}
-				unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {
 					queueContinue <- queueStruct{err: err}
 					return err
