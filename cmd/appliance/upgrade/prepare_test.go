@@ -116,6 +116,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					},
 				},
 				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
 					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
@@ -180,6 +196,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 							rw.WriteHeader(http.StatusOK)
 							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
 						}
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
 					},
 				},
 				{
@@ -256,6 +288,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					},
 				},
 				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
 					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
@@ -322,6 +370,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 							rw.WriteHeader(http.StatusOK)
 							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
 						}
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
 					},
 				},
 				{
@@ -466,6 +530,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					},
 				},
 				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
 					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
@@ -500,8 +580,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			in := io.NopCloser(stdin)
 			f := &factory.Factory{
 				Config: &configuration.Config{
-					Debug: false,
-					URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
+					Debug:   false,
+					URL:     fmt.Sprintf("http://appgate.com:%d", registry.Port),
+					Version: 16,
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,
