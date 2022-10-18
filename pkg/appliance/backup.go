@@ -225,6 +225,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				}
 				return err
 			}
+			networkErrors = 0
 			log.WithFields(log.Fields{
 				"appliance": applianceID,
 				"backup_id": backupID,
