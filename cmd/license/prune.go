@@ -6,13 +6,17 @@ import (
 	"net/http"
 
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/spf13/cobra"
 )
 
 // NewPruneCmd return a new license prune subcommand
 func NewPruneCmd(opts *licenseOpts) *cobra.Command {
 	return &cobra.Command{
-		Use: "prune",
+		Use:     "prune",
+		Short:   docs.LicensePruneDoc.Short,
+		Long:    docs.LicensePruneDoc.Long,
+		Example: docs.LicensePruneDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return pruneRun(c, args, opts)
 		},

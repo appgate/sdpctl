@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
@@ -33,6 +34,8 @@ func NewLicenseCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "license",
 		TraverseChildren: true,
+		Short:            docs.LicenseRootDoc.Short,
+		Long:             docs.LicenseRootDoc.Long,
 	}
 
 	cfg := f.Config
