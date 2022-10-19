@@ -106,7 +106,12 @@ func CreateDirectories() error {
 	return os.Mkdir(Directories(), os.ModePerm)
 }
 
+var ReadProfiles *Profiles
+
 func Read() (*Profiles, error) {
+	if ReadProfiles != nil {
+		return ReadProfiles, nil
+	}
 	content, err := os.ReadFile(FilePath())
 	if err != nil {
 		return nil, fmt.Errorf("Can't read profiles: %s %s\n", FilePath(), err)
@@ -116,7 +121,8 @@ func Read() (*Profiles, error) {
 	if err := json.Unmarshal(content, &profiles); err != nil {
 		return nil, fmt.Errorf("%s file is corrupt: %s \n", FilePath(), err)
 	}
-	return &profiles, nil
+	ReadProfiles = &profiles
+	return ReadProfiles, nil
 }
 
 func Write(p *Profiles) error {
