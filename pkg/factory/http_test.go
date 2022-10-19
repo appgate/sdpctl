@@ -1,13 +1,12 @@
 package factory
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/appgate/sdpctl/pkg/configuration"
 )
 
-func TestHttpClientTransportTLSFromConfig(t *testing.T) {
+func TestHttpTransportTLSFromConfig(t *testing.T) {
 	type args struct {
 		f *Factory
 	}
@@ -70,12 +69,13 @@ func TestHttpClientTransportTLSFromConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := httpClientFunc(tt.args.f)()
+			tr, err := httpTransport(tt.args.f)()
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("got error %v", err)
+				return
 			}
-			if c != nil {
-				tr := c.Transport.(*http.Transport)
+
+			if tr != nil {
 				if tr.TLSClientConfig.InsecureSkipVerify != tt.wantInsecure {
 					t.Fatalf("got %v expected %v", tr.TLSClientConfig.InsecureSkipVerify, tt.wantInsecure)
 				}
