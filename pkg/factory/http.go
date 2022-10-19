@@ -22,30 +22,39 @@ import (
 )
 
 type Factory struct {
-	HTTPClient    func() (*http.Client, error)
+	// HTTPClient is the underlying HTTP client used in APIClient and CustomHTTPClient
+	HTTPClient func() (*http.Client, error)
+	// CustomHTTPClient includes a custom HTTP.Client that includes the default
+	// headers to integrate with a controller
+	// the custom HTTP client includes the default transport layer to import TLS certificate
+	// and applies Accept, Authorization, and User-Agent headers to all requests
+	CustomHTTPClient func() (*http.Client, error)
+	// HTTPTransport is used by all HTTP Clients to import custom TLS certificate and set timeout values
 	HTTPTransport func() (*http.Transport, error)
-	APIClient     func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance     func(c *configuration.Config) (*appliance.Appliance, error)
-	Token         func(c *configuration.Config) (*token.Token, error)
-	ServiceUsers  func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
-	UserAgent     string
-	Config        *configuration.Config
-	IOOutWriter   io.Writer
-	Stdin         io.ReadCloser
-	StdErr        io.Writer
-	SpinnerOut    io.Writer
+	// APIClient is the generated api client based on the openapi-generator https://github.com/appgate/sdp-api-client-go
+	APIClient    func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance    func(c *configuration.Config) (*appliance.Appliance, error)
+	Token        func(c *configuration.Config) (*token.Token, error)
+	ServiceUsers func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
+	userAgent    string
+	Config       *configuration.Config
+	IOOutWriter  io.Writer
+	Stdin        io.ReadCloser
+	StdErr       io.Writer
+	SpinnerOut   io.Writer
 }
 
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
 	f.Config = config
-	f.UserAgent = "sdpctl/" + appVersion + "/go"
-	f.HTTPTransport = httpTransport(f)   // depends on config
-	f.HTTPClient = httpClientFunc(f)     // depends on config
-	f.APIClient = apiClientFunc(f)       // depends on config
-	f.Appliance = applianceFunc(f)       // depends on config
-	f.Token = tokenFunc(f)               // depends on config
-	f.ServiceUsers = serviceUsersFunc(f) // depends on config
+	f.userAgent = "sdpctl/" + appVersion + "/go"
+	f.HTTPTransport = httpTransport(f)       // depends on config
+	f.HTTPClient = httpClientFunc(f)         // depends on config
+	f.CustomHTTPClient = customHTTPClient(f) // depends on config
+	f.APIClient = apiClientFunc(f)           // depends on config
+	f.Appliance = applianceFunc(f)           // depends on config
+	f.Token = tokenFunc(f)                   // depends on config
+	f.ServiceUsers = serviceUsersFunc(f)     // depends on config
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
 	f.StdErr = os.Stderr
@@ -110,6 +119,44 @@ func httpTransport(f *Factory) func() (*http.Transport, error) {
 	}
 }
 
+type customTransport struct {
+	token, accept, useragent string
+	underlyingTransport      http.RoundTripper
+}
+
+func (ct *customTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("Accept", ct.accept)
+	req.Header.Add("Authorization", ct.token)
+	req.Header.Add("User-Agent", ct.useragent)
+
+	return ct.underlyingTransport.RoundTrip(req)
+}
+
+func customHTTPClient(f *Factory) func() (*http.Client, error) {
+	return func() (*http.Client, error) {
+		cfg := f.Config
+		client, err := f.HTTPClient()
+		if err != nil {
+			return nil, err
+		}
+		parentTransport, err := f.HTTPTransport()
+		if err != nil {
+			return nil, err
+		}
+		token, err := cfg.GetBearTokenHeaderValue()
+		if err != nil {
+			return nil, err
+		}
+		client.Transport = &customTransport{
+			token:               token,
+			accept:              fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
+			useragent:           f.userAgent,
+			underlyingTransport: parentTransport,
+		}
+		return client, nil
+	}
+}
+
 func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
 		cfg := f.Config
@@ -147,7 +194,7 @@ func apiClientFunc(f *Factory) func(c *configuration.Config) (*openapi.APIClient
 				"Accept": fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
 			},
 			Debug:     cfg.Debug,
-			UserAgent: f.UserAgent,
+			UserAgent: f.userAgent,
 			Servers: []openapi.ServerConfiguration{
 				{
 					URL: cfg.URL,
