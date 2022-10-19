@@ -19,6 +19,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -502,8 +503,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			// prepareReady is used for the status bars to mark them as ready if everything is successful.
 			prepareReady = []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}
-			// unwantedStatus is used to determine if the upgrade prepare has failed
-			unwantedStatus = []string{appliancepkg.UpgradeStatusFailed, appliancepkg.UpgradeStatusIdle}
 			// updateProgressBars is the container for the progress bars
 			updateProgressBars *tui.Progress
 		)
@@ -554,6 +553,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 			}
 
+			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
 				t = updateProgressBars.AddTracker(appliance.GetName(), "ready")
@@ -575,6 +575,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				if v == nil {
 					return nil
 				}
+				// unwantedStatus is used to determine if the upgrade prepare has failed
+				unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 				qs := v.(queueStruct)
 				ctx, cancel := context.WithTimeout(ctx, opts.timeout)
 				defer cancel()
@@ -587,9 +589,26 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					queueContinue <- queueStruct{err: err}
 					return err
 				}
-				if err := a.PrepareFileOn(ctx, remoteFilePath, qs.appliance.GetId(), opts.DevKeyring); err != nil {
+				changeID, err := a.PrepareFileOn(ctx, remoteFilePath, qs.appliance.GetId(), opts.DevKeyring)
+				if err != nil {
 					queueContinue <- queueStruct{err: err}
 					return err
+				}
+				if opts.Config.Version >= 15 {
+					t, err := opts.Config.GetBearTokenHeaderValue()
+					if err != nil {
+						queueContinue <- queueStruct{err: err}
+						return err
+					}
+					ac := change.ApplianceChange{
+						APIClient: a.APIClient,
+						Token:     t,
+					}
+					if _, err = ac.RetryUntilCompleted(ctx, changeID, qs.appliance.GetId()); err != nil {
+						queueContinue <- queueStruct{err: err}
+						return err
+					}
+					unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {
 					queueContinue <- queueStruct{err: err}
@@ -619,6 +638,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 				ctx, cancel := context.WithDeadline(ctx, qs.deadline)
 				defer cancel()
+				// unwantedStatus is used to determine if the upgrade prepare has failed
+				unwantedStatus := []string{appliancepkg.UpgradeStatusFailed, appliancepkg.UpgradeStatusIdle}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, prepareReady, unwantedStatus, qs.tracker); err != nil {
 					errChan <- err
 					return
