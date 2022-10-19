@@ -39,8 +39,13 @@ func TestNewListCmdNoProfiles(t *testing.T) {
 	}
 }
 
+var resetRead = func() {
+	profiles.ReadProfiles = nil
+}
+
 func setupExistingProfiles(t *testing.T) string {
 	t.Helper()
+	t.Cleanup(resetRead)
 	dir := t.TempDir()
 	t.Setenv("SDPCTL_CONFIG_DIR", dir)
 	profileFile, err := os.Create(profiles.FilePath())
