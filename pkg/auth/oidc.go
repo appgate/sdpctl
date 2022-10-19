@@ -187,7 +187,7 @@ var ErrPlatformNotSupported = errors.New("Provider with OpenID Connect is not su
 
 func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.IdentityProvidersNamesGet200ResponseDataInner) (*signInResponse, error) {
 	authenticator := NewAuth(o.Client)
-	prefix, err := o.Factory.Config.GetHost()
+	prefix, err := o.Factory.Config.KeyringPrefix()
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,6 @@ func (o OpenIDConnect) signin(ctx context.Context, loginOpts openapi.LoginReques
 			}
 			return response, nil
 		}
-
 	}
 
 	mux := http.NewServeMux()

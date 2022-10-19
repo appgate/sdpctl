@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
@@ -40,11 +41,11 @@ func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	if len(c.BearerToken) > 10 {
 		return fmt.Sprintf("Bearer %s", c.BearerToken), nil
 	}
-	h, err := c.GetHost()
+	prefix, err := c.KeyringPrefix()
 	if err != nil {
 		return "", fmt.Errorf("could not retrieve token for current host configuration %w", err)
 	}
-	v, err := keyring.GetBearer(h)
+	v, err := keyring.GetBearer(prefix)
 	if err != nil {
 		return "", err
 	}
@@ -160,24 +161,24 @@ func (c *Config) CheckAuth() bool {
 
 func (c *Config) ExpiredAtValid() bool {
 	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
-	d, err := time.Parse(layout, c.ExpiresAt)
+	t1, err := time.Parse(layout, c.ExpiresAt)
 	if err != nil {
 		return false
 	}
-	t1 := time.Now()
-	return t1.Add(-time.Hour * 2).Before(d)
+	now := time.Now().Add(-time.Hour * 2)
+	return t1.After(now)
 }
 
 func (c *Config) LoadCredentials() (*Credentials, error) {
 	creds := &Credentials{}
-	h, err := c.GetHost()
+	prefix, err := c.KeyringPrefix()
 	if err != nil {
 		return nil, err
 	}
-	if v, err := keyring.GetUsername(h); err == nil && len(v) > 0 {
+	if v, err := keyring.GetUsername(prefix); err == nil && len(v) > 0 {
 		creds.Username = v
 	}
-	if v, err := keyring.GetPassword(h); err == nil && len(v) > 0 {
+	if v, err := keyring.GetPassword(prefix); err == nil && len(v) > 0 {
 		creds.Password = v
 	}
 
@@ -185,11 +186,11 @@ func (c *Config) LoadCredentials() (*Credentials, error) {
 }
 
 func (c *Config) ClearCredentials() error {
-	h, err := c.GetHost()
+	prefix, err := c.KeyringPrefix()
 	if err != nil {
 		return err
 	}
-	if err := keyring.ClearCredentials(h); err != nil {
+	if err := keyring.ClearCredentials(prefix); err != nil {
 		return err
 	}
 	c.BearerToken = ""
@@ -227,14 +228,14 @@ func (c *Config) ClearBearer() error {
 }
 
 func (c *Config) StoreCredentials(username, password string) error {
-	h, err := c.GetHost()
+	prefix, err := c.KeyringPrefix()
 	if err != nil {
 		return err
 	}
-	if err := keyring.SetUsername(h, username); err != nil {
+	if err := keyring.SetUsername(prefix, username); err != nil {
 		return fmt.Errorf("could not store username in keychain %w", err)
 	}
-	if err := keyring.SetPassword(h, password); err != nil {
+	if err := keyring.SetPassword(prefix, password); err != nil {
 		return fmt.Errorf("could not store password in keychain %w", err)
 	}
 
@@ -250,4 +251,24 @@ func (c *Config) GetHost() (string, error) {
 		return "", err
 	}
 	return url.Hostname(), nil
+}
+
+// KeyringPrefix is the raw string values that will be used in the keyring package
+// it needs to be a unique, reproducible value for the selected collective + profile.
+// Downstream, this string value will be converted to a integer value (pkg/hashcode)
+// and used as a prefix when storing values in the keyring/keychain.
+func (c *Config) KeyringPrefix() (string, error) {
+	h, err := c.GetHost()
+	if err != nil {
+		return "", err
+	}
+	p, err := profiles.Read()
+	if err == nil {
+		if p.CurrentExists() {
+			if c, err := p.CurrentProfile(); err == nil {
+				return c.Name + h, nil
+			}
+		}
+	}
+	return h, nil
 }
