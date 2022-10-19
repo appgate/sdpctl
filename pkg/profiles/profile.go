@@ -62,6 +62,13 @@ func (p *Profiles) CurrentConfigExists() bool {
 var ErrNoCurrentProfile = errors.New("no current profile is set, run 'sdpctl profile set'")
 
 func (p *Profiles) CurrentProfile() (*Profile, error) {
+	if v := os.Getenv("SDPCTL_PROFILE"); len(v) > 0 {
+		for _, profile := range p.List {
+			if v == profile.Name {
+				return &profile, nil
+			}
+		}
+	}
 	if p.Current == nil {
 		return nil, ErrNoCurrentProfile
 	}
