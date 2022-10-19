@@ -58,6 +58,12 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			Message:  "select profile:",
 			Options:  list,
 		}
+		if p.CurrentExists() {
+			current, err := p.CurrentProfile()
+			if err == nil {
+				qs.Default = current.Name
+			}
+		}
 		if err := prompt.SurveyAskOne(qs, &index, survey.WithValidator(survey.Required)); err != nil {
 			return err
 		}
