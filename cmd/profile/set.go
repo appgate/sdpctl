@@ -20,6 +20,7 @@ func NewSetCmd(opts *commandOpts) *cobra.Command {
 		RunE: func(c *cobra.Command, args []string) error {
 			return setRun(c, args, opts)
 		},
+		ValidArgsFunction: tabCompletion,
 	}
 }
 
@@ -56,6 +57,12 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			PageSize: length,
 			Message:  "select profile:",
 			Options:  list,
+		}
+		if p.CurrentExists() {
+			current, err := p.CurrentProfile()
+			if err == nil {
+				qs.Default = current.Name
+			}
 		}
 		if err := prompt.SurveyAskOne(qs, &index, survey.WithValidator(survey.Required)); err != nil {
 			return err

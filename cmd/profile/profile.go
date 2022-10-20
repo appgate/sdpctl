@@ -10,12 +10,25 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 )
 
 type commandOpts struct {
 	Out io.Writer
+}
+
+var tabCompletion = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	p, err := profiles.Read()
+	if err != nil {
+		return []string{}, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	return p.Available(), cobra.ShellCompDirectiveNoFileComp
 }
 
 // NewProfileCmd return a new profile subcommand

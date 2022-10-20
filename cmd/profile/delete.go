@@ -22,6 +22,7 @@ func NewDeleteCmd(opts *commandOpts) *cobra.Command {
 		RunE: func(c *cobra.Command, args []string) error {
 			return deleteRun(c, args, opts)
 		},
+		ValidArgsFunction: tabCompletion,
 	}
 }
 
