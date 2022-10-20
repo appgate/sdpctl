@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -213,11 +214,19 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	retryStatus := func(ctx context.Context, applianceID, backupID string, tracker *tui.Tracker) error {
 		bo := backoff.NewExponentialBackOff()
 		bo.MaxElapsedTime = 0
+		networkErrors := 0
 		return backoff.Retry(func() error {
 			status, err := backupAPI.Status(ctx, applianceID, backupID)
 			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					networkErrors++
+					if networkErrors >= 5 {
+						return backoff.Permanent(cmdutil.ErrNetworkError)
+					}
+				}
 				return err
 			}
+			networkErrors = 0
 			log.WithFields(log.Fields{
 				"appliance": applianceID,
 				"backup_id": backupID,

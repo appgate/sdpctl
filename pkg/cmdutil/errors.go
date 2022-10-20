@@ -11,4 +11,6 @@ var (
 	ErrCommandTimeout = errors.New("Command timed out")
 	// ErrMissingTTY is used when no TTY is available
 	ErrMissingTTY = errors.New("no TTY present")
+	// ErrNetworkError is used when a command encounters multiple timeouts on a request, which we will presume is a network error
+	ErrNetworkError = errors.New("Failed to communicate with SDP Collective. Bad connection")
 )

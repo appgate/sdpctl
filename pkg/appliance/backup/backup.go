@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
@@ -60,7 +61,9 @@ const (
 )
 
 func (b *Backup) Status(ctx context.Context, applianceID, backupID string) (*openapi.AppliancesIdBackupBackupIdStatusGet200Response, error) {
-	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(ctx, applianceID, backupID).Authorization(b.Token).Execute()
+	timeoutCTX, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(timeoutCTX, applianceID, backupID).Authorization(b.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
