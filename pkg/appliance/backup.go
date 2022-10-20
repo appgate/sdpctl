@@ -18,6 +18,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -220,7 +221,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 				if errors.Is(err, context.DeadlineExceeded) {
 					networkErrors++
 					if networkErrors >= 5 {
-						return backoff.Permanent(err)
+						return backoff.Permanent(cmdutil.ErrNetworkError)
 					}
 				}
 				return err
