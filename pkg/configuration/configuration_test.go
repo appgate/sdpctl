@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -281,9 +282,10 @@ func TestCheckAPIVersionRestriction(t *testing.T) {
 		apiVersion int
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name       string
+		args       args
+		wantErr    bool
+		wantErrOut *regexp.Regexp
 	}{
 		{
 			name: "version is ok",
@@ -296,6 +298,7 @@ func TestCheckAPIVersionRestriction(t *testing.T) {
 				},
 				apiVersion: 17,
 			},
+			wantErr: false,
 		},
 		{
 			name: "version too low",
@@ -310,11 +313,33 @@ func TestCheckAPIVersionRestriction(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "custom error message",
+			args: args{
+				cmd: &cobra.Command{
+					Use: "testCommand",
+					Annotations: map[string]string{
+						"MinAPIVersion": "17",
+						"ErrorMessage":  "this command is not supported on v17",
+					},
+				},
+				apiVersion: 16,
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`this command is not supported on v17`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := CheckMinAPIVersionRestriction(tt.args.cmd, tt.args.apiVersion); (err != nil) != tt.wantErr {
-				t.Errorf("CheckAPIVersionRestriction() error = %v, wantErr %v", err, tt.wantErr)
+			err := CheckMinAPIVersionRestriction(tt.args.cmd, tt.args.apiVersion)
+			if (err != nil) != tt.wantErr || tt.wantErrOut != nil {
+				if tt.wantErrOut != nil {
+					if !tt.wantErrOut.MatchString(err.Error()) {
+						t.Fatalf("expected error message to match, want %s, got %s", tt.wantErrOut, err.Error())
+					}
+				} else {
+					t.Errorf("CheckAPIVersionRestriction() error = %v, wantErr %v", err, tt.wantErr)
+				}
 			}
 		})
 	}
