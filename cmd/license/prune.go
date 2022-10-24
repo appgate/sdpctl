@@ -13,7 +13,10 @@ import (
 // NewPruneCmd return a new license prune subcommand
 func NewPruneCmd(opts *licenseOpts) *cobra.Command {
 	return &cobra.Command{
-		Use:     "prune",
+		Use: "prune",
+		Annotations: map[string]string{
+			"MinAPIVersion": "18",
+		},
 		Short:   docs.LicensePruneDoc.Short,
 		Long:    docs.LicensePruneDoc.Long,
 		Example: docs.LicensePruneDoc.ExampleString(),
@@ -42,8 +45,7 @@ func pruneRun(cmd *cobra.Command, args []string, opts *licenseOpts) error {
 		return errors.New("could not do license prune, not supported on your appliance version")
 	}
 	if response.StatusCode != http.StatusNoContent {
-		fmt.Fprintf(opts.Out, "Could not prune license got HTTP %d\n", response.StatusCode)
-		return nil
+		return fmt.Errorf("could not prune license got HTTP %d\n", response.StatusCode)
 	}
 	fmt.Fprintln(opts.Out, "users license pruned")
 	return nil
