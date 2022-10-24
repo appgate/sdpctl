@@ -16,6 +16,7 @@ func NewPruneCmd(opts *licenseOpts) *cobra.Command {
 		Use: "prune",
 		Annotations: map[string]string{
 			"MinAPIVersion": "18",
+			"ErrorMessage":  "sdpctl license prune requires appliance version higher or equal to 6.1 with API Version 18",
 		},
 		Short:   docs.LicensePruneDoc.Short,
 		Long:    docs.LicensePruneDoc.Long,
