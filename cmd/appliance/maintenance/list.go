@@ -32,6 +32,10 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
+		Annotations: map[string]string{
+			"MinAPIVersion": "18",
+			"ErrorMessage":  "sdpctl appliance maintenance list requires appliance version higher or equal to 6.1 with API Version 18",
+		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, &opts)
 		},
