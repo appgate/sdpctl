@@ -210,7 +210,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	filteredAppliances := appliancepkg.FilterAppliances(Allappliances, filter)
 
-	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host)
+	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host, false)
 	if err != nil {
 		return err
 	}

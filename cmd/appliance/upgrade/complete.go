@@ -198,7 +198,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if len(opts.actualHostname) > 0 {
 		controlHost = opts.actualHostname
 	}
-	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, controlHost)
+	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, controlHost, true)
 	if err != nil {
 		return err
 	}

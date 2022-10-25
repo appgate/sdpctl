@@ -121,7 +121,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 
 		if opts.PrimaryFlag || opts.NoInteractive {
-			pc, err := FindPrimaryController(appliances, hostname)
+			pc, err := FindPrimaryController(appliances, hostname, false)
 			if err != nil {
 				log.Warn("failed to determine primary controller")
 			} else {
