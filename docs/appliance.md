@@ -140,6 +140,11 @@ The `upgrade complete` command will run until all appliances that are part of th
 2. Any additional controllers will be upgraded one at a time. If there are no additional controllers in the SDP Collective, this step will be skipped.
 3. Any remaining appliances will be upgraded. The remaining appliances will be split up into batches to ensure high availability during the upgrade process. The number of batches depends on how many appliances are left to upgrade and the size of each batch depends on how many sites are set up in the collective. Each appliance in a batch will need to be completed before the next batch is going to be processed.
 
+Note that the primary controller hostname need to resolve to an unique ip-adress for the upgrade to complete successfully. In case you are connecting to the primary controller through a load balancer, or similar that does not resolve to a unique ip-adress, you can use the `--actual-hostname` flag when completing the upgrade.
+```bash
+$ sdpctl appliance upgrade complete --actual-hostname=<actual controller hostname>
+```
+
 As with the other upgrade commands, the `--include` and `--exclude` flags can be used to gain further control of the upgrade completion.
 ```bash
 $ # upgrade only controllers
