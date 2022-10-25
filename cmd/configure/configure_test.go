@@ -21,7 +21,7 @@ func TestConfigCmd(t *testing.T) {
 	defer viper.Reset()
 	dir, err := os.MkdirTemp("", "sdpctl_test")
 	if err != nil {
-		t.Fatalf("cant create temp dir %s", err)
+		t.Fatalf("can't create temp dir %s", err)
 	}
 	defer os.RemoveAll(dir)
 	viper.AddConfigPath(dir)
@@ -49,7 +49,7 @@ func TestConfigCmd(t *testing.T) {
 		StdErr:      pty,
 	}
 	cmd := NewCmdConfigure(f)
-
+	cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -92,7 +92,7 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 	defer viper.Reset()
 	dir, err := os.MkdirTemp("", "sdpctl_test")
 	if err != nil {
-		t.Fatalf("cant create temp dir %s", err)
+		t.Fatalf("can't create temp dir %s", err)
 	}
 	defer os.RemoveAll(dir)
 	viper.AddConfigPath(dir)
@@ -120,6 +120,7 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 		StdErr:      pty,
 	}
 	cmd := NewCmdConfigure(f)
+	cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	cmd.SetArgs([]string{"--pem", "testdata/cert.pem"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -171,7 +172,7 @@ func TestConfigCmdWithExistingAddr(t *testing.T) {
 	defer viper.Reset()
 	dir, err := os.MkdirTemp("", "sdpctl_test*")
 	if err != nil {
-		t.Fatalf("cant create temp dir %s", err)
+		t.Fatalf("can't create temp dir %s", err)
 	}
 	defer os.RemoveAll(dir)
 	configPath := filepath.Join(dir, "config.json")
@@ -217,7 +218,7 @@ func TestConfigCmdWithExistingAddr(t *testing.T) {
 		StdErr:      pty,
 	}
 	cmd := NewCmdConfigure(f)
-
+	cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
