@@ -15,26 +15,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type listOptions struct {
+type statusOptions struct {
 	Config    *configuration.Config
 	Out       io.Writer
 	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	json      bool
 }
 
-// NewListCmd return a new maintenance enable command
-func NewListCmd(f *factory.Factory) *cobra.Command {
-	opts := listOptions{
+// NewStatusCmd return a new maintenance enable command
+func NewStatusCmd(f *factory.Factory) *cobra.Command {
+	opts := statusOptions{
 		Config:    f.Config,
 		Appliance: f.Appliance,
 		Out:       f.IOOutWriter,
 	}
 	var cmd = &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
+		Use: "status",
 		Annotations: map[string]string{
 			"MinAPIVersion": "18",
-			"ErrorMessage":  "sdpctl appliance maintenance list requires appliance version higher or equal to 6.1 with API Version 18",
+			"ErrorMessage":  "sdpctl appliance maintenance status requires appliance version higher or equal to 6.1 with API Version 18",
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return listRun(c, args, &opts)
@@ -44,7 +43,7 @@ func NewListCmd(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
+func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {

@@ -38,7 +38,8 @@ func NewMaintenanceCmd(f *factory.Factory) *cobra.Command {
 
 	cmd.AddCommand(NewEnableCmd(f))
 	cmd.AddCommand(NewDisableCmd(f))
-	cmd.AddCommand(NewListCmd(f))
+	cmd.AddCommand(NewStatusCmd(f))
+
 	return cmd
 }
 
