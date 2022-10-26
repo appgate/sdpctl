@@ -280,7 +280,7 @@ func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsApplian
 
 // FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
 // Hostnames should be compared in a case insensitive way.
-func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
+func FindPrimaryController(appliances []openapi.Appliance, hostname string, validate bool) (*openapi.Appliance, error) {
 	controllers := make([]openapi.Appliance, 0)
 	type details struct {
 		ID        string
@@ -325,8 +325,10 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string) (*op
 		)
 	}
 	if candidate != nil {
-		if err := ValidateHostname(*candidate, hostname); err != nil {
-			return nil, err
+		if validate {
+			if err := ValidateHostname(*candidate, hostname); err != nil {
+				return nil, err
+			}
 		}
 		return candidate, nil
 	}

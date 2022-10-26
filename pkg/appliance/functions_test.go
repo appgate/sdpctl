@@ -154,6 +154,7 @@ func TestFindPrimaryController(t *testing.T) {
 	type args struct {
 		appliances []openapi.Appliance
 		hostname   string
+		validate   bool
 	}
 	tests := []struct {
 		name    string
@@ -190,6 +191,7 @@ func TestFindPrimaryController(t *testing.T) {
 					},
 				},
 				hostname: "appgate.com",
+				validate: true,
 			},
 			want: &openapi.Appliance{
 				Name: "primary controller",
@@ -202,6 +204,39 @@ func TestFindPrimaryController(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "no hostname",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   openapi.PtrString("one"),
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "localhost",
+						},
+					},
+					{
+						Name: "secondary controller with log server",
+						Id:   openapi.PtrString("two"),
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "localhost",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogServer: &openapi.ApplianceAllOfLogServer{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+				hostname: "appgate.com",
+				validate: true,
+			},
+			wantErr: true,
 		},
 		{
 			name: "no hit",
@@ -235,6 +270,7 @@ func TestFindPrimaryController(t *testing.T) {
 					},
 				},
 				hostname: "appgate.com",
+				validate: true,
 			},
 			want:    nil,
 			wantErr: true,
@@ -242,7 +278,7 @@ func TestFindPrimaryController(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FindPrimaryController(tt.args.appliances, tt.args.hostname)
+			got, err := FindPrimaryController(tt.args.appliances, tt.args.hostname, tt.args.validate)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindPrimaryController() error = %v, wantErr %v", err, tt.wantErr)
 				return
