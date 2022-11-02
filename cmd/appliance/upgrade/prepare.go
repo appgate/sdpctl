@@ -311,9 +311,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	// Step 1
 
 	shouldUpload := false
-	fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
-	defer fileStatusCancel()
-	existingFile, err := a.FileStatus(fileStatusCtx, opts.filename)
+	existingFile, err := a.FileStatus(ctx, opts.filename)
 	if err != nil {
 		// if we dont get 404, return err
 		if errors.Is(err, appliancepkg.ErrFileNotFound) {
@@ -427,10 +425,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		fmt.Fprintf(opts.Out, "[%s] Primary controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 
 		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
-		if err := a.UploadToController(fileStatusCtx, opts.image, opts.filename); err != nil {
+		if err := a.UploadToController(ctx, opts.image, opts.filename); err != nil {
 			return err
 		}
-		fileUploadStatus := func(controller openapi.Appliance, p *mpb.Progress) error {
+		fileUploadStatus := func(ctx context.Context, controller openapi.Appliance, p *mpb.Progress) error {
 			status := ""
 			var uploadProgress *tui.Progress
 			var t *tui.Tracker
@@ -461,7 +459,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			return nil
 		}
-		if err := fileUploadStatus(*primaryController, p); err != nil {
+		fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
+		defer fileStatusCancel()
+		if err := fileUploadStatus(fileStatusCtx, *primaryController, p); err != nil {
 			return err
 		}
 
