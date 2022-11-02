@@ -99,6 +99,9 @@ func CheckMinAPIVersionRestriction(cmd *cobra.Command, currentVersion int) error
 		if c.Annotations != nil {
 			if s, ok := c.Annotations["MinAPIVersion"]; ok {
 				if minVersion, err := strconv.Atoi(s); err == nil && currentVersion < minVersion {
+					if message, ok := c.Annotations["ErrorMessage"]; ok {
+						return errors.New(message)
+					}
 					return fmt.Errorf("Minimum API version %d is required to use the '%s' command. Current API version is %d", minVersion, c.Name(), currentVersion)
 				}
 			}

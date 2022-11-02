@@ -14,6 +14,7 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"github.com/appgate/sdpctl/cmd/license"
 	cmdprofile "github.com/appgate/sdpctl/cmd/profile"
 	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
@@ -143,6 +144,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	rootCmd.AddCommand(cmdprofile.NewProfileCmd(f))
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(serviceusers.NewServiceUsersCMD(f))
+	rootCmd.AddCommand(license.NewLicenseCmd(f))
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)

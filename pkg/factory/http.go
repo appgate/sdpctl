@@ -22,11 +22,21 @@ import (
 )
 
 type Factory struct {
-	HTTPClient   func() (*http.Client, error)
+	// HTTPClient is the underlying HTTP client used in APIClient and CustomHTTPClient
+	HTTPClient func() (*http.Client, error)
+	// CustomHTTPClient includes a custom HTTP.Client that includes the default
+	// headers to integrate with a controller
+	// the custom HTTP client includes the default transport layer to import TLS certificate
+	// and applies Accept, Authorization, and User-Agent headers to all requests
+	CustomHTTPClient func() (*http.Client, error)
+	// HTTPTransport is used by all HTTP Clients to import custom TLS certificate and set timeout values
+	HTTPTransport func() (*http.Transport, error)
+	// APIClient is the generated api client based on the openapi-generator https://github.com/appgate/sdp-api-client-go
 	APIClient    func(c *configuration.Config) (*openapi.APIClient, error)
 	Appliance    func(c *configuration.Config) (*appliance.Appliance, error)
 	Token        func(c *configuration.Config) (*token.Token, error)
 	ServiceUsers func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
+	userAgent    string
 	Config       *configuration.Config
 	IOOutWriter  io.Writer
 	Stdin        io.ReadCloser
@@ -37,11 +47,14 @@ type Factory struct {
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
 	f.Config = config
-	f.HTTPClient = httpClientFunc(f)                 // depends on config
-	f.APIClient = apiClientFunc(f, appVersion)       // depends on config
-	f.Appliance = applianceFunc(f, appVersion)       // depends on config
-	f.Token = tokenFunc(f, appVersion)               // depends on config
-	f.ServiceUsers = serviceUsersFunc(f, appVersion) // depends on config
+	f.userAgent = "sdpctl/" + appVersion + "/go"
+	f.HTTPTransport = httpTransport(f)       // depends on config
+	f.HTTPClient = httpClientFunc(f)         // depends on config
+	f.CustomHTTPClient = customHTTPClient(f) // depends on config
+	f.APIClient = apiClientFunc(f)           // depends on config
+	f.Appliance = applianceFunc(f)           // depends on config
+	f.Token = tokenFunc(f)                   // depends on config
+	f.ServiceUsers = serviceUsersFunc(f)     // depends on config
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
 	f.StdErr = os.Stderr
@@ -57,21 +70,21 @@ func (f *Factory) CanPrompt() bool {
 func (f *Factory) SetSpinnerOutput(o io.Writer) {
 	f.SpinnerOut = o
 }
+
 func (f *Factory) GetSpinnerOutput() func() io.Writer {
 	return func() io.Writer {
 		return f.SpinnerOut
 	}
 }
-func httpClientFunc(f *Factory) func() (*http.Client, error) {
-	return func() (*http.Client, error) {
+
+func httpTransport(f *Factory) func() (*http.Transport, error) {
+	return func() (*http.Transport, error) {
 		cfg := f.Config
 		timeout := 5
 		if cfg.Timeout > timeout {
 			timeout = cfg.Timeout
 		}
-
 		timeoutDuration := time.Duration(timeout)
-
 		rootCAs, _ := x509.SystemCertPool()
 		if rootCAs == nil {
 			rootCAs = x509.NewCertPool()
@@ -102,6 +115,61 @@ func httpClientFunc(f *Factory) func() (*http.Client, error) {
 			}
 			tr.Proxy = http.ProxyURL(proxyURL)
 		}
+		return tr, nil
+	}
+}
+
+type customTransport struct {
+	token, accept, useragent string
+	underlyingTransport      http.RoundTripper
+}
+
+func (ct *customTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Add("Accept", ct.accept)
+	req.Header.Add("Authorization", ct.token)
+	req.Header.Add("User-Agent", ct.useragent)
+
+	return ct.underlyingTransport.RoundTrip(req)
+}
+
+func customHTTPClient(f *Factory) func() (*http.Client, error) {
+	return func() (*http.Client, error) {
+		cfg := f.Config
+		client, err := f.HTTPClient()
+		if err != nil {
+			return nil, err
+		}
+		parentTransport, err := f.HTTPTransport()
+		if err != nil {
+			return nil, err
+		}
+		token, err := cfg.GetBearTokenHeaderValue()
+		if err != nil {
+			return nil, err
+		}
+		client.Transport = &customTransport{
+			token:               token,
+			accept:              fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
+			useragent:           f.userAgent,
+			underlyingTransport: parentTransport,
+		}
+		return client, nil
+	}
+}
+
+func httpClientFunc(f *Factory) func() (*http.Client, error) {
+	return func() (*http.Client, error) {
+		cfg := f.Config
+		timeout := 5
+		if cfg.Timeout > timeout {
+			timeout = cfg.Timeout
+		}
+
+		timeoutDuration := time.Duration(timeout)
+		tr, err := f.HTTPTransport()
+		if err != nil {
+			return nil, err
+		}
 		c := &http.Client{
 			Transport: tr,
 			Timeout:   ((timeoutDuration * 2) * time.Second),
@@ -110,7 +178,7 @@ func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	}
 }
 
-func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) (*openapi.APIClient, error) {
+func apiClientFunc(f *Factory) func(c *configuration.Config) (*openapi.APIClient, error) {
 	return func(cfg *configuration.Config) (*openapi.APIClient, error) {
 		hc, err := f.HTTPClient()
 		if err != nil {
@@ -126,7 +194,7 @@ func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 				"Accept": fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
 			},
 			Debug:     cfg.Debug,
-			UserAgent: "sdpctl/" + appVersion + "/go",
+			UserAgent: f.userAgent,
 			Servers: []openapi.ServerConfiguration{
 				{
 					URL: cfg.URL,
@@ -139,7 +207,7 @@ func apiClientFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 	}
 }
 
-func getClients(f *Factory, appVersion string, cfg *configuration.Config) (*http.Client, *openapi.APIClient, error) {
+func getClients(f *Factory, cfg *configuration.Config) (*http.Client, *openapi.APIClient, error) {
 	httpClient, err := f.HTTPClient()
 	if err != nil {
 		return nil, nil, err
@@ -151,9 +219,9 @@ func getClients(f *Factory, appVersion string, cfg *configuration.Config) (*http
 	return httpClient, apiClient, nil
 }
 
-func applianceFunc(f *Factory, appVersion string) func(c *configuration.Config) (*appliance.Appliance, error) {
+func applianceFunc(f *Factory) func(c *configuration.Config) (*appliance.Appliance, error) {
 	return func(cfg *configuration.Config) (*appliance.Appliance, error) {
-		httpClient, apiClient, err := getClients(f, appVersion, cfg)
+		httpClient, apiClient, err := getClients(f, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -170,9 +238,9 @@ func applianceFunc(f *Factory, appVersion string) func(c *configuration.Config) 
 	}
 }
 
-func tokenFunc(f *Factory, appVersion string) func(c *configuration.Config) (*token.Token, error) {
+func tokenFunc(f *Factory) func(c *configuration.Config) (*token.Token, error) {
 	return func(cfg *configuration.Config) (*token.Token, error) {
-		httpClient, apiClient, err := getClients(f, appVersion, cfg)
+		httpClient, apiClient, err := getClients(f, cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -189,9 +257,9 @@ func tokenFunc(f *Factory, appVersion string) func(c *configuration.Config) (*to
 	}
 }
 
-func serviceUsersFunc(f *Factory, appVersion string) func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error) {
+func serviceUsersFunc(f *Factory) func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error) {
 	return func(cfg *configuration.Config) (*serviceusers.ServiceUsersAPI, error) {
-		_, apiClient, err := getClients(f, appVersion, cfg)
+		_, apiClient, err := getClients(f, cfg)
 		if err != nil {
 			return nil, err
 		}
