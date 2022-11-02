@@ -15,7 +15,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -230,7 +230,7 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 		for _, bapp := range c {
 			batchAppliances = append(batchAppliances, bapp.GetName())
 		}
-		logrus.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
+		log.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
 	}
 
 	return r
@@ -325,7 +325,7 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	}
 	if candidate != nil {
 		if validate {
-			if err := network.ValidateHostname(*candidate, hostname); err != nil {
+			if err := ValidateHostname(*candidate, hostname); err != nil {
 				return nil, err
 			}
 		}
@@ -335,6 +335,49 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 		"Unable to match the given Controller hostname %q with the actual Controller admin (or peer) hostname",
 		hostname,
 	)
+}
+
+func GetRealHostname(controller openapi.Appliance) (string, error) {
+	realHost := controller.GetHostname()
+	if i, ok := controller.GetPeerInterfaceOk(); ok {
+		realHost = i.GetHostname()
+	}
+	if i, ok := controller.GetAdminInterfaceOk(); ok {
+		realHost = i.GetHostname()
+	}
+	if err := ValidateHostname(controller, realHost); err != nil {
+		return "", err
+	}
+	return realHost, nil
+}
+
+func ValidateHostname(controller openapi.Appliance, hostname string) error {
+	var h string
+	if ai, ok := controller.GetAdminInterfaceOk(); ok {
+		h = ai.GetHostname()
+	}
+	if pi, ok := controller.GetPeerInterfaceOk(); ok && len(h) <= 0 {
+		h = pi.GetHostname()
+	}
+	if len(h) <= 0 {
+		return fmt.Errorf("failed to determine hostname for controller admin interface")
+	}
+
+	cHost := strings.ToLower(h)
+	nHost := strings.ToLower(hostname)
+	if cHost != nHost {
+		log.WithFields(log.Fields{
+			"controller-hostname": cHost,
+			"connected-hostname":  nHost,
+		}).Error("no match")
+		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname")
+	}
+
+	if err := network.ValidateHostnameUniqueness(nHost); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func FindCurrentController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {
@@ -501,7 +544,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 
 	if len(warnings) > 0 {
 		for _, warn := range warnings {
-			logrus.Warnf(warn)
+			log.Warnf(warn)
 		}
 	}
 

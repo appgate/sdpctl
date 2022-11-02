@@ -478,7 +478,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 2
-	primaryControllerRealHostname, err := network.GetRealHostname(*primaryController)
+	primaryControllerRealHostname, err := appliancepkg.GetRealHostname(*primaryController)
 	if err != nil {
 		return err
 	}
