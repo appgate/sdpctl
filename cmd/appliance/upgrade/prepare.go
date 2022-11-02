@@ -24,6 +24,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
@@ -54,6 +55,7 @@ type prepareUpgradeOptions struct {
 	hostOnController bool
 	forcePrepare     bool
 	ciMode           bool
+	actualHostname   string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -114,6 +116,9 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				opts.filename = path.Base(u.String())
 			}
 			if !opts.remoteImage {
+				// Needed to avoid trouble with the '~' symbol
+				opts.image = filesystem.AbsolutePath(opts.image)
+
 				// if the image is a local file, make sure its readable
 				// make early return if not
 				ok, err := util.FileExists(opts.image)
@@ -140,13 +145,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			return errs
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			h, err := opts.Config.GetHost()
-			if err != nil {
-				return fmt.Errorf("could not determine hostname for %s", err)
-			}
-			if err := network.ValidateHostnameUniqueness(h); err != nil {
-				return err
-			}
 			return prepareRun(c, args, opts)
 		},
 	}
@@ -157,6 +155,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", false, "Use the development keyring to verify the upgrade image")
 	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag.")
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use primary controller as image host when uploading from remote source.")
+	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "force prepare of upgrade on appliances even though the version uploaded is the same or lower then the version already running on the appliance")
 
 	return prepareCmd
@@ -208,9 +207,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	if len(opts.actualHostname) > 0 {
+		host = opts.actualHostname
+	}
 	filteredAppliances := appliancepkg.FilterAppliances(Allappliances, filter)
 
-	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host, false)
+	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host, true)
 	if err != nil {
 		return err
 	}
@@ -469,7 +471,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 2
-	primaryControllerRealHostname, err := appliancepkg.GetRealHostname(*primaryController)
+	primaryControllerRealHostname, err := network.GetRealHostname(*primaryController)
 	if err != nil {
 		return err
 	}
