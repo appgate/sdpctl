@@ -2,10 +2,8 @@ package appliance
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
-	"net"
 	"regexp"
 	"sort"
 	"strconv"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
+	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
@@ -326,7 +325,7 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	}
 	if candidate != nil {
 		if validate {
-			if err := ValidateHostname(*candidate, hostname); err != nil {
+			if err := network.ValidateHostname(*candidate, hostname); err != nil {
 				return nil, err
 			}
 		}
@@ -336,80 +335,6 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 		"Unable to match the given Controller hostname %q with the actual Controller admin (or peer) hostname",
 		hostname,
 	)
-}
-
-func GetRealHostname(controller openapi.Appliance) (string, error) {
-	realHost := controller.GetHostname()
-	if i, ok := controller.GetPeerInterfaceOk(); ok {
-		realHost = i.GetHostname()
-	}
-	if i, ok := controller.GetAdminInterfaceOk(); ok {
-		realHost = i.GetHostname()
-	}
-	if err := ValidateHostname(controller, realHost); err != nil {
-		return "", err
-	}
-	return realHost, nil
-}
-
-func ValidateHostname(controller openapi.Appliance, hostname string) error {
-	var h string
-	if ai, ok := controller.GetAdminInterfaceOk(); ok {
-		h = ai.GetHostname()
-	}
-	if pi, ok := controller.GetPeerInterfaceOk(); ok && len(h) <= 0 {
-		h = pi.GetHostname()
-	}
-	if len(h) <= 0 {
-		return fmt.Errorf("failed to determine hostname for controller admin interface")
-	}
-
-	cHost := strings.ToLower(h)
-	nHost := strings.ToLower(hostname)
-	if cHost != nHost {
-		logrus.WithFields(logrus.Fields{
-			"controller-hostname": cHost,
-			"connected-hostname":  nHost,
-		}).Error("no match")
-		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname")
-	}
-
-	var errs error
-	errCount := 0
-	ctx := context.Background()
-	ipv4s, err := net.DefaultResolver.LookupIP(ctx, "ip4", nHost)
-	if err != nil {
-		errCount++
-		err = fmt.Errorf("ipv4: %w", err)
-		errs = multierror.Append(err, errs)
-	}
-	ipv6s, err := net.DefaultResolver.LookupIP(ctx, "ip6", nHost)
-	if err != nil {
-		errCount++
-		err = fmt.Errorf("ipv6: %w", err)
-		errs = multierror.Append(err, errs)
-	}
-	// We check errors, but only one needs to succeed, so we also count the errors before determining if we return an error
-	if errs != nil && errCount > 1 {
-		return errs
-	}
-	v4length := len(ipv4s)
-	v6length := len(ipv6s)
-	if v4length > 1 || v6length > 1 {
-		var ips []string
-		for _, i := range ipv4s {
-			ips = append(ips, i.String())
-		}
-		for _, i := range ipv6s {
-			ips = append(ips, i.String())
-		}
-		return fmt.Errorf(`The given hostname %s does not resolve to a unique IP.
-A unique IP is necessary to ensure that the upgrade script
-connects to only the (primary) administration controller.
-The hostname resolves to the following IPs: %s`, nHost, strings.Join(ips, ", "))
-	}
-
-	return nil
 }
 
 func FindCurrentController(appliances []openapi.Appliance, hostname string) (*openapi.Appliance, error) {

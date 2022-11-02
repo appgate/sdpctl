@@ -19,7 +19,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
-	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
@@ -86,13 +85,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 				opts.Timeout = flagTimeout
 			}
 
-			actualHostname, err := cmd.Flags().GetString("actual-hostname")
-			if err != nil {
-				return err
-			}
-			if len(actualHostname) > 0 {
-				opts.actualHostname = actualHostname
-			}
 			ciModeFlag, err := cmd.Flags().GetBool("ci-mode")
 			if err != nil {
 				return err
@@ -102,13 +94,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			h, err := opts.Config.GetHost()
-			if err != nil {
-				return fmt.Errorf("could not determine hostname for %s", err)
-			}
-			if err := network.ValidateHostnameUniqueness(h); err != nil {
-				return err
-			}
 			return upgradeCompleteRun(c, args, &opts)
 		},
 	}
@@ -116,7 +101,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary controller before completing upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
-	flags.String("actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
+	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
 	flags.IntVar(&opts.batchSize, "batch-size", 2, "number of batch groups")
 	return upgradeCompleteCmd
 }
