@@ -2615,7 +2615,7 @@ func TestValidateHostname(t *testing.T) {
 			hostname:      "play.google.com",
 			adminHostName: "play.google.com",
 			wantErr:       true,
-			want:          *regexp.MustCompile(fmt.Sprintf(`The given hostname %s does not resolve to a unique IP.`, "play.google.com")),
+			want:          *regexp.MustCompile(fmt.Sprintf(`the given hostname %s does not resolve to a unique ip\.`, "play.google.com")),
 		},
 		{
 			name:          "admin interface not hostname",

@@ -6,6 +6,8 @@ import (
 	"net"
 	"sort"
 	"strings"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 type ResolverError struct {
@@ -29,22 +31,32 @@ The hostname resolves to the following ips:
 
 // ValidateHostnameUniqueness Validate that the given hostname resolves to at most 1 ip per ip version.
 func ValidateHostnameUniqueness(addr string) error {
-	resolver := net.DefaultResolver
+	var errs error
+	errCount := 0
 	ctx := context.Background()
-
-	// errors ignored since we don't know if
-	// both v4 and v6 is supported.
-	// for example,  *net.AddrError can return
-	// - no suitable address found
-	// if ipv6 is not supported on the host.
-	ipv4, _ := resolver.LookupIP(ctx, "ip4", addr)
-	ipv6, _ := resolver.LookupIP(ctx, "ip6", addr)
-
-	if len(ipv4) > 1 || len(ipv6) > 1 {
+	resolver := net.DefaultResolver
+	ipv4, err := resolver.LookupIP(ctx, "ip4", addr)
+	if err != nil {
+		errCount++
+		errs = multierror.Append(errs, fmt.Errorf("ipv4: %w", err))
+	}
+	ipv6, err := resolver.LookupIP(ctx, "ip6", addr)
+	if err != nil {
+		errCount++
+		errs = multierror.Append(errs, fmt.Errorf("ipv6: %w", err))
+	}
+	// We check errors, but only one needs to succeed, so we also count the errors before determining if we return an error
+	if errs != nil && errCount > 1 {
+		return errs
+	}
+	v4length := len(ipv4)
+	v6length := len(ipv6)
+	if v4length > 1 || v6length > 1 {
 		return &ResolverError{
 			ip:       append(ipv4, ipv6...),
 			hostname: addr,
 		}
 	}
+
 	return nil
 }

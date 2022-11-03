@@ -451,7 +451,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name:       "image file not found",
 			cli:        "upgrade prepare --image 'abc123456'",
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`Image file not found "abc123456"`),
+			wantErrOut: regexp.MustCompile(`.+Image file not found ".+abc123456"`),
 		},
 		{
 			name:       "file name error",

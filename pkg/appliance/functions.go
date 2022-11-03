@@ -2,10 +2,8 @@ package appliance
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
-	"net"
 	"regexp"
 	"sort"
 	"strconv"
@@ -13,10 +11,11 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
+	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -231,7 +230,7 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 		for _, bapp := range c {
 			batchAppliances = append(batchAppliances, bapp.GetName())
 		}
-		logrus.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
+		log.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
 	}
 
 	return r
@@ -367,46 +366,15 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 	cHost := strings.ToLower(h)
 	nHost := strings.ToLower(hostname)
 	if cHost != nHost {
-		logrus.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"controller-hostname": cHost,
 			"connected-hostname":  nHost,
 		}).Error("no match")
 		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname")
 	}
 
-	var errs error
-	errCount := 0
-	ctx := context.Background()
-	ipv4s, err := net.DefaultResolver.LookupIP(ctx, "ip4", nHost)
-	if err != nil {
-		errCount++
-		err = fmt.Errorf("ipv4: %w", err)
-		errs = multierror.Append(err, errs)
-	}
-	ipv6s, err := net.DefaultResolver.LookupIP(ctx, "ip6", nHost)
-	if err != nil {
-		errCount++
-		err = fmt.Errorf("ipv6: %w", err)
-		errs = multierror.Append(err, errs)
-	}
-	// We check errors, but only one needs to succeed, so we also count the errors before determining if we return an error
-	if errs != nil && errCount > 1 {
-		return errs
-	}
-	v4length := len(ipv4s)
-	v6length := len(ipv6s)
-	if v4length > 1 || v6length > 1 {
-		var ips []string
-		for _, i := range ipv4s {
-			ips = append(ips, i.String())
-		}
-		for _, i := range ipv6s {
-			ips = append(ips, i.String())
-		}
-		return fmt.Errorf(`The given hostname %s does not resolve to a unique IP.
-A unique IP is necessary to ensure that the upgrade script
-connects to only the (primary) administration controller.
-The hostname resolves to the following IPs: %s`, nHost, strings.Join(ips, ", "))
+	if err := network.ValidateHostnameUniqueness(nHost); err != nil {
+		return err
 	}
 
 	return nil
@@ -576,7 +544,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 
 	if len(warnings) > 0 {
 		for _, warn := range warnings {
-			logrus.Warnf(warn)
+			log.Warnf(warn)
 		}
 	}
 
