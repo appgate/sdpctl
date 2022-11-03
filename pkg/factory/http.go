@@ -47,7 +47,7 @@ type Factory struct {
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
 	f.Config = config
-	f.userAgent = "sdpctl/" + appVersion + "/go"
+	f.userAgent = "sdpctl/" + appVersion
 	f.HTTPTransport = httpTransport(f)       // depends on config
 	f.HTTPClient = httpClientFunc(f)         // depends on config
 	f.CustomHTTPClient = customHTTPClient(f) // depends on config
