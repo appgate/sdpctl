@@ -78,6 +78,8 @@ github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPp
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/appgate/sdp-api-client-go v1.0.7-0.20221011125012-1200fe22152c h1:dqR14HEyYAmJaEGavQoHEZ7rZbwxadYvhoxpDB8y1vM=
 github.com/appgate/sdp-api-client-go v1.0.7-0.20221011125012-1200fe22152c/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
+github.com/appgate/sdp-api-client-go v1.0.7-0.20221024132005-72954ecc7c32 h1:TOI7HNRZDJnz87vxt0uBqKfbRg/3/rzQXNU2QFmbNwU=
+github.com/appgate/sdp-api-client-go v1.0.7-0.20221024132005-72954ecc7c32/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=
 github.com/armon/go-metrics v0.3.10/go.mod h1:4O98XIr/9W0sxpJ8UaYkvjk10Iff7SnFrb4QAOwNTFc=
