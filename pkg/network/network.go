@@ -43,8 +43,7 @@ func ValidateHostnameUniqueness(addr string) error {
 	ipv6, err := resolver.LookupIP(ctx, "ip6", addr)
 	if err != nil {
 		errCount++
-		err = fmt.Errorf("ipv6: %w", err)
-		errs = multierror.Append(err, errs)
+		errs = multierror.Append(errs, fmt.Errorf("ipv6: %w", err))
 	}
 	// We check errors, but only one needs to succeed, so we also count the errors before determining if we return an error
 	if errs != nil && errCount > 1 {
