@@ -38,8 +38,7 @@ func ValidateHostnameUniqueness(addr string) error {
 	ipv4, err := resolver.LookupIP(ctx, "ip4", addr)
 	if err != nil {
 		errCount++
-		err = fmt.Errorf("ipv4: %w", err)
-		errs = multierror.Append(err, errs)
+		errs = multierror.Append(errs, fmt.Errorf("ipv4: %w", err))
 	}
 	ipv6, err := resolver.LookupIP(ctx, "ip6", addr)
 	if err != nil {
