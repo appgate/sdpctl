@@ -225,6 +225,8 @@ func (c *Config) ClearBearer() error {
 	if err := keyring.DeleteBearer(h); err != nil {
 		return err
 	}
+	c.BearerToken = ""
+	c.ExpiresAt = ""
 	viper.Set("bearer", "")
 	viper.Set("expires_at", "")
 	return nil
