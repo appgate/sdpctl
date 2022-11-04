@@ -18,16 +18,16 @@ import (
 )
 
 type Config struct {
-	URL         string `mapstructure:"url"`
-	Provider    string `mapstructure:"provider"`
-	Insecure    bool   `mapstructure:"insecure"`
-	Debug       bool   `mapstructure:"debug"`       // http debug flag
-	Version     int    `mapstructure:"api_version"` // api peer interface version
-	BearerToken string `mapstructure:"bearer"`      // current logged in user token
-	ExpiresAt   string `mapstructure:"expires_at"`
-	DeviceID    string `mapstructure:"device_id"`
-	PemFilePath string `mapstructure:"pem_filepath"`
-	Timeout     int    // HTTP timeout, not supported in the config file.
+	URL         string  `mapstructure:"url"`
+	Provider    *string `mapstructure:"provider"`
+	Insecure    bool    `mapstructure:"insecure"`
+	Debug       bool    `mapstructure:"debug"`       // http debug flag
+	Version     int     `mapstructure:"api_version"` // api peer interface version
+	BearerToken *string `mapstructure:"bearer"`      // current logged in user token
+	ExpiresAt   *string `mapstructure:"expires_at"`
+	DeviceID    string  `mapstructure:"device_id"`
+	PemFilePath string  `mapstructure:"pem_filepath"`
+	Timeout     int     // HTTP timeout, not supported in the config file.
 }
 
 type Credentials struct {
@@ -38,8 +38,8 @@ type Credentials struct {
 func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	// if the bearer token is in the config, we assume the current environment does not support a keyring, so we will use it.
 	// this will also include if the environment variable SDPCTL_BEARER is being used.
-	if len(c.BearerToken) > 10 {
-		return fmt.Sprintf("Bearer %s", c.BearerToken), nil
+	if c.BearerToken != nil && len(*c.BearerToken) > 10 {
+		return fmt.Sprintf("Bearer %s", *c.BearerToken), nil
 	}
 	prefix, err := c.KeyringPrefix()
 	if err != nil {
@@ -149,7 +149,7 @@ func (c *Config) CheckAuth() bool {
 	if len(c.URL) < 1 {
 		return false
 	}
-	if len(c.Provider) < 1 {
+	if c.Provider == nil {
 		return false
 	}
 	t, err := c.GetBearTokenHeaderValue()
@@ -163,8 +163,11 @@ func (c *Config) CheckAuth() bool {
 }
 
 func (c *Config) ExpiredAtValid() bool {
+	if c.ExpiresAt == nil {
+		return false
+	}
 	layout := "2006-01-02 15:04:05.999999999 -0700 MST"
-	t1, err := time.Parse(layout, c.ExpiresAt)
+	t1, err := time.Parse(layout, *c.ExpiresAt)
 	if err != nil {
 		return false
 	}
@@ -196,10 +199,11 @@ func (c *Config) ClearCredentials() error {
 	if err := keyring.ClearCredentials(prefix); err != nil {
 		return err
 	}
-	c.BearerToken = ""
-	c.ExpiresAt = ""
-	c.Provider = ""
-	keys := []string{"bearer", "expires_at", "provider"}
+	if err := c.ClearBearer(); err != nil {
+		return err
+	}
+	c.Provider = nil
+	keys := []string{"expires_at", "provider"}
 	allKeys := viper.AllKeys()
 	for _, k := range keys {
 		if util.InSlice(k, allKeys) {
@@ -225,10 +229,9 @@ func (c *Config) ClearBearer() error {
 	if err := keyring.DeleteBearer(h); err != nil {
 		return err
 	}
-	c.BearerToken = ""
-	c.ExpiresAt = ""
-	viper.Set("bearer", "")
-	viper.Set("expires_at", "")
+	c.BearerToken = nil
+	c.ExpiresAt = nil
+
 	return nil
 }
 

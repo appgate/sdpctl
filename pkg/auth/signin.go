@@ -63,8 +63,12 @@ func GetMinMaxAPIVersion(f *factory.Factory) (*MinMax, error) {
 		return nil, err
 	}
 	ctx := context.Background()
+	p := "local"
+	if cfg.Provider != nil {
+		p = *cfg.Provider
+	}
 	loginOpts := openapi.LoginRequest{
-		ProviderName: cfg.Provider,
+		ProviderName: p,
 		DeviceId:     cfg.DeviceID,
 	}
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
@@ -103,8 +107,7 @@ func Signin(f *factory.Factory) error {
 	}
 
 	loginOpts := openapi.LoginRequest{
-		ProviderName: cfg.Provider,
-		DeviceId:     cfg.DeviceID,
+		DeviceId: cfg.DeviceID,
 	}
 
 	bearer, err := cfg.GetBearTokenHeaderValue()
@@ -116,7 +119,6 @@ func Signin(f *factory.Factory) error {
 			return ErrSignInNotSupported
 		}
 	}
-
 	minMax, err := GetMinMaxAPIVersion(f)
 	if err != nil {
 		return err
@@ -156,7 +158,7 @@ func Signin(f *factory.Factory) error {
 	if !ok {
 		return fmt.Errorf("invalid provider %s - %s", selectedProvider.GetName(), loginOpts.ProviderName)
 	}
-	cfg.Provider = loginOpts.ProviderName
+	cfg.Provider = &loginOpts.ProviderName
 	var p Authenticate
 	switch selectedProvider.GetType() {
 	case RadiusProvider:
@@ -182,10 +184,10 @@ func Signin(f *factory.Factory) error {
 	if err != nil {
 		return err
 	}
-	cfg.BearerToken = authorizationToken.GetToken()
+	cfg.BearerToken = openapi.PtrString(authorizationToken.GetToken())
 	// use the original auth request expires_at value instead of the value from authorization since they can be different
 	// depending on the provider type.
-	cfg.ExpiresAt = response.Expires.String()
+	cfg.ExpiresAt = openapi.PtrString(response.Expires.String())
 	prefix, err := cfg.KeyringPrefix()
 	if err != nil {
 		return err
@@ -194,7 +196,7 @@ func Signin(f *factory.Factory) error {
 	// if the bearer token can't be saved to the keychain, it will be exported as env variable
 	// and saved in the config file as fallback, this should only happened if the system does not
 	// support the keychain integration.
-	if err := keyring.SetBearer(prefix, cfg.BearerToken); err != nil {
+	if err := keyring.SetBearer(prefix, *cfg.BearerToken); err != nil {
 		return err
 	}
 
@@ -214,7 +216,6 @@ func Signin(f *factory.Factory) error {
 	if err := viper.WriteConfig(); err != nil {
 		fmt.Fprintf(f.StdErr, "[error] %s\n", err)
 	}
-
 	return nil
 }
 
