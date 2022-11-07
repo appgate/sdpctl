@@ -12,6 +12,7 @@ import (
 
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/cmdappliance"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
@@ -47,7 +48,10 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		"",
 	}
 	cmd := &cobra.Command{
-		Use: "logs",
+		Use:     "logs",
+		Short:   docs.ApplianceLogsDoc.Short,
+		Long:    docs.ApplianceLogsDoc.Short,
+		Example: docs.ApplianceLogsDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			return cmdappliance.ArgsSelectAppliance(cmd, args, &opts.AppliancCmdOpts)
 		},

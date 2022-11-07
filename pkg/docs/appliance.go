@@ -285,4 +285,19 @@ NOTE: Although the '--include' and '--exclude' flags are provided as options her
 			},
 		},
 	}
+
+	ApplianceLogsDoc = CommandDoc{
+		Short: "download zip bundle with logs",
+		Long:  `Download a zip bundle with all logs from a appliance`,
+		Examples: []ExampleDoc{
+			{
+				Description: "Default logs command",
+				Command:     "sdpctl appliance logs",
+			},
+			{
+				Description: "Default logs to specific path",
+				Command:     "sdpctl appliance logs a68c1f69-534d-4060-a052-b223d42bac2c --path /tmp",
+			},
+		},
+	}
 )
