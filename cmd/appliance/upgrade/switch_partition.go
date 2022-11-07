@@ -7,6 +7,7 @@ import (
 
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/cmdappliance"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -33,7 +34,10 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use: "switch-partition [<appliance-id>]",
+		Use:     "switch-partition [<appliance-id>]",
+		Short:   docs.ApplianceUpgradeSwitchPartitionDoc.Short,
+		Long:    docs.ApplianceUpgradeSwitchPartitionDoc.Long,
+		Example: docs.ApplianceUpgradeSwitchPartitionDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			return cmdappliance.ArgsSelectAppliance(cmd, args, &opts.AppliancCmdOpts)
 		},

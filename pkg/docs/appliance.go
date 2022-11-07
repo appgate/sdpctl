@@ -323,4 +323,17 @@ for More information, see: https://sdphelp.appgate.com/adminguide/new-appliance.
 			},
 		},
 	}
+
+	ApplianceUpgradeSwitchPartitionDoc = CommandDoc{
+		Short: "Switch partition",
+		Long: `Reboot the appliance and switch the secondary partition to become the primary.
+
+`,
+		Examples: []ExampleDoc{
+			{
+				Description: "Interactive prompt to select and confirm which appliance to switch partition on",
+				Command:     "sdpctl appliance upgrade switch-partition",
+			},
+		},
+	}
 )
