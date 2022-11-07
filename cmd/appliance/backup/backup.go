@@ -28,6 +28,9 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 			if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
 				return err
 			}
+			if !f.CanPrompt() {
+				opts.NoInteractive = true
+			}
 			return appliance.PrepareBackup(&opts)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
