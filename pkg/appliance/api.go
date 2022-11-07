@@ -300,10 +300,10 @@ func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartit
 	return nil
 }
 
-func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error {
-	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeSwitchPartitionPost(ctx, id).Authorization(a.Token).Execute()
+func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) (string, error) {
+	changeID, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeSwitchPartitionPost(ctx, id).Authorization(a.Token).Execute()
 	if err != nil {
-		return api.HTTPErrorResponse(response, err)
+		return "", api.HTTPErrorResponse(response, err)
 	}
-	return nil
+	return changeID.GetId(), nil
 }

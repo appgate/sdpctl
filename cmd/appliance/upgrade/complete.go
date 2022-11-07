@@ -626,8 +626,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					if status.GetStatus() == appliancepkg.UpgradeStatusSuccess {
-						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
-							return fmt.Errorf("%s %w", i.GetName(), err)
+						if _, err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
+							return err
 						}
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
