@@ -80,12 +80,12 @@ func TestConfigCheckAuth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Config{
 				URL:         tt.fields.URL,
-				Provider:    tt.fields.Provider,
+				Provider:    &tt.fields.Provider,
 				Insecure:    tt.fields.Insecure,
 				Debug:       tt.fields.Debug,
 				Version:     tt.fields.Version,
-				BearerToken: tt.fields.BearerToken,
-				ExpiresAt:   tt.fields.ExpiresAt,
+				BearerToken: &tt.fields.BearerToken,
+				ExpiresAt:   &tt.fields.ExpiresAt,
 				DeviceID:    tt.fields.DeviceID,
 				PemFilePath: tt.fields.PemFilePath,
 			}
@@ -249,7 +249,7 @@ func TestClearCredentials(t *testing.T) {
 	)
 	cfg := Config{
 		URL:         fmt.Sprintf("https://%s", prefix),
-		BearerToken: bearer,
+		BearerToken: &bearer,
 	}
 	if err := keyring.SetUsername(prefix, username); err != nil {
 		t.Error("TEST FAIL: failed to set username", err)
