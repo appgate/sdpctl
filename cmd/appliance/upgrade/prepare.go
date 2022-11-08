@@ -251,10 +251,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			var errs *multierr.Error
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
-					errs = multierr.Append(fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason), errs)
+					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
 				}
 			}
-			errs = multierr.Append(errors.New("No appliances to prepare for upgrade. The filter query may be invalid. See the log for more details."), errs)
+			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. The filter query may be invalid. See the log for more details."))
 			return errs
 		}
 	}
