@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	filterHelp string = `Filter appliances using a comma separated list of key-value pairs. Example: '--include name=controller,site=<site-id> etc.'.
+	filterHelp string = `Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=<site-id> etc.'.
 Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function`
 )
 
@@ -25,8 +25,8 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 		TraverseChildren: true,
 	}
 	pFlags := cmd.PersistentFlags()
-	pFlags.StringToStringP("include", "i", map[string]string{}, filterHelp)
-	pFlags.StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances. Adheres to the same syntax and key-value pairs as '--include'")
+	pFlags.StringToStringP("include", "i", map[string]string{}, "Include appliances. Adheres to the same syntax and key-value pairs as '--exclude'")
+	pFlags.StringToStringP("exclude", "e", map[string]string{}, filterHelp)
 
 	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
 	cmd.AddCommand(backup.NewCmdBackup(f))
