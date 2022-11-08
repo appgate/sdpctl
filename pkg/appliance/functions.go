@@ -432,9 +432,9 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 	// apply normal filter
 	if len(filter["include"]) > 0 {
 		include = applyApplianceFilter(include, filter["include"])
-		for _, i := range include {
-			delete(notInclude, i.GetId())
-		}
+	}
+	for _, i := range include {
+		delete(notInclude, i.GetId())
 	}
 
 	// apply exclusion filter
@@ -449,8 +449,16 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 	}
 
 	for _, a := range notInclude {
-		exclude = append(exclude, a)
+		exclude = AppendUniqueAppliance(exclude, a)
 	}
+
+	// Sort results by name
+	sort.SliceStable(include, func(i, j int) bool {
+		return include[i].GetName() < include[j].GetName()
+	})
+	sort.SliceStable(exclude, func(i, j int) bool {
+		return exclude[i].GetName() < exclude[j].GetName()
+	})
 
 	return include, exclude
 }

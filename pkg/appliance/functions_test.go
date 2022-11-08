@@ -557,9 +557,10 @@ func TestFilterAndExclude(t *testing.T) {
 		"function":  "logserver",
 	}
 	type testStruct struct {
-		name string
-		args args
-		want []openapi.Appliance
+		name         string
+		args         args
+		want         []openapi.Appliance
+		wantFiltered []openapi.Appliance
 	}
 	tests := []testStruct{}
 	for word, value := range keywords {
@@ -580,6 +581,10 @@ func TestFilterAndExclude(t *testing.T) {
 			want: []openapi.Appliance{
 				mockControllers["primaryController"],
 			},
+			wantFiltered: []openapi.Appliance{
+				mockControllers["gateway"],
+				mockControllers["secondaryController"],
+			},
 		})
 		tests = append(tests, testStruct{
 			name: fmt.Sprintf("filter by %s", word),
@@ -596,16 +601,23 @@ func TestFilterAndExclude(t *testing.T) {
 				},
 			},
 			want: []openapi.Appliance{
-				mockControllers["secondaryController"],
 				mockControllers["gateway"],
+				mockControllers["secondaryController"],
+			},
+			wantFiltered: []openapi.Appliance{
+				mockControllers["primaryController"],
 			},
 		})
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := FilterAppliances(tt.args.appliances, tt.args.filter); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FilterAppliances() = %v, want %v", got, tt.want)
+			got, filtered := FilterAppliances(tt.args.appliances, tt.args.filter)
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("FilterAppliances() = %v", cmp.Diff(got, tt.want))
+			}
+			if !cmp.Equal(filtered, tt.wantFiltered) {
+				t.Errorf("FilterAppliances() = %v", cmp.Diff(filtered, tt.wantFiltered))
 			}
 		})
 	}
