@@ -124,10 +124,19 @@ type customTransport struct {
 	underlyingTransport      http.RoundTripper
 }
 
+type ContextKey string
+
+const ContextAcceptValue ContextKey = "Accept"
+
 func (ct *customTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("Accept", ct.accept)
 	req.Header.Add("Authorization", ct.token)
 	req.Header.Add("User-Agent", ct.useragent)
+	req.Header.Add("Accept", ct.accept)
+
+	// overwrite Accept header if we have anything in the context
+	if accept, ok := req.Context().Value(ContextAcceptValue).(string); ok {
+		req.Header.Set("Accept", accept)
+	}
 
 	return ct.underlyingTransport.RoundTrip(req)
 }
