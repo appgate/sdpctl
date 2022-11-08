@@ -419,9 +419,11 @@ var DefaultCommandFilter = map[string]map[string]string{
 	"exclude": {},
 }
 
-func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) (include []openapi.Appliance, exclude []openapi.Appliance) {
-	include = make([]openapi.Appliance, len(appliances))
+func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) ([]openapi.Appliance, []openapi.Appliance, error) {
+	include := make([]openapi.Appliance, len(appliances))
 	copy(include, appliances)
+	var errs *multierror.Error
+	var err error
 
 	// Keep track of which appliances are filtered at the different steps
 	notInclude := make(map[string]openapi.Appliance, len(appliances))
@@ -431,14 +433,20 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 
 	// apply normal filter
 	if len(filter["include"]) > 0 {
-		include = applyApplianceFilter(include, filter["include"])
+		include, err = applyApplianceFilter(include, filter["include"])
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
 	}
 	for _, i := range include {
 		delete(notInclude, i.GetId())
 	}
 
 	// apply exclusion filter
-	exclude = applyApplianceFilter(include, filter["exclude"])
+	exclude, err := applyApplianceFilter(include, filter["exclude"])
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
 	for _, exa := range exclude {
 		eID := exa.GetId()
 		for i, a := range include {
@@ -460,7 +468,7 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 		return exclude[i].GetName() < exclude[j].GetName()
 	})
 
-	return include, exclude
+	return include, exclude, errs.ErrorOrNil()
 }
 
 func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.Appliance) []openapi.Appliance {
@@ -479,7 +487,7 @@ func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.App
 	return filteredAppliances
 }
 
-func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) []openapi.Appliance {
+func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) ([]openapi.Appliance, error) {
 	var filteredAppliances []openapi.Appliance
 	var warnings []string
 
@@ -491,10 +499,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, name := range nameList {
 					regex, err := regexp.Compile(name)
 					if err != nil {
-						if !util.InSlice(err.Error(), warnings) {
-							warnings = append(warnings, err.Error())
-						}
-						continue
+						return nil, err
 					}
 					if regex.MatchString(a.GetName()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
@@ -505,10 +510,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, id := range ids {
 					regex, err := regexp.Compile(id)
 					if err != nil {
-						if !util.InSlice(err.Error(), warnings) {
-							warnings = append(warnings, err.Error())
-						}
-						continue
+						return nil, err
 					}
 					if regex.MatchString(a.GetId()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
@@ -527,10 +529,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, v := range vList {
 					regex, err := regexp.Compile(v)
 					if err != nil {
-						if !util.InSlice(err.Error(), warnings) {
-							warnings = append(warnings, err.Error())
-						}
-						continue
+						return nil, err
 					}
 					version := a.GetVersion()
 					versionString := fmt.Sprintf("%d", version)
@@ -543,10 +542,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, host := range hostList {
 					regex, err := regexp.Compile(host)
 					if err != nil {
-						if !util.InSlice(err.Error(), warnings) {
-							warnings = append(warnings, err.Error())
-						}
-						continue
+						return nil, err
 					}
 					if regex.MatchString(a.GetHostname()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
@@ -555,10 +551,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "active", "activated":
 				b, err := strconv.ParseBool(s)
 				if err != nil {
-					message := fmt.Sprintf("Failed to parse boolean filter value: %x", err)
-					if !util.InSlice(message, warnings) {
-						warnings = append(warnings, message)
-					}
+					return nil, err
 				}
 				if a.GetActivated() == b {
 					filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
@@ -568,10 +561,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 				for _, site := range siteList {
 					regex, err := regexp.Compile(site)
 					if err != nil {
-						if !util.InSlice(err.Error(), warnings) {
-							warnings = append(warnings, err.Error())
-						}
-						continue
+						return nil, err
 					}
 					if regex.MatchString(a.GetSite()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
@@ -600,7 +590,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 		}
 	}
 
-	return filteredAppliances
+	return filteredAppliances, nil
 }
 
 const (

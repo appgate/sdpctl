@@ -561,8 +561,22 @@ func TestFilterAndExclude(t *testing.T) {
 		args         args
 		want         []openapi.Appliance
 		wantFiltered []openapi.Appliance
+		wantErr      bool
 	}
-	tests := []testStruct{}
+	tests := []testStruct{
+		{
+			name: "invalid regex error",
+			args: args{
+				appliances: []openapi.Appliance{},
+				filter: map[string]map[string]string{
+					"include": {
+						"name": "*",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
 	for word, value := range keywords {
 		tests = append(tests, testStruct{
 			name: fmt.Sprintf("filter by %s", word),
@@ -612,7 +626,10 @@ func TestFilterAndExclude(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, filtered := FilterAppliances(tt.args.appliances, tt.args.filter)
+			got, filtered, err := FilterAppliances(tt.args.appliances, tt.args.filter)
+			if !tt.wantErr && err != nil {
+				t.Errorf("FilterAppliances() = %v", err)
+			}
 			if !cmp.Equal(got, tt.want) {
 				t.Errorf("FilterAppliances() = %v", cmp.Diff(got, tt.want))
 			}

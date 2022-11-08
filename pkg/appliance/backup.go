@@ -158,7 +158,10 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 
 		if !reflect.DeepEqual(nullFilter, opts.FilterFlag) {
-			res, _ := FilterAppliances(appliances, opts.FilterFlag)
+			res, _, err := FilterAppliances(appliances, opts.FilterFlag)
+			if err != nil {
+				return nil, err
+			}
 			toBackup = append(toBackup, res...)
 		}
 	}
@@ -367,9 +370,12 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	}
 
 	// Filter out all but Controllers, LogServers and Portals
-	appliances, _ = FilterAppliances(appliances, map[string]map[string]string{
+	appliances, _, err := FilterAppliances(appliances, map[string]map[string]string{
 		"include": {"function": strings.Join([]string{FunctionController, FunctionLogServer, FunctionPortal}, FilterDelimiter)},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	for _, a := range appliances {
 		selectorName := appendFunctions(a)
@@ -397,11 +403,14 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	}
 	log.WithField("appliances", selected).Info("selected appliances for backup")
 
-	result, _ := FilterAppliances(appliances, map[string]map[string]string{
+	result, _, err := FilterAppliances(appliances, map[string]map[string]string{
 		"include": {
 			"name": strings.Join(selected, FilterDelimiter),
 		},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }

@@ -235,7 +235,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			Appliance: a,
 		})
 	}
-	appliances, filtered := appliancepkg.FilterAppliances(online, filter)
+	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
+	if err != nil {
+		return err
+	}
 	for _, f := range filtered {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Appliance: f,
