@@ -419,26 +419,40 @@ var DefaultCommandFilter = map[string]map[string]string{
 	"exclude": {},
 }
 
-func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) []openapi.Appliance {
-	result := make([]openapi.Appliance, len(appliances))
-	copy(result, appliances)
+func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) (include []openapi.Appliance, exclude []openapi.Appliance) {
+	include = make([]openapi.Appliance, len(appliances))
+	copy(include, appliances)
+
+	// Keep track of which appliances are filtered at the different steps
+	notInclude := make(map[string]openapi.Appliance, len(appliances))
+	for _, a := range appliances {
+		notInclude[a.GetId()] = a
+	}
+
 	// apply normal filter
 	if len(filter["include"]) > 0 {
-		result = applyApplianceFilter(result, filter["include"])
+		include = applyApplianceFilter(include, filter["include"])
+		for _, i := range include {
+			delete(notInclude, i.GetId())
+		}
 	}
 
 	// apply exclusion filter
-	toExclude := applyApplianceFilter(result, filter["exclude"])
-	for _, exa := range toExclude {
+	exclude = applyApplianceFilter(include, filter["exclude"])
+	for _, exa := range exclude {
 		eID := exa.GetId()
-		for i, a := range result {
+		for i, a := range include {
 			if eID == a.GetId() {
-				result = append(result[:i], result[i+1:]...)
+				include = append(include[:i], include[i+1:]...)
 			}
 		}
 	}
 
-	return result
+	for _, a := range notInclude {
+		exclude = append(exclude, a)
+	}
+
+	return include, exclude
 }
 
 func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.Appliance) []openapi.Appliance {
@@ -467,7 +481,13 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "name":
 				nameList := strings.Split(s, FilterDelimiter)
 				for _, name := range nameList {
-					regex := regexp.MustCompile(name)
+					regex, err := regexp.Compile(name)
+					if err != nil {
+						if !util.InSlice(err.Error(), warnings) {
+							warnings = append(warnings, err.Error())
+						}
+						continue
+					}
 					if regex.MatchString(a.GetName()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
@@ -475,7 +495,13 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "id":
 				ids := strings.Split(s, FilterDelimiter)
 				for _, id := range ids {
-					regex := regexp.MustCompile(id)
+					regex, err := regexp.Compile(id)
+					if err != nil {
+						if !util.InSlice(err.Error(), warnings) {
+							warnings = append(warnings, err.Error())
+						}
+						continue
+					}
 					if regex.MatchString(a.GetId()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
@@ -491,7 +517,13 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "version":
 				vList := strings.Split(s, FilterDelimiter)
 				for _, v := range vList {
-					regex := regexp.MustCompile(v)
+					regex, err := regexp.Compile(v)
+					if err != nil {
+						if !util.InSlice(err.Error(), warnings) {
+							warnings = append(warnings, err.Error())
+						}
+						continue
+					}
 					version := a.GetVersion()
 					versionString := fmt.Sprintf("%d", version)
 					if regex.MatchString(versionString) {
@@ -501,7 +533,13 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "hostname", "host":
 				hostList := strings.Split(s, FilterDelimiter)
 				for _, host := range hostList {
-					regex := regexp.MustCompile(host)
+					regex, err := regexp.Compile(host)
+					if err != nil {
+						if !util.InSlice(err.Error(), warnings) {
+							warnings = append(warnings, err.Error())
+						}
+						continue
+					}
 					if regex.MatchString(a.GetHostname()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
@@ -520,7 +558,13 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 			case "site", "site-id":
 				siteList := strings.Split(s, FilterDelimiter)
 				for _, site := range siteList {
-					regex := regexp.MustCompile(site)
+					regex, err := regexp.Compile(site)
+					if err != nil {
+						if !util.InSlice(err.Error(), warnings) {
+							warnings = append(warnings, err.Error())
+						}
+						continue
+					}
 					if regex.MatchString(a.GetSite()) {
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}

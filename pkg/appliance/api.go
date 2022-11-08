@@ -29,7 +29,8 @@ func (a *Appliance) List(ctx context.Context, filter map[string]map[string]strin
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return FilterAppliances(appliances.GetData(), filter), nil
+	result, _ := FilterAppliances(appliances.GetData(), filter)
+	return result, nil
 }
 
 // Get return a single appliance based on applianceID

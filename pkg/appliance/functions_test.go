@@ -604,7 +604,7 @@ func TestFilterAndExclude(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := FilterAppliances(tt.args.appliances, tt.args.filter); !reflect.DeepEqual(got, tt.want) {
+			if got, _ := FilterAppliances(tt.args.appliances, tt.args.filter); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("FilterAppliances() = %v, want %v", got, tt.want)
 			}
 		})
