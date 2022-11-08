@@ -16,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
+	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb/v7"
@@ -30,6 +31,7 @@ type logOpts struct {
 	SpinnerOut func() io.Writer
 	Version    int
 	Path       string
+	json       bool
 }
 
 func NewLogsCmd(f *factory.Factory) *cobra.Command {
@@ -46,6 +48,7 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		f.GetSpinnerOutput(),
 		f.Config.Version,
 		"",
+		false,
 	}
 	cmd := &cobra.Command{
 		Use:     "logs",
@@ -60,6 +63,7 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&opts.Path, "path", "", "", "Optional path to write to")
+	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	return cmd
 }
 
@@ -122,6 +126,9 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	}
 	p.Wait()
 	log.Infof("Downloaded %d bytes zip bundle for %s", size, opts.ApplianceID)
+	if opts.json {
+		return util.PrintJSON(opts.Out, map[string]string{"path": file.Name()})
+	}
 	fmt.Fprintf(opts.Out, "saved to %s\n", file.Name())
 	return nil
 }
