@@ -12,18 +12,21 @@ import (
 
 // NewListCmd return a new profile list command
 func NewListCmd(opts *commandOpts) *cobra.Command {
-	return &cobra.Command{
+	var json = false
+	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   docs.ProfileListDoc.Short,
 		Long:    docs.ProfileListDoc.Long,
 		RunE: func(c *cobra.Command, args []string) error {
-			return listRun(c, args, opts)
+			return listRun(c, args, opts, json)
 		},
 	}
+	cmd.Flags().BoolVar(&json, "json", false, "Display in JSON format")
+	return cmd
 }
 
-func listRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
+func listRun(cmd *cobra.Command, args []string, opts *commandOpts, json bool) error {
 	if !profiles.FileExists() {
 		fmt.Fprintln(opts.Out, "no profiles added")
 		return nil
@@ -32,6 +35,9 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	p, err := profiles.Read()
 	if err != nil {
 		return err
+	}
+	if json {
+		return util.PrintJSON(opts.Out, p)
 	}
 	currentProfile, err := p.CurrentProfile()
 	if err != nil {
