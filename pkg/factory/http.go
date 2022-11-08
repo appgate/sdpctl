@@ -208,7 +208,7 @@ func apiClientFunc(f *Factory) func(c *configuration.Config) (*openapi.APIClient
 }
 
 func getClients(f *Factory, cfg *configuration.Config) (*http.Client, *openapi.APIClient, error) {
-	httpClient, err := f.HTTPClient()
+	httpClient, err := f.CustomHTTPClient()
 	if err != nil {
 		return nil, nil, err
 	}

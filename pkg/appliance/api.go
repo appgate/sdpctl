@@ -155,14 +155,11 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 	if err != nil {
 		return err
 	}
-	for k, v := range cfg.DefaultHeader {
-		req.Header.Add(k, v)
-	}
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	req.Header.Set("Authorization", a.Token)
+
 	response, err := httpClient.Do(req)
 	if err != nil {
 		if response == nil {
