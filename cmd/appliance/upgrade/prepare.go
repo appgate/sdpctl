@@ -1,7 +1,6 @@
 package upgrade
 
 import (
-	"archive/zip"
 	"bytes"
 	"context"
 	"errors"
@@ -56,6 +55,7 @@ type prepareUpgradeOptions struct {
 	forcePrepare     bool
 	ciMode           bool
 	actualHostname   string
+	targetVersion    *version.Version
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -97,10 +97,10 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			} else {
 				opts.timeout = flagTimeout
 			}
-			var errs error
+			var errs *multierr.Error
 			opts.filename = filepath.Base(opts.image)
 			if err := checkImageFilename(opts.filename); err != nil {
-				errs = multierr.Append(errs, err)
+				return err
 			}
 
 			// allow remote addr for image, such as aws s3 bucket
@@ -114,6 +114,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				// remove any query string, and leave us only with the filename
 				u.RawQuery = ""
 				opts.filename = path.Base(u.String())
+
+				// guess version from filename
+				if opts.targetVersion, err = appliancepkg.ParseVersionString(opts.filename); err != nil {
+					log.WithField("filename", opts.filename).Debug("failed to guess version from filename")
+					return err
+				}
 			}
 			if !opts.remoteImage {
 				// Needed to avoid trouble with the '~' symbol
@@ -129,20 +135,26 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					errs = multierr.Append(errs, fmt.Errorf("Image file not found %q", opts.image))
 				}
 				if ok {
-					_, err := zip.OpenReader(opts.image)
-					if err != nil {
-						errs = multierr.Append(errs, err)
+					// guess version from filename first, then from the extracted zip if filename fails
+					// fatal if both fail
+					if opts.targetVersion, err = appliancepkg.ParseVersionString(opts.filename); err != nil {
+						if opts.targetVersion, err = appliancepkg.ParseVersionFromZip(opts.image); err != nil {
+							errs = multierr.Append(errs, err)
+						}
 					}
 				}
 			}
 
-			ciModeFlag, err := cmd.Flags().GetBool("ci-mode")
-			if err != nil {
+			if opts.ciMode, err = cmd.Flags().GetBool("ci-mode"); err != nil {
 				return err
 			}
-			opts.ciMode = ciModeFlag
 
-			return errs
+			if opts.Config.Version <= 13 {
+				// Versions before v13 does not have dev-keyring functionality
+				opts.DevKeyring = false
+			}
+
+			return errs.ErrorOrNil()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			h, err := opts.Config.GetHost()
@@ -170,8 +182,8 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 
 func checkImageFilename(i string) error {
 	// Check if its a valid filename
-	if rg := regexp.MustCompile(`(.+)?\d\.\d\.\d(.+)?\.img\.zip`); !rg.MatchString(i) {
-		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive with a version number, such as 5.5.1")
+	if rg := regexp.MustCompile(`\.img\.zip`); !rg.MatchString(i) {
+		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive.")
 	}
 	return nil
 }
@@ -201,10 +213,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	targetVersion, err := appliancepkg.ParseVersionString(opts.filename)
-	if err != nil {
-		log.Debugf("Could not guess target version based on the image file name %q", opts.filename)
-	}
 	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	Allappliances, err := a.List(ctx, nil)
 	if err != nil {
@@ -248,7 +256,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 	if !opts.forcePrepare {
 		var skip []appliancepkg.SkipUpgrade
-		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, targetVersion)
+		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, opts.targetVersion)
 		skipAppliances = append(skipAppliances, skip...)
 		if len(appliances) <= 0 {
 			var errs *multierr.Error
@@ -271,17 +279,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 	autoScalingWarning := false
-	if targetVersion != nil {
-		constraints, _ := version.NewConstraint(">= 5.5.0")
-		if constraints.Check(targetVersion) {
-			autoScalingWarning = true
-		}
-	} else if opts.Config.Version == 15 {
+	constraints, _ := version.NewConstraint(">= 5.5.0")
+	if constraints.Check(opts.targetVersion) {
 		autoScalingWarning = true
-	}
-	if opts.Config.Version <= 13 {
-		// Versions before v13 does not have dev-keyring functionality
-		opts.DevKeyring = false
 	}
 	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 && !opts.NoInteractive {
 		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
@@ -312,11 +312,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	log.Infof("Primary controller is: %s and running %s", primaryController.Name, currentPrimaryControllerVersion.String())
-	if targetVersion != nil {
-		log.Infof("Appliances will be prepared for upgrade to version: %s", targetVersion.String())
-	}
-	msg, err := showPrepareUpgradeMessage(opts.filename, appliances, skipAppliances, initialStats.GetData())
+	log.Infof("Primary controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
+	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
+
+	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData())
 	if err != nil {
 		return err
 	}
@@ -551,13 +550,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					log.WithError(err).Warn("Failed to determine currently prepared version")
 				}
 			}
-			uploadVersion, err := appliancepkg.ParseVersionString(opts.image)
-			if err != nil {
-				log.WithError(err).Warn("failed parsing version string")
-			}
-			if versionCheck, err := appliancepkg.CompareVersionsAndBuildNumber(uploadVersion, preparedVersion); err == nil && versionCheck <= 0 {
+			if versionCheck, err := appliancepkg.CompareVersionsAndBuildNumber(opts.targetVersion, preparedVersion); err == nil && versionCheck <= 0 {
 				log.WithFields(log.Fields{
-					"uploadVersion":   uploadVersion.String(),
+					"uploadVersion":   opts.targetVersion.String(),
 					"preparedVersion": preparedVersion.String(),
 					"appliance":       appliance.GetName(),
 				}).Info("an older version is already prepared on the appliance. cancelling before proceeding")
@@ -716,18 +711,13 @@ The following appliances will be skipped:
 {{ .SkipTable }}{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
 	type stub struct {
 		Filepath       string
 		ApplianceTable string
 		SkipTable      string
 	}
 	data := stub{Filepath: f}
-
-	prepareVersion, err := appliancepkg.ParseVersionString(f)
-	if err != nil {
-		return "", err
-	}
 
 	abuf := &bytes.Buffer{}
 	at := util.NewPrinter(abuf, 4)
