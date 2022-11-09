@@ -217,7 +217,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if len(opts.actualHostname) > 0 {
 		host = opts.actualHostname
 	}
-	filteredAppliances := appliancepkg.FilterAppliances(Allappliances, filter)
 
 	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host, true)
 	if err != nil {
@@ -229,13 +228,24 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	skipAppliances := []appliancepkg.SkipUpgrade{}
-	appliances, offline, _ := appliancepkg.FilterAvailable(filteredAppliances, initialStats.GetData())
+	online, offline, _ := appliancepkg.FilterAvailable(Allappliances, initialStats.GetData())
 	for _, a := range offline {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Reason:    "appliance is offline",
 			Appliance: a,
 		})
 	}
+	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
+	if err != nil {
+		return err
+	}
+	for _, f := range filtered {
+		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
+			Appliance: f,
+			Reason:    "appliance was filtered using the '--include' or '--exclude' flag",
+		})
+	}
+
 	if !opts.forcePrepare {
 		var skip []appliancepkg.SkipUpgrade
 		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, targetVersion)
@@ -244,10 +254,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			var errs *multierr.Error
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
-					errs = multierr.Append(fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason), errs)
+					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
 				}
 			}
-			errs = multierr.Append(errors.New("No appliances to prepare for upgrade."), errs)
+			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. The filter query may be invalid. See the log for more details."))
 			return errs
 		}
 	}

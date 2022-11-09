@@ -211,7 +211,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		toBackup = append(toBackup, *primaryController)
 	}
 
-	allAppliances := appliancepkg.FilterAppliances(rawAppliances, filter)
+	allAppliances, _, err := appliancepkg.FilterAppliances(rawAppliances, filter)
+	if err != nil {
+		return err
+	}
 	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
