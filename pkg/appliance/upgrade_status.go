@@ -68,7 +68,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 					// send error details for tracker
 					tracker.Fail(s + " - " + details)
 				}
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s %s %s", name, s, details))
 			}
 			if util.InSlice(s, desiredStatuses) {
 				logEntry.Info("Reached wanted upgrade status")
