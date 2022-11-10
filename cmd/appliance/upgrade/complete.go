@@ -609,24 +609,24 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				logEntry.Info("Install the downloaded upgrade image to the other partition")
 				if !SwitchPartition {
 					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
-						return err
+						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					status, err := a.UpgradeStatus(ctx, i.GetId())
 					if err != nil {
-						return err
+						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					if status.GetStatus() == appliancepkg.UpgradeStatusSuccess {
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
-							return err
+							return fmt.Errorf("%s %w", i.GetName(), err)
 						}
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
-					return err
+					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 				if err := a.ApplianceStats.WaitForApplianceState(ctx, i, appliancepkg.StatReady, t); err != nil {
-					return err
+					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
 				s, _, err := a.Stats(ctx)
