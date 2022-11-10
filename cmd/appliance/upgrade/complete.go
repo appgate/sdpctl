@@ -548,8 +548,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
 			}
-			logEntry.WithField("want", appliancepkg.StatReady).Info("Waiting for the primary Controller to reach a wanted state")
-			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
+			msg := "Waiting for the primary Controller to reach a wanted state"
+			logEntry.WithField("want", appliancepkg.StatReady).Info(msg)
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.UpgradeStatusGetErrorMessage, msg), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 				return err
 			}
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
@@ -611,7 +612,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				}
 				logEntry.Info("Install the downloaded upgrade image to the other partition")
 				if !SwitchPartition {
-					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
+					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.UpgradeStatusGetErrorMessage, "applying upgrade"), i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					status, err := a.UpgradeStatusRetry(ctx, i.GetId())
@@ -709,7 +710,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err != nil {
 				return err
 			}
-			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.UpgradeStatusGetErrorMessage, "applying upgrade"), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 				log.WithFields(f).WithError(err).Error("The Controller never reached desired upgrade status")
 				return err
 			}
