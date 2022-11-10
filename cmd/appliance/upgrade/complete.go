@@ -611,7 +611,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
-					status, err := a.UpgradeStatus(ctx, i.GetId())
+					status, err := a.UpgradeStatusRetry(ctx, i.GetId())
 					if err != nil {
 						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
