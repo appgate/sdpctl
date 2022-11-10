@@ -602,8 +602,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 				}
 				if !util.InSlice(i.GetName(), toReboot) {
-					if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
-						return err
+					err := backoff.Retry(func() error {
+						return a.UpgradeComplete(ctx, i.GetId(), SwitchPartition)
+					}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+					if err != nil {
+						return fmt.Errorf("Could not complete upgrade on %s %w", i.GetName(), err)
 					}
 				}
 				logEntry.Info("Install the downloaded upgrade image to the other partition")
@@ -700,7 +703,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				t = p.AddTracker(controller.GetName(), "upgraded")
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
-			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
+			err := backoff.Retry(func() error {
+				return a.UpgradeComplete(ctx, controller.GetId(), true)
+			}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+			if err != nil {
 				return err
 			}
 			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
