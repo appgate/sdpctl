@@ -643,6 +643,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						queueContinue <- queueStruct{err: err}
 						return err
 					}
+					log.Infof("prepare image change %s %s %s", c.GetResult(), c.GetStatus(), c.GetDetails())
 					unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {
