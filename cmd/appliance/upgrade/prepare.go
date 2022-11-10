@@ -572,7 +572,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 			if status.GetStatus() != appliancepkg.UpgradeStatusReady {
 				log.WithFields(log.Fields{
-					"appliance": appliance.GetName(),
+					"appliance":      appliance.GetName(),
+					"upgrade_status": status.GetStatus(),
 				}).Info("another version is already prepared on the appliance. cancelling before proceeding")
 				if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
 					errs = multierr.Append(errs, err)
@@ -585,7 +586,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = updateProgressBars.AddTracker(appliance.GetName(), "ready")
+				t = updateProgressBars.AddTracker(appliance.GetName(), status.GetStatus())
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 
