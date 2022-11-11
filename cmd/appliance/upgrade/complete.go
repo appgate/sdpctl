@@ -13,6 +13,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -658,8 +659,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			close(upgradeChan)
 		}()
 		if err := g.Wait(); err != nil {
-			log.WithError(err).Error(err.Error())
-			return fmt.Errorf("Error during upgrade of an appliance %w", err)
+			if ae, ok := err.(*api.Error); ok {
+				for _, e := range ae.Errors {
+					log.Error(e)
+				}
+			} else {
+				log.Error(err)
+			}
+
+			return err
 		}
 		return nil
 	}
@@ -791,7 +799,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	for index, chunk := range chunks {
 		fmt.Fprintf(opts.Out, "\n[%s] Upgrading additional appliances (Batch %d / %d):\n", time.Now().Format(time.RFC3339), index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunk, false); err != nil {
-			return fmt.Errorf("Failed during upgrade of additional appliances %w", err)
+			return err
 		}
 	}
 
