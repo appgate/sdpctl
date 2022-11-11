@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -43,13 +44,19 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	logEntry := log.WithField("appliance", name)
 	logEntry.WithField("want", desiredStatuses).Info("Polling for upgrade status")
 	return func() error {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
 			if tracker != nil {
 				msg := "no response, appliance offline"
+				if !errors.Is(err, context.DeadlineExceeded) {
+					msg = err.Error()
+				}
 				if v, ok := ctx.Value(UpgradeStatusGetErrorMessage).(string); ok {
 					msg = v
 				}
+
 				tracker.Update(msg)
 			}
 			logEntry.WithError(err).Debug("Appliance unreachable")
