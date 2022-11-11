@@ -337,11 +337,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	majorOrMinorUpgrade := appliancepkg.IsMajorUpgrade(currentPrimaryControllerVersion, opts.targetVersion) || appliancepkg.IsMinorUpgrade(currentPrimaryControllerVersion, opts.targetVersion)
+	ctrlUpgradeWarning := appliancepkg.MultiControllerUpgradeWarning(Allappliances, appliances, majorOrMinorUpgrade)
 
 	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
 
-	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData())
+	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning)
 	if err != nil {
 		return err
 	}
@@ -723,16 +725,25 @@ const prepareUpgradeMessage = `PREPARE SUMMARY
 
 The following appliances will be skipped:
 
-{{ .SkipTable }}{{ end }}
+{{ .SkipTable }}{{ end }}{{ if .MultiControllerUpgradeWarning }}
+
+WARNING: This upgrade requires all controllers to be upgraded to the same version, but not all
+controllers are being prepared for upgrade.
+A partial major or minor controller upgrade is not supported. The upgrade will fail unless all
+controllers are prepared for upgrade when running 'upgrade complete'.{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning bool) (string, error) {
 	type stub struct {
-		Filepath       string
-		ApplianceTable string
-		SkipTable      string
+		Filepath                      string
+		ApplianceTable                string
+		SkipTable                     string
+		MultiControllerUpgradeWarning bool
 	}
-	data := stub{Filepath: f}
+	data := stub{
+		Filepath:                      f,
+		MultiControllerUpgradeWarning: multiControllerUpgradeWarning,
+	}
 
 	abuf := &bytes.Buffer{}
 	at := util.NewPrinter(abuf, 4)
