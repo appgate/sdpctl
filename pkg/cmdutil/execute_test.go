@@ -1,4 +1,4 @@
-package cmd
+package cmdutil
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/appgate/sdpctl/pkg/api"
-	"github.com/appgate/sdpctl/pkg/cmdutil"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
@@ -25,7 +25,7 @@ func TestCommandErrorHandling(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		want         exitCode
+		want         ExitCode
 		wantedOutput string
 	}{
 		{
@@ -33,14 +33,14 @@ func TestCommandErrorHandling(t *testing.T) {
 			args: args{
 				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error { return nil }},
 			},
-			want: exitOK,
+			want: ExitOK,
 		},
 		{
 			name: "auth error",
 			args: args{
 				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error { return ErrExitAuth }},
 			},
-			want: exitAuth,
+			want: ExitAuth,
 			wantedOutput: `1 error occurred:
 	* no authentication
 
@@ -50,9 +50,9 @@ func TestCommandErrorHandling(t *testing.T) {
 		{
 			name: "execution canceled by user",
 			args: args{
-				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error { return cmdutil.ErrExecutionCanceledByUser }},
+				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error { return ErrExecutionCanceledByUser }},
 			},
-			want: exitCancel,
+			want: ExitCancel,
 			wantedOutput: `1 error occurred:
 	* Cancelled by user
 
@@ -66,7 +66,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return context.DeadlineExceeded
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `2 errors occurred:
 	* context deadline exceeded
 	* Command timed out
@@ -81,7 +81,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return x509.UnknownAuthorityError{}
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `2 errors occurred:
 	* x509: certificate signed by unknown authority
 	* Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'
@@ -102,7 +102,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return fmt.Errorf("hello world %w", ae)
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `2 errors occurred:
 	* internal error message
 	* hello world HTTP 500 - foobar
@@ -130,7 +130,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return api.HTTPErrorResponse(response, errors.New("502 Bad Gateway"))
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `1 error occurred:
 	* HTTP 502 - 502 Bad Gateway
 
@@ -159,7 +159,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return api.HTTPErrorResponse(response, errors.New("foobar"))
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `3 errors occurred:
 	* internal error message
 	* field 1 hello
@@ -179,7 +179,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return result
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `2 errors occurred:
 	* aa
 	* bb
@@ -198,7 +198,7 @@ func TestCommandErrorHandling(t *testing.T) {
 					return fmt.Errorf("root message %w", result)
 				}},
 			},
-			want: exitError,
+			want: ExitError,
 			wantedOutput: `2 errors occurred:
 	* golang
 	* python
@@ -214,7 +214,7 @@ func TestCommandErrorHandling(t *testing.T) {
 			cmd.SetOut(io.Discard)
 			cmd.SilenceErrors = true
 			cmd.SetErr(stdout)
-			if got := executeCommand(tt.args.cmd); got != tt.want {
+			if got := ExecuteCommand(tt.args.cmd); got != tt.want {
 				t.Errorf("executeCommand() = %+v, want %+v", got, tt.want)
 			}
 
