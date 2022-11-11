@@ -449,9 +449,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:       "image file not found",
-			cli:        "upgrade prepare --image 'abc123456'",
+			cli:        "upgrade prepare --image 'abc123456.img.zip'",
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`.+Image file not found ".+abc123456"`),
+			wantErrOut: regexp.MustCompile(`.+Image file not found ".+abc123456.img.zip"`),
 		},
 		{
 			name:       "file name error",
@@ -461,7 +461,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name:       "invalid zip file error",
-			cli:        "upgrade prepare --image './testdata/invalid-5.5.1.img.zip'",
+			cli:        "upgrade prepare --image './testdata/invalid.img.zip'",
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`zip: not a valid zip file`),
 		},
@@ -865,7 +865,11 @@ gateway        ✓         5.5.7+28767        6.0.0+29426
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := showPrepareUpgradeMessage(tt.args.f, tt.args.appliance, tt.args.skip, tt.args.stats)
+			prepareVersion, err := appliancepkg.ParseVersionString("6.0.0-29426-release.img.zip")
+			if err != nil {
+				t.Fatalf("internal test error: %v", err)
+			}
+			got, err := showPrepareUpgradeMessage(tt.args.f, prepareVersion, tt.args.appliance, tt.args.skip, tt.args.stats)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("showPrepareUpgradeMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return

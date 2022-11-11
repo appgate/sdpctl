@@ -1,22 +1,15 @@
 package appliance
 
 import (
+	"archive/zip"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"strconv"
 
 	"github.com/hashicorp/go-version"
-)
-
-const (
-	HelpManualURL = "https://sdphelp.appgate.com/adminguide/v5.5"
-
-	BackupInstructions = `
-Please perform a backup or snapshot of %s before continuing!
-Use appgate-backup to perform a backup of the Controller.
-For more documentation on the backup process, go to:
-    %s/backup-script.html
-`
 )
 
 var (
@@ -53,4 +46,37 @@ func ParseVersionString(input string) (*version.Version, error) {
 		}
 	}
 	return version.NewVersion(input)
+}
+
+func ParseVersionFromZip(filename string) (*version.Version, error) {
+	type metadata struct {
+		Version string
+	}
+	zf, err := zip.OpenReader(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer zf.Close()
+
+	for _, file := range zf.File {
+		if file.Name == "metadata.json" {
+			fd, err := file.Open()
+			if err != nil {
+				return nil, err
+			}
+			defer fd.Close()
+
+			content, err := io.ReadAll(fd)
+			if err != nil {
+				return nil, err
+			}
+
+			meta := metadata{}
+			if err := json.Unmarshal(content, &meta); err != nil {
+				return nil, err
+			}
+			return ParseVersionString(meta.Version)
+		}
+	}
+	return nil, errors.New("no version found")
 }
