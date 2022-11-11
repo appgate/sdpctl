@@ -268,3 +268,68 @@ func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[st
 	unique := uniqueString(versionList)
 	return len(unique) != 1, res
 }
+
+const (
+	MajorVersion = uint8(4)
+	MinorVersion = uint8(2)
+	PatchVersion = uint8(1)
+)
+
+func getUpgradeVersionType(x, y *version.Version) uint8 {
+	var patch, minor, major uint8
+
+	if x == nil || y == nil {
+		return 0
+	}
+
+	xSeg := x.Segments()
+	ySeg := y.Segments()
+
+	// Patch
+	if xSeg[2] < ySeg[2] {
+		patch = PatchVersion
+	}
+	// Minor
+	if xSeg[1] < ySeg[1] {
+		minor = MinorVersion
+	}
+	// Major
+	if xSeg[0] < ySeg[0] {
+		major = MajorVersion
+	}
+
+	return major | minor | patch
+}
+
+func IsMajorUpgrade(current, next *version.Version) bool {
+	return getUpgradeVersionType(current, next)&MajorVersion == MajorVersion
+}
+
+func IsMinorUpgrade(current, next *version.Version) bool {
+	return getUpgradeVersionType(current, next)&MinorVersion == MinorVersion
+}
+
+func IsPatchUpgrade(current, next *version.Version) bool {
+	return getUpgradeVersionType(current, next)&PatchVersion == PatchVersion
+}
+
+func controllerCount(appliances []openapi.Appliance) int {
+	i := 0
+	for _, a := range appliances {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			i++
+		}
+	}
+	return i
+}
+
+func MultiControllerUpgradeWarning(all, preparing []openapi.Appliance, majorOrMinor bool) bool {
+	controllerCount := controllerCount(all)
+	controllerPrepareCount := 0
+	for _, a := range preparing {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			controllerPrepareCount++
+		}
+	}
+	return (controllerCount != controllerPrepareCount) && majorOrMinor
+}

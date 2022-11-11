@@ -3,6 +3,7 @@ package appliance
 import (
 	"bytes"
 	"reflect"
+	"runtime"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
@@ -414,6 +415,177 @@ func TestHasDiffVersions(t *testing.T) {
 					t.Logf("%s %s", key, value)
 				}
 				t.Fatalf("HasDiffVersions() got list count %d, expect %d - got res %v expected %v", len(list), tt.count, res, tt.expect)
+			}
+		})
+	}
+}
+
+func TestGetUpgradeVersionType(t *testing.T) {
+	v601, _ := version.NewVersion("6.0.1")
+	v602, _ := version.NewVersion("6.0.2")
+	v610, _ := version.NewVersion("6.1.0")
+	v700, _ := version.NewVersion("7.0.0")
+	type args struct {
+		x *version.Version
+		y *version.Version
+	}
+	tests := []struct {
+		name string
+		args args
+		want uint8
+	}{
+		{
+			name: "major upgrade",
+			args: args{
+				x: v610,
+				y: v700,
+			},
+			want: MajorVersion,
+		},
+		{
+			name: "minor upgrade",
+			args: args{
+				x: v602,
+				y: v610,
+			},
+			want: MinorVersion,
+		},
+		{
+			name: "patch upgrade",
+			args: args{
+				x: v601,
+				y: v602,
+			},
+			want: PatchVersion,
+		},
+		{
+			name: "equal version",
+			args: args{
+				x: v601,
+				y: v601,
+			},
+			want: uint8(0),
+		},
+		{
+			name: "downgrade",
+			args: args{
+				x: v700,
+				y: v601,
+			},
+			want: PatchVersion,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getUpgradeVersionType(tt.args.x, tt.args.y); got != tt.want {
+				t.Errorf("getUpgradeVersionType() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUpgradeCheckFunctions(t *testing.T) {
+	v601, _ := version.NewVersion("6.0.1")
+	v602, _ := version.NewVersion("6.0.2")
+	v610, _ := version.NewVersion("6.1.0")
+	v700, _ := version.NewVersion("7.0.0")
+	type args struct {
+		x *version.Version
+		y *version.Version
+	}
+	tests := []struct {
+		name      string
+		checkFunc func(x, y *version.Version) bool
+		args      args
+		want      bool
+	}{
+		{
+			name:      "patch version upgrade",
+			checkFunc: IsPatchUpgrade,
+			args: args{
+				x: v601,
+				y: v602,
+			},
+			want: true,
+		},
+		{
+			name:      "patch version downgrade",
+			checkFunc: IsPatchUpgrade,
+			args: args{
+				x: v602,
+				y: v601,
+			},
+			want: false,
+		},
+		{
+			name:      "patch version equal",
+			checkFunc: IsPatchUpgrade,
+			args: args{
+				x: v602,
+				y: v602,
+			},
+			want: false,
+		},
+		{
+			name:      "minor version upgrade",
+			checkFunc: IsMinorUpgrade,
+			args: args{
+				x: v602,
+				y: v610,
+			},
+			want: true,
+		},
+		{
+			name:      "minor version downgrade",
+			checkFunc: IsMinorUpgrade,
+			args: args{
+				x: v610,
+				y: v602,
+			},
+			want: false,
+		},
+		{
+			name:      "minor version equal",
+			checkFunc: IsMinorUpgrade,
+			args: args{
+				x: v610,
+				y: v610,
+			},
+			want: false,
+		},
+		{
+			name:      "major version upgrade",
+			checkFunc: IsMajorUpgrade,
+			args: args{
+				x: v610,
+				y: v700,
+			},
+			want: true,
+		},
+		{
+			name:      "major version downgrade",
+			checkFunc: IsMajorUpgrade,
+			args: args{
+				x: v700,
+				y: v610,
+			},
+			want: false,
+		},
+		{
+			name:      "major version equal",
+			checkFunc: IsMajorUpgrade,
+			args: args{
+				x: v700,
+				y: v700,
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.checkFunc(tt.args.x, tt.args.y); got != tt.want {
+				funcName := runtime.FuncForPC(reflect.ValueOf(tt.checkFunc).Pointer()).Name()
+				t.Errorf("%v() = %v, want %v", funcName, got, tt.want)
 			}
 		})
 	}
