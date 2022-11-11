@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/hashicorp/go-multierror"
 )
 
 type GenericErrorResponse struct {
@@ -15,33 +13,43 @@ type GenericErrorResponse struct {
 	Message string   `json:"message,omitempty"`
 	Errors  []Errors `json:"errors,omitempty"`
 }
+
 type Errors struct {
 	Field   string `json:"field,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+type Error struct {
+	StatusCode int
+	Err        error
+	Errors     []error
+}
+
+func (e *Error) Error() string {
+	return fmt.Sprintf("HTTP %d - %s", e.StatusCode, e.Err.Error())
 }
 
 func HTTPErrorResponse(response *http.Response, err error) error {
 	if response == nil {
 		return fmt.Errorf("No response %w", err)
 	}
-	var errors error
+	ae := &Error{StatusCode: response.StatusCode, Err: err}
 
 	responseBody, errRead := io.ReadAll(response.Body)
 	if errRead != nil {
-		return fmt.Errorf("%d Could not read response body %w", response.StatusCode, err)
+		return ae
 	}
 	errBody := GenericErrorResponse{}
 	if errMarshal := json.Unmarshal(responseBody, &errBody); errMarshal != nil {
-		return fmt.Errorf("HTTP %d - %w", response.StatusCode, err)
+		return ae
 	}
+
 	if len(errBody.Message) > 0 {
-		errors = multierror.Append(errors, stderrors.New(errBody.Message))
+		ae.Errors = append(ae.Errors, stderrors.New(errBody.Message))
 	}
 	for _, e := range errBody.Errors {
-		errors = multierror.Append(errors, fmt.Errorf("%s %s", e.Field, e.Message))
+		ae.Errors = append(ae.Errors, fmt.Errorf("%s %s", e.Field, e.Message))
+
 	}
-	if errors == nil {
-		errors = multierror.Append(errors, err)
-	}
-	return errors
+	return ae
 }

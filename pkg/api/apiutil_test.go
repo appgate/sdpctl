@@ -46,7 +46,7 @@ func TestHTTPErrorResponse(t *testing.T) {
 				},
 				err: errors.New("cc"),
 			},
-			errorString: "1 error occurred:\n\t* cc\n\n",
+			errorString: "HTTP 400 - cc",
 		},
 		{
 			name: "HTTP 400 invalid json format",
@@ -81,7 +81,7 @@ func TestHTTPErrorResponse(t *testing.T) {
 				},
 				err: errors.New("cc"),
 			},
-			errorString: "3 errors occurred:\n\t* internal error message\n\t* field 1 hello\n\t* field 2 world\n\n",
+			errorString: "HTTP 400 - cc",
 		},
 		{
 			name: "HTTP 422 expected json format no errors array",
@@ -95,7 +95,7 @@ func TestHTTPErrorResponse(t *testing.T) {
 				},
 				err: errors.New("cc"),
 			},
-			errorString: "1 error occurred:\n\t* internal error message\n\n",
+			errorString: "HTTP 422 - cc",
 		},
 	}
 	for _, tt := range tests {
