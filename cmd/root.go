@@ -22,6 +22,7 @@ import (
 	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
 	cfgcmd "github.com/appgate/sdpctl/cmd/configure"
 	"github.com/appgate/sdpctl/cmd/serviceusers"
+	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -189,14 +190,26 @@ func Execute() exitCode {
 	rFlag.StringVarP(&currentProfile, "profile", "p", "", "")
 	rFlag.Usage = func() {}
 	rFlag.Parse(os.Args[1:])
-	root := NewCmdRoot(&currentProfile)
-	cmd, err := root.ExecuteC()
+
+	return executeCommand(NewCmdRoot(&currentProfile))
+}
+
+func executeCommand(cmd *cobra.Command) exitCode {
+	cmd, err := cmd.ExecuteC()
 	if err != nil {
 		var result *multierror.Error
-		// Unwrap error and check if we have a nested multierr
-		// if we do, we will make the errors flat for 1 level
-		// otherwise, append error to new multierr list
+
 		if we := errors.Unwrap(err); we != nil {
+			// if the command return a api error, (api.HTTPErrorResponse) for example HTTP 400-599, we will
+			// resolve each nested error and convert them to multierror to prettify it for the user in a list view.
+			if ae, ok := we.(*api.Error); ok {
+				for _, e := range ae.Errors {
+					result = multierror.Append(result, e)
+				}
+			}
+			// Unwrap error and check if we have a nested multierr
+			// if we do, we will make the errors flat for 1 level
+			// otherwise, append error to new multierr list
 			if merr, ok := we.(*multierror.Error); ok {
 				for _, e := range merr.Errors {
 					result = multierror.Append(result, e)
@@ -205,7 +218,13 @@ func Execute() exitCode {
 				result = multierror.Append(result, err)
 			}
 		} else {
-			result = multierror.Append(result, err)
+			if ae, ok := err.(*api.Error); ok {
+				for _, e := range ae.Errors {
+					result = multierror.Append(result, e)
+				}
+			} else {
+				result = multierror.Append(result, err)
+			}
 		}
 
 		// if error is DeadlineExceeded, add custom ErrCommandTimeout
@@ -220,7 +239,10 @@ func Execute() exitCode {
 		}
 
 		// print all multierrors to stderr, then return correct exitcode based on error type
-		fmt.Fprintln(os.Stderr, result.ErrorOrNil())
+		if result.ErrorOrNil() == nil {
+			result = multierror.Append(result, err)
+		}
+		fmt.Fprintln(cmd.ErrOrStderr(), result.ErrorOrNil())
 
 		if errors.Is(err, ErrExitAuth) {
 			return exitAuth
@@ -231,8 +253,8 @@ func Execute() exitCode {
 		// only show usage prompt if we get invalid args / flags
 		errorString := err.Error()
 		if strings.Contains(errorString, "arg(s)") || strings.Contains(errorString, "flag") || strings.Contains(errorString, "command") {
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, cmd.UsageString())
+			fmt.Fprintln(cmd.ErrOrStderr())
+			fmt.Fprintln(cmd.ErrOrStderr(), cmd.UsageString())
 			return exitError
 		}
 
