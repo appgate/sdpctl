@@ -165,6 +165,9 @@ func Signin(f *factory.Factory) error {
 	case LocalProvider:
 		p = NewLocal(f)
 	case OidcProvider:
+		if os.Getenv("SDPCTL_NO_KEYRING") != "" {
+			return fmt.Errorf("%s provider does not work when environment variable SDPCTL_NO_KEYRING is set.", selectedProvider.GetType())
+		}
 		oidc := NewOpenIDConnect(f, client)
 		defer oidc.Close()
 		p = oidc
