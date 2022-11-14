@@ -197,27 +197,27 @@ func Signin(f *factory.Factory) error {
 			return nil
 		}
 		return nil
-	} else {
-		prefix, err := cfg.KeyringPrefix()
-		if err != nil {
-			return err
-		}
-		keyringErrMessage := "[warning] To disable keyring integration, set environment variable SDPCTL_NO_KEYRING=true"
-		// if the bearer token can't be saved to the keychain, it will be exported as env variable
-		// and saved in the config file as fallback, this should only happened if the system does not
-		// support the keychain integration.
-		if err := keyring.SetBearer(prefix, *cfg.BearerToken); err != nil {
-			fmt.Fprintf(f.StdErr, "[warning] could not save token to keyring %s\n", err)
-			fmt.Fprintln(f.StdErr, keyringErrMessage)
-		}
+	}
 
-		// store username and password if any in keyring, in practice only applicable on local provider
-		if len(response.LoginOpts.GetUsername()) > 1 && len(response.LoginOpts.GetPassword()) > 1 {
-			if err := cfg.StoreCredentials(response.LoginOpts.GetUsername(), response.LoginOpts.GetPassword()); err != nil {
-				fmt.Fprintf(f.StdErr, "[warning] %s\n", err)
-				fmt.Fprintln(f.StdErr, keyringErrMessage)
-				return nil
-			}
+	prefix, err := cfg.KeyringPrefix()
+	if err != nil {
+		return err
+	}
+	keyringErrMessage := "[warning] To disable keyring integration, set environment variable SDPCTL_NO_KEYRING=true"
+	// if the bearer token can't be saved to the keychain, it will be exported as env variable
+	// and saved in the config file as fallback, this should only happened if the system does not
+	// support the keychain integration.
+	if err := keyring.SetBearer(prefix, *cfg.BearerToken); err != nil {
+		fmt.Fprintf(f.StdErr, "[warning] could not save token to keyring %s\n", err)
+		fmt.Fprintln(f.StdErr, keyringErrMessage)
+	}
+
+	// store username and password if any in keyring, in practice only applicable on local provider
+	if len(response.LoginOpts.GetUsername()) > 1 && len(response.LoginOpts.GetPassword()) > 1 {
+		if err := cfg.StoreCredentials(response.LoginOpts.GetUsername(), response.LoginOpts.GetPassword()); err != nil {
+			fmt.Fprintf(f.StdErr, "[warning] %s\n", err)
+			fmt.Fprintln(f.StdErr, keyringErrMessage)
+			return nil
 		}
 	}
 
