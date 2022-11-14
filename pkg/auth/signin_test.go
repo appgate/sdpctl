@@ -276,7 +276,20 @@ func TestSignin(t *testing.T) {
 				identityProviderNames,
 			},
 		},
-	}
+		{
+			name: "no keyring",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME":   "bob",
+				"SDPCTL_PASSWORD":   "alice",
+				"SDPCTL_NO_KEYRING": "true",
+			},
+			wantErr: false,
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderNames,
+				authorizationGET,
+			},
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			keyring.MockInit()
