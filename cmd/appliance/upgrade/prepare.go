@@ -586,7 +586,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = updateProgressBars.AddTracker(appliance.GetName(), status.GetStatus())
+				t = updateProgressBars.AddTracker(appliance.GetName(), appliancepkg.UpgradeStatusReady)
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 
