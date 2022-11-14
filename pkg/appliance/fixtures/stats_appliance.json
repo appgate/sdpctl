@@ -106,8 +106,7 @@
                 }
             },
             "upgrade": {
-                "status": "ready",
-                "details": "appgate-5.4.5-26552-release.img.zip"
+                "status": "idle"
             }
         }
     ],

@@ -254,22 +254,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		})
 	}
 
-	if !opts.forcePrepare {
-		var skip []appliancepkg.SkipUpgrade
-		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, opts.targetVersion)
-		skipAppliances = append(skipAppliances, skip...)
-		if len(appliances) <= 0 {
-			var errs *multierr.Error
-			if len(skipAppliances) > 0 {
-				for _, skip := range skipAppliances {
-					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
-				}
-			}
-			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. The filter query may be invalid. See the log for more details."))
-			return errs
-		}
-	}
-
 	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
 		appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace)
 		if !opts.NoInteractive {
@@ -304,6 +288,50 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		fmt.Fprintf(opts.Out, "\n%s\n", msg)
 		if err := prompt.AskConfirmation(); err != nil {
 			return err
+		}
+	}
+
+	if !opts.forcePrepare {
+		var skip []appliancepkg.SkipUpgrade
+		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, opts.targetVersion)
+		skipAppliances = append(skipAppliances, skip...)
+
+		postPrepared := []openapi.Appliance{}
+		upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
+		if err != nil {
+			return err
+		}
+		for _, app := range appliances {
+			us := upgradeStatuses[app.GetId()]
+			if us.Status != appliancepkg.UpgradeStatusReady {
+				postPrepared = append(postPrepared, app)
+				continue
+			}
+			prepareVersion, err := appliancepkg.ParseVersionString(us.Details)
+			if err != nil {
+				postPrepared = append(postPrepared, app)
+				continue
+			}
+			if res, err := appliancepkg.CompareVersionsAndBuildNumber(opts.targetVersion, prepareVersion); err == nil && res >= 0 {
+				skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
+					Appliance: app,
+					Reason:    "appliance is already prepared for upgrade with a higher or equal version",
+				})
+				continue
+			}
+			postPrepared = append(postPrepared, app)
+		}
+		appliances = postPrepared
+
+		if len(appliances) <= 0 {
+			var errs *multierr.Error
+			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details."))
+			if len(skipAppliances) > 0 {
+				for _, skip := range skipAppliances {
+					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
+				}
+			}
+			return errs
 		}
 	}
 
@@ -542,20 +570,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err != nil {
 				log.WithError(err).WithField("applianceID", appliance.GetId()).Debug("Failed to determine current upgrade status")
 			}
-			details := status.GetDetails()
-			var preparedVersion *version.Version
-			if len(details) > 0 {
-				preparedVersion, err = appliancepkg.ParseVersionString(details)
-				if err != nil {
-					log.WithError(err).Warn("Failed to determine currently prepared version")
-				}
-			}
-			if versionCheck, err := appliancepkg.CompareVersionsAndBuildNumber(opts.targetVersion, preparedVersion); err == nil && versionCheck <= 0 {
+			if status.GetStatus() != appliancepkg.UpgradeStatusReady {
 				log.WithFields(log.Fields{
-					"uploadVersion":   opts.targetVersion.String(),
-					"preparedVersion": preparedVersion.String(),
-					"appliance":       appliance.GetName(),
-				}).Info("an older version is already prepared on the appliance. cancelling before proceeding")
+					"appliance":      appliance.GetName(),
+					"upgrade_status": status.GetStatus(),
+				}).Info("another version is already prepared on the appliance. cancelling before proceeding")
 				if err := a.UpgradeCancel(ctx, appliance.GetId()); err != nil {
 					errs = multierr.Append(errs, err)
 				}
@@ -567,7 +586,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = updateProgressBars.AddTracker(appliance.GetName(), "ready")
+				t = updateProgressBars.AddTracker(appliance.GetName(), status.GetStatus())
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 

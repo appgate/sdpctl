@@ -136,7 +136,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"idle","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 				{
@@ -144,7 +144,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"idle","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 			},
@@ -219,7 +219,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"idle","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 				{
@@ -227,7 +227,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+						fmt.Fprint(rw, string(`{"status":"idle","details":"appgate-5.5.1-9876.img.zip"}`))
 					},
 				},
 			},
@@ -325,94 +325,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`--image is mandatory`),
 		},
 		{
-			name: "timeout flag",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip' --timeout 0s",
-			askStubs: func(as *prompt.AskStubber) {
-				as.StubOne(true) // peer_warning message
-				as.StubOne(true) // upgrade_confirm
-			},
-			httpStubs: []httpmock.Stub{
-				{
-					URL:       "/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
-				},
-				{
-					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
-				},
-				{
-					URL:       "/files/appgate-5.5.1-9876.img.zip",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
-				},
-				{
-					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
-					Responder: func(rw http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
-							return
-						}
-						if r.Method == http.MethodPost {
-							rw.Header().Set("Content-Type", "application/json")
-							rw.WriteHeader(http.StatusOK)
-							fmt.Fprint(rw, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
-						}
-					},
-				},
-				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
-					Responder: func(rw http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
-							return
-						}
-						if r.Method == http.MethodPost {
-							rw.Header().Set("Content-Type", "application/json")
-							rw.WriteHeader(http.StatusOK)
-							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
-						}
-					},
-				},
-				{
-					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusOK)
-						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
-					},
-				},
-				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusOK)
-						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
-					},
-				},
-				{
-					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
-					Responder: func(rw http.ResponseWriter, r *http.Request) {
-						rw.Header().Set("Content-Type", "application/json")
-						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
-					},
-				},
-				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
-					Responder: func(rw http.ResponseWriter, r *http.Request) {
-						rw.Header().Set("Content-Type", "application/json")
-						rw.WriteHeader(http.StatusOK)
-						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
-					},
-				},
-			},
-			wantErr:    false,
-			wantErrOut: regexp.MustCompile("WARNING: timeout is less than the allowed minimum. Using default timeout instead: 30m0s"),
-		},
-		{
 			name: "disagree with peer warning",
 			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(true)  // auto-scaling warning
 				s.StubOne(false) // peer_warning message
 			},
 			httpStubs: []httpmock.Stub{
@@ -432,7 +347,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "no prepare confirmation",
 			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(true)  // peer_warning message
 				s.StubOne(false) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -468,6 +382,9 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "prepare same version",
 			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-12345.img.zip'",
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(true)
+			},
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -479,7 +396,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade.`),
+			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details.`),
 		},
 		{
 			name: "force prepare same version",
