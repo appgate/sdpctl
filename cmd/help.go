@@ -99,6 +99,8 @@ Available Variables:
   SDPCTL_PROFILE:
     Description: Profile name to use
     Options:  See 'sdpctl profile list'
+  SDPCTL_NO_KEYRING:
+    Description: Disable keyring integration. Does not attempt to store anything in the os keychain.
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 
