@@ -21,9 +21,9 @@ type Config struct {
 	URL         string  `mapstructure:"url"`
 	Provider    *string `mapstructure:"provider"`
 	Insecure    bool    `mapstructure:"insecure"`
-	Debug       bool    `mapstructure:"debug"`       // http debug flag
-	Version     int     `mapstructure:"api_version"` // api peer interface version
-	BearerToken *string `mapstructure:"bearer"`      // current logged in user token
+	Debug       bool    `mapstructure:"debug"`         // http debug flag
+	Version     int     `mapstructure:"api_version"`   // api peer interface version
+	BearerToken *string `mapstructure:"bearer:squash"` // current logged in user token
 	ExpiresAt   *string `mapstructure:"expires_at"`
 	DeviceID    string  `mapstructure:"device_id"`
 	PemFilePath string  `mapstructure:"pem_filepath"`
