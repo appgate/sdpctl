@@ -570,7 +570,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err != nil {
 				log.WithError(err).WithField("applianceID", appliance.GetId()).Debug("Failed to determine current upgrade status")
 			}
-			if status.GetStatus() != appliancepkg.UpgradeStatusReady {
+			if status.GetStatus() != appliancepkg.UpgradeStatusIdle {
 				log.WithFields(log.Fields{
 					"appliance":      appliance.GetName(),
 					"upgrade_status": status.GetStatus(),
@@ -586,7 +586,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = updateProgressBars.AddTracker(appliance.GetName(), status.GetStatus())
+				t = updateProgressBars.AddTracker(appliance.GetName(), appliancepkg.UpgradeStatusReady)
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 
