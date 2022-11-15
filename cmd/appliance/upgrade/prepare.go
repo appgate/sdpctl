@@ -148,12 +148,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if opts.ciMode, err = cmd.Flags().GetBool("ci-mode"); err != nil {
 				return err
 			}
-
-			if opts.Config.Version <= 13 {
-				// Versions before v13 does not have dev-keyring functionality
-				opts.DevKeyring = false
-			}
-
 			return errs.ErrorOrNil()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
@@ -266,6 +260,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	constraints, _ := version.NewConstraint(">= 5.5.0")
 	if constraints.Check(opts.targetVersion) {
 		autoScalingWarning = true
+	}
+	if opts.Config.Version <= 13 {
+		// Versions before v13 does not have dev-keyring functionality
+		opts.DevKeyring = false
 	}
 	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 && !opts.NoInteractive {
 		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
