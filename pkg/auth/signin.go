@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -63,13 +64,9 @@ func GetMinMaxAPIVersion(f *factory.Factory) (*MinMax, error) {
 		return nil, err
 	}
 	ctx := context.Background()
-	p := "local"
-	if cfg.Provider != nil {
-		p = *cfg.Provider
-	}
+
 	loginOpts := openapi.LoginRequest{
-		ProviderName: p,
-		DeviceId:     cfg.DeviceID,
+		DeviceId: cfg.DeviceID,
 	}
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
 	authenticator := NewAuth(client)
@@ -110,6 +107,10 @@ func Signin(f *factory.Factory) error {
 		DeviceId: cfg.DeviceID,
 	}
 
+	if cfg.Provider != nil {
+		loginOpts.ProviderName = *cfg.Provider
+	}
+
 	bearer, err := cfg.GetBearTokenHeaderValue()
 	if err == nil && cfg.ExpiredAtValid() && len(bearer) > 0 && cfg.Version > 0 {
 		return nil
@@ -135,7 +136,7 @@ func Signin(f *factory.Factory) error {
 		return err
 	}
 
-	if len(providers) == 1 && len(loginOpts.ProviderName) <= 0 {
+	if len(providers) == 1 && len(loginOpts.ProviderName) == 0 {
 		loginOpts.ProviderName = providers[0].GetName()
 	}
 	providerMap := make(map[string]openapi.IdentityProvidersNamesGet200ResponseDataInner, 0)
@@ -145,7 +146,7 @@ func Signin(f *factory.Factory) error {
 		providerNames = append(providerNames, p.GetName())
 	}
 
-	if len(providers) > 1 && len(loginOpts.ProviderName) <= 0 {
+	if len(providers) > 1 && len(loginOpts.ProviderName) == 0 {
 		qs := &survey.Select{
 			Message: "Choose a provider:",
 			Options: providerNames,
@@ -156,7 +157,7 @@ func Signin(f *factory.Factory) error {
 	}
 	selectedProvider, ok := providerMap[loginOpts.ProviderName]
 	if !ok {
-		return fmt.Errorf("invalid provider %s - %s", selectedProvider.GetName(), loginOpts.ProviderName)
+		return fmt.Errorf("invalid provider %s. Available providers: %s", loginOpts.ProviderName, strings.Join(providerNames, ", "))
 	}
 	cfg.Provider = &loginOpts.ProviderName
 	var p Authenticate
