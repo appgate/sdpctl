@@ -430,7 +430,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 		additionalControllers []openapi.Appliance
 		logServersForwarders  []openapi.Appliance
 		chunks                [][]openapi.Appliance
-		skipped               []openapi.Appliance
+		skipped               []appliancepkg.SkipUpgrade
 		backup                []openapi.Appliance
 		backupDestination     string
 		toVersion             string
@@ -451,7 +451,7 @@ func TestPrintCompleteSummary(t *testing.T) {
 					{Name: "gateway-2"},
 				},
 			},
-			skipped:   []openapi.Appliance{},
+			skipped:   []appliancepkg.SkipUpgrade{},
 			toVersion: "5.5.4",
 			expect: `
 UPGRADE COMPLETE SUMMARY
@@ -502,12 +502,18 @@ Upgrade will be completed in steps:
 					},
 				},
 			},
-			skipped: []openapi.Appliance{
+			skipped: []appliancepkg.SkipUpgrade{
 				{
-					Name: "secondary-controller",
+					Appliance: openapi.Appliance{
+						Name: "secondary-controller",
+					},
+					Reason: "appliance is offline",
 				},
 				{
-					Name: "additional-controller",
+					Appliance: openapi.Appliance{
+						Name: "additional-controller",
+					},
+					Reason: "appliance is not prepared for upgrade",
 				},
 			},
 			backup: []openapi.Appliance{
@@ -546,8 +552,9 @@ Upgrade will be completed in steps:
 
 
 Appliances that will be skipped:
-  - secondary-controller
-  - additional-controller
+  - additional-controller: appliance is not prepared for upgrade
+  - secondary-controller: appliance is offline
+
 `,
 		},
 		{
@@ -570,12 +577,18 @@ Appliances that will be skipped:
 					},
 				},
 			},
-			skipped: []openapi.Appliance{
+			skipped: []appliancepkg.SkipUpgrade{
 				{
-					Name: "secondary-controller",
+					Appliance: openapi.Appliance{
+						Name: "secondary-controller",
+					},
+					Reason: "skip1",
 				},
 				{
-					Name: "additional-controller",
+					Appliance: openapi.Appliance{
+						Name: "additional-controller",
+					},
+					Reason: "skip2",
 				},
 			},
 			backup: []openapi.Appliance{
@@ -621,8 +634,9 @@ Upgrade will be completed in steps:
 
 
 Appliances that will be skipped:
-  - secondary-controller
-  - additional-controller
+  - additional-controller: skip2
+  - secondary-controller: skip1
+
 `,
 		},
 	}

@@ -210,20 +210,31 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		toBackup = append(toBackup, *primaryController)
 	}
 
-	allAppliances, _, err := appliancepkg.FilterAppliances(rawAppliances, filter)
-	if err != nil {
-		return err
-	}
+	skipping := []appliancepkg.SkipUpgrade{}
 	initialStats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
 	}
-	appliances, offline, err := appliancepkg.FilterAvailable(allAppliances, initialStats.GetData())
+	online, offline, err := appliancepkg.FilterAvailable(rawAppliances, initialStats.GetData())
 	if err != nil {
 		return fmt.Errorf("Could not complete the upgrade operation %w", err)
 	}
 	for _, o := range offline {
 		log.Warnf("%q is offline and will be excluded from upgrade", o.GetName())
+		skipping = append(skipping, appliancepkg.SkipUpgrade{
+			Appliance: o,
+			Reason:    "appliance is offline",
+		})
+	}
+	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
+	if err != nil {
+		return err
+	}
+	for _, f := range filtered {
+		skipping = append(skipping, appliancepkg.SkipUpgrade{
+			Appliance: f,
+			Reason:    "filtered using the '--include' and/or '--exclude' flag",
+		})
 	}
 
 	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
@@ -236,6 +247,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	currentPrimaryControllerVersion, err := appliancepkg.GetApplianceVersion(*primaryController, *initialStats)
+	if err != nil {
+		return err
+	}
+
+	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
 		return err
 	}
@@ -254,15 +270,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	toReboot := []string{}
-	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
-	if err != nil {
-		return err
-	}
 	for id, result := range upgradeStatuses {
 		if !util.InSlice(result.Status, []string{appliancepkg.UpgradeStatusReady, appliancepkg.UpgradeStatusSuccess}) {
 			for i, appliance := range appliances {
 				if id == appliance.GetId() {
-					log.WithField("appliance", appliance.GetName()).Infof("Excluding from upgrade")
+					skipping = append(skipping, appliancepkg.SkipUpgrade{
+						Appliance: appliance,
+						Reason:    "appliance is not prepared for upgrade",
+					})
 					appliances = append(appliances[:i], appliances[i+1:]...)
 				}
 			}
@@ -325,17 +340,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	}
 
-	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to get upgrade status")
-		return err
-	}
-	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.GetDetails())
+	primaryControllerUpgradeStatus := upgradeStatuses[primaryController.GetId()]
+	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
 
-	if primaryControllerUpgradeStatus.GetStatus() != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
+	if primaryControllerUpgradeStatus.Status != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
 		return fmt.Errorf("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
 	}
 
@@ -349,13 +360,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	chunkLength := len(chunks)
 
 	msg := ""
-	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
-		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, offline, toBackup, opts.backupDestination, newVersion)
+	if primaryControllerUpgradeStatus.Status == appliancepkg.UpgradeStatusReady {
+		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, newVersion)
 		if err != nil {
 			return err
 		}
 	} else {
-		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, offline, toBackup, opts.backupDestination, newVersion)
+		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, newVersion)
 		if err != nil {
 			return err
 		}
@@ -460,7 +471,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	verifyingSpinner.Increment()
 	initP.Wait()
 
-	if primaryControllerUpgradeStatus.GetStatus() == appliancepkg.UpgradeStatusReady {
+	if primaryControllerUpgradeStatus.Status == appliancepkg.UpgradeStatusReady {
 		fmt.Fprintf(opts.Out, "\n[%s] Upgrading the primary Controller:\n", time.Now().Format(time.RFC3339))
 		upgradeReadyPrimary := func(ctx context.Context, controller openapi.Appliance) error {
 			var initialVolume float32
@@ -742,7 +753,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	return nil
 }
 
-func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers, logForwardersServers []openapi.Appliance, chunks [][]openapi.Appliance, skipped, backup []openapi.Appliance, backupDestination string, toVersion *version.Version) (string, error) {
+func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers, logForwardersServers []openapi.Appliance, chunks [][]openapi.Appliance, skipped []appliancepkg.SkipUpgrade, backup []openapi.Appliance, backupDestination string, toVersion *version.Version) (string, error) {
 	var (
 		completeSummaryTpl = `
 UPGRADE COMPLETE SUMMARY{{ if .Version }}
@@ -756,7 +767,8 @@ Upgrade will be completed in steps:
 {{ $s.TableString }}
 {{ end }}{{ if .Skipped }}
 Appliances that will be skipped:{{ range .Skipped }}
-  - {{ . }}{{ end }}
+  - {{ .Name }}: {{ .Reason }}{{ end }}
+
 {{ end }}`
 		DescriptionIndent = "\n    "
 		BackupDescription = []string{
@@ -788,10 +800,13 @@ Appliances that will be skipped:{{ range .Skipped }}
 		Description string
 		TableString string
 	}
+	type skipStruct struct {
+		Name, Reason string
+	}
 
 	type tplStub struct {
 		Steps   []step
-		Skipped []string
+		Skipped []skipStruct
 		Version string
 	}
 
@@ -863,10 +878,16 @@ Appliances that will be skipped:{{ range .Skipped }}
 		})
 	}
 
-	toSkip := []string{}
-	for _, a := range skipped {
-		toSkip = append(toSkip, a.GetName())
+	toSkip := []skipStruct{}
+	for _, s := range skipped {
+		toSkip = append(toSkip, skipStruct{
+			Name:   s.Appliance.GetName(),
+			Reason: s.Reason,
+		})
 	}
+	sort.Slice(toSkip, func(i, j int) bool {
+		return toSkip[i].Name < toSkip[j].Name
+	})
 	tplData := tplStub{
 		Steps:   tplSteps,
 		Skipped: toSkip,
