@@ -223,7 +223,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.Warnf("%q is offline and will be excluded from upgrade", o.GetName())
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: o,
-			Reason:    "appliance is offline",
+			Reason:    appliancepkg.SkipReasonOffline,
 		})
 	}
 	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
@@ -233,7 +233,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	for _, f := range filtered {
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: f,
-			Reason:    "filtered using the '--include' and/or '--exclude' flag",
+			Reason:    appliancepkg.SkipReasonFiltered,
 		})
 	}
 
@@ -256,6 +256,18 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 
+	primaryControllerUpgradeStatus := upgradeStatuses[primaryController.GetId()]
+	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
+	}
+	if primaryControllerUpgradeStatus.Status != appliancepkg.UpgradeStatusReady {
+		skipping = append(skipping, appliancepkg.SkipUpgrade{
+			Appliance: *primaryController,
+			Reason:    appliancepkg.SkipReasonNotPrepared,
+		})
+	}
+
 	f := log.Fields{
 		"appliance": primaryController.GetName(),
 		"version":   currentPrimaryControllerVersion.String(),
@@ -276,7 +288,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if id == appliance.GetId() {
 					skipping = append(skipping, appliancepkg.SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "appliance is not prepared for upgrade",
+						Reason:    appliancepkg.SkipReasonNotPrepared,
 					})
 					appliances = append(appliances[:i], appliances[i+1:]...)
 				}
@@ -340,14 +352,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	}
 
-	primaryControllerUpgradeStatus := upgradeStatuses[primaryController.GetId()]
-	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
-	}
-
 	if primaryControllerUpgradeStatus.Status != appliancepkg.UpgradeStatusReady && len(additionalControllers) <= 0 && len(additionalAppliances) <= 0 {
-		return fmt.Errorf("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
+		var errs *multierror.Error
+		errs = multierror.Append(errs, fmt.Errorf("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade"))
+		for _, s := range skipping {
+			errs = multierror.Append(errs, s)
+		}
+		return errs
 	}
 
 	// chunks include slices of slices, divided in chunkSize,

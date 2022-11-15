@@ -165,6 +165,17 @@ type SkipUpgrade struct {
 	Appliance openapi.Appliance
 }
 
+const (
+	SkipReasonNotPrepared     = "appliance is not prepared for upgrade"
+	SkipReasonOffline         = "appliance is offline"
+	SkipReasonFiltered        = "filtered using the '--include' and/or '--exclude' flag"
+	SkipReasonAlreadyPrepared = "appliance is already prepared for upgrade with a higher or equal version"
+)
+
+func (su SkipUpgrade) Error() string {
+	return fmt.Sprintf("%s: %s", su.Appliance.GetName(), su.Reason)
+}
+
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
 func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipUpgrade) {

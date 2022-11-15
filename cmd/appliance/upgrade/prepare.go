@@ -233,7 +233,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	online, offline, _ := appliancepkg.FilterAvailable(Allappliances, initialStats.GetData())
 	for _, a := range offline {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
-			Reason:    "appliance is offline",
+			Reason:    appliancepkg.SkipReasonOffline,
 			Appliance: a,
 		})
 	}
@@ -244,7 +244,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	for _, f := range filtered {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Appliance: f,
-			Reason:    "appliance was filtered using the '--include' or '--exclude' flag",
+			Reason:    appliancepkg.SkipReasonFiltered,
 		})
 	}
 
@@ -313,7 +313,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if res, err := appliancepkg.CompareVersionsAndBuildNumber(opts.targetVersion, prepareVersion); err == nil && res >= 0 {
 				skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 					Appliance: app,
-					Reason:    "appliance is already prepared for upgrade with a higher or equal version",
+					Reason:    appliancepkg.SkipReasonAlreadyPrepared,
 				})
 				continue
 			}
@@ -326,7 +326,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details"))
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
-					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
+					errs = multierr.Append(errs, skip)
 				}
 			}
 			return errs
