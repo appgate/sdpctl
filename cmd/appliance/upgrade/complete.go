@@ -3,6 +3,7 @@ package upgrade
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -194,6 +195,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
+	f := log.Fields{
+		"appliance": primaryController.GetName(),
+	}
+	log.WithFields(f).Info("Found primary Controller")
 
 	bOpts := appliancepkg.BackupOpts{
 		Config:        opts.Config,
@@ -257,7 +262,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	primaryControllerUpgradeStatus := upgradeStatuses[primaryController.GetId()]
-	newVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
+	preparedVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
@@ -268,13 +273,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		})
 	}
 
-	f := log.Fields{
-		"appliance": primaryController.GetName(),
-		"version":   currentPrimaryControllerVersion.String(),
-	}
-	log.WithFields(f).Info("Found primary Controller")
-	// We will exclude the primary Controller from the other Controllers
-	// since the primary Controller is a special case during the upgrade process.
+	// We will exclude the primary controller from the others controllers
+	// since the primary controller is a special case during the upgrade process.
 	for i, appliance := range appliances {
 		if appliance.GetId() == primaryController.GetId() {
 			appliances = append(appliances[:i], appliances[i+1:]...)
@@ -308,6 +308,37 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
 			}
 		}
+	}
+
+	// Check if all controllers need to upgrade
+	isMajorOrMinorUpgrade := false
+	allOnlineControllers := append(additionalControllers, *primaryController)
+	for _, ctrl := range allOnlineControllers {
+		status := upgradeStatuses[ctrl.GetId()]
+		if status.Status != appliancepkg.UpgradeStatusReady {
+			continue
+		}
+		prepareVersion, err := appliancepkg.ParseVersionString(status.Details)
+		if err != nil {
+			continue
+		}
+		data := initialStats.GetData()
+		for _, d := range data {
+			if d.GetId() == ctrl.GetId() {
+				currentVersionString := d.GetVersion()
+				currentVersion, err := appliancepkg.ParseVersionString(currentVersionString)
+				if err != nil {
+					continue
+				}
+				if appliancepkg.IsMajorUpgrade(currentVersion, prepareVersion) || appliancepkg.IsMinorUpgrade(currentVersion, prepareVersion) {
+					isMajorOrMinorUpgrade = true
+				}
+			}
+		}
+	}
+	forceAllControllerUpgrade := appliancepkg.MultiControllerUpgradeWarning(upgradeStatuses, online, allOnlineControllers, isMajorOrMinorUpgrade)
+	if forceAllControllerUpgrade {
+		return errors.New("All controllers need to upgrade, but not all controllers are prepared for upgrade. Please prepare the remaining controllers before running 'upgrade complete' again.")
 	}
 
 	// isolate log forwarders and log servers
@@ -372,12 +403,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	msg := ""
 	if primaryControllerUpgradeStatus.Status == appliancepkg.UpgradeStatusReady {
-		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, newVersion)
+		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, preparedVersion)
 		if err != nil {
 			return err
 		}
 	} else {
-		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, newVersion)
+		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, preparedVersion)
 		if err != nil {
 			return err
 		}
@@ -420,7 +451,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// so that we can leave the Collective gracefully.
 	fmt.Fprintf(opts.Out, "\n[%s] Initializing upgrade:\n", time.Now().Format(time.RFC3339))
 	initP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
-	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, newVersion)
+	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, preparedVersion)
 	if disableAdditionalControllers {
 		for _, controller := range additionalControllers {
 			spinner := tui.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")

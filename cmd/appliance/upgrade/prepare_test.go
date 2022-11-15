@@ -394,6 +394,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					URL:       "/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_5.5.1.json"),
 				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+					},
+				},
 			},
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details`),

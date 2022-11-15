@@ -334,12 +334,14 @@ func controllerCount(appliances []openapi.Appliance) int {
 	return i
 }
 
-func MultiControllerUpgradeWarning(all, preparing []openapi.Appliance, majorOrMinor bool) bool {
+func MultiControllerUpgradeWarning(upgradeStatuses map[string]UpgradeStatusResult, all, preparing []openapi.Appliance, majorOrMinor bool) bool {
 	controllerCount := controllerCount(all)
 	controllerPrepareCount := 0
 	for _, a := range preparing {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
-			controllerPrepareCount++
+			if ugs := upgradeStatuses[a.GetId()]; ugs.Status == UpgradeStatusReady {
+				controllerPrepareCount++
+			}
 		}
 	}
 	return (controllerCount != controllerPrepareCount) && majorOrMinor

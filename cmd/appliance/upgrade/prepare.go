@@ -289,16 +289,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
+	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
+	if err != nil {
+		return err
+	}
 	if !opts.forcePrepare {
 		var skip []appliancepkg.SkipUpgrade
 		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, opts.targetVersion)
 		skipAppliances = append(skipAppliances, skip...)
 
 		postPrepared := []openapi.Appliance{}
-		upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
-		if err != nil {
-			return err
-		}
 		for _, app := range appliances {
 			us := upgradeStatuses[app.GetId()]
 			if us.Status != appliancepkg.UpgradeStatusReady {
@@ -338,7 +338,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	majorOrMinorUpgrade := appliancepkg.IsMajorUpgrade(currentPrimaryControllerVersion, opts.targetVersion) || appliancepkg.IsMinorUpgrade(currentPrimaryControllerVersion, opts.targetVersion)
-	ctrlUpgradeWarning := appliancepkg.MultiControllerUpgradeWarning(Allappliances, appliances, majorOrMinorUpgrade)
+	ctrlUpgradeWarning := appliancepkg.MultiControllerUpgradeWarning(upgradeStatuses, Allappliances, appliances, majorOrMinorUpgrade)
 
 	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
