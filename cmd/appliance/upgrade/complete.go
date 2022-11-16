@@ -549,7 +549,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
 			}
-			msg := "Waiting for the primary Controller to reach desired state"
+			msg := "Upgrading primary Controller, installing and rebooting..."
 			logEntry.WithField("want", appliancepkg.StatReady).Info(msg)
 			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.UpgradeStatusGetErrorMessage, msg), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 				return err
