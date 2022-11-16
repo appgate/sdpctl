@@ -338,6 +338,66 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile("never switched partition"),
 		},
+		{
+			name: "controller major-minor guard unprepared controller",
+			cli:  "upgrade complete --backup=false --no-interactive",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/ha_appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/ha_stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL:       "/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
+				},
+				{
+					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile("All Controllers need upgrading when doing major or minor version upgrade, but not all controllers are prepared for upgrade. Please prepare the remaining controllers before running 'upgrade complete' again."),
+		},
+		{
+			name: "controller major-minor guard mismatch version",
+			cli:  "upgrade complete --backup=false --no-interactive",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/ha_appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/ha_stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL: "/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/upgrade",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "ready", "details": "appgate-5.5.0.img.zip" }`))
+					},
+				},
+				{
+					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile("Version mismatch on prepared Controllers. Controllers need to be prepared with the same version when doing a major or minor version upgrade."),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
