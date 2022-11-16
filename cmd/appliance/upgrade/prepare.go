@@ -719,9 +719,7 @@ const prepareUpgradeMessage = `PREPARE SUMMARY
 1. Upload upgrade image {{.Filepath}} to Controller
 2. Prepare upgrade on the following appliances:
 
-{{ .ApplianceTable }}
-
-3. Delete upgrade image from Controller{{ if .SkipTable }}
+{{ .ApplianceTable }}{{ if .SkipTable }}
 
 The following appliances will be skipped:
 

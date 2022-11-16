@@ -714,8 +714,6 @@ controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
 
 
-3. Delete upgrade image from Controller
-
 The following appliances will be skipped:
 
 Appliance      Online    Current version    Reason
@@ -775,8 +773,6 @@ controller1    ✓         5.5.7+28767        6.0.0+29426
 controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
 
-
-3. Delete upgrade image from Controller
 `,
 		},
 	}
