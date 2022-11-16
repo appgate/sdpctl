@@ -262,7 +262,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	primaryControllerUpgradeStatus := upgradeStatuses[primaryController.GetId()]
-	preparedVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
+	primaryControllerPreparedVersion, err := appliancepkg.ParseVersionString(primaryControllerUpgradeStatus.Details)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
@@ -311,6 +311,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// Check if all controllers need to upgrade
+	versionMismatch := false
 	isMajorOrMinorUpgrade := false
 	allOnlineControllers := append(additionalControllers, *primaryController)
 	for _, ctrl := range allOnlineControllers {
@@ -321,6 +322,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		prepareVersion, err := appliancepkg.ParseVersionString(status.Details)
 		if err != nil {
 			continue
+		}
+		if v, _ := appliancepkg.CompareVersionsAndBuildNumber(primaryControllerPreparedVersion, prepareVersion); v != 0 {
+			versionMismatch = true
 		}
 		data := initialStats.GetData()
 		for _, d := range data {
@@ -336,9 +340,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 		}
 	}
-	forceAllControllerUpgrade := appliancepkg.MultiControllerUpgradeWarning(upgradeStatuses, online, allOnlineControllers, isMajorOrMinorUpgrade)
+	forceAllControllerUpgrade := appliancepkg.NeedsMultiControllerUpgrade(upgradeStatuses, online, allOnlineControllers, isMajorOrMinorUpgrade)
 	if forceAllControllerUpgrade {
-		return errors.New("All controllers need to upgrade, but not all controllers are prepared for upgrade. Please prepare the remaining controllers before running 'upgrade complete' again.")
+		return errors.New("All Controllers need upgrading when doing major or minor version upgrade, but not all controllers are prepared for upgrade. Please prepare the remaining controllers before running 'upgrade complete' again.")
+	}
+	if versionMismatch && isMajorOrMinorUpgrade {
+		return errors.New("Version mismatch on prepared Controllers. Controllers need to be prepared with the same version when doing a major or minor version upgrade.")
 	}
 
 	// isolate log forwarders and log servers
@@ -403,12 +410,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	msg := ""
 	if primaryControllerUpgradeStatus.Status == appliancepkg.UpgradeStatusReady {
-		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, preparedVersion)
+		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, primaryControllerPreparedVersion)
 		if err != nil {
 			return err
 		}
 	} else {
-		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, preparedVersion)
+		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, primaryControllerPreparedVersion)
 		if err != nil {
 			return err
 		}
@@ -451,7 +458,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// so that we can leave the Collective gracefully.
 	fmt.Fprintf(opts.Out, "\n[%s] Initializing upgrade:\n", time.Now().Format(time.RFC3339))
 	initP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
-	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, preparedVersion)
+	disableAdditionalControllers := appliancepkg.ShouldDisable(currentPrimaryControllerVersion, primaryControllerPreparedVersion)
 	if disableAdditionalControllers {
 		for _, controller := range additionalControllers {
 			spinner := tui.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")

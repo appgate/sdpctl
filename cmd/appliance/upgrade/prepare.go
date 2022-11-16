@@ -338,7 +338,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	majorOrMinorUpgrade := appliancepkg.IsMajorUpgrade(currentPrimaryControllerVersion, opts.targetVersion) || appliancepkg.IsMinorUpgrade(currentPrimaryControllerVersion, opts.targetVersion)
-	ctrlUpgradeWarning := appliancepkg.MultiControllerUpgradeWarning(upgradeStatuses, Allappliances, appliances, majorOrMinorUpgrade)
+	ctrlUpgradeWarning := appliancepkg.NeedsMultiControllerUpgrade(upgradeStatuses, Allappliances, appliances, majorOrMinorUpgrade)
 
 	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
