@@ -48,7 +48,7 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 				Description: "Backup with no arguments or flags will prompt for appliance",
 				Command:     "sdpctl appliance backup",
 				Output: `? Backup API is disabled on the appliance. Do you want to enable it now? Yes
-? The passphrase to encrypt appliance Backups when backup API is used: <password> # only shows if backup API is not enabled
+? The passphrase to encrypt the appliance backups when the Backup API is used: <password> # only shows if backup API is not enabled
 ? Confirm your passphrase: <password> # only shows if backup API is not enabled
 ? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
 > [ ]  controller

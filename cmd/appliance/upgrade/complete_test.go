@@ -303,7 +303,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 			},
 			upgradeStatusWorker: &errorUpgradeStatus{},
-			wantErrOut:          regexp.MustCompile(`Could not complete upgrade operation 1 error occurred`),
+			wantErrOut:          regexp.MustCompile(`Could not complete the upgrade operation 1 error occurred`),
 			wantErr:             true,
 		},
 		{
@@ -530,8 +530,8 @@ Upgrade will be completed in steps:
     - primary-controller
 
 
- 2. The primaryController will be upgraded.
-    This will result in the API being unreachable while completing the primaryController upgrade.
+ 2. The primary Controller will be upgraded.
+    This will result in the API being unreachable while completing the primary Controller upgrade.
 
     - primary-controller
 
@@ -598,8 +598,8 @@ Upgrade will be completed in steps:
     - primary-controller
 
 
- 2. The primaryController will be upgraded.
-    This will result in the API being unreachable while completing the primaryController upgrade.
+ 2. The primary Controller will be upgraded.
+    This will result in the API being unreachable while completing the primary Controller upgrade.
 
     - primary-controller
 

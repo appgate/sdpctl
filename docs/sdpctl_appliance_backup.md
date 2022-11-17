@@ -26,7 +26,7 @@ sdpctl appliance backup [flags]
   # Backup with no arguments or flags will prompt for appliance
   > sdpctl appliance backup
   ? Backup API is disabled on the appliance. Do you want to enable it now? Yes
-  ? The passphrase to encrypt Appliance Backups when backup API is used: <password> # only shows if backup API is not enabled
+  ? The passphrase to encrypt the appliance backups when the Backup API is used: <password> # only shows if backup API is not enabled
   ? Confirm your passphrase: <password> # only shows if backup API is not enabled
   ? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
   > [ ]  controller

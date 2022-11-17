@@ -48,6 +48,6 @@ func pruneRun(cmd *cobra.Command, args []string, opts *licenseOpts) error {
 	if response.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("Could not prune the user licenses got HTTP %d\n", response.StatusCode)
 	}
-	fmt.Fprintln(opts.Out, "Users licenses pruned")
+	fmt.Fprintln(opts.Out, "User licenses pruned")
 	return nil
 }

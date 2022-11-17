@@ -360,7 +360,7 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 		h = pi.GetHostname()
 	}
 	if len(h) <= 0 {
-		return fmt.Errorf("Failed to determine hostname for Controller admin interface")
+		return fmt.Errorf("Failed to determine hostname for the Controller admin nterface")
 	}
 
 	cHost := strings.ToLower(h)
