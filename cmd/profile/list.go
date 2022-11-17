@@ -54,7 +54,7 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts, json bool) er
 			if err != nil {
 				fmt.Fprintf(opts.Out, "Current profile %s is not configure, run 'sdpctl configure'\n", currentProfile.Name)
 			} else {
-				fmt.Fprintf(opts.Out, "Current profile is %s (%s) primary controller %s\n", currentProfile.Name, currentProfile.Directory, h)
+				fmt.Fprintf(opts.Out, "Current profile is %s (%s) the primary Controller %s\n", currentProfile.Name, currentProfile.Directory, h)
 			}
 		}
 	}

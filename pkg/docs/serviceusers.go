@@ -2,12 +2,12 @@ package docs
 
 var (
 	ServiceUsersRoot = &CommandDoc{
-		Short:    "root command for managing service users in the Appgate SDP Collective",
+		Short:    "Manage the Service Users",
 		Long:     "",
 		Examples: []ExampleDoc{},
 	}
 	ServiceUsersList = &CommandDoc{
-		Short: "list service users in the Appgate SDP Collective",
+		Short: "list service users in the Collective",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{

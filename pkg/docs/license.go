@@ -2,7 +2,7 @@ package docs
 
 var (
 	LicenseRootDoc = CommandDoc{
-		Short: "interact with Appgate SDP License",
+		Short: "Manage the user licenses",
 		Long:  ``,
 	}
 

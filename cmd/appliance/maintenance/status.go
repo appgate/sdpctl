@@ -55,7 +55,7 @@ func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 		return err
 	}
 
-	// filter out the only the controller stats
+	// filter out the only the Controller stats
 	controllers := make([]openapi.StatsAppliancesListAllOfData, 0)
 	notController := "n/a"
 	for _, s := range stats.GetData() {

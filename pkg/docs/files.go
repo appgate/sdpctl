@@ -7,8 +7,8 @@ var (
 		Examples: []ExampleDoc{},
 	}
 	FilesListDocs = CommandDoc{
-		Short: "lists the files in the controllers file repository",
-		Long: `Lists the files in the controllers file repository. Default output is in table format.
+		Short: "lists the files in the Controllers file repository",
+		Long: `Lists the files in the Controllers file repository. Default output is in table format.
 Optionally print the output in JSON format by using the "--json" flag`,
 		Examples: []ExampleDoc{
 			{

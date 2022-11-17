@@ -2,8 +2,8 @@ package docs
 
 var (
 	ConfigureDocs = CommandDoc{
-		Short: "Configure your Appgate SDP Collective",
-		Long: `Setup a configuration file towards your Appgate SDP Collective to be able to interact with the collective. By default, the configuration file
+		Short: "Configure your Collective",
+		Long: `Setup a configuration file towards your Collective to be able to interact with the collective. By default, the configuration file
 will be created in a default directory in depending on your system. This can be overridden by setting the 'SDPCTL_CONFIG_DIR' environment variable.
 See 'sdpctl help environment' for more information on using environment variables.`,
 		Examples: []ExampleDoc{
@@ -26,8 +26,8 @@ See 'sdpctl help environment' for more information on using environment variable
 		},
 	}
 	ConfigureSigninDocs = CommandDoc{
-		Short: "Sign in and authenticate to Appgate SDP Collective",
-		Long: `Sign in to the Appgate SDP Collective using the configuration file created by the 'sdpctl configure' command.
+		Short: "Sign in and authenticate to Collective",
+		Long: `Sign in to the Collective using the configuration file created by the 'sdpctl configure' command.
 This will fetch a token on valid authentication which will be valid for 24 hours and stored in the configuration.`,
 		Examples: []ExampleDoc{
 			{

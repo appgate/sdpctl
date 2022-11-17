@@ -74,27 +74,27 @@ func GetMinMaxAPIVersion(f *factory.Factory) (*MinMax, error) {
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
 	authenticator := NewAuth(client)
 	// initial authentication, this will fail, since we will use the signin response
-	// to compute the correct peerVersion used in the selected appgate sdp collective.
+	// to compute the correct peerVersion used in the selected collective.
 	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
 	if err != nil && minMax == nil {
-		return nil, fmt.Errorf("invalid credentials %w", err)
+		return nil, fmt.Errorf("Invalid credentials %w", err)
 	}
 	if minMax != nil {
 		return minMax, nil
 	}
-	return nil, errors.New("could not automatically determine api version to use")
+	return nil, errors.New("Could not automatically determine api version to use")
 }
 
-var ErrSignInNotSupported = errors.New("no TTY present, and missing required environment variables to authenticate")
+var ErrSignInNotSupported = errors.New("No TTY present, and missing required environment variables to authenticate")
 
 // Signin support interactive signin if a valid TTY is present, otherwise it requires environment variables to authenticate,
 // this is only supported by 'local' auth provider
 // If OTP is required, a prompt will appear and await user input
 // Signin is done in several steps
 // - Compute correct peer api version to use, based on login response body, which gives us a range of supported peer api to use
-// - If there are more then 1 auth provider supported, prompt user to select (requires TTY | error shown if no TTY)
+// - If there are more than 1 auth provider supported, prompt user to select (requires TTY | error shown if no TTY)
 // - Store bearer token in os keyring, (refresh token if the provider supports it too)
-// - Store primary controller version in config file
+// - Store the primary Controller version in config file
 // - Save config file to $SDPCTL_CONFIG_DIR
 func Signin(f *factory.Factory) error {
 	cfg := f.Config

@@ -123,7 +123,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if opts.PrimaryFlag || opts.NoInteractive {
 			pc, err := FindPrimaryController(appliances, hostname, false)
 			if err != nil {
-				log.Warn("failed to determine primary controller")
+				log.Warn("Failed to determine the primary Controller")
 			} else {
 				idFilter := []string{}
 				if len(opts.FilterFlag["include"]["id"]) > 0 {
@@ -137,7 +137,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if opts.CurrentFlag {
 			cc, err := FindCurrentController(appliances, hostname)
 			if err != nil {
-				log.Warn("failed to determine current controller")
+				log.Warn("Failed to determine the current Controller")
 			} else {
 				idFilter := []string{}
 				if len(opts.FilterFlag["include"]["id"]) > 0 {
@@ -266,7 +266,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if err := retryStatus(ctx, b.applianceID, b.backupID, tracker); err != nil {
 			return b, err
 		}
-		log.WithFields(f).Infof("starting download for backup id %s", b.backupID)
+		log.WithFields(f).Infof("Starting download for backup id %s", b.backupID)
 		tracker.Update("downloading")
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		if err != nil {
@@ -297,7 +297,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			defer wg.Done()
 			backedUp, err := b(appliance, t)
 			if err != nil {
-				errorChannel <- fmt.Errorf("could not backup %s %s", appliance.GetName(), err)
+				errorChannel <- fmt.Errorf("Could not backup %s %s", appliance.GetName(), err)
 				return
 			}
 			backups <- backedUp
@@ -434,7 +434,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
-			password, err := prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
+			password, err := prompt.PasswordConfirmation("The passphrase to encrypt appliance Backups when backup API is used:")
 			if err != nil {
 				return false, err
 			}

@@ -55,7 +55,7 @@ func GetBearer(prefix string) (string, error) {
 	}
 	v, err := getSecret(format(prefix, bearer))
 	if err != nil {
-		return "", fmt.Errorf("could not retrieve bearer token for %s configuration, run 'sdpctl configure login' or set SDPCTL_BEARER %w", prefix, err)
+		return "", fmt.Errorf("Could not retrieve bearer token for %s configuration, run 'sdpctl configure login' or set SDPCTL_BEARER %w", prefix, err)
 	}
 	return v, nil
 }

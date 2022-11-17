@@ -19,20 +19,20 @@ func NewOpenCmd(f *factory.Factory) *cobra.Command {
 		Annotations: map[string]string{
 			"skipAuthCheck": "true",
 		},
-		Short: "Open the web UI in your default browser",
+		Short: "Open the Admin UI in your browser",
 		RunE: func(c *cobra.Command, args []string) error {
 			addr, err := configuration.NormalizeURL(f.Config.URL)
 			if err != nil {
-				return fmt.Errorf("could not normalize addr %w", err)
+				return fmt.Errorf("Could not normalize addr %w", err)
 			}
 			webUI, err := url.Parse(addr)
 			if err != nil {
-				return fmt.Errorf("could not parse addr %w", err)
+				return fmt.Errorf("Could not parse addr %w", err)
 			}
 			browser.Stderr = io.Discard
 			webUI.Path = "/ui"
 			if err := browser.OpenURL(webUI.String()); err != nil {
-				log.Warnf("could not open %s in your default browser.", webUI)
+				log.Warnf("Could not open %s in your default browser.", webUI)
 			}
 			return nil
 		},

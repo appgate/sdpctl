@@ -6,8 +6,9 @@ package keyring
 import (
 	"errors"
 	"fmt"
-	"github.com/keybase/go-keychain"
 	"os"
+
+	"github.com/keybase/go-keychain"
 )
 
 func deleteSecretKey(prefix, name string) error {
@@ -20,7 +21,7 @@ func deleteSecretKey(prefix, name string) error {
 		err := keychain.DeleteItem(item)
 		if err != nil {
 			if !errors.Is(err, keychain.ErrorItemNotFound) {
-				return errors.New("failed to delete credential from keychain")
+				return errors.New("Failed to delete credential from keychain")
 			}
 		}
 	}
@@ -52,10 +53,10 @@ func QueryKeychain(key string) (string, error) {
 	query.SetReturnData(true)
 	result, err := keychain.QueryItem(query)
 	if err != nil {
-		return "", errors.New("encountered error when querying the keychain")
+		return "", errors.New("Encountered error when querying the keychain")
 	}
 	if len(result) != 1 {
-		return "", errors.New(fmt.Sprintf("could not find key: %s", key))
+		return "", fmt.Errorf("Could not find key: %s", key)
 	}
 	return string(result[0].Data), nil
 }
@@ -94,14 +95,14 @@ func UpdateKeychain(updateItem keychain.Item, key string) error {
 
 	results, err := keychain.QueryItem(queryItem)
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to query keychain: %s", err))
+		return fmt.Errorf("Failed to query keychain: %s", err)
 	}
 	if len(results) != 1 {
-		return errors.New(fmt.Sprintf("could not find key: %s", key))
+		return fmt.Errorf("Could not find key: %s", key)
 	}
 
 	if err = keychain.UpdateItem(queryItem, updateItem); err != nil {
-		return errors.New(fmt.Sprintf("failed to update item: %s", err))
+		return fmt.Errorf("Failed to update item: %s", err)
 	}
 
 	return nil
@@ -113,7 +114,7 @@ func GetPassword(prefix string) (string, error) {
 	}
 	pw, err := QueryKeychain(format(prefix, password))
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed to get password from keychain: %s", err))
+		return "", fmt.Errorf("Failed to get password from keychain: %s", err)
 	}
 	return pw, nil
 }
@@ -132,7 +133,7 @@ func GetBearer(prefix string) (string, error) {
 	}
 	token, err := QueryKeychain(format(prefix, bearer))
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed to get bearer token from keychain: %s", err))
+		return "", fmt.Errorf("Failed to get bearer token from keychain: %s", err)
 	}
 	return token, nil
 }
@@ -169,7 +170,7 @@ func GetUsername(prefix string) (string, error) {
 	}
 	user, err := QueryKeychain(format(prefix, username))
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed to get username from keychain: %s", err))
+		return "", fmt.Errorf("Failed to get username from keychain: %s", err)
 	}
 	return user, nil
 }
@@ -177,7 +178,7 @@ func GetUsername(prefix string) (string, error) {
 func GetRefreshToken(prefix string) (string, error) {
 	token, err := QueryKeychain(format(prefix, refreshToken))
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("failed to get refresh token from keychain: %s", err))
+		return "", fmt.Errorf("Failed to get refresh token from keychain: %s", err)
 	}
 	return token, nil
 }

@@ -219,7 +219,7 @@ const (
 // 1 if y is greater than x
 func CompareVersionsAndBuildNumber(x, y *version.Version) (int, error) {
 	if x == nil || y == nil {
-		return 0, fmt.Errorf("failed to compare versions, got nil version - x=%v, y=%v", x, y)
+		return 0, fmt.Errorf("Failed to compare versions, got nil version - x=%v, y=%v", x, y)
 	}
 	res := y.Compare(x)
 

@@ -59,7 +59,7 @@ func (p *Profiles) CurrentConfigExists() bool {
 	return false
 }
 
-var ErrNoCurrentProfile = errors.New("no current profile is set, run 'sdpctl profile set'")
+var ErrNoCurrentProfile = errors.New("No current profile is set, run 'sdpctl profile set'")
 
 func (p *Profiles) CurrentProfile() (*Profile, error) {
 	if v := os.Getenv("SDPCTL_PROFILE"); len(v) > 0 {
@@ -77,7 +77,7 @@ func (p *Profiles) CurrentProfile() (*Profile, error) {
 			return &profile, nil
 		}
 	}
-	return nil, errors.New("could not get current profile")
+	return nil, errors.New("Could not get current profile")
 }
 
 func (p *Profiles) Available() []string {

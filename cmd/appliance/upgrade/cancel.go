@@ -64,7 +64,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 
 	flags := upgradeCancelCmd.Flags()
 	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
-	flags.BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the controller")
+	flags.BoolVar(&opts.delete, "delete", false, "Delete all upgrade files from the Controller")
 
 	return upgradeCancelCmd
 }
@@ -117,7 +117,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 	}
 	if len(noneIdleAppliances) == 0 {
-		log.Infof("did not find any appliances to perform cancel on.")
+		log.Infof("Did not find any appliances to perform cancel on.")
 		return nil
 	}
 	msg, err := showCancelList(noneIdleAppliances, offline)
@@ -207,7 +207,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 			return err
 		}
 		for _, f := range files {
-			log.Infof("deleting file %q from controller file repository", f.GetName())
+			log.Infof("Deleting file %q from the Controller file repository", f.GetName())
 			if err := a.DeleteFile(ctx, f.GetName()); err != nil {
 				log.Warningf("Unable to delete file %q %s", f.GetName(), err)
 			}

@@ -38,8 +38,8 @@ var (
 	version         string = "dev"
 	commit          string
 	buildDate       string
-	longDescription string = `The official CLI tool for managing your Appgate SDP Collective.
-With sdpctl, you can list, backup and upgrade your Appgate SDP Appliances with a single command.`
+	longDescription string = `The official CLI tool for managing your Collective.
+With sdpctl, you can list, backup and upgrade your Appliances with a single command.`
 	versionOutput string = fmt.Sprintf(`%s
 commit: %s
 build date: %s`, version, commit, buildDate)
@@ -83,7 +83,7 @@ func initConfig(currentProfile *string) {
 		}
 	} else {
 		// if we don't have any profiles
-		// we will assume there is only one collective to respect
+		// we will assume there is only one Collective to respect
 		// and we will default to base dir.
 		viper.AddConfigPath(dir)
 	}
@@ -97,7 +97,7 @@ func initConfig(currentProfile *string) {
 			// Its OK if we can't the file, fallback to arguments and/or environment variables
 			// or configure it with sdpctl configure
 		} else {
-			fmt.Printf("can't find config; run sdpctl configure %s %s\n", dir, err)
+			fmt.Printf("Can't find config; run sdpctl configure %s %s\n", dir, err)
 			os.Exit(1)
 		}
 	}
@@ -106,7 +106,7 @@ func initConfig(currentProfile *string) {
 func NewCmdRoot(currentProfile *string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:               "sdpctl",
-		Short:             "sdpctl is a command line tool to control and handle Appgate SDP using the CLI",
+		Short:             "sdpctl is a command line tool to control and handle using the CLI",
 		Long:              longDescription,
 		Version:           versionOutput,
 		SilenceErrors:     true,
@@ -324,7 +324,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			// For certain sub-commands we want to make sure that we are using the
 			// latest api version available (appliance upgrade prepare and complete)
 			// we wont use this check for all commands, and fallback to the config value
-			// so we can reduce number oh http requests to the controller.
+			// so we can reduce number oh http requests to the Controller.
 			if configuration.NeedUpdatedAPIVersionConfig(cmd) {
 				minMax, err := auth.GetMinMaxAPIVersion(f)
 				if err == nil && minMax != nil {

@@ -34,11 +34,11 @@ type AskStubber struct {
 
 func compareOptions(expected, got []string) error {
 	if len(expected) != len(got) {
-		return fmt.Errorf("expected %v, got %v (length mismatch)", expected, got)
+		return fmt.Errorf("Expected %v, got %v (length mismatch)", expected, got)
 	}
 	for i, v := range expected {
 		if v != got[i] {
-			return fmt.Errorf("expected %v, got %v", expected, got)
+			return fmt.Errorf("Expected %v, got %v", expected, got)
 		}
 	}
 	return nil
@@ -69,7 +69,7 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 		case *survey.Password:
 			message = pt.Message
 		default:
-			return fmt.Errorf("prompt type %T is not supported by the stubber", pt)
+			return fmt.Errorf("Prompt type %T is not supported by the stubber", pt)
 		}
 
 		var stub *QuestionStub
@@ -81,12 +81,12 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 			}
 		}
 		if stub == nil {
-			return fmt.Errorf("no prompt stub for %q", message)
+			return fmt.Errorf("Mo prompt stub for %q", message)
 		}
 
 		if len(stub.options) > 0 {
 			if err := compareOptions(stub.options, options); err != nil {
-				return fmt.Errorf("stubbed options mismatch for %q: %v", message, err)
+				return fmt.Errorf("Stubbed options mismatch for %q: %v", message, err)
 			}
 		}
 
@@ -101,7 +101,7 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 				}
 			}
 			if foundIndex < 0 {
-				return fmt.Errorf("answer %q not found in options for %q: %v", stringValue, message, options)
+				return fmt.Errorf("Answer %q not found in options for %q: %v", stringValue, message, options)
 			}
 			userValue = core.OptionAnswer{
 				Value: stringValue,
@@ -143,7 +143,7 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 		SurveyAskOne = origSurveyAskOne
 		for _, s := range as.stubs {
 			if !s.matched {
-				t.Errorf("unmatched prompt stub: %+v", s)
+				t.Errorf("Unmatched prompt stub: %+v", s)
 			}
 		}
 	}

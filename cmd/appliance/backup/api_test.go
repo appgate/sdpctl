@@ -168,7 +168,7 @@ func TestBackupAPICommand(t *testing.T) {
 	stubber, teardown := prompt.InitAskStubber(t)
 	defer teardown()
 	func(prompt *prompt.AskStubber) {
-		prompt.StubPrompt("The passphrase to encrypt Appliance Backups when backup API is used:").AnswerWith("secret")
+		prompt.StubPrompt("The passphrase to encrypt appliance backups when backup API is used:").AnswerWith("secret")
 		prompt.StubPrompt("Confirm your passphrase:").AnswerWith("secret")
 	}(stubber)
 
@@ -219,7 +219,7 @@ func Test_getPassPhrase(t *testing.T) {
 			want:    "secret",
 			wantErr: false,
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubPrompt("The passphrase to encrypt Appliance Backups when backup API is used:").AnswerWith("secret")
+				s.StubPrompt("The passphrase to encrypt appliance backups when backup API is used:").AnswerWith("secret")
 				s.StubPrompt("Confirm your passphrase:").AnswerWith("secret")
 			},
 		},

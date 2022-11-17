@@ -17,7 +17,7 @@ type Closure func(v interface{}) error
 // New initiates a new FIFO queue
 func New(capacity, workers int) *QueueWorker {
 	q := goconcurrentqueue.NewFixedFIFO(capacity)
-	// dont allow more workers then there are items in the queue
+	// dont allow more workers than there are items in the queue
 	if workers > q.GetCap() {
 		workers = q.GetCap()
 	}

@@ -21,7 +21,7 @@ func (r *ResolverError) Error() string {
 		ips = append(ips, addr.String())
 	}
 	sort.Strings(ips)
-	return fmt.Sprintf(`the given hostname %s does not resolve to a unique ip.
+	return fmt.Sprintf(`The given hostname %s does not resolve to a unique ip.
 A unique ip is necessary to ensure that the upgrade script
 connects to only the (primary) administration Controller.
 The hostname resolves to the following ips:

@@ -62,7 +62,7 @@ func GetUsername(prefix string) (string, error) {
 func saveEncryptedFile(name, prefix, secret string) error {
 	encrypted, err := dpapi.EncryptBytes([]byte(secret))
 	if err != nil {
-		return fmt.Errorf("could not encrypt token to Windows DPAPI %w", err)
+		return fmt.Errorf("Could not encrypt token to Windows DPAPI %w", err)
 	}
 	dir := profiles.GetStorageDirectory()
 	p, err := filepath.Abs(fmt.Sprintf("%s/%s", dir, format(prefix, name)))
@@ -72,11 +72,11 @@ func saveEncryptedFile(name, prefix, secret string) error {
 
 	f, err := os.Create(p)
 	if err != nil {
-		return fmt.Errorf("could create file %w", err)
+		return fmt.Errorf("Could create file %w", err)
 	}
 	defer f.Close()
 	if _, err := f.Write(encrypted); err != nil {
-		return fmt.Errorf("could write file %w", err)
+		return fmt.Errorf("Could write file %w", err)
 	}
 	return nil
 }
@@ -93,7 +93,7 @@ func getSecretFile(name, prefix string) (string, error) {
 	}
 	dec, err := dpapi.DecryptBytes(dat)
 	if err != nil {
-		return "", fmt.Errorf("could not decrypt token from Windows DPAPI %w", err)
+		return "", fmt.Errorf("Could not decrypt token from Windows DPAPI %w", err)
 	}
 	return string(dec), nil
 }

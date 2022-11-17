@@ -72,7 +72,7 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	defer terminal.Unlock()
 	client, err := opts.HTTPClient()
 	if err != nil {
-		return fmt.Errorf("could not resolve a HTTP client based on your current config %s", err)
+		return fmt.Errorf("Could not resolve a HTTP client based on your current config %s", err)
 	}
 	path, err := os.Getwd()
 	if err != nil {
@@ -88,7 +88,7 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 		return err
 	}
 	request = request.WithContext(context.WithValue(context.Background(), factory.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+zip", opts.Version)))
-	log.Infof("starting downloading log zip bundle or %s", opts.ApplianceID)
+	log.Infof("Starting downloading log zip bundle or %s", opts.ApplianceID)
 	response, err := client.Do(request)
 	if response == nil || err != nil {
 		return api.HTTPErrorResponse(response, err)
@@ -144,7 +144,7 @@ func copy(dst io.Writer, src io.Reader, bar *mpb.Bar) (written int64, err error)
 			if nw < 0 || nr < nw {
 				nw = 0
 				if ew == nil {
-					ew = errors.New("invalid write result")
+					ew = errors.New("Invalid write result")
 				}
 			}
 			written += int64(nw)

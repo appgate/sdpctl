@@ -26,7 +26,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 	logEntry := log.WithFields(log.Fields{
 		"appliance": appliance.GetName(),
 	})
-	logEntry.WithField("want", want).Info("polling for appliance status")
+	logEntry.WithField("want", want).Info("Polling for the appliance status")
 	return backoff.Retry(func() error {
 		stats, _, err := u.Appliance.Stats(ctx)
 		if err != nil {
@@ -37,7 +37,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 				current := stat.GetStatus()
 				logEntry.WithFields(log.Fields{
 					"current": current,
-				}).Debug("received appliance status")
+				}).Debug("Received appliance status")
 				if tracker != nil {
 					tracker.Update(current)
 				}
@@ -46,7 +46,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 				}
 			}
 		}
-		logEntry.Info("reached wanted appliance status")
+		logEntry.Info("Reached the wanted appliance status")
 		return nil
 
 	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
@@ -65,7 +65,7 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 	logEntry := log.WithFields(log.Fields{
 		"appliance": appliance.GetName(),
 	})
-	logEntry.WithField("want", want).Info("polling for appliance state")
+	logEntry.WithField("want", want).Info("Polling for the appliance state")
 	return backoff.Retry(func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -80,16 +80,16 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 				fields := log.Fields{
 					"current": state,
 				}
-				logEntry.WithFields(fields).Debug("received appliance state")
+				logEntry.WithFields(fields).Debug("Received appliance state")
 				if tracker != nil {
 					tracker.Update(state)
 				}
 				if !util.InSlice(state, want) {
-					return fmt.Errorf("never reached desired state %s", want)
+					return fmt.Errorf("Never reached desired state %s", want)
 				}
 			}
 		}
-		logEntry.Info("reached wanted appliance state")
+		logEntry.Info("Reached wanted appliance state")
 		return nil
 	}, b)
 }

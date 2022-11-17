@@ -159,7 +159,7 @@ func TestBackupCmdFailedOnServer(t *testing.T) {
 
 	_, err := cmd.ExecuteC()
 	if err == nil {
-		reg := regexp.MustCompile(`could not backup controller: something went wrong`)
+		reg := regexp.MustCompile(`could not backup the Controller: something went wrong`)
 		if res := reg.MatchString(err.Error()); !res {
 			t.Fatalf("result matching failed. WANT: %+v, GOT: %+v", reg.String(), string(err.Error()))
 		}

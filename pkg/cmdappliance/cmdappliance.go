@@ -32,7 +32,7 @@ func ArgsSelectAppliance(cmd *cobra.Command, args []string, opts *AppliancCmdOpt
 	switch len(args) {
 	case 0:
 		if opts.NoInteractive {
-			return errors.New("can't prompt, applianceID argument required")
+			return errors.New("Can't prompt, applianceID argument required")
 		}
 
 		a, err := opts.Appliance(opts.Config)
@@ -46,7 +46,7 @@ func ArgsSelectAppliance(cmd *cobra.Command, args []string, opts *AppliancCmdOpt
 		opts.ApplianceID = applianceID
 	case 1:
 		if !util.IsUUID(args[0]) {
-			return errors.New("expected argument to be appliance uuid")
+			return errors.New("Expected argument to be appliance uuid")
 		}
 		opts.ApplianceID = args[0]
 	}

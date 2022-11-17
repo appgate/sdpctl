@@ -25,7 +25,7 @@ type Factory struct {
 	// HTTPClient is the underlying HTTP client used in APIClient and CustomHTTPClient
 	HTTPClient func() (*http.Client, error)
 	// CustomHTTPClient includes a custom HTTP.Client that includes the default
-	// headers to integrate with a controller
+	// headers to integrate with a Controller
 	// the custom HTTP client includes the default transport layer to import TLS certificate
 	// and applies Accept, Authorization, and User-Agent headers to all requests
 	CustomHTTPClient func() (*http.Client, error)

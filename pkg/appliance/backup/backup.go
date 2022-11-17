@@ -25,7 +25,7 @@ func New(c *openapi.APIClient, t string, v int) *Backup {
 	}
 }
 
-// Initiate an Appliance Backup. The progress can be followed by polling the Appliance via "GET appliances/{id}/backup/{backupId}/status".
+// Initiate an appliance backup. The progress can be followed by polling the appliance via "GET appliances/{id}/backup/{backupId}/status".
 func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit bool) (string, error) {
 	o := openapi.AppliancesIdBackupPostRequest{
 		Logs:  &logs,
@@ -39,7 +39,7 @@ func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit b
 	return status.GetId(), nil
 }
 
-// Download a completed Appliance Backup with the given ID of an Appliance
+// Download a completed appliance backup with the given ID of an Appliance
 func (b *Backup) Download(ctx context.Context, applianceID, backupID string) (*os.File, error) {
 	ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
 	file, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, applianceID, backupID).Authorization(b.Token).Execute()
