@@ -117,7 +117,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		}
 	}
 	if len(noneIdleAppliances) == 0 {
-		log.Infof("Did not find any appliances to perform cancel on.")
+		log.Infof("Did not find any appliances to perform cancel on")
 		return nil
 	}
 	msg, err := showCancelList(noneIdleAppliances, offline)

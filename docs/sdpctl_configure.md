@@ -1,10 +1,10 @@
 ## sdpctl configure
 
-Configure your Appgate SDP Collective
+Configure your Collective
 
 ### Synopsis
 
-Setup a configuration file towards your Appgate SDP Collective to be able to interact with the collective. By default, the configuration file
+Setup a configuration file towards your Collective to be able to interact with the collective. By default, the configuration file
 will be created in a default directory in depending on your system. This can be overridden by setting the 'SDPCTL_CONFIG_DIR' environment variable.
 See 'sdpctl help environment' for more information on using environment variables.
 
@@ -38,16 +38,16 @@ sdpctl configure [flags]
 ### Options inherited from parent commands
 
 ```
-      --api-version int   peer API version override
-      --ci-mode           log to stderr instead of file and disable progress-bars
+      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
       --debug             Enable debug logging
-      --no-interactive    suppress interactive prompt with auto accept
-      --no-verify         don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string    profile configuration to use
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
 ```
 
 ### SEE ALSO
 
-* [sdpctl](sdpctl.md)	 - sdpctl is a command line tool to control and handle Appgate SDP using the CLI
-* [sdpctl configure signin](sdpctl_configure_signin.md)	 - Sign in and authenticate to Appgate SDP Collective
+* [sdpctl](sdpctl.md)	 - sdpctl is a command line tool to manage Appgate SDP Collectives
+* [sdpctl configure signin](sdpctl_configure_signin.md)	 - Sign in and authenticate to Collective
 

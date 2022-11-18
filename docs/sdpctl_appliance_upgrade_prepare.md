@@ -1,6 +1,6 @@
 ## sdpctl appliance upgrade prepare
 
-prepare appliances for upgrade
+Prepare the appliances for upgrade
 
 ### Synopsis
 
@@ -29,7 +29,7 @@ sdpctl appliance upgrade prepare [flags]
   # prepare an upgrade from remote upgrade image
   > sdpctl appliance upgrade prepare --image=https://upgrade-host.com/upgrade-5.5.3.img.zip
 
-  # use primary controller as an upgrade image host for the other appliances
+  # use the primary Controller as an upgrade image host for the other appliances
   > sdpctl appliance upgrade prepare --image=https://upgrade-host.com/upgrade-5.5.3.img.zip --host-on-controller
 
   # prepare only certain appliances based on a filter
@@ -39,31 +39,31 @@ sdpctl appliance upgrade prepare [flags]
 ### Options
 
 ```
-      --actual-hostname string   If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.
+      --actual-hostname string   If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname
       --dev-keyring              Use the development keyring to verify the upgrade image
-      --force                    force prepare of upgrade on appliances even though the version uploaded is the same or lower then the version already running on the appliance
+      --force                    Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance
   -h, --help                     help for prepare
-      --host-on-controller       Use primary controller as image host when uploading from remote source.
+      --host-on-controller       Use the primary Controller as image host when uploading from remote source
       --image string             Upgrade image file or URL
-      --no-interactive           suppress interactive prompt with auto accept
-      --throttle int             Upgrade is done in batches using a throttle value. You can control the throttle using this flag. (default 5)
+      --no-interactive           Suppress interactive prompt with auto accept
+      --throttle int             Upgrade is done in batches using a throttle value. You can control the throttle using this flag (default 5)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --api-version int          peer API version override
-      --ci-mode                  log to stderr instead of file and disable progress-bars
+      --api-version int          Peer API version override
+      --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
   -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=<site-id> etc.'.
                                  Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
   -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
-      --no-verify                don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string           profile configuration to use
-  -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on. (default 30m0s)
+      --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string           Profile configuration to use
+  -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
 ```
 
 ### SEE ALSO
 
-* [sdpctl appliance upgrade](sdpctl_appliance_upgrade.md)	 - Perform appliance upgrade on the Appgate SDP Collective
+* [sdpctl appliance upgrade](sdpctl_appliance_upgrade.md)	 - Perform appliance upgrade on the Collective
 

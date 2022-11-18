@@ -50,7 +50,7 @@ var generateCmd = &cobra.Command{
 func generateManPages(cmd *cobra.Command) error {
 	o := runtime.GOOS
 	if o != "linux" && o != "darwin" {
-		return errors.New("Man pages not available for this OS.")
+		return errors.New("Man pages not available for this OS")
 	}
 
 	cwd, err := os.Getwd()

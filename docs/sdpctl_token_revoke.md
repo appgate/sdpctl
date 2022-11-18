@@ -1,6 +1,6 @@
 ## sdpctl token revoke
 
-revoke entitlement tokens by distinguished name or token-type
+Revoke entitlement tokens by distinguished name or token-type
 
 ### Synopsis
 
@@ -29,29 +29,29 @@ sdpctl token revoke [<distinguished-name> | --by-token-type <type>] [flags]
 ### Options
 
 ```
-      --by-token-type string                   revoke all tokens of this type. { administration, adminclaims, entitlements, claims }
-      --delay-minutes int32                    delay time for token revocations in minutes. defaults to 5 minutes (default 5)
+      --by-token-type string                   Revoke all tokens of this type. { administration, adminclaims, entitlements, claims }
+      --delay-minutes int32                    Delay time for token revocations in minutes. defaults to 5 minutes (default 5)
   -h, --help                                   help for revoke
-      --per-second float32                     tokens are revoked in batches according to this value to spread load on the controller. defaults to 7 token per second (default 7)
-      --reason string                          reason for revocation
-      --site-id string                         revoke only tokens for the given site ID
-      --specific-distinguished-names strings   comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices
-      --token-type string                      revoke only certain types of token when revoking by distinguished name
+      --per-second float32                     Tokens are revoked in batches according to this value to spread load on the Controller. defaults to 7 token per second (default 7)
+      --reason string                          Reason for revocation
+      --site-id string                         Revoke only tokens for the given site ID
+      --specific-distinguished-names strings   Comma-separated string of distinguished names to renew tokens in bulk for a specific list of devices
+      --token-type string                      Revoke only certain types of token when revoking by distinguished name
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --api-version int   peer API version override
-      --ci-mode           log to stderr instead of file and disable progress-bars
+      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
       --debug             Enable debug logging
       --json              Display in JSON format
-      --no-interactive    suppress interactive prompt with auto accept
-      --no-verify         don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string    profile configuration to use
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
 ```
 
 ### SEE ALSO
 
-* [sdpctl token](sdpctl_token.md)	 - Perform actions related to token on the Appgate SDP Collective
+* [sdpctl token](sdpctl_token.md)	 - Perform actions on Admin, Claims and Entitlement tokens
 

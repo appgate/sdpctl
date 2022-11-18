@@ -1,11 +1,11 @@
 ## sdpctl appliance resolve-name-status
 
-Get the status of name resolution on a Gateway.
+Get the status of name resolution on a Gateway
 
 ### Synopsis
 
 Get the status of name resolution on a Gateway. It lists all the subscribed resource names from all the connected
-Clients and shows the resolution results.
+Clients and shows the resolution results
 
 ```
 sdpctl appliance resolve-name-status [<appliance-id>] [flags]
@@ -44,18 +44,18 @@ sdpctl appliance resolve-name-status [<appliance-id>] [flags]
 ### Options inherited from parent commands
 
 ```
-      --api-version int          peer API version override
-      --ci-mode                  log to stderr instead of file and disable progress-bars
+      --api-version int          Peer API version override
+      --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
   -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=<site-id> etc.'.
                                  Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
   -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
-      --no-interactive           suppress interactive prompt with auto accept
-      --no-verify                don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string           profile configuration to use
+      --no-interactive           Suppress interactive prompt with auto accept
+      --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string           Profile configuration to use
 ```
 
 ### SEE ALSO
 
-* [sdpctl appliance](sdpctl_appliance.md)	 - interact with Appgate SDP Appliances
+* [sdpctl appliance](sdpctl_appliance.md)	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc
 

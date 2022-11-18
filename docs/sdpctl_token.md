@@ -1,10 +1,10 @@
 ## sdpctl token
 
-Perform actions related to token on the Appgate SDP Collective
+Perform actions on Admin, Claims and Entitlement tokens
 
 ### Synopsis
 
-The token command allows you to renew or revoke device tokens used in the Appgate SDP Collective.
+The token command allows you to renew or revoke tokens used in the Collective.
 
 ### Options
 
@@ -16,17 +16,17 @@ The token command allows you to renew or revoke device tokens used in the Appgat
 ### Options inherited from parent commands
 
 ```
-      --api-version int   peer API version override
-      --ci-mode           log to stderr instead of file and disable progress-bars
+      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
       --debug             Enable debug logging
-      --no-interactive    suppress interactive prompt with auto accept
-      --no-verify         don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string    profile configuration to use
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
 ```
 
 ### SEE ALSO
 
-* [sdpctl](sdpctl.md)	 - sdpctl is a command line tool to control and handle Appgate SDP using the CLI
-* [sdpctl token list](sdpctl_token_list.md)	 - list distinguished names of active devices
-* [sdpctl token revoke](sdpctl_token_revoke.md)	 - revoke entitlement tokens by distinguished name or token-type
+* [sdpctl](sdpctl.md)	 - sdpctl is a command line tool to manage Appgate SDP Collectives
+* [sdpctl token list](sdpctl_token_list.md)	 - List distinguished names of active devices
+* [sdpctl token revoke](sdpctl_token_revoke.md)	 - Revoke entitlement tokens by distinguished name or token-type
 

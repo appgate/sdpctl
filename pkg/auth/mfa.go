@@ -84,7 +84,7 @@ func (a *Auth) InitializeOTP(ctx context.Context, password *string, token string
 	return r, nil
 }
 
-var ErrInvalidOneTimePassword = errors.New("Invalid one-time password.")
+var ErrInvalidOneTimePassword = errors.New("Invalid one-time password")
 
 // PushOTP HTTP POST /authentication/otp
 func (a *Auth) PushOTP(ctx context.Context, answer, token string) (*openapi.LoginResponse, error) {

@@ -97,9 +97,9 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 	if !backupEnabled {
 		if opts.NoInteractive {
-			return backupIDs, errors.New("Using '--no-interactive' flag while backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again.")
+			return backupIDs, errors.New("Using '--no-interactive' flag while Backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again")
 		}
-		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it.")
+		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it")
 	}
 
 	appliances, err := app.List(ctx, nil)
@@ -181,11 +181,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	toBackup, offline, _ := FilterAvailable(toBackup, initialStats.GetData())
 
 	for _, v := range offline {
-		log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
+		log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline")
 	}
 
 	if len(toBackup) <= 0 {
-		fmt.Fprintln(opts.Out, "No appliances to backup. Either no appliance was selected or the selected appliances are offline.")
+		fmt.Fprintln(opts.Out, "No appliances to backup. Either no appliance was selected or the selected appliances are offline")
 		return nil, nil
 	}
 
@@ -422,7 +422,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	}
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
-		log.Warn("Backup API is disabled on the appliance.")
+		log.Warn("Backup API is disabled on the appliance")
 		var shouldEnable bool
 		q := &survey.Confirm{
 			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",

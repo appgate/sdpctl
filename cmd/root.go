@@ -38,9 +38,8 @@ var (
 	version         string = "dev"
 	commit          string
 	buildDate       string
-	longDescription string = `The official CLI tool for managing your Collective.
-With sdpctl, you can list, backup and upgrade your Appliances with a single command.`
-	versionOutput string = fmt.Sprintf(`%s
+	longDescription string = `The official CLI tool for managing your Collective.`
+	versionOutput   string = fmt.Sprintf(`%s
 commit: %s
 build date: %s`, version, commit, buildDate)
 )
@@ -106,7 +105,7 @@ func initConfig(currentProfile *string) {
 func NewCmdRoot(currentProfile *string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:               "sdpctl",
-		Short:             "sdpctl is a command line tool to control and handle using the CLI",
+		Short:             "sdpctl is a command line tool to manage Appgate SDP Collectives",
 		Long:              longDescription,
 		Version:           versionOutput,
 		SilenceErrors:     true,
@@ -118,16 +117,16 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 
 	pFlags := rootCmd.PersistentFlags()
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
-	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "peer API version override")
-	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "don't verify TLS on for this particular command, overriding settings from config file")
-	pFlags.Bool("no-interactive", false, "suppress interactive prompt with auto accept")
-	pFlags.Bool("ci-mode", false, "log to stderr instead of file and disable progress-bars")
+	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "Peer API version override")
+	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "Don't verify TLS on for the given command, overriding settings from config file")
+	pFlags.Bool("no-interactive", false, "Suppress interactive prompt with auto accept")
+	pFlags.Bool("ci-mode", false, "Log to stderr instead of file and disable progress-bars")
 
 	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
 	// in Execute() because we need to parse it first before the others to be able
 	// to resolve factory.New
 	var dummy string
-	pFlags.StringVarP(&dummy, "profile", "p", "", "profile configuration to use")
+	pFlags.StringVarP(&dummy, "profile", "p", "", "Profile configuration to use")
 
 	initConfig(currentProfile)
 
@@ -346,7 +345,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		// require that the user is authenticated before running most commands
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			var result error
-			result = multierror.Append(result, errors.New("To authenticate, please run `sdpctl configure signin`."))
+			result = multierror.Append(result, errors.New("To authenticate, please run `sdpctl configure signin`"))
 			result = multierror.Append(result, ErrExitAuth)
 			return result
 		}

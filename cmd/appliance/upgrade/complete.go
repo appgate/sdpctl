@@ -107,10 +107,10 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	flags := upgradeCompleteCmd.Flags()
-	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "backup primary Controller before completing the upgrade")
-	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "specify path to download backup")
-	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
-	flags.IntVar(&opts.batchSize, "batch-size", 2, "number of batch groups")
+	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "Backup primary Controller before completing the upgrade")
+	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "Specify path to download backup")
+	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
+	flags.IntVar(&opts.batchSize, "batch-size", 2, "Number of batch groups")
 	return upgradeCompleteCmd
 }
 
@@ -224,7 +224,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("Could not complete the upgrade operation %w", err)
 	}
 	for _, o := range offline {
-		log.Warnf("%q is offline and will be excluded from upgrade.", o.GetName())
+		log.Warnf("%q is offline and will be excluded from upgrade", o.GetName())
 	}
 
 	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
@@ -759,24 +759,24 @@ Appliances that will be skipped:{{ range .Skipped }}
 			fmt.Sprintf("and downloaded to %s:", backupDestination),
 		}
 		PrimaryControllerDescription = []string{
-			"The primary Controller will be upgraded.",
-			"This will result in the API being unreachable while completing the primary Controller upgrade.",
+			"The primary Controller will be upgraded",
+			"This will result in the API being unreachable while completing the primary Controller upgrade",
 		}
 		AdditionalControllerDescription = []string{
-			"Additional Controllers will be upgraded.",
+			"Additional Controllers will be upgraded",
 			"In some cases, the Controller function on additional Controllers will need to be disabled",
 			"before proceeding with the upgrade. The disabled Controllers will then be re-enabled once",
-			"the upgrade is completed.",
-			"This step will also reboot the upgraded Controllers for the upgrade to take effect.",
+			"the upgrade is completed",
+			"This step will also reboot the upgraded Controllers for the upgrade to take effect",
 		}
 		LogForwardersAndServersDescription = []string{
 			"Appliances with LogForwarder/LogServer functions are updated",
-			"Other appliances need a connection to to these appliances for logging.",
+			"Other appliances need a connection to to these appliances for logging",
 		}
 		AdditionalAppliancesDescription = []string{
 			"Additional appliances will be upgraded. The additional appliances will be split into",
-			"batches to keep the Collective as available as possible during the upgrade process.",
-			"Some of the additional appliances may need to be rebooted for the upgrade to take effect.",
+			"batches to keep the Collective as available as possible during the upgrade process",
+			"Some of the additional appliances may need to be rebooted for the upgrade to take effect",
 		}
 	)
 	type step struct {

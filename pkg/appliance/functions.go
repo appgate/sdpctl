@@ -136,10 +136,10 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	}
 	for _, a := range offline {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
-			err = multierror.Append(err, fmt.Errorf("Cannot start the operation since a Controller %q is offline.", a.GetName()))
+			err = multierror.Append(err, fmt.Errorf("Cannot start the operation since a Controller %q is offline", a.GetName()))
 		}
 		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
-			err = multierror.Append(err, fmt.Errorf("Cannot start the operation since a LogServer %q is offline.", a.GetName()))
+			err = multierror.Append(err, fmt.Errorf("Cannot start the operation since a LogServer %q is offline", a.GetName()))
 		}
 	}
 	return result, offline, err
@@ -318,8 +318,8 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	}
 	if count > 1 {
 		return nil, fmt.Errorf(
-			"The given Controller hostname %s is used by more than one appliance."+
-				"A unique Controller admin (or peer) hostname is required to perform the upgrade.",
+			"The given Controller hostname %s is used by more than one appliance"+
+				"A unique Controller admin (or peer) hostname is required to perform the upgrade",
 			hostname,
 		)
 	}
@@ -576,7 +576,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					}
 				}
 			default:
-				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring.", k)
+				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring", k)
 				if !util.InSlice(message, warnings) {
 					warnings = append(warnings, message)
 				}

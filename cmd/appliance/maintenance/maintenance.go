@@ -93,7 +93,7 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 func toggleRun(cmd *cobra.Command, args []string, opts *toggleOptions) error {
 	cfg := opts.Config
 	if cfg.Version < 15 {
-		return errors.New("Maintenance mode is not supported on this version.")
+		return errors.New("Maintenance mode is not supported on this version")
 	}
 	a, err := opts.Appliance(cfg)
 	if err != nil {

@@ -27,7 +27,7 @@ type apiOptions struct {
 	disable   bool
 }
 
-// NewBackupAPICmd return a new backup API command
+// NewBackupAPICmd return a new Backup API command
 func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 	opts := apiOptions{
 		Config:    f.Config,
@@ -66,13 +66,13 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		return api.HTTPErrorResponse(response, err)
 	}
 	if v, ok := settings.GetBackupApiEnabledOk(); ok && *v && !opts.disable {
-		fmt.Fprintln(opts.Out, "The Backup API is already enabled.")
+		fmt.Fprintln(opts.Out, "The Backup API is already enabled")
 		return nil
 	}
 	var message string
 	if opts.disable {
 		settings.SetBackupApiEnabled(false)
-		message = "The Backup API has been disabled."
+		message = "The Backup API has been disabled"
 	} else {
 		hasStdin := false
 		stat, err := os.Stdin.Stat()
@@ -85,7 +85,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		}
 		settings.SetBackupApiEnabled(true)
 		settings.SetBackupPassphrase(answer)
-		message = "The Backup API and the passphrase have been updated."
+		message = "The Backup API and the passphrase have been updated"
 	}
 
 	response, err = client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(t).Execute()

@@ -1,6 +1,6 @@
 ## sdpctl service-users
 
-root command for managing service users in the Appgate SDP Collective
+Manage Service Users
 
 ### Options
 
@@ -12,20 +12,20 @@ root command for managing service users in the Appgate SDP Collective
 ### Options inherited from parent commands
 
 ```
-      --api-version int   peer API version override
-      --ci-mode           log to stderr instead of file and disable progress-bars
+      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
       --debug             Enable debug logging
-      --no-interactive    suppress interactive prompt with auto accept
-      --no-verify         don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string    profile configuration to use
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
 ```
 
 ### SEE ALSO
 
-* [sdpctl](sdpctl.md)	 - sdpctl is a command line tool to control and handle Appgate SDP using the CLI
-* [sdpctl service-users create](sdpctl_service-users_create.md)	 - create a new service user
-* [sdpctl service-users delete](sdpctl_service-users_delete.md)	 - delete one or more service user(s)
-* [sdpctl service-users get](sdpctl_service-users_get.md)	 - get detailed information about a service user
-* [sdpctl service-users list](sdpctl_service-users_list.md)	 - list service users in the Appgate SDP Collective
-* [sdpctl service-users update](sdpctl_service-users_update.md)	 - update a service user
+* [sdpctl](sdpctl.md)	 - sdpctl is a command line tool to manage Appgate SDP Collectives
+* [sdpctl service-users create](sdpctl_service-users_create.md)	 - Create a new service user
+* [sdpctl service-users delete](sdpctl_service-users_delete.md)	 - Delete one or more service user(s)
+* [sdpctl service-users get](sdpctl_service-users_get.md)	 - Get detailed information about a service user
+* [sdpctl service-users list](sdpctl_service-users_list.md)	 - List service users in the Collective
+* [sdpctl service-users update](sdpctl_service-users_update.md)	 - Update a service user
 

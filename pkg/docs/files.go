@@ -7,7 +7,7 @@ var (
 		Examples: []ExampleDoc{},
 	}
 	FilesListDocs = CommandDoc{
-		Short: "lists the files in the Controllers file repository",
+		Short: "Lists the files in the Controllers file repository",
 		Long: `Lists the files in the Controllers file repository. Default output is in table format.
 Optionally print the output in JSON format by using the "--json" flag`,
 		Examples: []ExampleDoc{
@@ -33,7 +33,7 @@ appgate-6.0.1-29983-beta.img.zip    Ready     2022-08-19 08:06:20.909002 +0000 U
 		},
 	}
 	FilesDeleteDocs = CommandDoc{
-		Short: "delete files from the repository",
+		Short: "Delete files from the repository",
 		Long:  `Delete files from the repository with this command. There are multiple options on which file(s) should be deleted.`,
 		Examples: []ExampleDoc{
 			{

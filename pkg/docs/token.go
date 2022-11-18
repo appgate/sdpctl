@@ -6,7 +6,7 @@ var (
 		Long:  `The token command allows you to renew or revoke tokens used in the Collective.`,
 	}
 	TokenListDoc = CommandDoc{
-		Short: "list distinguished names of active devices",
+		Short: "List distinguished names of active devices",
 		Long:  "List distinguished names of active tokens, either in table format or JSON format using the '--json' flag",
 		Examples: []ExampleDoc{
 			{
@@ -20,7 +20,7 @@ var (
 		},
 	}
 	TokenRevokeDoc = CommandDoc{
-		Short: "revoke entitlement tokens by distinguished name or token-type",
+		Short: "Revoke entitlement tokens by distinguished name or token-type",
 		Long: `Revoke tokens by distinguished name or token type.
 
 Valid token types are:

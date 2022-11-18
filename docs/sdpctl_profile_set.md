@@ -1,6 +1,6 @@
 ## sdpctl profile set
 
-Set which profile to use
+Set which admin profile to use
 
 ```
 sdpctl profile set [flags]
@@ -9,14 +9,14 @@ sdpctl profile set [flags]
 ### Examples
 
 ```
-  # Set profile without any arguments
+  # Set admin profile without any arguments
   > sdpctl profile set
   ? select profile:  [Use arrows to move, type to filter]
   > production
     staging
     testing
 
-  # set production as your current configuration
+  # set production as your current admin profile
   > sdpctl profile set production
 ```
 
@@ -29,15 +29,15 @@ sdpctl profile set [flags]
 ### Options inherited from parent commands
 
 ```
-      --api-version int   peer API version override
-      --ci-mode           log to stderr instead of file and disable progress-bars
+      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
       --debug             Enable debug logging
-      --no-interactive    suppress interactive prompt with auto accept
-      --no-verify         don't verify TLS on for this particular command, overriding settings from config file
-  -p, --profile string    profile configuration to use
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
 ```
 
 ### SEE ALSO
 
-* [sdpctl profile](sdpctl_profile.md)	 - Handle configuration for more then one appgate sdp profile
+* [sdpctl profile](sdpctl_profile.md)	 - Manage configuration for multiple admin profiles
 

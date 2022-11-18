@@ -32,7 +32,7 @@ func NewOpenCmd(f *factory.Factory) *cobra.Command {
 			browser.Stderr = io.Discard
 			webUI.Path = "/ui"
 			if err := browser.OpenURL(webUI.String()); err != nil {
-				log.Warnf("Could not open %s in your default browser.", webUI)
+				log.Warnf("Could not open %s in your default browser", webUI)
 			}
 			return nil
 		},

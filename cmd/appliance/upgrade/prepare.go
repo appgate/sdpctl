@@ -163,13 +163,13 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	flags := prepareCmd.Flags()
-	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
+	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "Suppress interactive prompt with auto accept")
 	flags.StringVarP(&opts.image, "image", "", "", "Upgrade image file or URL")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", false, "Use the development keyring to verify the upgrade image")
-	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag.")
-	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source.")
-	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
-	flags.BoolVar(&opts.forcePrepare, "force", false, "force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
+	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag")
+	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
+	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
+	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
 
 	return prepareCmd
 }
@@ -177,7 +177,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 func checkImageFilename(i string) error {
 	// Check if its a valid filename
 	if rg := regexp.MustCompile(`\.img\.zip`); !rg.MatchString(i) {
-		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive.")
+		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive")
 	}
 	return nil
 }
@@ -323,7 +323,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		if len(appliances) <= 0 {
 			var errs *multierr.Error
-			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details."))
+			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details"))
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
 					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
