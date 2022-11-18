@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <link rel="stylesheet" type="text/css" href="assets/guide.css">
+  <title>Appgate sdpctl Quick Start Guide</title>
+  <script>
+    const VARS = {
+      macos: "",
+      windows: "",
+      deb: "",
+      rpm: "",
+      linux: "",
+      version: "",
+      command: "./sdpctl"
+    };
+  </script>
+  <script>
+    /* start OS detection functions */
+    function detectOs() {
+      const agent = navigator.userAgent.toLowerCase();
+      if (agent.indexOf("like mac os x") > -1) return "ios";
+      if (agent.indexOf("mac os x") > -1) return "macos";
+      if (agent.indexOf("windows") > -1) return "windows";
+      if (agent.indexOf("android") > -1) return "android";
+      if (agent.indexOf("cros") > -1) return "android";
+      if (agent.indexOf("linux") > -1) return "linux";
+      return "windows";
+    }
+
+    function showDetectedOs() {
+      const os = detectOs();
+      if (!["macos", "windows", "linux"].includes(os)) {
+        showAllOs();
+      } else {
+        document.getElementById("os-" + os).style.display = "block";
+      }
+      VARS.command = os == "windows" ? "sdpctl.exe" : "./sdpctl";
+    }
+
+    function showAllOs(event) {
+      const elems = document.querySelectorAll("#os-all > div");
+      for (let i = 0; i < elems.length; i++) {
+        elems[i].style.display = "block";
+      }
+      const links = document.querySelectorAll("#os-all .alt-link ");
+      for (let i = 0; i < links.length; i++) {
+        links[i].classList.add("is-hidden");
+      }
+    }
+
+    function expand(event) {
+      event.preventDefault();
+      event.target.closest(".expander").classList.add("is-hidden");
+      event.target.closest(".collapsed").classList.remove("collapsed");
+    }
+
+    function fetchLatestRelease() {
+
+      function applyVariables() {
+        const elems = document.querySelectorAll("[data-varid]");
+        for (let i = 0; i < elems.length; i++) {
+          const elem = elems[i];
+          switch (elem.tagName) {
+            case "A":
+              elem.href = VARS[elems[i].dataset["varid"]];
+              break;
+            case "IMG":
+              elem.src = VARS[elems[i].dataset["varid"]];
+              break;
+            case "SPAN":
+              elem.textContent = VARS[elems[i].dataset["varid"]];
+              break;
+          }
+        }
+      }
+
+      fetch(`https://api.github.com/repos/appgate/sdpctl/releases?t=${Math.random()}`, {
+        method: "get"
+      })
+        .then(response => response.json())
+        .then((releases) => {
+          const release = releases[0];
+          VARS.version = release.tag_name;
+          VARS.macos = release.assets.find(asset => asset.browser_download_url.includes("darwin_all.tar.gz")).browser_download_url;
+          VARS.windows = release.assets.find(asset => asset.browser_download_url.includes("windows_amd64.zip")).browser_download_url;
+          VARS.deb = release.assets.find(asset => asset.browser_download_url.includes("linux_amd64.deb")).browser_download_url;
+          VARS.rpm = release.assets.find(asset => asset.browser_download_url.includes("linux_amd64.rpm")).browser_download_url;
+          VARS.linux = release.assets.find(asset => asset.browser_download_url.includes("linux_amd64.tar.gz")).browser_download_url;
+
+          applyVariables();
+        })
+        .catch((err) => {
+          document.getElementById("panel-success").classList.add("is-hidden");
+          document.getElementById("panel-fail").classList.remove("is-hidden");
+          applyVariables();
+          console.log(err);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      showDetectedOs();
+      //fetchLatestRelease();
+    });
+  </script>
+  <style>
+    .alt-link {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: smaller;
+    }
+
+    #os-all>div {
+      display: none;
+    }
+
+    .os-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .os-logo {
+      display: block;
+      margin: auto;
+      width: 4rem;
+      height: 4rem;
+    }
+
+    .commands-table td:first-child {
+      width: 15rem;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page text-center">
+    <div class="box">
+      <object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+
+      <h1 class="margin-top-small">sdpctl Quick Start Guide</h1>
+      <hr />
+      <div id="panel-success">
+        <h2 class="margin-bottom">Download</h2>
+        <p class="margin-bottom">
+          Appgate sdpctl is compatible with SDP Collectives versions 6 or newer.<br />
+          Always download the latest version <span data-varid="version" class="tag"></span> for your operating system.
+        </p>
+        <div class="columns wraps-980" id="os-all">
+          <div id="os-macos">
+            <div class="os-block">
+              <object class="os-logo" data="assets/macos.svg" aria-label="macos logo"></object>
+              <a class="button margin-top-small" data-varid="macos">
+                <span>macOS</span>
+                <i class="icon-download"></i>
+              </a>
+              <a class="alt-link" href="javascript:showAllOs()">Not on macOS ?</a>
+            </div>
+          </div>
+          <div class="os-block" id="os-linux">
+            <div class="os-block">
+
+              <object class="os-logo" data="assets/linux.svg" aria-label="linux logo"></object>
+              <a class="button margin-top-small" data-varid="deb">
+                <span>deb package</span>
+                <i class="icon-download"></i>
+              </a>
+              <a class="button margin-top-small" data-varid="rpm">
+                <span>rpm package</span>
+                <i class="icon-download"></i>
+              </a>
+              <a class="button margin-top-small" data-varid="linux">
+                <span>executable</span>
+                <i class="icon-download"></i>
+              </a>
+              <a class="alt-link" href="javascript:showAllOs()">Not on Linux ?</a>
+            </div>
+          </div>
+          <div class="os-block" id="os-windows">
+            <div class="os-block">
+              <object class="os-logo" data="assets/windows.svg" aria-label="windows logo"></object>
+              <a class="button margin-top-small" data-varid="windows">
+                <span>Windows</span>
+                <i class="icon-download"></i>
+              </a>
+              <a class="alt-link" href="javascript:showAllOs()">Not on Windows ?</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="panel-fail" class="is-hidden">
+        <h2 class="margin-bottom">Download</h2>
+        <p class="margin-bottom">Failed to fetch latest release information.</p>
+        <p>You can download the latest binaries for your operating system in <a target="_blank" rel="noopener" href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</p>
+      </div>
+      <hr />
+      <div>
+        <h2 class="margin-bottom">Quick Start</h2>
+        <p class="margin-bottom">In this section, we'll show you how to upgrade your Appgate SDP Collective.</p>
+        <!--configuration step-->
+        <p class="emphasize text-left margin-bottom-small">First step is to complete the initial setup.</p>
+        <pre class="code-editor margin-bottom-small collapsed">
+<span class="code-comment"># If you have self-signed certificate on Admin UI, use the flag : --pem &lt;path-to-pem&gt;</span>
+
+<span class="code-comment"># Provide the Admin UI url</span>
+<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> configure</span>
+<span class="code-output">
+    ? Enter the url for the Controller API (example https://controller.company.com:8443) https://ag-ctrl.company.com:8443
+    Configuration updated successfully
+</span>
+<span class="code-comment">
+# Signin to your Collective</span>
+<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> configure signin</span>
+<span class="code-output">
+    ? Choose a provider:  [Use arrows to move, type to filter]
+    > Azure AD SAML Admin
+      Azure AD OIDC
+      local
+
+    ? Please enter your one-time password: ******
+    Successfully signed in
+</span>
+<span class="code-comment">
+# Verify the configuration</span>
+<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> appliance status</span>
+<span class="code-output">
+    Name                    Status     Function      CPU     Memory    Network out/in           Disk    Version
+    ----                    ------     --------      ---     ------    --------------           ----    -------
+    Singapore Controller    healthy    Controller    1.4%    13.9%     34.9 Kbps / 17.1 Kbps    1.7%    6.0.1+30125
+    Singapore Gateway       healthy    Gateway       0.3%    12.7%     0.64 Kbps / 0.12 Kbps    0.9%    6.0.1+30125</span>
+    <div class="expander"><a href="#" onclick="expand(event)">show more</a></div>
+</pre>
+
+        <!--upgrade step-->
+        <p class="emphasize text-left margin-bottom-small">Next step is to prepare one of the Controllers then backup and complete the upgrade.</p>
+        <pre class="code-editor margin-bottom-small collapsed">
+<span class="code-comment"># If you have self-signed certificate on Admin UI, use the flag : --pem &lt;path-to-pem&gt;</span>
+
+<span class="code-comment"># Prepare the upgrade</span>
+<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade prepare --image=&lt;upgrade-image-zip-or-url&gt;</span>
+<span class="code-output">
+    PREPARE SUMMARY
+
+    ...
+    ? Do you want to continue? Yes
+
+    [2022-09-27T15:04:01+02:00] Preparing image on appliances:
+      ✓ Singapore Controller: ready
+      ✓ Singapore Gateway: ready
+
+    [2022-09-27T15:05:09+02:00] PREPARE COMPLETE
+
+</span>
+<span class="code-comment"># Backup then complete the upgrade</span>
+<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade complete</span>
+<span class="code-output">
+    ? Do you want to backup before proceeding? Yes
+    ? Path to where backup should be saved /Users/ann.gills/Downloads/appgate/backup
+    ? select appliances to backup: Singapore Controller ( Controller )
+
+    UPGRADE COMPLETE SUMMARY
+
+    Appliances will be upgraded to version 6.0.2+30473
+
+    ...
+
+    [2022-09-27T15:07:56+02:00] Upgrading primary controller:
+    ✓ Singapore Controller: upgraded
+
+    [2022-09-27T15:11:18+02:00] Upgrading additional appliances (Batch 1 / 1):
+    ✓ Singapore Gateway: upgraded
+
+    [2022-09-27T15:14:25+02:00] UPGRADE COMPLETE
+
+    Appliance               Upgraded to
+    ---------               -----------
+    Singapore Controller    6.0.2+30473
+    Singapore Gateway       6.0.2+30473</span>
+    <div class="expander"><a href="#" onclick="expand(event)">show more</a></div>
+</pre>
+        <p class="emphasize text-left margin-bottom-small">All done!</p>
+      </div>
+      <hr />
+      <div>
+        <h2 class="margin-bottom">Available Commands</h2>
+        <p class="margin-bottom">
+          Appgate sdpctl is an open-source tool with capabilities beyond upgrading an SDP Collective.<br />
+          Here you can find the summary for current available commands, click on each for details.
+        </p>
+        <table class="commands-table margin-bottom-small">
+          <thead>
+            <tr>
+              <th>command</th>
+              <th>description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="sdpctl_appliance">appliance</a></td>
+              <td>Manage the appliances and perform tasks such as backups, ugprades, metrics etc</td>
+            </tr>
+            <tr>
+              <td><a href="sdpctl_completion">completion</a></td>
+              <td>Generate shell completion scripts</td>
+            </tr>
+            <tr>
+              <td><a href="sdpctl_configure">configure</a></td>
+              <td>Configure your Collective</td>
+            </tr>
+            <tr>
+              <td><a href="sdpctl_help">help</a></td>
+              <td>Help about any command</td>
+            </tr>
+            <tr>
+              <td><a href="sdtp_license">license</a></td>
+              <td>Manage assigned User/Portal/Service licenses</td>
+            </tr>
+            <tr>
+              <td><a href="sdpctl_open">open</a></td>
+              <td>Open the Admin UI in your browser</td>
+            </tr>
+            <tr>
+              <td><a href="sdpcctl_profile">profile</a></td>
+              <td>Manage configuration for multiple admin profiles <span class="tag">advanced</span></td>
+            </tr>
+            <tr>
+              <td><a href="sdpctl_service-users">service-users</a></td>
+              <td>Manage Service Users</td>
+            </tr>
+            <tr>
+              <td><a href="sdpctl_token">token</a></td>
+              <td>Perform actions on Admin, Claims and Entitlement tokens</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+      <hr />
+      <div>
+        <h2 class="margin-bottom">Additional Help</h2>
+        <p class="margin-bottom">
+          Here you can find the source code, additional documentation and help contact.
+        </p>
+        <ul class="text-left">
+          <li>Read more about appliance upgrades in <a target="_blank" rel="noopener" href="https://sdphelp.appgate.com/adminguide/upgrading-appliances.html">admin guide</a>.</li>
+          <li>Find more supported platforms (ARM) in <a target="_blank" rel="noopener" href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</li>
+          <li>Contact Appgate Support at <a href="mailto:support@appgate.com?subject=Appgate sdpctl help">support@appgate.com</a>.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+  <noscript>You need a modern browser with JavaScript in order to view this page.</noscript>
+</body>
+
+</html>

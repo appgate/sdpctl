@@ -256,6 +256,11 @@
       max-width: 8rem;
     }
 
+    code {
+      color: var(--color-ag-dark);
+      font-family: Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+    }
+
     .code-editor {
       color: var(--color-ag-dark);
       font-family: Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
@@ -386,7 +391,9 @@
         border: 1px solid var(--color-ag-light);
       }
 
-      .code-editor {
+
+      .code-editor,
+      code {
         color: var(--color-ag-light);
         background-color: var(--color-ag-dark);
       }
