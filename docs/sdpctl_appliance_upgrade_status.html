@@ -1,0 +1,62 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>Appgate sdpctl Quick Start Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
+      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr>
+      <div class="content text-left">
+<h2 class="text-center margin-bottom">sdpctl appliance upgrade status</h2><p class="margin-bottom">Display the upgrade status of Appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Display the upgrade status of Appliances in either table or json format.
+Upgrade statuses:
+- idle:         No upgrade is initiated
+- started:      Upgrade process has started
+- downloading:  Appliance is downloading the upgrade image
+- verifying:    Upgrade image download is completed and the image is being verified
+- ready:        Image is verified and ready to be applied
+- installing:   Appliance is installing the upgrade image
+- success:      Upgrade successful
+- failed:       Upgrade failed for some reason during the process</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade status [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # view in table format
+  &gt; sdpctl appliance upgrade status
+
+  # view in JSON format
+  &gt; sdpctl appliance upgrade status --json
+
+  # filtered appliance status list
+  &gt; sdpctl appliance upgrade status --include=name=controller
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -h, --help   help for status
+      --json   Display in JSON format
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+      --ci-mode                  Log to stderr instead of file and disable progress-bars
+      --debug                    Enable debug logging
+  -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
+                                 Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
+  -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
+      --no-interactive           Suppress interactive prompt with auto accept
+      --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string           Profile configuration to use
+  -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>

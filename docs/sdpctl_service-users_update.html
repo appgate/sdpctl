@@ -1,0 +1,71 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>Appgate sdpctl Quick Start Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
+      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr>
+      <div class="content text-left">
+<h2 class="text-center margin-bottom">sdpctl service-users update</h2><p class="margin-bottom">Update a service user</p><pre class="code-editor margin-bottom"><code>sdpctl service-users update [id] [args...] [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # update the name of a service user with the id of &lt;id&gt;
+  &gt; sdpctl service-users update &lt;id&gt; name &lt;new-name&gt;
+
+  # set a new passphrase for service user with id of &lt;id&gt;
+  &gt; sdpctl service-users update &lt;id&gt; passphrase &lt;new-passphrase&gt;
+
+  # disable a service user with id of &lt;id&gt;
+  &gt; sdpctl service-users update &lt;id&gt; disable
+
+  # enable a service user with id of &lt;id&gt;
+  &gt; sdpctl service-users update &lt;id&gt; enable
+
+  # add a tag for a service user
+  &gt; sdpctl service-users update &lt;id&gt; add tag &lt;new-tag&gt;
+
+  # add a label for a service user
+  &gt; sdpctl service-users update &lt;id&gt; add label &lt;key&gt;=&lt;value&gt;
+
+  # remove a tag for a service user
+  &gt; sdpctl service-users update &lt;id&gt; remove tag &lt;tag&gt;
+
+  # remove a label for a service user
+  &gt; sdpctl service-users update &lt;id&gt; remove label &lt;key&gt;
+
+  # update a service user using a predefined JSON file
+  &gt; sdpctl service-users update &lt;id&gt; --from-file=&lt;path-to-json-file&gt;
+
+  # update multiple values of a service user
+  &gt; sdpctl service-users update &lt;id&gt; '{&quot;name&quot;: &quot;&lt;new-name&gt;&quot;, &quot;disabled&quot;: true}'
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -f, --from-file string   update service user with values using a valid json file
+  -h, --help               help for update
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
+      --debug             Enable debug logging
+      --json              output in json format
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p class="margin-bottom"><a href="sdpctl_service-users.html">sdpctl service-users</a>	 - Manage Service Users</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>

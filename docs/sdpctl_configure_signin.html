@@ -1,0 +1,43 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>Appgate sdpctl Quick Start Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
+      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr>
+      <div class="content text-left">
+<h2 class="text-center margin-bottom">sdpctl configure signin</h2><p class="margin-bottom">Sign in and authenticate to Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Sign in to the Collective using the configuration file created by the 'sdpctl configure' command.
+This will fetch a token on valid authentication which will be valid for 24 hours and stored in the configuration.</p><pre class="code-editor margin-bottom"><code>sdpctl configure signin [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # default sign in command
+  &gt; sdpctl configure signin
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -h, --help   help for signin
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
+      --debug             Enable debug logging
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p class="margin-bottom"><a href="sdpctl_configure.html">sdpctl configure</a>	 - Configure your Collective</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>
