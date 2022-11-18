@@ -40,6 +40,10 @@ fmtcheck:
 fmt:
 	gofmt -w $(GOFMT_FILES)
 
+.PHONY: docs
+docs:
+	go run main.go generate markdown
+
 # Run go test twice, since -race don't catch all edge cases
 test:
 	go test ./... -count 1 -timeout 30s
