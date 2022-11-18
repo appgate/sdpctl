@@ -54,7 +54,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure appgate.controller.com'")
 				}
 				q := &survey.Input{
-					Message: "Enter the url for the Controller API (example https://appgate.controller.com/admin)",
+					Message: "Enter the url for the Controller API (example https://controller.company.com:8443)",
 					Default: opts.Config.URL,
 				}
 

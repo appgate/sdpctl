@@ -181,7 +181,7 @@ func TestBackupAPICommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read stdout %s", err)
 	}
-	want := regexp.MustCompile(`The Backup API and the passphrase have been updated.`)
+	want := regexp.MustCompile(`The Backup API and the passphrase have been updated`)
 	if !want.MatchString(string(got)) {
 		t.Fatalf("Expected output\n%s\ngot\n%s\n", want, got)
 	}

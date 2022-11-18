@@ -205,7 +205,7 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
-	reg := regexp.MustCompile(`Using '--no-interactive' flag while Backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again.`)
+	reg := regexp.MustCompile(`Using '--no-interactive' flag while Backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again`)
 	_, err := cmd.ExecuteC()
 	if err != nil {
 		if !reg.MatchString(err.Error()) {

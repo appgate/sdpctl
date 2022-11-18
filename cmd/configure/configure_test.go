@@ -56,7 +56,7 @@ func TestConfigCmd(t *testing.T) {
 	stubber, teardown := prompt.InitAskStubber(t)
 	defer teardown()
 	func(s *prompt.AskStubber) {
-		s.StubPrompt("Enter the url for the Controller API (example https://appgate.controller.com/admin)").
+		s.StubPrompt("Enter the url for the Controller API (example https://controller.company.com:8443)").
 			AnswerWith("controller.appgate.com")
 
 	}(stubber)
@@ -128,7 +128,7 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 	stubber, teardown := prompt.InitAskStubber(t)
 	defer teardown()
 	func(s *prompt.AskStubber) {
-		s.StubPrompt("Enter the url for the Controller API (example https://appgate.controller.com/admin)").
+		s.StubPrompt("Enter the url for the Controller API (example https://controller.company.com:8443)").
 			AnswerWith("another.appgate.com")
 
 	}(stubber)
@@ -225,7 +225,7 @@ func TestConfigCmdWithExistingAddr(t *testing.T) {
 	stubber, teardown := prompt.InitAskStubber(t)
 	defer teardown()
 	func(s *prompt.AskStubber) {
-		s.StubPrompt("Enter the url for the Controller API (example https://appgate.controller.com/admin)").
+		s.StubPrompt("Enter the url for the Controller API (example https://controller.company.com:8443)").
 			AnswerWith("new.appgate.com")
 
 	}(stubber)

@@ -460,24 +460,24 @@ Appliances will be upgraded to version 5.5.4
 
 Upgrade will be completed in steps:
 
- 1. The primary Controller will be upgraded.
-    This will result in the API being unreachable while completing the primary Controller upgrade.
+ 1. The primary Controller will be upgraded
+    This will result in the API being unreachable while completing the primary Controller upgrade
 
     - primary-controller
 
 
- 2. Additional Controllers will be upgraded.
+ 2. Additional Controllers will be upgraded
     In some cases, the Controller function on additional Controllers will need to be disabled
     before proceeding with the upgrade. The disabled Controllers will then be re-enabled once
-    the upgrade is completed.
-    This step will also reboot the upgraded Controllers for the upgrade to take effect.
+    the upgrade is completed
+    This step will also reboot the upgraded Controllers for the upgrade to take effect
 
     - secondary-controller
 
 
  3. Additional appliances will be upgraded. The additional appliances will be split into
-    batches to keep the Collective as available as possible during the upgrade process.
-    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
+    batches to keep the Collective as available as possible during the upgrade process
+    Some of the additional appliances may need to be rebooted for the upgrade to take effect
 
     Batch #1:
     - gateway
@@ -530,15 +530,15 @@ Upgrade will be completed in steps:
     - primary-controller
 
 
- 2. The primary Controller will be upgraded.
-    This will result in the API being unreachable while completing the primary Controller upgrade.
+ 2. The primary Controller will be upgraded
+    This will result in the API being unreachable while completing the primary Controller upgrade
 
     - primary-controller
 
 
  3. Additional appliances will be upgraded. The additional appliances will be split into
-    batches to keep the Collective as available as possible during the upgrade process.
-    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
+    batches to keep the Collective as available as possible during the upgrade process
+    Some of the additional appliances may need to be rebooted for the upgrade to take effect
 
     Batch #1:
     - gateway
@@ -598,22 +598,22 @@ Upgrade will be completed in steps:
     - primary-controller
 
 
- 2. The primary Controller will be upgraded.
-    This will result in the API being unreachable while completing the primary Controller upgrade.
+ 2. The primary Controller will be upgraded
+    This will result in the API being unreachable while completing the primary Controller upgrade
 
     - primary-controller
 
 
  3. Appliances with LogForwarder/LogServer functions are updated
-    Other appliances need a connection to to these appliances for logging.
+    Other appliances need a connection to to these appliances for logging
 
     - logforwarder1
     - logforwarder2
 
 
  4. Additional appliances will be upgraded. The additional appliances will be split into
-    batches to keep the Collective as available as possible during the upgrade process.
-    Some of the additional appliances may need to be rebooted for the upgrade to take effect.
+    batches to keep the Collective as available as possible during the upgrade process
+    Some of the additional appliances may need to be rebooted for the upgrade to take effect
 
     Batch #1:
     - gateway
