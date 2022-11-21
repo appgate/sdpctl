@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"testing"
 
 	expect "github.com/Netflix/go-expect"
@@ -13,11 +14,13 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/appgate/sdpctl/pkg/keyring"
+	"github.com/appgate/sdpctl/pkg/util"
 
 	"github.com/appgate/sdpctl/pkg/prompt"
 	pseudotty "github.com/creack/pty"
 	"github.com/hinshun/vt10x"
-	"github.com/zalando/go-keyring"
+	zkeyring "github.com/zalando/go-keyring"
 )
 
 var (
@@ -117,7 +120,7 @@ var (
                         }
                       ]
                     },
-                    "token": "string",
+                    "token": "VeryLongBearerTokenString",
                     "expires": "2019-08-24T14:15:22Z",
                     "messageOfTheDay": "Welcome to Appgate SDP."
                   }`))
@@ -147,6 +150,87 @@ func TestSignInNoPromptOrEnv(t *testing.T) {
 	}
 	if !errors.Is(ErrSignInNotSupported, err) {
 		t.Errorf("expected %s, got %s", ErrSignInNotSupported, err)
+	}
+}
+
+func TestSigninNoKeyringNoconfig(t *testing.T) {
+	zkeyring.MockInit()
+	registry := httpmock.NewRegistry(t)
+	httpStubs := []httpmock.Stub{
+		authenticationResponse,
+		identityProviderNames,
+		authorizationGET,
+	}
+	for _, v := range httpStubs {
+		registry.Register(v.URL, v.Responder)
+	}
+	defer registry.Teardown()
+	registry.Serve()
+	f := &factory.Factory{
+		Config: &configuration.Config{
+			Debug: false,
+			URL:   "http://localhost",
+		},
+		IOOutWriter: os.Stdout,
+		Stdin:       os.Stdin,
+		StdErr:      os.Stderr,
+	}
+	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
+		return registry.Client, nil
+	}
+	environmentVariables := map[string]string{
+		"SDPCTL_USERNAME":   "bob",
+		"SDPCTL_PASSWORD":   "alice",
+		"SDPCTL_NO_KEYRING": "true",
+	}
+	for k, v := range environmentVariables {
+		t.Setenv(k, v)
+	}
+	dir := t.TempDir()
+	t.Setenv("SDPCTL_CONFIG_DIR", dir)
+
+	pty, tty, err := pseudotty.Open()
+	if err != nil {
+		t.Fatalf("failed to open pseudotty: %v", err)
+	}
+	term := vt10x.New(vt10x.WithWriter(tty))
+	c, err := expect.NewConsole(expect.WithStdin(pty), expect.WithStdout(term), expect.WithCloser(pty, tty))
+	if err != nil {
+		t.Fatalf("failed to create console: %v", err)
+	}
+
+	defer c.Close()
+
+	if err := Signin(f); err != nil {
+		t.Fatal(err)
+	}
+	configFile := filepath.Join(dir, "config.json")
+	if ok, err := util.FileExists(configFile); ok && err == nil {
+		t.Fatalf("found config file %s but did not expect it", configFile)
+	}
+
+	prefix, err := f.Config.KeyringPrefix()
+	if err != nil {
+		t.Fatal("could not check verify keyring")
+	}
+	// make sure its not in keyring,
+	// we will remove the env variable, if any to make sure we trigger
+	// the keyring
+	os.Unsetenv("SDPCTL_PASSWORD")
+	if _, err := keyring.GetPassword(prefix); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	os.Unsetenv("SDPCTL_USERNAME")
+	if _, err := keyring.GetUsername(prefix); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	os.Unsetenv("SDPCTL_BEARER")
+	if _, err := keyring.GetBearer(prefix); err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if _, err := f.Config.GetBearTokenHeaderValue(); err != nil {
+		t.Fatalf("did not expect bearer token to be nil %s", err)
 	}
 }
 
@@ -276,10 +360,23 @@ func TestSignin(t *testing.T) {
 				identityProviderNames,
 			},
 		},
-	}
+		{
+			name: "no keyring",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME":   "bob",
+				"SDPCTL_PASSWORD":   "alice",
+				"SDPCTL_NO_KEYRING": "true",
+			},
+			wantErr: false,
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderNames,
+				authorizationGET,
+			},
+		}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			keyring.MockInit()
+			zkeyring.MockInit()
 			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
 				registry.Register(v.URL, v.Responder)

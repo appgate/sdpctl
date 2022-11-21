@@ -127,6 +127,9 @@ func SetPassword(prefix, secret string) error {
 }
 
 func GetBearer(prefix string) (string, error) {
+	if v, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
+		return v, nil
+	}
 	token, err := QueryKeychain(format(prefix, bearer))
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("failed to get bearer token from keychain: %s", err))

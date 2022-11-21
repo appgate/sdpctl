@@ -165,6 +165,9 @@ func Signin(f *factory.Factory) error {
 	case LocalProvider:
 		p = NewLocal(f)
 	case OidcProvider:
+		if os.Getenv("SDPCTL_NO_KEYRING") != "" {
+			return fmt.Errorf("%s provider does not work when environment variable SDPCTL_NO_KEYRING is set.", selectedProvider.GetType())
+		}
 		oidc := NewOpenIDConnect(f, client)
 		defer oidc.Close()
 		p = oidc
@@ -188,22 +191,35 @@ func Signin(f *factory.Factory) error {
 	// use the original auth request expires_at value instead of the value from authorization since they can be different
 	// depending on the provider type.
 	cfg.ExpiresAt = openapi.PtrString(response.Expires.String())
+
+	// if we have set environment variable SDPCTL_NO_KEYRING, we wont save anything to the keyring
+	// default behavior is to save to keyring unless this environment variable is explicitly set.
+	if os.Getenv("SDPCTL_NO_KEYRING") != "" {
+		if err := os.Setenv("SDPCTL_BEARER", *cfg.BearerToken); err != nil {
+			fmt.Fprintf(f.StdErr, "[warning] sdpctl keyring integration disabled by environment variable, cant set key to env %s\n", err)
+			return nil
+		}
+		return nil
+	}
+
 	prefix, err := cfg.KeyringPrefix()
 	if err != nil {
 		return err
 	}
-
+	keyringErrMessage := "[warning] To disable keyring integration, set environment variable SDPCTL_NO_KEYRING=true"
 	// if the bearer token can't be saved to the keychain, it will be exported as env variable
 	// and saved in the config file as fallback, this should only happened if the system does not
 	// support the keychain integration.
 	if err := keyring.SetBearer(prefix, *cfg.BearerToken); err != nil {
-		return err
+		fmt.Fprintf(f.StdErr, "[warning] could not save token to keyring %s\n", err)
+		fmt.Fprintln(f.StdErr, keyringErrMessage)
 	}
 
 	// store username and password if any in keyring, in practice only applicable on local provider
 	if len(response.LoginOpts.GetUsername()) > 1 && len(response.LoginOpts.GetPassword()) > 1 {
 		if err := cfg.StoreCredentials(response.LoginOpts.GetUsername(), response.LoginOpts.GetPassword()); err != nil {
 			fmt.Fprintf(f.StdErr, "[warning] %s\n", err)
+			fmt.Fprintln(f.StdErr, keyringErrMessage)
 			return nil
 		}
 	}

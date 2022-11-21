@@ -44,8 +44,7 @@ func GetPassword(prefix string) (string, error) {
 func SetPassword(prefix, secret string) error {
 	err := setSecret(format(prefix, password), secret)
 	if err != nil && strings.Contains(err.Error(), secretMissing) {
-		os.Setenv("SDPCTL_PASSWORD", secret)
-		return nil
+		return os.Setenv("SDPCTL_PASSWORD", secret)
 	}
 	return err
 }
@@ -63,7 +62,7 @@ func GetBearer(prefix string) (string, error) {
 
 func SetBearer(prefix, secret string) error {
 	if err := setSecret(format(prefix, bearer), secret); err != nil {
-		os.Setenv("SDPCTL_BEARER", secret)
+		return os.Setenv("SDPCTL_BEARER", secret)
 	}
 	return nil
 }
@@ -75,7 +74,7 @@ func DeleteBearer(prefix string) error {
 		}
 	}
 	if _, ok := os.LookupEnv("SDPCTL_BEARER"); ok {
-		os.Unsetenv("SDPCTL_BEARER")
+		return os.Unsetenv("SDPCTL_BEARER")
 	}
 	return nil
 }
@@ -91,8 +90,7 @@ func SetRefreshToken(prefix, secret string) error {
 func SetUsername(prefix, secret string) error {
 	err := setSecret(format(prefix, username), secret)
 	if err != nil && strings.Contains(err.Error(), secretMissing) {
-		os.Setenv("SDPCTL_USERNAME", secret)
-		return nil
+		return os.Setenv("SDPCTL_USERNAME", secret)
 	}
 	return err
 }
