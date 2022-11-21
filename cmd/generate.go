@@ -19,6 +19,7 @@ import (
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -149,11 +150,11 @@ func generateHTML(cmd *cobra.Command) error {
 		}
 
 		opts := html.RendererOptions{
-			Flags:          html.FlagsNone,
+			Flags:          html.CommonFlags,
 			RenderNodeHook: renderHook,
 		}
 		renderer := html.NewRenderer(opts)
-		output := string(markdown.ToHTML(b, nil, renderer))
+		output := string(markdown.ToHTML(b, parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock), renderer))
 
 		t := template.New("Render")
 		t, err = t.Parse(htmlHeader + `{{.}}` + htmlFooter)
