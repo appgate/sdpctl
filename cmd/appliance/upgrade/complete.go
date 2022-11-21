@@ -108,7 +108,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 
 	flags := upgradeCompleteCmd.Flags()
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "Backup primary Controller before completing the upgrade")
-	flags.StringVar(&opts.backupDestination, "backup-destination", appliancepkg.DefaultBackupDestination, "Specify path to download backup")
+	flags.StringVar(&opts.backupDestination, "backup-destination", "$HOME/Downloads/appgate/backup", "Specify path to download backup")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.IntVar(&opts.batchSize, "batch-size", 2, "Number of batch groups")
 	return upgradeCompleteCmd
