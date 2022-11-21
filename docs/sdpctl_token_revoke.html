@@ -20,11 +20,14 @@
 			</div>
 			<hr />
       <div class="content text-left">
-<h2 class="text-left margin-bottom">sdpctl token revoke</h2><p>Revoke entitlement tokens by distinguished name or token-type</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Revoke tokens by distinguished name or token type.</p><p>Valid token types are:
-  - administration
-  - adminclaims
-  - entitlements
-  - claims</p><pre class="code-editor margin-bottom"><code>sdpctl token revoke [&lt;distinguished-name&gt; | --by-token-type &lt;type&gt;] [flags]
+<h2 class="text-left margin-bottom">sdpctl token revoke</h2><p>Revoke entitlement tokens by distinguished name or token-type</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Revoke tokens by distinguished name or token type.</p><p>Valid token types are:</p><ul>
+<li><p>administration</p></li>
+<li><p>adminclaims</p></li>
+<li><p>entitlements</p></li>
+<li><p>claims</p></li>
+</ul>
+
+<pre class="code-editor margin-bottom"><code>sdpctl token revoke [&lt;distinguished-name&gt; | --by-token-type &lt;type&gt;] [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # revoke by distinguished name

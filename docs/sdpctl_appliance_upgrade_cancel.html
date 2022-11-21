@@ -21,11 +21,11 @@
 			<hr />
       <div class="content text-left">
 <h2 class="text-left margin-bottom">sdpctl appliance upgrade cancel</h2><p>Cancel a prepared upgrade on one or more appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Cancel a prepared upgrade. The command will attempt to cancel upgrades on
-Appliances that are not in the 'idle' upgrade state. Cancelling will remove the
+Appliances that are not in the &lsquo;idle&rsquo; upgrade state. Cancelling will remove the
 upgrade image from the Appliance, though it will not remove images hosted in the primary
-controller file repository (such as when using the '--host-on-controller' flag) by default.
-To remove them as well, you can use the '--delete' flag.</p><p>Note that you can cancel upgrades on specific appliances by using the '--include' and/or
-'--exclude' flags in combination with this command.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade cancel [flags]
+controller file repository (such as when using the &lsquo;&ndash;host-on-controller&rsquo; flag) by default.
+To remove them as well, you can use the &lsquo;&ndash;delete&rsquo; flag.</p><p>Note that you can cancel upgrades on specific appliances by using the &lsquo;&ndash;include&rsquo; and/or
+&lsquo;&ndash;exclude&rsquo; flags in combination with this command.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade cancel [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # cancel upgrade on all Appliances

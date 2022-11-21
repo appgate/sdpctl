@@ -20,11 +20,17 @@
 			</div>
 			<hr />
       <div class="content text-left">
-<h2 class="text-left margin-bottom">sdpctl appliance upgrade</h2><p>Perform appliance upgrade on the Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The upgrade procedure is divided into two parts,
-  - prepare: Upload the image new appliance image to the Collective.
-  - complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.</p><p>Additional subcommands included are:
-  - status: view the current upgrade status on all appliances.
-  - cancel: Cancel a prepared upgrade.</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3><pre class="code-editor margin-bottom"><code>  -h, --help               help for upgrade
+<h2 class="text-left margin-bottom">sdpctl appliance upgrade</h2><p>Perform appliance upgrade on the Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The upgrade procedure is divided into two parts,</p><ul>
+<li><p>prepare: Upload the image new appliance image to the Collective.</p></li>
+<li><p>complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.</p></li>
+</ul>
+<p>Additional subcommands included are:</p>
+<ul>
+<li><p>status: view the current upgrade status on all appliances.</p></li>
+<li><p>cancel: Cancel a prepared upgrade.</p></li>
+</ul>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -h, --help               help for upgrade
   -t, --timeout duration   Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>

@@ -22,9 +22,9 @@
       <div class="content text-left">
 <h2 class="text-left margin-bottom">sdpctl appliance backup</h2><p>Perform backup of the appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The backup command will request a backup from the API and download them to a destination directory. The command requires the Backup API to be enabled in
 the Collective. In case the Backup API is not enabled when executing the backup command, you will be prompted to activate it.</p><p>There are multiple options for selecting which Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
-the appliance you want to take a backup of.</p><p>The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an 'appgate' directory
-will be created there if it doesn't already exist and the backups will be downloaded to that. In case custom destination directory is specified by using the
-'--destination' flag, the extra 'appgate' directory will not be created. The user also has to have write privileges on the specified directory.</p><p>For more information on the backup process, go to: <a href="https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html">https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html</a></p><pre class="code-editor margin-bottom"><code>sdpctl appliance backup [flags]
+the appliance you want to take a backup of.</p><p>The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an &lsquo;appgate&rsquo; directory
+will be created there if it doesn&rsquo;t already exist and the backups will be downloaded to that. In case custom destination directory is specified by using the
+&lsquo;&ndash;destination&rsquo; flag, the extra &lsquo;appgate&rsquo; directory will not be created. The user also has to have write privileges on the specified directory.</p><p>For more information on the backup process, go to: <a href="https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html">https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html</a></p><pre class="code-editor margin-bottom"><code>sdpctl appliance backup [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # Backup with no arguments or flags will prompt for appliance
@@ -51,7 +51,7 @@ will be created there if it doesn't already exist and the backups will be downlo
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
 <pre class="code-editor margin-bottom"><code>      --all                  backup all appliances in the Collective
       --current              backup the current peer Controller
-  -d, --destination string   backup destination directory (default &quot;/Users/user/Downloads/appgate/backup&quot;)
+  -d, --destination string   backup destination directory (default &quot;$HOME/Downloads/appgate/backup&quot;)
   -h, --help                 help for backup
       --primary              backup the primary Controller
       --quiet                backup summary will not be printed if setting this flag

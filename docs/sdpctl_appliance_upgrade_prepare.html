@@ -23,9 +23,9 @@
 <h2 class="text-left margin-bottom">sdpctl appliance upgrade prepare</h2><p>Prepare the appliances for upgrade</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Prepare an upgrade but do NOT install it.
 This means the upgrade file will be downloaded/uploaded to all the appliances,
 the signature verified as well as any other preconditions applicable at this point.</p><p>There are initial checks on the filename before attempting to upload it to the Appliances.
-A valid filename ends with '.img.zip' and also needs to have a semver included somewhere
-in the name, eg. 'upgrade.img.zip' will not not be valid, but 'upgrade5.5.3.img.zip' is
-considered valid.</p><p>Note that the '--image' flag also accepts URL:s. The Appliances will then attempt to download
+A valid filename ends with &lsquo;.img.zip&rsquo; and also needs to have a semver included somewhere
+in the name, eg. &lsquo;upgrade.img.zip&rsquo; will not not be valid, but &lsquo;upgrade5.5.3.img.zip&rsquo; is
+considered valid.</p><p>Note that the &lsquo;&ndash;image&rsquo; flag also accepts URL:s. The Appliances will then attempt to download
 the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade prepare [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>

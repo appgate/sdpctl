@@ -21,15 +21,18 @@
 			<hr />
       <div class="content text-left">
 <h2 class="text-left margin-bottom">sdpctl appliance upgrade status</h2><p>Display the upgrade status of Appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Display the upgrade status of Appliances in either table or json format.
-Upgrade statuses:
-- idle:         No upgrade is initiated
-- started:      Upgrade process has started
-- downloading:  Appliance is downloading the upgrade image
-- verifying:    Upgrade image download is completed and the image is being verified
-- ready:        Image is verified and ready to be applied
-- installing:   Appliance is installing the upgrade image
-- success:      Upgrade successful
-- failed:       Upgrade failed for some reason during the process</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade status [flags]
+Upgrade statuses:</p><ul>
+<li><p>idle:         No upgrade is initiated</p></li>
+<li><p>started:      Upgrade process has started</p></li>
+<li><p>downloading:  Appliance is downloading the upgrade image</p></li>
+<li><p>verifying:    Upgrade image download is completed and the image is being verified</p></li>
+<li><p>ready:        Image is verified and ready to be applied</p></li>
+<li><p>installing:   Appliance is installing the upgrade image</p></li>
+<li><p>success:      Upgrade successful</p></li>
+<li><p>failed:       Upgrade failed for some reason during the process</p></li>
+</ul>
+
+<pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade status [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # view in table format
