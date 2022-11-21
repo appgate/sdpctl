@@ -50,7 +50,7 @@ sdpctl appliance backup [flags]
 ```
       --all                  backup all appliances in the Collective
       --current              backup the current peer Controller
-  -d, --destination string   backup destination directory (default "/home/user/Downloads/appgate/backup")
+  -d, --destination string   backup destination directory (default "/Users/user/Downloads/appgate/backup")
   -h, --help                 help for backup
       --primary              backup the primary Controller
       --quiet                backup summary will not be printed if setting this flag

@@ -49,13 +49,13 @@
       }
       const links = document.querySelectorAll("#os-all .alt-link ");
       for (let i = 0; i < links.length; i++) {
-        links[i].classList.add("is-hidden");
+        links[i].classList.add("hidden");
       }
     }
 
     function expand(event) {
       event.preventDefault();
-      event.target.closest(".expander").classList.add("is-hidden");
+      event.target.closest(".expander").classList.add("hidden");
       event.target.closest(".collapsed").classList.remove("collapsed");
     }
 
@@ -95,8 +95,8 @@
           applyVariables();
         })
         .catch((err) => {
-          document.getElementById("panel-success").classList.add("is-hidden");
-          document.getElementById("panel-fail").classList.remove("is-hidden");
+          document.getElementById("panel-success").classList.add("hidden");
+          document.getElementById("panel-fail").classList.remove("hidden");
           applyVariables();
           console.log(err);
         });
@@ -104,7 +104,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       showDetectedOs();
-      //fetchLatestRelease();
+      fetchLatestRelease();
     });
   </script>
   <style>
@@ -142,7 +142,6 @@
   <main class="page text-center">
     <div class="box">
       <object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-
       <h1 class="margin-top-small">sdpctl Quick Start Guide</h1>
       <hr />
       <div id="panel-success">
@@ -193,7 +192,7 @@
           </div>
         </div>
       </div>
-      <div id="panel-fail" class="is-hidden">
+      <div id="panel-fail" class="hidden">
         <h2 class="margin-bottom">Download</h2>
         <p class="margin-bottom">Failed to fetch latest release information.</p>
         <p>You can download the latest binaries for your operating system in <a target="_blank" rel="noopener" href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</p>
@@ -313,11 +312,11 @@
               <td>Configure your Collective</td>
             </tr>
             <tr>
-              <td><a href="sdpctl_help">help</a></td>
+              <td>help</td>
               <td>Help about any command</td>
             </tr>
             <tr>
-              <td><a href="sdtp_license">license</a></td>
+              <td><a href="sdpctl_license">license</a></td>
               <td>Manage assigned User/Portal/Service licenses</td>
             </tr>
             <tr>
@@ -325,7 +324,7 @@
               <td>Open the Admin UI in your browser</td>
             </tr>
             <tr>
-              <td><a href="sdpcctl_profile">profile</a></td>
+              <td><a href="sdpctl_profile">profile</a></td>
               <td>Manage configuration for multiple admin profiles <span class="tag">advanced</span></td>
             </tr>
             <tr>

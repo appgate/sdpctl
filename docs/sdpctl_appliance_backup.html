@@ -5,19 +5,26 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance backup</h2><p class="margin-bottom">Perform backup of the appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">The backup command will request a backup from the API and download them to a destination directory. The command requires the Backup API to be enabled in
-the Collective. In case the Backup API is not enabled when executing the backup command, you will be prompted to activate it.</p><p class="margin-bottom">There are multiple options for selecting which Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
-the appliance you want to take a backup of.</p><p class="margin-bottom">The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an 'appgate' directory
+<h2 class="text-left margin-bottom">sdpctl appliance backup</h2><p>Perform backup of the appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The backup command will request a backup from the API and download them to a destination directory. The command requires the Backup API to be enabled in
+the Collective. In case the Backup API is not enabled when executing the backup command, you will be prompted to activate it.</p><p>There are multiple options for selecting which Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
+the appliance you want to take a backup of.</p><p>The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an 'appgate' directory
 will be created there if it doesn't already exist and the backups will be downloaded to that. In case custom destination directory is specified by using the
-'--destination' flag, the extra 'appgate' directory will not be created. The user also has to have write privileges on the specified directory.</p><p class="margin-bottom">For more information on the backup process, go to: <a href="https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html">https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html</a></p><pre class="code-editor margin-bottom"><code>sdpctl appliance backup [flags]
+'--destination' flag, the extra 'appgate' directory will not be created. The user also has to have write privileges on the specified directory.</p><p>For more information on the backup process, go to: <a href="https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html">https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html</a></p><pre class="code-editor margin-bottom"><code>sdpctl appliance backup [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # Backup with no arguments or flags will prompt for appliance
@@ -44,7 +51,7 @@ will be created there if it doesn't already exist and the backups will be downlo
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
 <pre class="code-editor margin-bottom"><code>      --all                  backup all appliances in the Collective
       --current              backup the current peer Controller
-  -d, --destination string   backup destination directory (default &quot;/home/user/Downloads/appgate/backup&quot;)
+  -d, --destination string   backup destination directory (default &quot;/Users/user/Downloads/appgate/backup&quot;)
   -h, --help                 help for backup
       --primary              backup the primary Controller
       --quiet                backup summary will not be printed if setting this flag
@@ -63,8 +70,8 @@ will be created there if it doesn't already exist and the backups will be downlo
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_backup_api.html">sdpctl appliance backup api</a>	 - Controls the state of the Backup API</p></li>
+<li><p><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
+<li><p><a href="sdpctl_appliance_backup_api.html">sdpctl appliance backup api</a>	 - Controls the state of the Backup API</p></li>
 </ul>
 
       </div>

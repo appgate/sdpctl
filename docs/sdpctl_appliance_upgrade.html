@@ -5,17 +5,24 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance upgrade</h2><p class="margin-bottom">Perform appliance upgrade on the Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">The upgrade procedure is divided into two parts,
+<h2 class="text-left margin-bottom">sdpctl appliance upgrade</h2><p>Perform appliance upgrade on the Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The upgrade procedure is divided into two parts,
   - prepare: Upload the image new appliance image to the Collective.
-  - complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.</p><p class="margin-bottom">Additional subcommands included are:
+  - complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.</p><p>Additional subcommands included are:
   - status: view the current upgrade status on all appliances.
   - cancel: Cancel a prepared upgrade.</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3><pre class="code-editor margin-bottom"><code>  -h, --help               help for upgrade
   -t, --timeout duration   Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
@@ -33,11 +40,11 @@
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade_cancel.html">sdpctl appliance upgrade cancel</a>	 - Cancel a prepared upgrade on one or more appliances</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade_complete.html">sdpctl appliance upgrade complete</a>	 - Complete the upgrade on prepared appliances</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade_prepare.html">sdpctl appliance upgrade prepare</a>	 - Prepare the appliances for upgrade</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade_status.html">sdpctl appliance upgrade status</a>	 - Display the upgrade status of Appliances</p></li>
+<li><p><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
+<li><p><a href="sdpctl_appliance_upgrade_cancel.html">sdpctl appliance upgrade cancel</a>	 - Cancel a prepared upgrade on one or more appliances</p></li>
+<li><p><a href="sdpctl_appliance_upgrade_complete.html">sdpctl appliance upgrade complete</a>	 - Complete the upgrade on prepared appliances</p></li>
+<li><p><a href="sdpctl_appliance_upgrade_prepare.html">sdpctl appliance upgrade prepare</a>	 - Prepare the appliances for upgrade</p></li>
+<li><p><a href="sdpctl_appliance_upgrade_status.html">sdpctl appliance upgrade status</a>	 - Display the upgrade status of Appliances</p></li>
 </ul>
 
       </div>

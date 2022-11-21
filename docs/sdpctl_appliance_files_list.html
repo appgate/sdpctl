@@ -5,15 +5,22 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance files list</h2><p class="margin-bottom">Lists the files in the Controllers file repository</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Lists the files in the Controllers file repository. Default output is in table format.
+<h2 class="text-left margin-bottom">sdpctl appliance files list</h2><p>Lists the files in the Controllers file repository</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Lists the files in the Controllers file repository. Default output is in table format.
 Optionally print the output in JSON format by using the &quot;--json&quot; flag</p><pre class="code-editor margin-bottom"><code>sdpctl appliance files list [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
@@ -51,7 +58,7 @@ Optionally print the output in JSON format by using the &quot;--json&quot; flag<
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_files.html">sdpctl appliance files</a>	 - The files command lets you manage the file repository on the connected Controller</p></li>
+<li><p><a href="sdpctl_appliance_files.html">sdpctl appliance files</a>	 - The files command lets you manage the file repository on the connected Controller</p></li>
 </ul>
 
       </div>

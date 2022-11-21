@@ -5,16 +5,23 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance stats</h2><p class="margin-bottom">Show appliance stats</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Show current stats, such as current system resource consumption, appliance version etc, for the appliances.
-Using the '--json' flag will return a more detailed list of stats in json format.</p><p class="margin-bottom">NOTE: Although the '--include' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance stats [flags]
+<h2 class="text-left margin-bottom">sdpctl appliance stats</h2><p>Show appliance stats</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Show current stats, such as current system resource consumption, appliance version etc, for the appliances.
+Using the '--json' flag will return a more detailed list of stats in json format.</p><p>NOTE: Although the '--include' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance stats [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # default listing of stats
@@ -40,7 +47,7 @@ Using the '--json' flag will return a more detailed list of stats in json format
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
+<li><p><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
 </ul>
 
       </div>

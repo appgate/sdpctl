@@ -5,15 +5,22 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl profile</h2><p class="margin-bottom">Manage configuration for multiple admin profiles</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Manage the local configuration of sdpctl for multiple admin profiles</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3><pre class="code-editor margin-bottom"><code>  -h, --help   help for profile
+<h2 class="text-left margin-bottom">sdpctl profile</h2><p>Manage configuration for multiple admin profiles</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Manage the local configuration of sdpctl for multiple admin profiles</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3><pre class="code-editor margin-bottom"><code>  -h, --help   help for profile
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
 <pre class="code-editor margin-bottom"><code>      --api-version int   Peer API version override
@@ -25,11 +32,11 @@
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_profile_add.html">sdpctl profile add</a>	 - Add another admin profile configuration</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_profile_delete.html">sdpctl profile delete</a>	 - Remove an existing admin profile</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_profile_list.html">sdpctl profile list</a>	 - List all existing admin profiles</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_profile_set.html">sdpctl profile set</a>	 - Set which admin profile to use</p></li>
+<li><p><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
+<li><p><a href="sdpctl_profile_add.html">sdpctl profile add</a>	 - Add another admin profile configuration</p></li>
+<li><p><a href="sdpctl_profile_delete.html">sdpctl profile delete</a>	 - Remove an existing admin profile</p></li>
+<li><p><a href="sdpctl_profile_list.html">sdpctl profile list</a>	 - List all existing admin profiles</p></li>
+<li><p><a href="sdpctl_profile_set.html">sdpctl profile set</a>	 - Set which admin profile to use</p></li>
 </ul>
 
       </div>

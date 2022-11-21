@@ -5,15 +5,22 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance</h2><p class="margin-bottom">Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">The base command to manage the appliances. This command does not do anything by itself, it is
+<h2 class="text-left margin-bottom">sdpctl appliance</h2><p>Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The base command to manage the appliances. This command does not do anything by itself, it is
 used together with one of the available sub-commands listed below.</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3><pre class="code-editor margin-bottom"><code>  -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
                                  Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
   -h, --help                     help for appliance
@@ -29,17 +36,17 @@ used together with one of the available sub-commands listed below.</p><hr class=
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_backup.html">sdpctl appliance backup</a>	 - Perform backup of the appliances</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_files.html">sdpctl appliance files</a>	 - The files command lets you manage the file repository on the connected Controller</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_list.html">sdpctl appliance list</a>	 - List all appliances</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_logs.html">sdpctl appliance logs</a>	 - Download zip bundle with logs</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_maintenance.html">sdpctl appliance maintenance</a>	 - Manually mange maintenance mode on Controllers</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_metric.html">sdpctl appliance metric</a>	 - Get all the Prometheus metrics for the given Appliance</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_resolve-name.html">sdpctl appliance resolve-name</a>	 - Test a resolver name on a Gateway</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_resolve-name-status.html">sdpctl appliance resolve-name-status</a>	 - Get the status of name resolution on a Gateway</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_stats.html">sdpctl appliance stats</a>	 - Show appliance stats</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
+<li><p><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
+<li><p><a href="sdpctl_appliance_backup.html">sdpctl appliance backup</a>	 - Perform backup of the appliances</p></li>
+<li><p><a href="sdpctl_appliance_files.html">sdpctl appliance files</a>	 - The files command lets you manage the file repository on the connected Controller</p></li>
+<li><p><a href="sdpctl_appliance_list.html">sdpctl appliance list</a>	 - List all appliances</p></li>
+<li><p><a href="sdpctl_appliance_logs.html">sdpctl appliance logs</a>	 - Download zip bundle with logs</p></li>
+<li><p><a href="sdpctl_appliance_maintenance.html">sdpctl appliance maintenance</a>	 - Manually mange maintenance mode on Controllers</p></li>
+<li><p><a href="sdpctl_appliance_metric.html">sdpctl appliance metric</a>	 - Get all the Prometheus metrics for the given Appliance</p></li>
+<li><p><a href="sdpctl_appliance_resolve-name.html">sdpctl appliance resolve-name</a>	 - Test a resolver name on a Gateway</p></li>
+<li><p><a href="sdpctl_appliance_resolve-name-status.html">sdpctl appliance resolve-name-status</a>	 - Get the status of name resolution on a Gateway</p></li>
+<li><p><a href="sdpctl_appliance_stats.html">sdpctl appliance stats</a>	 - Show appliance stats</p></li>
+<li><p><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
 </ul>
 
       </div>

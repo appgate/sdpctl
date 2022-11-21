@@ -184,7 +184,7 @@ func renderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool
 			if level == "3" {
 				w.Write([]byte(`<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">`))
 			} else {
-				w.Write([]byte(fmt.Sprintf(`<h%s class="text-center margin-bottom">`, level)))
+				w.Write([]byte(fmt.Sprintf(`<h%s class="text-left margin-bottom">`, level)))
 			}
 		} else {
 			w.Write([]byte(fmt.Sprintf(`</h%s>`, level)))
@@ -206,11 +206,7 @@ func renderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool
 			return ast.GoToNext, false
 		}
 		if entering {
-			if _, ok := p.GetChildren()[0].(*ast.Link); ok {
-				w.Write([]byte(`<p>`))
-			} else {
-				w.Write([]byte(`<p class="margin-bottom">`))
-			}
+			w.Write([]byte(`<p>`))
 		} else {
 			w.Write([]byte(`</p>`))
 		}
@@ -227,13 +223,20 @@ const (
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
 `
 

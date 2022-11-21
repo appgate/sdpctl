@@ -5,19 +5,26 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance upgrade cancel</h2><p class="margin-bottom">Cancel a prepared upgrade on one or more appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Cancel a prepared upgrade. The command will attempt to cancel upgrades on
+<h2 class="text-left margin-bottom">sdpctl appliance upgrade cancel</h2><p>Cancel a prepared upgrade on one or more appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Cancel a prepared upgrade. The command will attempt to cancel upgrades on
 Appliances that are not in the 'idle' upgrade state. Cancelling will remove the
 upgrade image from the Appliance, though it will not remove images hosted in the primary
 controller file repository (such as when using the '--host-on-controller' flag) by default.
-To remove them as well, you can use the '--delete' flag.</p><p class="margin-bottom">Note that you can cancel upgrades on specific appliances by using the '--include' and/or
+To remove them as well, you can use the '--delete' flag.</p><p>Note that you can cancel upgrades on specific appliances by using the '--include' and/or
 '--exclude' flags in combination with this command.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade cancel [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
@@ -48,7 +55,7 @@ To remove them as well, you can use the '--delete' flag.</p><p class="margin-bot
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
+<li><p><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
 </ul>
 
       </div>

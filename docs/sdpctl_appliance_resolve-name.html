@@ -5,15 +5,22 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl appliance resolve-name</h2><p class="margin-bottom">Test a resolver name on a Gateway</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Test a resolver name on a Gateway. Name resolvers are used by the Gateways on a Site resolve
+<h2 class="text-left margin-bottom">sdpctl appliance resolve-name</h2><p>Test a resolver name on a Gateway</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Test a resolver name on a Gateway. Name resolvers are used by the Gateways on a Site resolve
 the IPs in the specific network or set of protected resources.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance resolve-name [&lt;appliance-id&gt;] [&lt;query&gt;] [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
@@ -43,7 +50,7 @@ the IPs in the specific network or set of protected resources.</p><pre class="co
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
+<li><p><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
 </ul>
 
       </div>

@@ -5,15 +5,22 @@
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
+	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
   <main class="page text-center">
     <div class="box">
-      <img src="./assets/appgate.svg" class="appgate-logo" alt="appgate inc logo">
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
-      <hr>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">QuickStart Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-<h2 class="text-center margin-bottom">sdpctl configure</h2><p class="margin-bottom">Configure your Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p class="margin-bottom">Setup a configuration file towards your Collective to be able to interact with the collective. By default, the configuration file
+<h2 class="text-left margin-bottom">sdpctl configure</h2><p>Configure your Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Setup a configuration file towards your Collective to be able to interact with the collective. By default, the configuration file
 will be created in a default directory in depending on your system. This can be overridden by setting the 'SDPCTL_CONFIG_DIR' environment variable.
 See 'sdpctl help environment' for more information on using environment variables.</p><pre class="code-editor margin-bottom"><code>sdpctl configure [flags]
 </code></pre>
@@ -44,8 +51,8 @@ See 'sdpctl help environment' for more information on using environment variable
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
 <ul>
-<li><p class="margin-bottom"><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
-<li><p class="margin-bottom"><a href="sdpctl_configure_signin.html">sdpctl configure signin</a>	 - Sign in and authenticate to Collective</p></li>
+<li><p><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
+<li><p><a href="sdpctl_configure_signin.html">sdpctl configure signin</a>	 - Sign in and authenticate to Collective</p></li>
 </ul>
 
       </div>

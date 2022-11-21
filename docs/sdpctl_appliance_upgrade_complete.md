@@ -30,7 +30,7 @@ sdpctl appliance upgrade complete [flags]
 ```
       --actual-hostname string      If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname
   -b, --backup                      Backup primary Controller before completing the upgrade (default true)
-      --backup-destination string   Specify path to download backup (default "/home/user/Downloads/appgate/backup")
+      --backup-destination string   Specify path to download backup (default "/Users/user/Downloads/appgate/backup")
       --batch-size int              Number of batch groups (default 2)
   -h, --help                        help for complete
 ```
