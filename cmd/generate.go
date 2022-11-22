@@ -258,22 +258,17 @@ const (
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
-  <script type="text/javascript" src="./assets/guide.js" />
+  <script type="text/javascript" src="./assets/guide.js"></script>
   <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
-  {{ if .TOC }}<nav class="toc" role="navigation">
-  <ul>
-    {{ range .TOC }}<li><a href="./{{.Original}}">{{.Friendly}}</a></li>{{ end }}
-  </ul>
-  </nav>{{ end }}
   <main class="page text-center">
     <div class="box">
 			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
 			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
-				<a href="index.html">QuickStart Guide</a>
+				<a href="index.html">Quick Start Guide</a>
 				<span class="breadcrumb-seperator">/</span>
 			</div>
 			<hr />

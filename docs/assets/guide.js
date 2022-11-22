@@ -6,7 +6,7 @@ function initBreadcrumb() {
   const page = location.pathname.substring(location.pathname.lastIndexOf("/") + 1);
 
   const crumbs = [{
-    name: "Quickstart Guide",
+    name: "Quick Start Guide",
     url: location.pathname.substring(0, location.pathname.lastIndexOf("/") + 1)
   }];
 
@@ -15,7 +15,7 @@ function initBreadcrumb() {
     url = !url ? current : `${url}_${current}`;
     crumbs.push({ name: current, url: `${url}.html` });
   }
-  console.log(crumbs);
+
   let html = "";
   for (let i = 0; i < crumbs.length - 1; i++) {
     html += `<a href="${crumbs[i].url}" class="bc-crumb">${crumbs[i].name}</a><span class="bc-seperator">/</span>`;
