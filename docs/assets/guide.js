@@ -13,14 +13,14 @@ function initBreadcrumb() {
   let url = "";
   for (let current of page.split("_")) {
     url = !url ? current : `${url}_${current}`;
-    crumbs.push({ name: current, url: url })
+    crumbs.push({ name: current, url: `${url}.html` });
   }
   console.log(crumbs);
   let html = "";
   for (let i = 0; i < crumbs.length - 1; i++) {
     html += `<a href="${crumbs[i].url}" class="bc-crumb">${crumbs[i].name}</a><span class="bc-seperator">/</span>`;
   }
-  html += `<span class="bc-current">${crumbs[crumbs.length - 1].name}</span>`;
+  html += `<span class="bc-current">${crumbs[crumbs.length - 1].name.replace(".html", "")}</span>`;
 
   breadcrumb.innerHTML = html;
 }

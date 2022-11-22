@@ -261,7 +261,7 @@ const (
 <body>
   {{ if .TOC }}<nav class="toc" role="navigation">
   <ul>
-  {{ range .TOC }}<li><a href="./docs/{{.Original}}">{{.Friendly}}</a></li>{{ end }}
+    {{ range .TOC }}<li><a href="./{{.Original}}">{{.Friendly}}</a></li>{{ end }}
   </ul>
   </nav>{{ end }}
   <main class="page text-center">
