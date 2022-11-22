@@ -197,34 +197,32 @@
         <h2 class="margin-bottom">Usage Examples</h2>
 
         <details class="text-left margin-bottom-small">
-          <summary class="example-summary">Complete the initial setup after installation</summary>
+          <summary class="example-summary">Complete the initial setup after downloading</summary>
           <pre class="code-editor"><code>
-# Provide the Admin UI url. If you have self-signed cert on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
+# Extract the executable first
+# Provide the Admin UI url. If you use self-signed cert on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
 &gt; <span data-varid="command">sdpctl.exe</span> configure
-
-    ? Enter the url for the Controller API (example https://controller.company.com:8443) https://ag-ctrl.company.com:8443
-    Configuration updated successfully
+  ? Enter the url for the Controller API (example https://controller.company.com:8443) https://ag-ctrl.company.com:8443
+  Configuration updated successfully
 
 
 # Signin to your Collective
 &gt; <span data-varid="command">sdpctl.exe</span> configure signin
+  ? Choose a provider:  [Use arrows to move, type to filter]
+  ❯ Azure AD SAML Admin
+    Azure AD OIDC
+    local
 
-    ? Choose a provider:  [Use arrows to move, type to filter]
-    &#10095; Azure AD SAML Admin
-      Azure AD OIDC
-      local
-
-    ? Please enter your one-time password: ******
-    Successfully signed in
+  ? Please enter your one-time password: ******
+  Successfully signed in
 
 
 # Verify the configuration
 &gt; <span data-varid="command">sdpctl.exe</span> appliance status
-
-    Name                    Status     Function      CPU     Memory    Network out/in           Disk    Version
-    ----                    ------     --------      ---     ------    --------------           ----    -------
-    Singapore Controller    healthy    Controller    1.4%    13.9%     34.9 Kbps / 17.1 Kbps    1.7%    6.0.1+30125
-    Singapore Gateway       healthy    Gateway       0.3%    12.7%     0.64 Kbps / 0.12 Kbps    0.9%    6.0.1+30125
+  Name                    Status     Function      CPU     Memory    Network out/in           Disk    Version
+  ----                    ------     --------      ---     ------    --------------           ----    -------
+  Singapore Controller    healthy    Controller    1.4%    13.9%     34.9 Kbps / 17.1 Kbps    1.7%    6.0.1+30125
+  Singapore Gateway       healthy    Gateway       0.3%    12.7%     0.64 Kbps / 0.12 Kbps    0.9%    6.0.1+30125
           </code></pre>
         </details>
 
@@ -233,66 +231,156 @@
           <pre class="code-editor"><code>
 # Prepare the upgrade
 &gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade prepare --image=&lt;upgrade-image-zip-or-url&gt;
+  PREPARE SUMMARY
 
-    PREPARE SUMMARY
+  ...
+  ? Do you want to continue? Yes
 
-    ...
-    ? Do you want to continue? Yes
+  [2022-09-27T15:04:01+02:00] Preparing image on appliances:
+    ✓ Singapore Controller: ready
+    ✓ Singapore Gateway: ready
 
-    [2022-09-27T15:04:01+02:00] Preparing image on appliances:
-      ✓ Singapore Controller: ready
-      ✓ Singapore Gateway: ready
-
-    [2022-09-27T15:05:09+02:00] PREPARE COMPLETE
+  [2022-09-27T15:05:09+02:00] PREPARE COMPLETE
 
 
 # Backup then complete the upgrade
 &gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade complete
+  ? Do you want to backup before proceeding? Yes
+  ? Path to where backup should be saved /Users/ann.gills/Downloads/appgate/backup
+  ? select appliances to backup: Singapore Controller ( Controller )
 
-    ? Do you want to backup before proceeding? Yes
-    ? Path to where backup should be saved /Users/ann.gills/Downloads/appgate/backup
-    ? select appliances to backup: Singapore Controller ( Controller )
+  UPGRADE COMPLETE SUMMARY
 
-    UPGRADE COMPLETE SUMMARY
+  Appliances will be upgraded to version 6.0.2+30473
 
-    Appliances will be upgraded to version 6.0.2+30473
+  ...
 
-    ...
+  [2022-09-27T15:07:56+02:00] Upgrading primary controller:
+  ✓ Singapore Controller: upgraded
 
-    [2022-09-27T15:07:56+02:00] Upgrading primary controller:
-    ✓ Singapore Controller: upgraded
+  [2022-09-27T15:11:18+02:00] Upgrading additional appliances (Batch 1 / 1):
+  ✓ Singapore Gateway: upgraded
 
-    [2022-09-27T15:11:18+02:00] Upgrading additional appliances (Batch 1 / 1):
-    ✓ Singapore Gateway: upgraded
+  [2022-09-27T15:14:25+02:00] UPGRADE COMPLETE
 
-    [2022-09-27T15:14:25+02:00] UPGRADE COMPLETE
-
-    Appliance               Upgraded to
-    ---------               -----------
-    Singapore Controller    6.0.2+30473
-    Singapore Gateway       6.0.2+30473
+  Appliance               Upgraded to
+  ---------               -----------
+  Singapore Controller    6.0.2+30473
+  Singapore Gateway       6.0.2+30473
           </code></pre>
         </details>
 
         <details class="text-left margin-bottom-small">
-          <summary class="example-summary">Backup and restore an appliance</summary>
+          <summary class="example-summary">Backup an appliance</summary>
           <pre class="code-editor"><code>
-> tbd
+&gt; <span data-varid="command">sdpctl.exe</span> appliance backup
+  ? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
+  ❯ [ ]  Singapore Controller ( Controller )
+    [ ]  Singapore Gateway ( Gateway )
+
+  Will perform backup on the following appliances:
+    - Singapore Controller
+
+  Backup destination is /Users/ann.gills/Downloads/appgate/backup
+
+    ✓ Singapore Controller: download complete
+
+  Backup complete!
+
+  # use cz-restore script internal to the appliance to restore the backup file
           </code></pre>
         </details>
 
         <details class="text-left margin-bottom-small">
-          <summary class="example-summary">List and renew entitlement tokens</summary>
+          <summary class="example-summary">List and renew tokens</summary>
           <pre class="code-editor"><code>
-> tbd
+# list distinguished names with active tokens
+&gt; <span data-varid="command">sdpctl.exe</span> appliance tokens list
+  Distinguished Name                     Device ID       Last Token Issued At           Provider Name    Username
+  ------------------                     ---------       --------------------           -------------    --------
+  CN=2cc1a54a...,CN=ann.gills,OU=ldap    2cc1a54a-...    2022-11-22T09:42:09.738773Z    ldap             ann.gills
+  ...
+
+
+# renew all tokens for ann.gills
+&gt; <span data-varid="command">sdpctl.exe</span> appliance tokens revoke "CN=2cc1a54...,CN=ann.gills,OU=ldap"
+  ID           Type            Distinguished Name                   Issued          Expires         Revoked  Site ID    Site Name   Revocation Time
+  --           ----            ------------------                   ------          -------         -------  -------    ---------   ---------------
+  e9abaff5...  Entitlement     CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true      8a4add    SG-01       2022-11-22 ...
+  d9910d8d...  Claims          CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true                            2022-11-22 ...
+
+
+# renew all entitlement tokens
+&gt; <span data-varid="command">sdpctl.exe</span> appliance tokens revoke --by-token-type entitlement
+  ID           Type            Distinguished Name                   Issued          Expires         Revoked  Site ID    Site Name   Revocation Time
+  --           ----            ------------------                   ------          -------         -------  -------    ---------   ---------------
+  e9abaff5...  Entitlement     CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true      8a4add    SG-01       2022-11-22 ...
+  ...
           </code></pre>
         </details>
 
         <details class="text-left margin-bottom-small">
-          <summary class="example-summary">Manage multiple Collectives</summary>
-          <pre class="code-editor"><code># If you have self-signed certificate on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
+          <summary class="example-summary">Manage multiple Collectives <span class="tag">advanced</span></summary>
+          <pre class="code-editor"><code>
+# you can manage multiple Collectives by adding more admin profiles
 
-> tbd
+# configure your production SDP Collectice
+&gt; <span data-varid="command">sdpctl.exe</span> configure
+  ? Enter the url for the Controller API (example https://controller.company.com:8443) https://production.company.com:8443
+  Configuration updated successfully
+
+
+# by default there are no profiles created
+&gt; <span data-varid="command">sdpctl.exe</span> profile list
+no profiles added
+
+
+# create a new profile for staging
+&gt; <span data-varid="command">sdpctl.exe</span> profile add staging
+  Created profile staging, run 'sdpctl profile list' to see all available profiles
+  run 'sdpctl profile set staging' to select the new profile
+
+
+# note that at this point, sdpctl is still using the "default" profile
+
+
+&gt; <span data-varid="command">sdpctl.exe</span> profile list
+  Current profile is default (/Users/ann.gills/Library/Application Support/sdpctl/profiles/default) primary production.company.com
+
+  Available profiles
+  Name       Config directory
+  ----       ----------------
+  default    /Users/ann.gills/Library/Application Support/sdpctl/profiles/default
+  staging    /Users/ann.gills/Library/Application Support/sdpctl/profiles/staging
+
+
+# set the staging profile as current
+&gt; <span data-varid="command">sdpctl.exe</span> profile set staging
+  staging (/Users/ann.gills/Library/Application Support/sdpctl/profiles/staging) is selected as current sdp profile
+
+
+# now, sdpctl is still using the "staging" profile
+
+
+# configure your staging SDP Collectice
+&gt; <span data-varid="command">sdpctl.exe</span> configure
+  ? Enter the url for the Controller API (example https://controller.company.com:8443) https://staging.company.com:8443
+  Configuration updated successfully
+
+&gt; <span data-varid="command">sdpctl.exe</span> profile list
+  Current profile is staging (/Users/ann.gills/Library/Application Support/sdpctl/profiles/staging) primary controller staging.company.com
+
+  Available profiles
+  Name       Config directory
+  ----       ----------------
+  default    /Users/ann.gills/Library/Application Support/sdpctl/profiles/default
+  staging    /Users/ann.gills/Library/Application Support/sdpctl/profiles/staging
+
+
+# once you are done with managin staging Collective, you can switch back to default
+# set the default profile as current
+&gt; <span data-varid="command">sdpctl.exe</span> profile set default
+  staging (/Users/ann.gills/Library/Application Support/sdpctl/profiles/default) is selected as current sdp profile
           </code></pre>
         </details>
 
@@ -302,7 +390,7 @@
         <h2 class="margin-bottom">Available Commands</h2>
         <p class="margin-bottom">
           Appgate sdpctl is an open-source tool with capabilities beyond upgrading an SDP Collective.<br />
-          Here you can find the summary for current available commands, click on each for details.
+          Here you can find the summary for currently available commands, click on each for details.
         </p>
         <table class="commands-table margin-bottom-small">
           <thead>

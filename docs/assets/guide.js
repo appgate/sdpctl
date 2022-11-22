@@ -18,7 +18,7 @@ function initBreadcrumb() {
 
   let html = "";
   for (let i = 0; i < crumbs.length - 1; i++) {
-    html += `<a href="${crumbs[i].url}" class="bc-crumb">${crumbs[i].name}</a><span class="bc-seperator">/</span>`;
+    html += `<a href="${crumbs[i].url}" class="bc-crumb">${crumbs[i].name}</a><span class="bc-seperator">&#10095;</span>`;
   }
   html += `<span class="bc-current">${crumbs[crumbs.length - 1].name.replace(".html", "")}</span>`;
 
