@@ -135,13 +135,41 @@ func generateHTML(cmd *cobra.Command) error {
 		return err
 	}
 
+	type tocStruct struct {
+		Original string
+		Friendly string
+	}
+	type htmlGenStruct struct {
+		TOC     []tocStruct
+		Content string
+	}
+	toc := []tocStruct{}
+
 	path := filepath.FromSlash(fmt.Sprintf("%s/docs", cwd))
+	mdRegex := regexp.MustCompile(`\.md$`)
+
+	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+		if !mdRegex.MatchString(info.Name()) {
+			return nil
+		}
+
+		baseName := strings.Replace(info.Name(), ".md", "", 1)
+		toc = append(toc, tocStruct{
+			Original: baseName + ".html",
+			Friendly: strings.ReplaceAll(baseName, "_", " "),
+		})
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	return filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		regex := regexp.MustCompile(`\.md$`)
-		if !regex.MatchString(info.Name()) {
+		if !mdRegex.MatchString(info.Name()) {
 			return nil
 		}
 		b, err := os.ReadFile(path)
@@ -149,19 +177,22 @@ func generateHTML(cmd *cobra.Command) error {
 			return err
 		}
 
+		data := htmlGenStruct{
+			TOC: toc,
+		}
+
 		opts := html.RendererOptions{
 			Flags:          html.CommonFlags,
 			RenderNodeHook: renderHook,
 		}
 		renderer := html.NewRenderer(opts)
-		output := string(markdown.ToHTML(b, parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock), renderer))
+		data.Content = string(markdown.ToHTML(b, parser.NewWithExtensions(parser.CommonExtensions|parser.NoEmptyLineBeforeBlock), renderer))
 
-		t := template.New("Render")
-		t, err = t.Parse(htmlHeader + `{{.}}` + htmlFooter)
+		t, err := template.New("Render").Parse(htmlTemplate)
 		t = template.Must(t, err)
 
 		var processed bytes.Buffer
-		if err := t.Execute(&processed, output); err != nil {
+		if err := t.Execute(&processed, data); err != nil {
 			return err
 		}
 
@@ -217,17 +248,22 @@ func renderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool
 }
 
 const (
-	htmlHeader string = `<head>
+	htmlTemplate string = `<head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="Description" content="Appgate sdpctl Quick Start Guide">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
-	<script type="text/javascript" src="./assets/guide.js"></script>
+  <script type="text/javascript" src="./assets/guide.js" />
   <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
 </head>
 <body>
+  {{ if .TOC }}<nav class="toc" role="navigation">
+  <ul>
+  {{ range .TOC }}<li><a href="./docs/{{.Original}}">{{.Friendly}}</a></li>{{ end }}
+  </ul>
+  </nav>{{ end }}
   <main class="page text-center">
     <div class="box">
 			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
@@ -239,9 +275,7 @@ const (
 			</div>
 			<hr />
       <div class="content text-left">
-`
-
-	htmlFooter string = `
+      {{.Content}}
       </div>
     </div>
   </main>
