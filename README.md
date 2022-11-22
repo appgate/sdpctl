@@ -15,7 +15,7 @@ Over time we will add more features to sdpctl so please be sure to always use th
 # Installation
 
 ## Signature verification
-Before installion make sure the verify the signature of the downloaded binaries.
+Before installation make sure the verify the signature of the downloaded binaries.
 Release binary checksums are signed using a GPG key, the [public key](https://bin.appgate-sdp.com/appgate-inc.pub) with key id `5635CFCADCF8A718`.
 
 To import and trust the key:
@@ -28,7 +28,7 @@ gpg> 5
 gpg> quit
 ```
 
-The `checksums.txt.asc` contains the signature for `checksums.txt` as well as it's content.
+The `checksums.txt.asc` contains the signature for `checksums.txt` as well as its content.
 On Linux you can verify the checksums signature as well as the checksums of the binaries using the following command:
 ```bash
 gpg --output - --verify checksums.txt.asc | sha256sum --check --ignore-missing
