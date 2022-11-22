@@ -51,7 +51,7 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 ? The passphrase to encrypt the appliance backups when the Backup API is used: <password> # only shows if Backup API is not enabled
 ? Confirm your passphrase: <password> # only shows if Backup API is not enabled
 ? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
-> [ ]  controller
+❯ [ ]  controller
   [ ]  gateway`,
 			},
 			{

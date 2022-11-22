@@ -6,8 +6,9 @@
   <meta name="Description" content="Appgate sdpctl Quick Start Guide">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="expires" content="0">
-  <link rel="stylesheet" type="text/css" href="assets/guide.css">
   <title>Appgate sdpctl Quick Start Guide</title>
+  <link rel="stylesheet" type="text/css" href="assets/guide.css">
+  <script type="text/javascript" src="./assets/guide.js"></script>
   <script>
     const VARS = {
       macos: "",
@@ -51,12 +52,6 @@
       for (let i = 0; i < links.length; i++) {
         links[i].classList.add("hidden");
       }
-    }
-
-    function expand(event) {
-      event.preventDefault();
-      event.target.closest(".expander").classList.add("hidden");
-      event.target.closest(".collapsed").classList.remove("collapsed");
     }
 
     function fetchLatestRelease() {
@@ -105,6 +100,7 @@
     document.addEventListener("DOMContentLoaded", () => {
       showDetectedOs();
       fetchLatestRelease();
+      highlightCode();
     });
   </script>
   <style>
@@ -198,50 +194,46 @@
       </div>
       <hr />
       <div>
-        <h2 class="margin-bottom">Quick Start</h2>
-        <p class="margin-bottom">In this section, we'll show you how to upgrade your Appgate SDP Collective.</p>
-        <!--configuration step-->
-        <p class="emphasize text-left margin-bottom-small">First step is to complete the initial setup.</p>
-        <pre class="code-editor margin-bottom-small collapsed">
-<span class="code-comment"># If you have self-signed certificate on Admin UI, use the flag : --pem &lt;path-to-pem&gt;</span>
+        <h2 class="margin-bottom">Usage Examples</h2>
 
-<span class="code-comment"># Provide the Admin UI url</span>
-<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> configure</span>
-<span class="code-output">
+        <details class="text-left margin-bottom-small">
+          <summary class="example-summary">Complete the initial setup after installation</summary>
+          <pre class="code-editor"><code>
+# Provide the Admin UI url. If you have self-signed cert on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
+&gt; <span data-varid="command">sdpctl.exe</span> configure
+
     ? Enter the url for the Controller API (example https://controller.company.com:8443) https://ag-ctrl.company.com:8443
     Configuration updated successfully
-</span>
-<span class="code-comment">
-# Signin to your Collective</span>
-<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> configure signin</span>
-<span class="code-output">
+
+
+# Signin to your Collective
+&gt; <span data-varid="command">sdpctl.exe</span> configure signin
+
     ? Choose a provider:  [Use arrows to move, type to filter]
-    > Azure AD SAML Admin
+    &#10095; Azure AD SAML Admin
       Azure AD OIDC
       local
 
     ? Please enter your one-time password: ******
     Successfully signed in
-</span>
-<span class="code-comment">
-# Verify the configuration</span>
-<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> appliance status</span>
-<span class="code-output">
+
+
+# Verify the configuration
+&gt; <span data-varid="command">sdpctl.exe</span> appliance status
+
     Name                    Status     Function      CPU     Memory    Network out/in           Disk    Version
     ----                    ------     --------      ---     ------    --------------           ----    -------
     Singapore Controller    healthy    Controller    1.4%    13.9%     34.9 Kbps / 17.1 Kbps    1.7%    6.0.1+30125
-    Singapore Gateway       healthy    Gateway       0.3%    12.7%     0.64 Kbps / 0.12 Kbps    0.9%    6.0.1+30125</span>
-    <div class="expander"><a href="#" onclick="expand(event)">show more</a></div>
-</pre>
+    Singapore Gateway       healthy    Gateway       0.3%    12.7%     0.64 Kbps / 0.12 Kbps    0.9%    6.0.1+30125
+          </code></pre>
+        </details>
 
-        <!--upgrade step-->
-        <p class="emphasize text-left margin-bottom-small">Next step is to prepare one of the Controllers then backup and complete the upgrade.</p>
-        <pre class="code-editor margin-bottom-small collapsed">
-<span class="code-comment"># If you have self-signed certificate on Admin UI, use the flag : --pem &lt;path-to-pem&gt;</span>
+        <details class="text-left margin-bottom-small">
+          <summary class="example-summary">Upgrade a Collective</summary>
+          <pre class="code-editor"><code>
+# Prepare the upgrade
+&gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade prepare --image=&lt;upgrade-image-zip-or-url&gt;
 
-<span class="code-comment"># Prepare the upgrade</span>
-<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade prepare --image=&lt;upgrade-image-zip-or-url&gt;</span>
-<span class="code-output">
     PREPARE SUMMARY
 
     ...
@@ -253,10 +245,10 @@
 
     [2022-09-27T15:05:09+02:00] PREPARE COMPLETE
 
-</span>
-<span class="code-comment"># Backup then complete the upgrade</span>
-<span class="code-command">&gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade complete</span>
-<span class="code-output">
+
+# Backup then complete the upgrade
+&gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade complete
+
     ? Do you want to backup before proceeding? Yes
     ? Path to where backup should be saved /Users/ann.gills/Downloads/appgate/backup
     ? select appliances to backup: Singapore Controller ( Controller )
@@ -278,10 +270,32 @@
     Appliance               Upgraded to
     ---------               -----------
     Singapore Controller    6.0.2+30473
-    Singapore Gateway       6.0.2+30473</span>
-    <div class="expander"><a href="#" onclick="expand(event)">show more</a></div>
-</pre>
-        <p class="emphasize text-left margin-bottom-small">All done!</p>
+    Singapore Gateway       6.0.2+30473
+          </code></pre>
+        </details>
+
+        <details class="text-left margin-bottom-small">
+          <summary class="example-summary">Backup and restore an appliance</summary>
+          <pre class="code-editor"><code>
+> tbd
+          </code></pre>
+        </details>
+
+        <details class="text-left margin-bottom-small">
+          <summary class="example-summary">List and renew entitlement tokens</summary>
+          <pre class="code-editor"><code>
+> tbd
+          </code></pre>
+        </details>
+
+        <details class="text-left margin-bottom-small">
+          <summary class="example-summary">Manage multiple Collectives</summary>
+          <pre class="code-editor"><code># If you have self-signed certificate on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
+
+> tbd
+          </code></pre>
+        </details>
+
       </div>
       <hr />
       <div>

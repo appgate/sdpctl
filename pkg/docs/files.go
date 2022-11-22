@@ -51,7 +51,7 @@ deleted2.img.zip: deleted`,
 				Description: "no arguments will prompt for which files to delete",
 				Command:     "sdpctl appliance files delete",
 				Output: `? select files to delete:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
-> [ ]  file1.img.zip
+❯ [ ]  file1.img.zip
   [ ]  file2.img.zip
   [ ]  file3.img.zip
 `,

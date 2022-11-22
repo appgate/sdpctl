@@ -26,7 +26,7 @@ var (
 				Description: "Set admin profile without any arguments",
 				Command:     "sdpctl profile set",
 				Output: `? select profile:  [Use arrows to move, type to filter]
-> production
+❯ production
   staging
   testing`,
 			},

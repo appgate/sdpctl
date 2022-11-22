@@ -2,7 +2,7 @@
 :root {
   --color-ag-rust: #d64527;
   --color-ag-dark: #0f0f0f;
-  --color-ag-light: #ffffff;
+  --color-ag-light: #f0f0f0;
   --color-bg-page: #f0f0f0;
   --color-bg-box: #ffffff;
   --color-gh-link: #0969da;
@@ -95,11 +95,16 @@ li {
   font-size: 1rem;
   line-height: 2.5rem;
   list-style: square;
+  list-style-position: inside;
 }
 
-/* workaround for generated html  */
+/* workarounds for generated html lists */
 li .margin-bottom {
   margin-bottom: 0;
+}
+
+li p {
+  display: inline;
 }
 
 a {
@@ -220,11 +225,12 @@ code {
 .code-editor {
   color: var(--color-ag-dark);
   font-family: Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: smaller;
+  font-size: 0.9rem;
   text-align: left;
   padding: var(--spacing-default);
   overflow-x: scroll;
   background-color: var(--color-gh-editor);
+  border: 1px solid var(--color-bg-page);
   border-radius: var(--border-radius);
 }
 
@@ -234,7 +240,7 @@ code {
 }
 
 .code-comment {
-  color: var(--color-gh-comment);
+  font-style: italic;
 }
 
 .tag {
@@ -301,30 +307,20 @@ code {
   display: none !important;
 }
 
-.collapsed {
-  height: 10rem !important;
-  overflow: hidden;
-  position: relative;
-}
-
-.expander {
-  width: 100%;
-  height: 4rem;
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  text-align: center;
-  background: linear-gradient(transparent, var(--color-ag-light), var(--color-ag-light));
-
-  display: flex;
-  justify-content: center;
-  align-items: end;
+.example-summary {
+  padding: 1rem 0.5rem;
+  margin-bottom: 1px;
+  cursor: pointer;
+  background-color: var(--color-gh-editor);
+  border: 1px solid var(--color-bg-page);
+  border-radius: var(--border-radius);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --color-bg-page: #000000;
     --color-bg-box: #181818;
+    --color-gh-editor: var(--color-ag-dark);
     --drop-shadow: 0 0 0.5rem #232323;
     --button-shadow: 0 0 0.5rem #232323;
   }
@@ -355,19 +351,10 @@ code {
   .code-editor,
   code {
     color: var(--color-ag-light);
-    background-color: var(--color-ag-dark);
   }
 
   .code-command {
     color: #0e76f8;
-  }
-
-  .code-comment {
-    color: #b5bac0;
-  }
-
-  .expander {
-    background: linear-gradient(transparent, var(--color-ag-dark), var(--color-ag-dark));
   }
 }
 
@@ -377,6 +364,11 @@ code {
   margin: calc(var(--spacing-box-ver) * -0.5) 0;
 }
 
+.breadcrumb .bc-crumb {
+  white-space: nowrap;
+}
+
 .breadcrumb .bc-seperator {
   margin: 0 0.25rem;
+  word-break: break-all;
 }

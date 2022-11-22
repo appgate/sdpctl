@@ -259,7 +259,7 @@ const (
   <title>sdpctl Reference Guide</title>
   <link rel="stylesheet" href="./assets/guide.css">
   <script type="text/javascript" src="./assets/guide.js"></script>
-  <script>document.addEventListener("DOMContentLoaded", () => initBreadcrumb());</script>
+  <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
 </head>
 <body>
   <main class="page text-center">

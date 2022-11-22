@@ -24,3 +24,26 @@ function initBreadcrumb() {
 
   breadcrumb.innerHTML = html;
 }
+
+function highlightCode() {
+  const codes = document.getElementsByTagName("code");
+  for (let code of codes) {
+    const lines = code.innerHTML.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      switch (true) {
+        case lines[i].trimStart().startsWith("#"):
+          lines[i] = `<span class="code-comment">${lines[i]}</span>`;
+          break
+        case lines[i].trimStart().startsWith("&gt;"):
+          lines[i] = `<span class="code-command">${lines[i]}</span>`;
+          break;
+      }
+    }
+    code.innerHTML = lines.join("\n").trim();
+  }
+}
+
+function initManPage() {
+  initBreadcrumb();
+  highlightCode();
+}
