@@ -133,9 +133,9 @@ This means the upgrade file will be downloaded/uploaded to all the appliances,
 the signature verified as well as any other preconditions applicable at this point.
 
 There are initial checks on the filename before attempting to upload it to the Appliances.
-A valid filename ends with '.img.zip' and also needs to have a semver included somewhere
-in the name, eg. 'upgrade.img.zip' will not not be valid, but 'upgrade5.5.3.img.zip' is
-considered valid.
+If a local upgrade image is uploaded to the Controller, the only pre-condition is that the filename ends with the file extension '.img.zip'.
+If, however, the file is hosted on a server and a URL is provided to the prepare command, the filename should also contain a version, such as 6.0.3.
+Otherwise the prepare will fail.
 
 Note that the '--image' flag also accepts URL:s. The Appliances will then attempt to download
 the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.`,

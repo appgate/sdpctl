@@ -42,7 +42,6 @@ fmt:
 
 .PHONY: docs
 docs:
-	go run main.go generate markdown
 	go run main.go generate html
 
 # Run go test twice, since -race don't catch all edge cases

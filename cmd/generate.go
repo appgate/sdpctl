@@ -34,23 +34,18 @@ var generateCmd = &cobra.Command{
 		"skipAuthCheck": "true",
 	},
 	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"man", "markdown", "md", "html", "all"},
+	ValidArgs:             []string{"man", "html", "all"},
 	Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 	Short:                 "Generates man pages for sdpctl",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		switch args[0] {
 		case "man":
 			return generateManPages(cmd)
-		case "markdown", "md":
-			return generateMarkdown(cmd)
 		case "html":
 			return generateHTML(cmd)
 		case "all":
 			var errs error
 			if err := generateManPages(cmd); err != nil {
-				errs = multierror.Append(err)
-			}
-			if err := generateMarkdown(cmd); err != nil {
 				errs = multierror.Append(err)
 			}
 			if err := generateHTML(cmd); err != nil {
@@ -130,6 +125,9 @@ func generateMarkdown(cmd *cobra.Command) error {
 }
 
 func generateHTML(cmd *cobra.Command) error {
+	if err := generateMarkdown(cmd); err != nil {
+		return err
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -165,7 +163,7 @@ func generateHTML(cmd *cobra.Command) error {
 		return err
 	}
 
-	return filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -204,8 +202,13 @@ func generateHTML(cmd *cobra.Command) error {
 		if err := os.WriteFile(htmlName, processed.Bytes(), 0644); err != nil {
 			return err
 		}
-		return nil
+
+		return os.Remove(path)
 	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func renderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool) {
