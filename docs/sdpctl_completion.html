@@ -1,0 +1,78 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>sdpctl Reference Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+  <script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">Quick Start Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
+      <div class="content text-left">
+      <h2 class="text-left margin-bottom">sdpctl completion</h2><p>Generate shell completion scripts</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>sdpctl provides a way to generate autocompletion scripts for your current shell. See examples for more details on your specific shell.</p><pre class="code-editor margin-bottom"><code>sdpctl completion [bash|zsh|fish|powershell] [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # Bash:
+  # Note that if you installed sdpctl from deb or rpm package, bash completion is already included.
+  &gt; mkdir -p ~/.local/share/bash-completion
+  &gt; sdpctl completion bash | tee ~/.local/share/bash-completion/sdpctl
+
+  # ZSH:
+  # If shell completion is not already enabled in your environment,
+  # you will need to enable it.  You can execute the following once:
+  &gt; echo &quot;autoload -U compinit; compinit&quot; &gt;&gt; ~/.zshrc
+
+  # To load completions for each session, execute once:
+  &gt; sdpctl completion zsh | tee --output-error=exit &quot;/usr/share/zsh/vendor-completions/_sdpctl&quot;
+
+  # Fish:
+  # Load completion for the session:
+  &gt; sdpctl completion fish | source
+
+  # To load completions for each session, execute once:
+  &gt; sdpctl completion fish | tee ~/.config/fish/completions/sdpctl.fish
+
+  # PowerShell:
+  # Load completion for the session
+  &gt; sdpctl completion powershell | Out-String | Invoke-Expression
+
+  # To load completions for every new session, run this command
+  # and source this file from your PowerShell profile.
+  &gt; sdpctl completion powershell &gt; sdpctl.ps1
+
+  # MacOS:
+  # Load completion for session
+  &gt; sdpctl completion bash | tee /usr/local/etc/bash_completion.d/sdpctl
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -h, --help   help for completion
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int   Peer API version override
+      --ci-mode           Log to stderr instead of file and disable progress-bars
+      --debug             Enable debug logging
+      --no-interactive    Suppress interactive prompt with auto accept
+      --no-verify         Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string    Profile configuration to use
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>

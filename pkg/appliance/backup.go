@@ -97,9 +97,9 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 	if !backupEnabled {
 		if opts.NoInteractive {
-			return backupIDs, errors.New("Using '--no-interactive' flag while backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again.")
+			return backupIDs, errors.New("Using '--no-interactive' flag while Backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again")
 		}
-		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it.")
+		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it")
 	}
 
 	appliances, err := app.List(ctx, nil)
@@ -123,7 +123,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if opts.PrimaryFlag || opts.NoInteractive {
 			pc, err := FindPrimaryController(appliances, hostname, false)
 			if err != nil {
-				log.Warn("failed to determine primary controller")
+				log.Warn("Failed to determine the primary Controller")
 			} else {
 				idFilter := []string{}
 				if len(opts.FilterFlag["include"]["id"]) > 0 {
@@ -137,7 +137,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if opts.CurrentFlag {
 			cc, err := FindCurrentController(appliances, hostname)
 			if err != nil {
-				log.Warn("failed to determine current controller")
+				log.Warn("Failed to determine the current Controller")
 			} else {
 				idFilter := []string{}
 				if len(opts.FilterFlag["include"]["id"]) > 0 {
@@ -181,11 +181,11 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	toBackup, offline, _ := FilterAvailable(toBackup, initialStats.GetData())
 
 	for _, v := range offline {
-		log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline.")
+		log.WithField("appliance", v.GetName()).Info("Skipping appliance. Appliance is offline")
 	}
 
 	if len(toBackup) <= 0 {
-		fmt.Fprintln(opts.Out, "No appliances to backup. Either no appliance was selected or the selected appliances are offline.")
+		fmt.Fprintln(opts.Out, "No appliances to backup. Either no appliance was selected or the selected appliances are offline")
 		return nil, nil
 	}
 
@@ -266,7 +266,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		if err := retryStatus(ctx, b.applianceID, b.backupID, tracker); err != nil {
 			return b, err
 		}
-		log.WithFields(f).Infof("starting download for backup id %s", b.backupID)
+		log.WithFields(f).Infof("Starting download for backup id %s", b.backupID)
 		tracker.Update("downloading")
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		if err != nil {
@@ -297,7 +297,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			defer wg.Done()
 			backedUp, err := b(appliance, t)
 			if err != nil {
-				errorChannel <- fmt.Errorf("could not backup %s %s", appliance.GetName(), err)
+				errorChannel <- fmt.Errorf("Could not backup %s %s", appliance.GetName(), err)
 				return
 			}
 			backups <- backedUp
@@ -422,7 +422,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	}
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
-		log.Warn("Backup API is disabled on the appliance.")
+		log.Warn("Backup API is disabled on the appliance")
 		var shouldEnable bool
 		q := &survey.Confirm{
 			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",
@@ -434,7 +434,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
-			password, err := prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
+			password, err := prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
 			if err != nil {
 				return false, err
 			}

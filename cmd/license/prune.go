@@ -30,7 +30,7 @@ func NewPruneCmd(opts *licenseOpts) *cobra.Command {
 func pruneRun(cmd *cobra.Command, args []string, opts *licenseOpts) error {
 	client, err := opts.HTTPClient()
 	if err != nil {
-		return fmt.Errorf("could not resolve a HTTP client based on your current config %s", err)
+		return fmt.Errorf("Could not resolve a HTTP client based on your current config %s", err)
 	}
 	requestURL := fmt.Sprintf("%s/license/users/prune", opts.BaseURL)
 	request, err := http.NewRequest(http.MethodDelete, requestURL, nil)
@@ -43,11 +43,11 @@ func pruneRun(cmd *cobra.Command, args []string, opts *licenseOpts) error {
 		return api.HTTPErrorResponse(response, err)
 	}
 	if response.StatusCode == http.StatusNotFound {
-		return errors.New("could not do license prune, not supported on your appliance version")
+		return errors.New("Could not prune the user licenses, not supported on your appliance version")
 	}
 	if response.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("could not prune license got HTTP %d\n", response.StatusCode)
+		return fmt.Errorf("Could not prune the user licenses got HTTP %d\n", response.StatusCode)
 	}
-	fmt.Fprintln(opts.Out, "users license pruned")
+	fmt.Fprintln(opts.Out, "User licenses pruned")
 	return nil
 }

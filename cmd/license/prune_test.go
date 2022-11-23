@@ -34,7 +34,7 @@ func TestPruneCommand(t *testing.T) {
 				},
 			},
 			wantErr:    false,
-			wantOutput: "users license pruned\n",
+			wantOutput: "User licenses pruned\n",
 		},
 		{
 			name: "unexpected http response",
@@ -49,7 +49,7 @@ func TestPruneCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`could not prune license got HTTP 200`),
+			wantErrOut: regexp.MustCompile(`Could not prune the user licenses got HTTP 200`),
 		},
 		{
 			name: "not found",
@@ -62,7 +62,7 @@ func TestPruneCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`could not do license prune, not supported on your appliance version`),
+			wantErrOut: regexp.MustCompile(`Could not prune the user licenses, not supported on your appliance version`),
 		},
 	}
 	for _, tt := range tests {

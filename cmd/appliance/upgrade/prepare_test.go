@@ -371,7 +371,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name:       "file name error",
 			cli:        "upgrade prepare --image './testdata/appgate.img'",
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`Invalid name on image file. The format is expected to be a .img.zip archive.`),
+			wantErrOut: regexp.MustCompile(`Invalid name on image file. The format is expected to be a .img.zip archive`),
 		},
 		{
 			name:       "invalid zip file error",
@@ -396,7 +396,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details.`),
+			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details`),
 		},
 		{
 			name: "force prepare same version",
@@ -714,8 +714,6 @@ controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
 
 
-3. Delete upgrade image from Controller
-
 The following appliances will be skipped:
 
 Appliance      Online    Current version    Reason
@@ -775,8 +773,6 @@ controller1    ✓         5.5.7+28767        6.0.0+29426
 controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
 
-
-3. Delete upgrade image from Controller
 `,
 		},
 	}

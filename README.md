@@ -15,7 +15,7 @@ Over time we will add more features to sdpctl so please be sure to always use th
 # Installation
 
 ## Signature verification
-Before installion make sure the verify the signature of the downloaded binaries.
+Before installation make sure the verify the signature of the downloaded binaries.
 Release binary checksums are signed using a GPG key, the [public key](https://bin.appgate-sdp.com/appgate-inc.pub) with key id `5635CFCADCF8A718`.
 
 To import and trust the key:
@@ -28,7 +28,7 @@ gpg> 5
 gpg> quit
 ```
 
-The `checksums.txt.asc` contains the signature for `checksums.txt` as well as it's content.
+The `checksums.txt.asc` contains the signature for `checksums.txt` as well as its content.
 On Linux you can verify the checksums signature as well as the checksums of the binaries using the following command:
 ```bash
 gpg --output - --verify checksums.txt.asc | sha256sum --check --ignore-missing
@@ -83,96 +83,3 @@ The `sdpctl` tool supports shell completions for `bash`, `zsh`, `fish` and `Powe
 ```
 $ sdpctl completion --help
 ```
-
-# Usage
-
-## Initial setup
-To start using `sdpctl`, you'll need to authenticate with your Appgate SDP Collective. The authentication process has two steps; first configure `sdpctl` and then authenticate by signing in to the Collective configured in the first step.
-
-In case the Appgate SDP Collective you want to connect to has an unsigned certificate, you can use the `--pem` flag with a path to the certificate PEM when configuring.
-
-See the [configuration documentation](./docs/configure.md) for a more detailed description on how to use the `configure` command.
-
-Example:
-```bash
-# Initial configuration
-$ sdpctl configure
-? Enter the url for the controller API (example https://appgate.controller.com/admin)
-
-# Configure using an unsigned certificate
-$ sdpctl configure --pem=<path to PEM>
-? Enter the url for the controller API (example https://appgate.controller.com/admin)
-
-# Sign in
-$ sdpctl configure signin
-```
-
-You can also manage multiple Appgate SDP Collectives using `sdpctl`. See the [authentication documentation](./docs/configure.md#working-with-multiple-appgate-sdp-collectives) for more information.
-
----
-## The `appliance` command
-The `appliance` command in `sdpctl` is used for appliance management tasks, such as backing up or upgrading appliances. The appliance command requires at least one action command following it. Executing the appliance command without an action command will print the help text for the command.
-
-See the [appliance command documentation](./docs/appliance.md) for a more detailed description
-
-### Examples
-```bash
-# Listing appliances
-$ sdpctl appliance list
-
-# Backing up appliances
-$ sdpctl appliance backup
-
-# Upgrading appliances
-$ sdpctl appliance upgrade prepare --image=<appliance-image>
-$ sdpctl appliance upgrade complete
-```
-
----
-## The `token` command
-The token command let's you list and revoke device tokens according to the options specified. To revoke a single token, use these commands:
-```bash
-# List the current tokens
-$ sdpctl token list
-Distinguished Name                                     Device ID                             Last Token Issued At         Provider Name  Username
-------------------                                     ---------                             --------------------         -------------  --------
-CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local  8401189b-492f-4d76-b667-1a9ba03b4ce1  2022-02-21T07:22:12.375464Z  local          admin
-
-# Revoke the token
-$ sdpctl token revoke CN=8401189b492f4d76b6671a9ba03b4ce1,CN=admin,OU=local
-```
-
-More details on the token command can be found in [the token command documentation](./docs/token.md)
-
----
-
-### logs
-
-A log file is generated and store locally, the location differs depending on your operating system.
-
-For Unix `$HOME/.config/sdpctl/sdpctl.log` (or `$HOME/.config/sdpctl/profiles/{name}/sdpctl.log`)
-
-For Windows `%LocalAppData%\sdpctl` (or `%LocalAppData%\sdpctl\profiles\{name}\sdpctl.log`)
-
-For macOS `~/Library/Application\ Support/sdpctl/sdpctl.log` (or `~/Library/Application\ Support/sdpctl/profiles/{name}/sdpctl.log`)
-
----
-
-## Other available commands
-
-### `sdpctl open`
-The open command will attempt to open the Appgate SDP Collective administration interface in the systems default browser.
-
-### `sdpctl help [command]`
-The help command will print the help page for any command that follows.
-
----
-## Global flags
-| Flag | Shorthand | Description |
-|---|---|---|
-| `--api-version` | none | peer API version override |
-| `--debug` | none | Enable debug output and logging |
-
-# Support
-
-You can open a [github issue](https://github.com/appgate/sdpctl/issues) or contact support@appgate.com

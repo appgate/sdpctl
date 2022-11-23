@@ -136,10 +136,10 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	}
 	for _, a := range offline {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
-			err = multierror.Append(err, fmt.Errorf("cannot start the operation since a controller %q is offline.", a.GetName()))
+			err = multierror.Append(err, fmt.Errorf("Cannot start the operation since a Controller %q is offline", a.GetName()))
 		}
 		if v, ok := a.GetLogServerOk(); ok && v.GetEnabled() {
-			err = multierror.Append(err, fmt.Errorf("cannot start the operation since a logserver %q is offline.", a.GetName()))
+			err = multierror.Append(err, fmt.Errorf("Cannot start the operation since a LogServer %q is offline", a.GetName()))
 		}
 	}
 	return result, offline, err
@@ -274,10 +274,10 @@ func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsApplian
 			return ParseVersionString(s.GetVersion())
 		}
 	}
-	return nil, fmt.Errorf("could not determine appliance version %s", appliance.GetName())
+	return nil, fmt.Errorf("Could not determine appliance version %s", appliance.GetName())
 }
 
-// FindPrimaryController The given hostname should match one of the controller's actual admin hostname.
+// FindPrimaryController The given hostname should match one of the Controller's actual admin hostname.
 // Hostnames should be compared in a case insensitive way.
 func FindPrimaryController(appliances []openapi.Appliance, hostname string, validate bool) (*openapi.Appliance, error) {
 	controllers := make([]openapi.Appliance, 0)
@@ -318,8 +318,8 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	}
 	if count > 1 {
 		return nil, fmt.Errorf(
-			"The given Controller hostname %s is used by more than one appliance."+
-				"A unique Controller admin (or peer) hostname is required to perform the upgrade.",
+			"The given Controller hostname %s is used by more than one appliance"+
+				"A unique Controller admin (or peer) hostname is required to perform the upgrade",
 			hostname,
 		)
 	}
@@ -360,7 +360,7 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 		h = pi.GetHostname()
 	}
 	if len(h) <= 0 {
-		return fmt.Errorf("failed to determine hostname for controller admin interface")
+		return fmt.Errorf("Failed to determine hostname for the Controller admin nterface")
 	}
 
 	cHost := strings.ToLower(h)
@@ -370,7 +370,7 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 			"controller-hostname": cHost,
 			"connected-hostname":  nHost,
 		}).Error("no match")
-		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname")
+		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real Controller hostname")
 	}
 
 	if err := network.ValidateHostnameUniqueness(nHost); err != nil {
@@ -395,7 +395,7 @@ func FindCurrentController(appliances []openapi.Appliance, hostname string) (*op
 			return &a, nil
 		}
 	}
-	return nil, errors.New("No host controller found")
+	return nil, errors.New("No host Controller found")
 }
 
 // AutoscalingGateways return the template appliance and all gateways
@@ -576,7 +576,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 					}
 				}
 			default:
-				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring.", k)
+				message := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring", k)
 				if !util.InSlice(message, warnings) {
 					warnings = append(warnings, message)
 				}
@@ -623,7 +623,7 @@ var StatusNotBusy = []string{
 	statusOffline,
 }
 
-// StatsIsOnline will return true if the controller reports the appliance to be online in a valid status
+// StatsIsOnline will return true if the Controller reports the appliance to be online in a valid status
 func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	// from appliance 6.0, 'online' field has been removed in favour for status
 	// we will keep GetOnline() for backwards compatibility.

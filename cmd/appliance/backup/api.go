@@ -27,7 +27,7 @@ type apiOptions struct {
 	disable   bool
 }
 
-// NewBackupAPICmd return a new backup API command
+// NewBackupAPICmd return a new Backup API command
 func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 	opts := apiOptions{
 		Config:    f.Config,
@@ -46,7 +46,7 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 			return backupAPIrun(c, args, &opts)
 		},
 	}
-	cmd.Flags().BoolVar(&opts.disable, "disable", false, "Disable the backup API")
+	cmd.Flags().BoolVar(&opts.disable, "disable", false, "Disable the Backup API")
 
 	return cmd
 }
@@ -66,13 +66,13 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		return api.HTTPErrorResponse(response, err)
 	}
 	if v, ok := settings.GetBackupApiEnabledOk(); ok && *v && !opts.disable {
-		fmt.Fprintln(opts.Out, "Backup API is already enabled.")
+		fmt.Fprintln(opts.Out, "The Backup API is already enabled")
 		return nil
 	}
 	var message string
 	if opts.disable {
 		settings.SetBackupApiEnabled(false)
-		message = "backup API has been disabled."
+		message = "The Backup API has been disabled"
 	} else {
 		hasStdin := false
 		stat, err := os.Stdin.Stat()
@@ -85,7 +85,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		}
 		settings.SetBackupApiEnabled(true)
 		settings.SetBackupPassphrase(answer)
-		message = "Backup API and passphrase has been updated."
+		message = "The Backup API and the passphrase have been updated"
 	}
 
 	response, err = client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(t).Execute()
@@ -100,12 +100,12 @@ func getPassPhrase(stdIn io.Reader, canPrompt, hasStdin bool) (string, error) {
 	if hasStdin {
 		buf, err := io.ReadAll(stdIn)
 		if err != nil {
-			return "", fmt.Errorf("could not read input from stdin %s", err)
+			return "", fmt.Errorf("Could not read input from stdin %s", err)
 		}
 		return strings.TrimSuffix(string(buf), "\n"), nil
 	}
 	if !canPrompt {
 		return "", cmdutil.ErrMissingTTY
 	}
-	return prompt.PasswordConfirmation("The passphrase to encrypt Appliance Backups when backup API is used:")
+	return prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
 }

@@ -28,7 +28,7 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 		Aliases: []string{"edit", "set"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 1 {
-				return fmt.Errorf("not enough arguments")
+				return fmt.Errorf("Not enough arguments")
 			}
 			if !util.IsUUID(args[0]) {
 				return fmt.Errorf("%s: %s", InvalidUUIDError, args[0])
@@ -70,7 +70,7 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			return err
 		}
 		if !ok {
-			return fmt.Errorf("file not found: %s", path)
+			return fmt.Errorf("File not found: %s", path)
 		}
 		file, err := os.ReadFile(path)
 		if err != nil {
@@ -81,7 +81,7 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		}
 	} else {
 		if len(args) < 2 {
-			return fmt.Errorf("not enough arguments")
+			return fmt.Errorf("Not enough arguments")
 		}
 		arg := args[1]
 
@@ -100,7 +100,7 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		case "add", "append":
 			// adding tag or label requires at least four arguments
 			if len(args) < 4 {
-				return fmt.Errorf("not enough arguments")
+				return fmt.Errorf("Not enough arguments")
 			}
 			noun := args[2]
 			value := args[3]
@@ -108,17 +108,17 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			case "label":
 				keyValue := strings.Split(value, "=")
 				if len(keyValue) < 2 {
-					return fmt.Errorf("no key or value provided for label")
+					return fmt.Errorf("No key or value provided for label")
 				}
 				dto.Labels[keyValue[0]] = keyValue[1]
 			case "tag":
 				dto.Tags = append(toUpdate.GetTags(), value)
 			default:
-				return fmt.Errorf("unknown argument %s", noun)
+				return fmt.Errorf("Unknown argument %s", noun)
 			}
 		case "remove", "rm":
 			if len(args) < 4 {
-				return fmt.Errorf("not enough arguments")
+				return fmt.Errorf("Not enough arguments")
 			}
 			noun := args[2]
 			value := args[3]
@@ -126,7 +126,7 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			case "label":
 				_, ok := dto.Labels[value]
 				if !ok {
-					return fmt.Errorf("failed to remove label %s: label does not exist", value)
+					return fmt.Errorf("Failed to remove label %s: label does not exist", value)
 				}
 				delete(dto.Labels, value)
 			case "tag":

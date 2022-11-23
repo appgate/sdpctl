@@ -42,7 +42,7 @@ func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
 	// If there's an existing bearer token present, we will clear it and renew the authentication
 	if err := cfg.ClearBearer(); err != nil {
 		// not a fatal error
-		log.WithError(err).Warn("failed to delete auth token")
+		log.WithError(err).Warn("Failed to delete auth token")
 	}
 	if err := auth.Signin(opts.f); err != nil {
 		return err

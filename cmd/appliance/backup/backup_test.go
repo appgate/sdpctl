@@ -159,7 +159,7 @@ func TestBackupCmdFailedOnServer(t *testing.T) {
 
 	_, err := cmd.ExecuteC()
 	if err == nil {
-		reg := regexp.MustCompile(`could not backup controller: something went wrong`)
+		reg := regexp.MustCompile(`could not backup the Controller: something went wrong`)
 		if res := reg.MatchString(err.Error()); !res {
 			t.Fatalf("result matching failed. WANT: %+v, GOT: %+v", reg.String(), string(err.Error()))
 		}
@@ -205,7 +205,7 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
-	reg := regexp.MustCompile(`Using '--no-interactive' flag while backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again.`)
+	reg := regexp.MustCompile(`Using '--no-interactive' flag while Backup API is disabled. Use the 'sdpctl appliance backup api' command to enable it before trying again`)
 	_, err := cmd.ExecuteC()
 	if err != nil {
 		if !reg.MatchString(err.Error()) {

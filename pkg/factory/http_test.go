@@ -102,7 +102,7 @@ func TestNew(t *testing.T) {
 					Insecure: true,
 					Version:  15,
 					Debug:    false,
-					URL:      "https://appgate.controller.com/admin",
+					URL:      "https://controller.company.com:8443",
 				},
 			},
 		},

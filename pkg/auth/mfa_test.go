@@ -470,7 +470,7 @@ func TestAuthPushOTP(t *testing.T) {
 				t.Errorf("Auth.PushOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err != nil && tt.wantErr && err.Error() != "Invalid one-time password." {
+			if err != nil && tt.wantErr && err.Error() != "Invalid one-time password" {
 				t.Fatalf("Invalid error message, got %s", err)
 			}
 			t.Logf("Got %+v", got)

@@ -1,0 +1,74 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>sdpctl Reference Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+  <script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">Quick Start Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
+      <div class="content text-left">
+      <h2 class="text-left margin-bottom">sdpctl appliance upgrade prepare</h2><p>Prepare the appliances for upgrade</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Prepare an upgrade but do NOT install it.
+This means the upgrade file will be downloaded/uploaded to all the appliances,
+the signature verified as well as any other preconditions applicable at this point.</p><p>There are initial checks on the filename before attempting to upload it to the Appliances.
+If a local upgrade image is uploaded to the Controller, the only pre-condition is that the filename ends with the file extension &lsquo;.img.zip&rsquo;.
+If, however, the file is hosted on a server and a URL is provided to the prepare command, the filename should also contain a version, such as 6.0.3.
+Otherwise the prepare will fail.</p><p>Note that the &lsquo;&ndash;image&rsquo; flag also accepts URL:s. The Appliances will then attempt to download
+the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade prepare [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # prepare an upgrade from a local upgrade image
+  &gt; sdpctl appliance upgrade prepare --image=/path/to/upgrade-5.5.3.img.zip
+
+  # prepare an upgrade from remote upgrade image
+  &gt; sdpctl appliance upgrade prepare --image=https://upgrade-host.com/upgrade-5.5.3.img.zip
+
+  # use the primary Controller as an upgrade image host for the other appliances
+  &gt; sdpctl appliance upgrade prepare --image=https://upgrade-host.com/upgrade-5.5.3.img.zip --host-on-controller
+
+  # prepare only certain appliances based on a filter
+  &gt; sdpctl appliance upgrade prepare --image=/path/to/image-5.5.3.img.zip --include function=controller
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>      --actual-hostname string   If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname
+      --dev-keyring              Use the development keyring to verify the upgrade image
+      --force                    Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance
+  -h, --help                     help for prepare
+      --host-on-controller       Use the primary Controller as image host when uploading from remote source
+      --image string             Upgrade image file or URL
+      --no-interactive           Suppress interactive prompt with auto accept
+      --throttle int             Upgrade is done in batches using a throttle value. You can control the throttle using this flag (default 5)
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+      --ci-mode                  Log to stderr instead of file and disable progress-bars
+      --debug                    Enable debug logging
+  -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
+                                 Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
+  -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
+      --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string           Profile configuration to use
+  -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>

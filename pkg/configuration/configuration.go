@@ -43,7 +43,7 @@ func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	}
 	prefix, err := c.KeyringPrefix()
 	if err != nil {
-		return "", fmt.Errorf("could not retrieve token for current host configuration %w", err)
+		return "", fmt.Errorf("Could not retrieve token for current host configuration %w", err)
 	}
 	v, err := keyring.GetBearer(prefix)
 	if err != nil {
@@ -120,7 +120,7 @@ func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {
 	return false
 }
 
-var ErrNoAddr = errors.New("no valid address set, run 'sdpctl configure' or set SDPCTL_URL")
+var ErrNoAddr = errors.New("No valid address set, run 'sdpctl configure' or set SDPCTL_URL")
 
 func NormalizeURL(u string) (string, error) {
 	if len(u) <= 0 {
@@ -241,10 +241,10 @@ func (c *Config) StoreCredentials(username, password string) error {
 		return err
 	}
 	if err := keyring.SetUsername(prefix, username); err != nil {
-		return fmt.Errorf("could not store username in keychain %w", err)
+		return fmt.Errorf("Could not store username in keychain %w", err)
 	}
 	if err := keyring.SetPassword(prefix, password); err != nil {
-		return fmt.Errorf("could not store password in keychain %w", err)
+		return fmt.Errorf("Could not store password in keychain %w", err)
 	}
 
 	return nil
@@ -262,7 +262,7 @@ func (c *Config) GetHost() (string, error) {
 }
 
 // KeyringPrefix is the raw string values that will be used in the keyring package
-// it needs to be a unique, reproducible value for the selected collective + profile.
+// it needs to be a unique, reproducible value for the selected Collective + profile.
 // Downstream, this string value will be converted to a integer value (pkg/hashcode)
 // and used as a prefix when storing values in the keyring/keychain.
 func (c *Config) KeyringPrefix() (string, error) {

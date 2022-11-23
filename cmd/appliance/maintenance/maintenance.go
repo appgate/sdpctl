@@ -72,7 +72,7 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 	switch len(args) {
 	case 0:
 		if opts.noInteractive {
-			return errors.New("provide controller UUID when using --no-interactive, sdpctl appliance maintenance disable controllerUUID")
+			return errors.New("Provide the Controller UUID when using --no-interactive, sdpctl appliance maintenance disable controllerUUID")
 		}
 		applianceID, err := appliancepkg.PromptSelect(ctx, a, filter(primaryControllerHostname))
 		if err != nil {
@@ -84,7 +84,7 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 			opts.controllerID = args[0]
 			return nil
 		}
-		return errors.New("expected first argument to be appliance UUID")
+		return errors.New("Expected first argument to be appliance UUID")
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 func toggleRun(cmd *cobra.Command, args []string, opts *toggleOptions) error {
 	cfg := opts.Config
 	if cfg.Version < 15 {
-		return errors.New("maintenance mode is not supported on this version.")
+		return errors.New("Maintenance mode is not supported on this version")
 	}
 	a, err := opts.Appliance(cfg)
 	if err != nil {
@@ -113,9 +113,9 @@ This is a superuser function and should only be used if you know what you are do
 			return err
 		}
 
-		confirmation := fmt.Sprintf("Are you really sure you want to disable maintenance mode on %s?", appliance.GetName())
+		confirmation := fmt.Sprintf("Are you sure you want to disable maintenance mode on %s?", appliance.GetName())
 		if opts.enabled {
-			confirmation = fmt.Sprintf("Are you really sure you want to enable maintenance mode on %s?", appliance.GetName())
+			confirmation = fmt.Sprintf("Are you sure you want to enable maintenance mode on %s?", appliance.GetName())
 		}
 		if err := prompt.AskConfirmation(confirmation); err != nil {
 			return err

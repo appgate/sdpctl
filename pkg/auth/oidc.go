@@ -82,7 +82,7 @@ type oidcHandler struct {
 }
 
 // oidcRedirectAddress is the local webserver for the redirect loop used with oidc provider
-// it uses the same port as the appgate sdp client for consistency.
+// it uses the same port as the client for consistency.
 const (
 	oidcPort            string = ":29001"
 	oidcRedirectAddress string = "http://localhost" + oidcPort

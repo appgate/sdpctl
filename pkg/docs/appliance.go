@@ -2,13 +2,13 @@ package docs
 
 var (
 	ApplianceRootDoc = CommandDoc{
-		Short: "interact with Appgate SDP Appliances",
-		Long: `The base command to access and interact with your Appgate SDP Appliances. This command does not do anything by itself, it is
+		Short: "Manage the appliances and perform tasks such as backups, ugprades, metrics etc",
+		Long: `The base command to manage the appliances. This command does not do anything by itself, it is
 used together with one of the available sub-commands listed below.`,
 	}
 	ApplianceListDoc = CommandDoc{
-		Short: "List all Appgate SDP Appliances",
-		Long: `List all Appliances in the Appgate SDP Collective. The appliances will be listed in no particular order. Using without arguments
+		Short: "List all appliances",
+		Long: `List all appliances in the Collective. The appliances will be listed in no particular order. Using without arguments
 will print a table view with a limited set of information. Using the command with the provided '--json' flag will print out a more detailed
 list view in json format. The list command can also be combined with the global '--include' and '--exclude' flags`,
 		Examples: []ExampleDoc{
@@ -31,12 +31,12 @@ gateway                                                ec3b6270-ad7e-447a-a6e6-8
 		},
 	}
 	ApplianceBackupDoc = CommandDoc{
-		Short: "Perform backup of the Appgate SDP Collective appliances",
-		Long: `The backup command will request a backup from the API and download them to a destination directory. The command requires the backup API to be enabled in
-the Appgate SDP Collective. In case the backup API is not enabled when executing the backup command, you will be prompted to activate it.
+		Short: "Perform backup of the appliances",
+		Long: `The backup command will request a backup from the API and download them to a destination directory. The command requires the Backup API to be enabled in
+the Collective. In case the Backup API is not enabled when executing the backup command, you will be prompted to activate it.
 
-There are multiple options for selecting which Appgate SDP Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
-the Appgate SDP Appliance you want to take a backup of.
+There are multiple options for selecting which Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
+the appliance you want to take a backup of.
 
 The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an 'appgate' directory
 will be created there if it doesn't already exist and the backups will be downloaded to that. In case custom destination directory is specified by using the
@@ -48,10 +48,10 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 				Description: "Backup with no arguments or flags will prompt for appliance",
 				Command:     "sdpctl appliance backup",
 				Output: `? Backup API is disabled on the appliance. Do you want to enable it now? Yes
-? The passphrase to encrypt Appliance Backups when backup API is used: <password> # only shows if backup API is not enabled
-? Confirm your passphrase: <password> # only shows if backup API is not enabled
+? The passphrase to encrypt the appliance backups when the Backup API is used: <password> # only shows if Backup API is not enabled
+? Confirm your passphrase: <password> # only shows if Backup API is not enabled
 ? select appliances to backup:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
-> [ ]  controller
+❯ [ ]  controller
   [ ]  gateway`,
 			},
 			{
@@ -59,11 +59,11 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 				Command:     "sdpctl appliance backup --destination=path/to/backup/destination",
 			},
 			{
-				Description: "backup only primary controller using flag",
+				Description: "backup only the primary Controller using flag",
 				Command:     "sdpctl appliance backup --primary",
 			},
 			{
-				Description: "backup all Appgate SDP Appliances",
+				Description: "backup all appliances",
 				Command:     "sdpctl appliance backup --all",
 			},
 			{
@@ -73,25 +73,25 @@ For more information on the backup process, go to: https://sdphelp.appgate.com/a
 		},
 	}
 	ApplianceBackupAPIDoc = CommandDoc{
-		Short: "Controls the state of the backup API.",
-		Long: `This command controls the state of the backup API on the Appgate SDP Collective.
-You will be prompted for a passphrase for the backups when enabling the backup API using this command.
+		Short: "Controls the state of the Backup API",
+		Long: `This command controls the state of the Backup API on the Collective.
+You will be prompted for a passphrase for the backups when enabling the Backup API using this command.
 The passphrase is required.`,
 		Examples: []ExampleDoc{
 			{
-				Description: "enable the backup API",
+				Description: "enable the Backup API",
 				Command:     "appgate appliance backup api",
 			},
 			{
-				Description: "disable the backup API",
+				Description: "disable the Backup API",
 				Command:     "sdpctl appliance backup api --disable",
 			},
 		},
 	}
 	ApplianceUpgradeDoc = CommandDoc{
-		Short: "Perform appliance upgrade on the Appgate SDP Collective",
+		Short: "Perform appliance upgrade on the Collective",
 		Long: `The upgrade procedure is divided into two parts,
-  - prepare: Upload the image new appliance image to the Appgate SDP Collective.
+  - prepare: Upload the image new appliance image to the Collective.
   - complete: Install a prepared upgrade on the secondary partition and perform a reboot to make the second partition the primary.
 
 Additional subcommands included are:
@@ -100,8 +100,8 @@ Additional subcommands included are:
 `,
 	}
 	ApplianceUpgradeStatusDoc = CommandDoc{
-		Short: "Display the upgrade status of Appgate SDP Appliances",
-		Long: `Display the upgrade status of Appgate SDP Appliances in either table or json format.
+		Short: "Display the upgrade status of Appliances",
+		Long: `Display the upgrade status of Appliances in either table or json format.
 Upgrade statuses:
 - idle:         No upgrade is initiated
 - started:      Upgrade process has started
@@ -127,15 +127,15 @@ Upgrade statuses:
 		},
 	}
 	ApplianceUpgradePrepareDoc = CommandDoc{
-		Short: "prepare appliances for upgrade",
+		Short: "Prepare the appliances for upgrade",
 		Long: `Prepare an upgrade but do NOT install it.
 This means the upgrade file will be downloaded/uploaded to all the appliances,
 the signature verified as well as any other preconditions applicable at this point.
 
 There are initial checks on the filename before attempting to upload it to the Appliances.
-A valid filename ends with '.img.zip' and also needs to have a semver included somewhere
-in the name, eg. 'upgrade.img.zip' will not not be valid, but 'upgrade5.5.3.img.zip' is
-considered valid.
+If a local upgrade image is uploaded to the Controller, the only pre-condition is that the filename ends with the file extension '.img.zip'.
+If, however, the file is hosted on a server and a URL is provided to the prepare command, the filename should also contain a version, such as 6.0.3.
+Otherwise the prepare will fail.
 
 Note that the '--image' flag also accepts URL:s. The Appliances will then attempt to download
 the upgrade image using the provided URL. It will fail if the Appliances cannot access the URL.`,
@@ -149,7 +149,7 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 				Command:     "sdpctl appliance upgrade prepare --image=https://upgrade-host.com/upgrade-5.5.3.img.zip",
 			},
 			{
-				Description: "use primary controller as an upgrade image host for the other appliances",
+				Description: "use the primary Controller as an upgrade image host for the other appliances",
 				Command:     "sdpctl appliance upgrade prepare --image=https://upgrade-host.com/upgrade-5.5.3.img.zip --host-on-controller",
 			},
 			{
@@ -170,11 +170,11 @@ Note that you can cancel upgrades on specific appliances by using the '--include
 '--exclude' flags in combination with this command.`,
 		Examples: []ExampleDoc{
 			{
-				Description: "cancel upgrade on all Appgate SDP Appliances",
+				Description: "cancel upgrade on all Appliances",
 				Command:     "sdpctl appliance upgrade cancel",
 			},
 			{
-				Description: "cancel upgrade on selected Appgate SDP Appliances",
+				Description: "cancel upgrade on selected Appliances",
 				Command:     "sdpctl appliance upgrade cancel --include function=gateway",
 			},
 			{
@@ -184,7 +184,7 @@ Note that you can cancel upgrades on specific appliances by using the '--include
 		},
 	}
 	ApplianceUpgradeCompleteDoc = CommandDoc{
-		Short: "complete the upgrade on prepared appliances",
+		Short: "Complete the upgrade on prepared appliances",
 		Long: `Complete a prepared upgrade.
 Install a prepared upgrade on the secondary partition
 and perform a reboot to make the second partition the primary.`,
@@ -194,7 +194,7 @@ and perform a reboot to make the second partition the primary.`,
 				Command:     "sdpctl appliance upgrade complete",
 			},
 			{
-				Description: "backup primary controller before completing",
+				Description: "backup the primary Controller before completing",
 				Command:     "sdpctl appliance upgrade complete --backup",
 			},
 			{
@@ -204,9 +204,9 @@ and perform a reboot to make the second partition the primary.`,
 		},
 	}
 	ApplianceMetricsDoc = CommandDoc{
-		Short: "Get all the Prometheus metrics for the given Appgate SDP Appliance",
-		Long: `The 'metric' command will return a list of all the available metrics provided by an Appgate SDP Appliance for use in Prometheus.
-If no Appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. A second argument can be used
+		Short: "Get all the Prometheus metrics for the given Appliance",
+		Long: `The 'metric' command will return a list of all the available metrics provided by an appliance for use in Prometheus.
+If no appliance ID is given as an argument, the command will prompt for which Appliance you want metrics for. A second argument can be used
 to get a specific metric name. This needs to be an exact match.`,
 		Examples: []ExampleDoc{
 			{
@@ -233,7 +233,7 @@ the IPs in the specific network or set of protected resources.`,
 				Command:     "sdpctl appliance resolve-name d750ad44-7c6a-416d-773b-f805a2272418 dns://google.se",
 			},
 			{
-				Description: "If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on.",
+				Description: "If you omit appliance id, you will be prompted with all online gateways, and you can select one to test on",
 				Command:     "sdpctl appliance resolve-name dns://google.se",
 				Output: `? select appliance: gateway-9a9b8b70-faaa-4059-a061-761ce13783ba-site1 - Default Site - []
 142.251.36.3
@@ -242,9 +242,9 @@ the IPs in the specific network or set of protected resources.`,
 		},
 	}
 	ApplianceResolveNameStatusDoc = CommandDoc{
-		Short: "Get the status of name resolution on a Gateway.",
+		Short: "Get the status of name resolution on a Gateway",
 		Long: `Get the status of name resolution on a Gateway. It lists all the subscribed resource names from all the connected
-Clients and shows the resolution results.`,
+Clients and shows the resolution results`,
 		Examples: []ExampleDoc{
 			{
 				Description: "with a specific gateway appliance id",
@@ -269,8 +269,8 @@ Clients and shows the resolution results.`,
 		},
 	}
 	ApplianceStatsDocs = CommandDoc{
-		Short: "show Appgate SDP Appliance stats",
-		Long: `Show current stats, such as current system resource consumption, Appliance version etc, for the Appgate SDP Appliances.
+		Short: "Show appliance stats",
+		Long: `Show current stats, such as current system resource consumption, appliance version etc, for the appliances.
 Using the '--json' flag will return a more detailed list of stats in json format.
 
 NOTE: Although the '--include' and '--exclude' flags are provided as options here, they don't have any actual effect on the command.`,
@@ -287,7 +287,7 @@ NOTE: Although the '--include' and '--exclude' flags are provided as options her
 	}
 
 	ApplianceLogsDoc = CommandDoc{
-		Short: "download zip bundle with logs",
+		Short: "Download zip bundle with logs",
 		Long:  `Download a zip bundle with all logs from a appliance`,
 		Examples: []ExampleDoc{
 			{

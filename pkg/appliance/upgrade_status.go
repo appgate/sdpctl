@@ -38,7 +38,7 @@ type UpgradeStatus struct {
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) backoff.Operation {
 	name := appliance.GetName()
 	logEntry := log.WithField("appliance", name)
-	logEntry.WithField("want", desiredStatuses).Info("polling for upgrade status")
+	logEntry.WithField("want", desiredStatuses).Info("Polling for upgrade status")
 	hasRebooted := false
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -47,22 +47,22 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		if err != nil {
 			if tracker != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
-					tracker.Update("rebooting, waiting for appliance to come back online")
+					tracker.Update("Rebooting, waiting for appliance to come back online")
 					hasRebooted = true
 				} else if hasRebooted {
-					tracker.Update("switching partition")
+					tracker.Update("Switching partition")
 				} else {
-					tracker.Update("installing")
+					tracker.Update("Installing")
 				}
 			}
-			logEntry.WithError(err).Debug("appliance unreachable")
+			logEntry.WithError(err).Debug("Appliance unreachable")
 			return err
 		}
 		var s string
 		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			logEntry.WithField("current", s).Debug("received upgrade status")
+			logEntry.WithField("current", s).Debug("Received upgrade status")
 			if tracker != nil {
 				tracker.Update(s)
 			}
@@ -74,7 +74,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
 			}
 			if util.InSlice(s, desiredStatuses) {
-				logEntry.Info("reached wanted upgrade status")
+				logEntry.Info("Reached wanted upgrade status")
 				return nil
 			}
 		}

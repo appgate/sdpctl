@@ -2586,7 +2586,7 @@ func TestGetRealHostname(t *testing.T) {
 		{
 			name:     "no hostname",
 			wantErr:  true,
-			matchErr: regexp.MustCompile("failed to determine hostname for controller admin interface"),
+			matchErr: regexp.MustCompile("Failed to determine hostname for the Controller admin nterface"),
 		},
 	}
 	for _, tt := range testCases {
@@ -2644,7 +2644,7 @@ func TestValidateHostname(t *testing.T) {
 			hostname:      "play.google.com",
 			adminHostName: "play.google.com",
 			wantErr:       true,
-			want:          *regexp.MustCompile(fmt.Sprintf(`the given hostname %s does not resolve to a unique ip\.`, "play.google.com")),
+			want:          *regexp.MustCompile(fmt.Sprintf(`The given hostname %s does not resolve to a unique ip\.`, "play.google.com")),
 		},
 		{
 			name:          "admin interface not hostname",

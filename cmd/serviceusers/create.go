@@ -65,7 +65,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			return err
 		}
 		if !ok {
-			return fmt.Errorf("file not found: %s", path)
+			return fmt.Errorf("File not found: %s", path)
 		}
 		file, err := os.ReadFile(path)
 		if err != nil {
@@ -106,7 +106,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		if hasStdin {
 			buf, err := io.ReadAll(opts.In)
 			if err != nil {
-				return fmt.Errorf("failed to read from stdin: %w", err)
+				return fmt.Errorf("Failed to read from stdin: %w", err)
 			}
 			password = strings.TrimSuffix(string(buf), "\n")
 		}
@@ -151,7 +151,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 	}
 
 	if len(users) <= 0 {
-		return fmt.Errorf("failed to create user(s): no user data provided")
+		return fmt.Errorf("Failed to create user(s): no user data provided")
 	}
 
 	var errs *multierror.Error

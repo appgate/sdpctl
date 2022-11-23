@@ -73,7 +73,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			desc:       "invalid label arguments",
 			args:       []string{"update", "1767c791-4001-429b-82cf-0a471cc2f5d2", "add", "label", "badlabel"},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`no key or value provided for label`),
+			wantErrOut: regexp.MustCompile(`No key or value provided for label`),
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
@@ -85,7 +85,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			desc:       "invalid tag arguments",
 			args:       []string{"update", "1767c791-4001-429b-82cf-0a471cc2f5d2", "add", "tag"},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`not enough arguments`),
+			wantErrOut: regexp.MustCompile(`Not enough arguments`),
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",

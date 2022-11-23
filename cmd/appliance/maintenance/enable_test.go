@@ -66,7 +66,7 @@ func TestNewEnableCmd(t *testing.T) {
 			args:       []string{"20e75a08-96c6-4ea3-833e-cdbac346e2ae", "true", "--no-interactive", "--json"},
 			httpStubs:  []httpmock.Stub{},
 			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`maintenance mode is not supported on this version`),
+			wantErrOut: regexp.MustCompile(`Maintenance mode is not supported on this version`),
 			version:    13,
 			wantJSON:   false,
 		},

@@ -79,7 +79,7 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			}
 
 			if len(ids) <= 0 {
-				return fmt.Errorf("no service users selected for deletion")
+				return fmt.Errorf("No service users selected for deletion")
 			}
 
 			var errs *multierror.Error

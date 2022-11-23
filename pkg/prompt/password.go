@@ -21,7 +21,7 @@ func PasswordConfirmation(message string) (string, error) {
 		return firstAnswer, err
 	}
 	if firstAnswer != secondAnswer {
-		return firstAnswer, errors.New("passphrase did not match")
+		return firstAnswer, errors.New("The passphrase did not match")
 	}
 	return firstAnswer, nil
 }

@@ -32,7 +32,7 @@ func TestApplianceChangeGet(t *testing.T) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
 						fmt.Fprint(rw, string(`{
-                            "details": "Disabling controller maintenance mode",
+                            "details": "Disabling the Controller maintenance mode",
                             "id": "96525303-ef06-4f9b-922c-4a940e5b505e",
                             "status": "running"
                         }`))
@@ -44,7 +44,7 @@ func TestApplianceChangeGet(t *testing.T) {
 				applianceID: "de0d2354-13cf-4c9e-8044-80563e340764",
 			},
 			want: &openapi.AppliancesIdChangeChangeIdGet200Response{
-				Details: openapi.PtrString("Disabling controller maintenance mode"),
+				Details: openapi.PtrString("Disabling the Controller maintenance mode"),
 				Id:      "96525303-ef06-4f9b-922c-4a940e5b505e",
 				Status:  "running",
 			},

@@ -1,0 +1,81 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>sdpctl Reference Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+  <script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">Quick Start Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
+      <div class="content text-left">
+      <h2 class="text-left margin-bottom">sdpctl appliance backup</h2><p>Perform backup of the appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>The backup command will request a backup from the API and download them to a destination directory. The command requires the Backup API to be enabled in
+the Collective. In case the Backup API is not enabled when executing the backup command, you will be prompted to activate it.</p><p>There are multiple options for selecting which Appliances to backup, using flags or optional arguments. The arguments are expected to be the name of
+the appliance you want to take a backup of.</p><p>The default destination directory is set to be the users default downloads directory on the system. If the default destination is used, an &lsquo;appgate&rsquo; directory
+will be created there if it doesn&rsquo;t already exist and the backups will be downloaded to that. In case custom destination directory is specified by using the
+&lsquo;&ndash;destination&rsquo; flag, the extra &lsquo;appgate&rsquo; directory will not be created. The user also has to have write privileges on the specified directory.</p><p>For more information on the backup process, go to: <a href="https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html">https://sdphelp.appgate.com/adminguide/v5.5/backup-script.html</a></p><pre class="code-editor margin-bottom"><code>sdpctl appliance backup [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # Backup with no arguments or flags will prompt for appliance
+  &gt; sdpctl appliance backup
+  ? Backup API is disabled on the appliance. Do you want to enable it now? Yes
+  ? The passphrase to encrypt the appliance backups when the Backup API is used: &lt;password&gt; # only shows if Backup API is not enabled
+  ? Confirm your passphrase: &lt;password&gt; # only shows if Backup API is not enabled
+  ? select appliances to backup:  [Use arrows to move, space to select, &lt;right&gt; to all, &lt;left&gt; to none, type to filter]
+  ❯ [ ]  controller
+    [ ]  gateway
+
+  # download backups to a custom directory
+  &gt; sdpctl appliance backup --destination=path/to/backup/destination
+
+  # backup only the primary Controller using flag
+  &gt; sdpctl appliance backup --primary
+
+  # backup all appliances
+  &gt; sdpctl appliance backup --all
+
+  # backup using '--include' and '--exclude' flags
+  &gt; sdpctl appliance backup --include=function=controller --exclude=tag=secondary
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>      --all                  backup all appliances in the Collective
+      --current              backup the current peer Controller
+  -d, --destination string   backup destination directory (default &quot;$HOME/Downloads/appgate/backup&quot;)
+  -h, --help                 help for backup
+      --primary              backup the primary Controller
+      --quiet                backup summary will not be printed if setting this flag
+      --with strings         include extra data in backup (audit, logs)
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+      --ci-mode                  Log to stderr instead of file and disable progress-bars
+      --debug                    Enable debug logging
+  -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
+                                 Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
+  -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
+      --no-interactive           Suppress interactive prompt with auto accept
+      --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string           Profile configuration to use
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
+<li><p><a href="sdpctl_appliance_backup_api.html">sdpctl appliance backup api</a>	 - Controls the state of the Backup API</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>

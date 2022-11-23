@@ -51,10 +51,10 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 			switch len(args) {
 			case 0:
 				if noInteractive || !opts.CanPrompt {
-					return errors.New("can't prompt, You need to provide all arguments, for example 'sdpctl configure appgate.controller.com'")
+					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure appgate.controller.com'")
 				}
 				q := &survey.Input{
-					Message: "Enter the url for the controller API (example https://appgate.controller.com/admin)",
+					Message: "Enter the url for the Controller API (example https://controller.company.com:8443)",
 					Default: opts.Config.URL,
 				}
 
@@ -65,7 +65,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 			case 1:
 				opts.URL = args[0]
 			default:
-				return fmt.Errorf("accepts at most %d arg(s), received %d", 1, len(args))
+				return fmt.Errorf("Accepts at most %d arg(s), received %d", 1, len(args))
 			}
 			return nil
 		},
@@ -83,7 +83,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
 	if len(opts.URL) < 1 {
-		return errors.New("missing URL for appgate sdp controller")
+		return errors.New("Missing URL for the Controller")
 	}
 	if len(opts.PEM) > 0 {
 		opts.PEM = filesystem.AbsolutePath(opts.PEM)
@@ -94,7 +94,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 	u, err := configuration.NormalizeURL(opts.URL)
 	if err != nil {
-		return fmt.Errorf("could not determine URL for %s %s", opts.URL, err)
+		return fmt.Errorf("Could not determine URL for %s %s", opts.URL, err)
 	}
 	viper.Set("url", u)
 	opts.Config.URL = u
@@ -102,7 +102,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 
 	h, err := opts.Config.GetHost()
 	if err != nil {
-		return fmt.Errorf("could not determine hostname for %s %s", opts.URL, err)
+		return fmt.Errorf("Could not determine hostname for %s %s", opts.URL, err)
 	}
 	if err := network.ValidateHostnameUniqueness(h); err != nil {
 		fmt.Fprintln(opts.StdErr, err.Error())
@@ -110,7 +110,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 
 	if err := viper.WriteConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			// if its a new collective config, and the directory is empty
+			// if its a new Collective config, and the directory is empty
 			// try to write a plain config
 			if err := viper.SafeWriteConfig(); err != nil {
 				return err
@@ -119,7 +119,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 	// Clear old credentials when configuring
 	if err := opts.Config.ClearCredentials(); err != nil {
-		log.Warnf("ran configure command, unable to clear credentials %s", err)
+		log.Warnf("Ran configure command, unable to clear credentials %s", err)
 	}
 	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
 	fmt.Fprintln(opts.Out, "Configuration updated successfully")

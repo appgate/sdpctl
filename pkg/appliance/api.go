@@ -22,7 +22,7 @@ type Appliance struct {
 	ApplianceStats      WaitForApplianceStatus
 }
 
-// List from the appgate sdp collective
+// List from the Collective
 // Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
 func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string) ([]openapi.Appliance, error) {
 	appliances, response, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
@@ -167,10 +167,10 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 	response, err := httpClient.Do(req)
 	if err != nil {
 		if response == nil {
-			return fmt.Errorf("no response during upload %w", err)
+			return fmt.Errorf("No response during upload %w", err)
 		}
 		if response.StatusCode == http.StatusConflict {
-			return fmt.Errorf("already exists %w", err)
+			return fmt.Errorf("Already exists %w", err)
 		}
 		return api.HTTPErrorResponse(response, err)
 	}
@@ -185,10 +185,10 @@ func (a *Appliance) UploadToController(ctx context.Context, url, filename string
 	}).Execute()
 	if err != nil {
 		if response == nil {
-			return fmt.Errorf("no response during upload %w", err)
+			return fmt.Errorf("No response during upload %w", err)
 		}
 		if response.StatusCode == http.StatusConflict {
-			return fmt.Errorf("already exists %w", err)
+			return fmt.Errorf("Already exists %w", err)
 		}
 		return api.HTTPErrorResponse(response, err)
 	}

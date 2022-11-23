@@ -63,7 +63,7 @@ The default path to the config file is "$XDG_CONFIG_HOME/sdpctl" or "$HOME/.conf
 
 Available Variables:
   SDPCTL_URL:
-    Description: URL to the controller API endpoint, for example https://appgate.acme.com:8443/admin
+    Description: URL to the Controller API endpoint, for example https://appgate.acme.com:8443/admin
   SDPCTL_PROVIDER:
     Description: Display name of the Identity Provider name. Used during sign in
     Default: local
@@ -73,10 +73,10 @@ Available Variables:
     Default: false
   SDPCTL_PEM_FILEPATH:
     Description: If sdpctl is configured insecure:false, you need to append this configuration and point
-                 to a valid PEM file used by the controller.
+                 to a valid PEM file used by the Controller.
   SDPCTL_API_VERSION:
-    Description: Client peer version used to communicate with the controller API, default value will be computed based on the
-                 primary controller appliance version.
+    Description: Client peer version used to communicate with the Controller API, default value will be computed based on the
+                 primary Controller appliance version.
   SDPCTL_BEARER:
     Description: The Bearer authentication, computed from 'sdpctl configure signin'
   SDPCTL_USERNAME:

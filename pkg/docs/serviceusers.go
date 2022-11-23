@@ -2,12 +2,12 @@ package docs
 
 var (
 	ServiceUsersRoot = &CommandDoc{
-		Short:    "root command for managing service users in the Appgate SDP Collective",
+		Short:    "Manage Service Users",
 		Long:     "",
 		Examples: []ExampleDoc{},
 	}
 	ServiceUsersList = &CommandDoc{
-		Short: "list service users in the Appgate SDP Collective",
+		Short: "List service users in the Collective",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{
@@ -21,7 +21,7 @@ var (
 		},
 	}
 	ServiceUsersGet = &CommandDoc{
-		Short: "get detailed information about a service user",
+		Short: "Get detailed information about a service user",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{
@@ -31,7 +31,7 @@ var (
 		},
 	}
 	ServiceUsersCreate = &CommandDoc{
-		Short: "create a new service user",
+		Short: "Create a new service user",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{
@@ -52,7 +52,7 @@ var (
 		},
 	}
 	ServiceUsersUpdate = &CommandDoc{
-		Short: "update a service user",
+		Short: "Update a service user",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{
@@ -98,7 +98,7 @@ var (
 		},
 	}
 	ServiceUsersDelete = &CommandDoc{
-		Short: "delete one or more service user(s)",
+		Short: "Delete one or more service user(s)",
 		Long:  "",
 		Examples: []ExampleDoc{
 			{

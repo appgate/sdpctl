@@ -117,7 +117,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 
 				// guess version from filename
 				if opts.targetVersion, err = appliancepkg.ParseVersionString(opts.filename); err != nil {
-					log.WithField("filename", opts.filename).Debug("failed to guess version from filename")
+					log.WithField("filename", opts.filename).Debug("Failed to guess version from filename")
 					return err
 				}
 			}
@@ -153,7 +153,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		RunE: func(c *cobra.Command, args []string) error {
 			h, err := opts.Config.GetHost()
 			if err != nil {
-				return fmt.Errorf("could not determine hostname for %s", err)
+				return fmt.Errorf("Could not determine hostname for %s", err)
 			}
 			if err := network.ValidateHostnameUniqueness(h); err != nil {
 				return err
@@ -163,13 +163,13 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	flags := prepareCmd.Flags()
-	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "suppress interactive prompt with auto accept")
+	flags.BoolVar(&opts.NoInteractive, "no-interactive", false, "Suppress interactive prompt with auto accept")
 	flags.StringVarP(&opts.image, "image", "", "", "Upgrade image file or URL")
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", false, "Use the development keyring to verify the upgrade image")
-	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag.")
-	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use primary controller as image host when uploading from remote source.")
-	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname.")
-	flags.BoolVar(&opts.forcePrepare, "force", false, "force prepare of upgrade on appliances even though the version uploaded is the same or lower then the version already running on the appliance")
+	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag")
+	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
+	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
+	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
 
 	return prepareCmd
 }
@@ -177,7 +177,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 func checkImageFilename(i string) error {
 	// Check if its a valid filename
 	if rg := regexp.MustCompile(`\.img\.zip`); !rg.MatchString(i) {
-		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive.")
+		return errors.New("Invalid name on image file. The format is expected to be a .img.zip archive")
 	}
 	return nil
 }
@@ -323,7 +323,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		if len(appliances) <= 0 {
 			var errs *multierr.Error
-			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details."))
+			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details"))
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
 					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
@@ -338,7 +338,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	log.Infof("Primary controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
+	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
 
 	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData())
@@ -460,13 +460,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		if remoteFile.GetStatus() != appliancepkg.FileReady {
-			return fmt.Errorf("remote file %q is uploaded, but is in status %s - %s", opts.filename, remoteFile.GetStatus(), remoteFile.GetFailureReason())
+			return fmt.Errorf("Remote file %q is uploaded, but is in status %s - %s", opts.filename, remoteFile.GetStatus(), remoteFile.GetFailureReason())
 		}
 		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
 
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
-		fmt.Fprintf(opts.Out, "[%s] Primary controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
+		fmt.Fprintf(opts.Out, "[%s] The primary Controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 
 		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 		if err := a.UploadToController(ctx, opts.image, opts.filename); err != nil {
@@ -496,7 +496,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 				if status == appliancepkg.FileFailed {
 					reason := errors.New(remoteFile.GetFailureReason())
-					return fmt.Errorf("Upload to controller failed: %w", reason)
+					return fmt.Errorf("Upload to the Controller failed: %w", reason)
 				}
 				// Arbitrary sleep for not polling file status from the API too much
 				time.Sleep(time.Second * 2)
@@ -532,7 +532,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
 	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance, workers int) error {
 		var errs error
-		log.Infof("Remote file path for controller %s", remoteFilePath)
+		log.Infof("Remote file path for the Controller %s", remoteFilePath)
 		var (
 			count = len(appliances)
 			// qw is the FIFO queue that will run Upgrade concurrently on number of workers.
@@ -706,9 +706,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		deleteCtx, deleteCancel := context.WithTimeout(ctx, opts.timeout)
 		defer deleteCancel()
 		if err := a.DeleteFile(deleteCtx, opts.filename); err != nil {
-			log.Warnf("Failed to delete %s from controller %s", opts.filename, err)
+			log.Warnf("Failed to delete %s from the Controller %s", opts.filename, err)
 		}
-		log.Infof("File %s deleted from Controller", opts.filename)
+		log.Infof("File %s deleted from the Controller", opts.filename)
 	}
 	fmt.Fprintf(opts.Out, "\n[%s] PREPARE COMPLETE\n", time.Now().Format(time.RFC3339))
 	return nil
@@ -719,9 +719,7 @@ const prepareUpgradeMessage = `PREPARE SUMMARY
 1. Upload upgrade image {{.Filepath}} to Controller
 2. Prepare upgrade on the following appliances:
 
-{{ .ApplianceTable }}
-
-3. Delete upgrade image from Controller{{ if .SkipTable }}
+{{ .ApplianceTable }}{{ if .SkipTable }}
 
 The following appliances will be skipped:
 
