@@ -271,6 +271,9 @@ func applianceGroupHash(appliance openapi.Appliance) int {
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == appliance.GetId() {
+			if !StatsIsOnline(s) {
+				return nil, fmt.Errorf("can't get current version of %s, the appliance is offline", appliance.GetName())
+			}
 			return ParseVersionString(s.GetVersion())
 		}
 	}
