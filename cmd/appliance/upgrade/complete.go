@@ -510,7 +510,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) error {
 		g, ctx := errgroup.WithContext(ctx)
-		regex := regexp.MustCompile(`A reboot is required for the upgrade to go into effect`)
+		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		var p *tui.Progress
 		if !opts.ciMode {
