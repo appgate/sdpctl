@@ -18,13 +18,13 @@ import (
 )
 
 type apiOptions struct {
-	Config    *configuration.Config
-	Out       io.Writer
-	In        io.ReadCloser
-	CanPrompt bool
-	APIClient func(c *configuration.Config) (*openapi.APIClient, error)
-	debug     bool
-	disable   bool
+	Config        *configuration.Config
+	Out           io.Writer
+	In            io.ReadCloser
+	APIClient     func(c *configuration.Config) (*openapi.APIClient, error)
+	debug         bool
+	disable       bool
+	NoInteractive bool
 }
 
 // NewBackupAPICmd return a new Backup API command
@@ -35,7 +35,6 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 		debug:     f.Config.Debug,
 		Out:       f.IOOutWriter,
 		In:        f.Stdin,
-		CanPrompt: f.CanPrompt(),
 	}
 	var cmd = &cobra.Command{
 		Use:     "api",
@@ -43,6 +42,13 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceBackupAPIDoc.Long,
 		Example: docs.ApplianceBackupAPIDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
+			var err error
+			if opts.NoInteractive, err = c.Flags().GetBool("no-interactive"); err != nil {
+				return err
+			}
+			if !f.CanPrompt() {
+				opts.NoInteractive = true
+			}
 			return backupAPIrun(c, args, &opts)
 		},
 	}
@@ -79,7 +85,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
 			hasStdin = true
 		}
-		answer, err := getPassPhrase(opts.In, opts.CanPrompt, hasStdin)
+		answer, err := getPassPhrase(opts.In, !opts.NoInteractive, hasStdin)
 		if err != nil {
 			return err
 		}
@@ -105,7 +111,7 @@ func getPassPhrase(stdIn io.Reader, canPrompt, hasStdin bool) (string, error) {
 		return strings.TrimSuffix(string(buf), "\n"), nil
 	}
 	if !canPrompt {
-		return "", cmdutil.ErrMissingTTY
+		return "", fmt.Errorf("no interactive mode or %w", cmdutil.ErrMissingTTY)
 	}
 	return prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
 }
