@@ -254,6 +254,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
+	rebootRegex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
+	toReboot := []string{}
 	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
 		return err
@@ -266,6 +268,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					appliances = append(appliances[:i], appliances[i+1:]...)
 				}
 			}
+		} else if result.Status == appliancepkg.UpgradeStatusSuccess && rebootRegex.MatchString(result.Details) {
+			toReboot = append(toReboot, result.Name)
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
@@ -512,7 +516,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) error {
 		g, ctx := errgroup.WithContext(ctx)
-		regex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		var p *tui.Progress
 		if !opts.ciMode {
@@ -537,8 +540,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					t = p.AddTracker(i.GetName(), "upgraded")
 					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 				}
-				if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
-					return err
+				if !util.InSlice(i.GetName(), toReboot) {
+					if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
+						return err
+					}
 				}
 				logEntry.Info("Install the downloaded upgrade image to the other partition")
 				if !SwitchPartition {
@@ -549,7 +554,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					if err != nil {
 						return err
 					}
-					if regex.MatchString(status.GetDetails()) {
+					if rebootRegex.MatchString(status.GetDetails()) {
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
 							return err
 						}
