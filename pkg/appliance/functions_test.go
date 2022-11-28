@@ -2803,3 +2803,68 @@ func TestStatsIsOnline(t *testing.T) {
 		})
 	}
 }
+
+func TestGetApplianceVersion(t *testing.T) {
+	v61, _ := version.NewVersion("6.1.0")
+	type args struct {
+		appliance openapi.Appliance
+		stats     openapi.StatsAppliancesList
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *version.Version
+		wantErr bool
+	}{
+		{
+			name: "online OK",
+			args: args{
+				appliance: openapi.Appliance{
+					Name: "controller one",
+					Id:   openapi.PtrString("one"),
+				},
+				stats: openapi.StatsAppliancesList{
+					Data: []openapi.StatsAppliancesListAllOfData{
+						{
+							Id:      openapi.PtrString("one"),
+							Status:  openapi.PtrString("warning"),
+							Version: openapi.PtrString(v61.String()),
+						},
+					},
+				},
+			},
+			want:    v61,
+			wantErr: false,
+		},
+		{
+			name: "offline",
+			args: args{
+				appliance: openapi.Appliance{
+					Name: "controller two",
+					Id:   openapi.PtrString("two"),
+				},
+				stats: openapi.StatsAppliancesList{
+					Data: []openapi.StatsAppliancesListAllOfData{
+						{
+							Id: openapi.PtrString("two"),
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetApplianceVersion(tt.args.appliance, tt.args.stats)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetApplianceVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetApplianceVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

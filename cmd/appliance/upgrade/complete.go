@@ -285,6 +285,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// this is only needed when upgrading to version 6.0 from 5.x, so we need to check for this particular case
 	logForwardersAndServersAll := append(groups[appliancepkg.FunctionLogServer], groups[appliancepkg.FunctionLogForwarder]...)
 	logForwardersAndServers := []openapi.Appliance{}
+	v6, err := version.NewConstraint(">= 6.0.0-beta")
+	if err != nil {
+		return err
+	}
 	for _, lfs := range logForwardersAndServersAll {
 		upgradeStatus, err := a.UpgradeStatus(ctx, lfs.GetId())
 		if err != nil {
@@ -292,33 +296,31 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		currentVersion, err := appliancepkg.GetApplianceVersion(lfs, *initialStats)
 		if err != nil {
-			return err
+			log.Warn(err)
 		}
-		upgradeVersion, err := appliancepkg.ParseVersionString(upgradeStatus.GetDetails())
-		if err != nil {
-			return err
+		if currentVersion != nil {
+			upgradeVersion, err := appliancepkg.ParseVersionString(upgradeStatus.GetDetails())
+			if err != nil {
+				log.Warn(err)
+			}
+			if upgradeVersion != nil && v6.Check(upgradeVersion) && !v6.Check(currentVersion) {
+				for i, app := range additionalAppliances {
+					if lfs.GetId() == app.GetId() {
+						additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
+					}
+				}
+				isAlsoInControllers := false
+				for _, ctrl := range additionalControllers {
+					if lfs.GetId() == ctrl.GetId() {
+						isAlsoInControllers = true
+					}
+				}
+				if !isAlsoInControllers {
+					logForwardersAndServers = append(logForwardersAndServers, lfs)
+				}
+			}
 		}
 
-		v6, err := version.NewConstraint(">= 6.0.0-beta")
-		if err != nil {
-			return err
-		}
-		if v6.Check(upgradeVersion) && !v6.Check(currentVersion) {
-			for i, app := range additionalAppliances {
-				if lfs.GetId() == app.GetId() {
-					additionalAppliances = append(additionalAppliances[:i], additionalAppliances[i+1:]...)
-				}
-			}
-			isAlsoInControllers := false
-			for _, ctrl := range additionalControllers {
-				if lfs.GetId() == ctrl.GetId() {
-					isAlsoInControllers = true
-				}
-			}
-			if !isAlsoInControllers {
-				logForwardersAndServers = append(logForwardersAndServers, lfs)
-			}
-		}
 	}
 
 	primaryControllerUpgradeStatus, err := a.UpgradeStatus(ctx, primaryController.GetId())
