@@ -77,7 +77,7 @@ func TestBackupAPICommandAlreadyEnabled(t *testing.T) {
 		return a, nil
 	}
 	cmd := NewBackupAPICmd(f)
-
+	cmd.PersistentFlags().Bool("no-interactive", false, "")
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -162,7 +162,7 @@ func TestBackupAPICommand(t *testing.T) {
 		return a, nil
 	}
 	cmd := NewBackupAPICmd(f)
-
+	cmd.PersistentFlags().Bool("no-interactive", false, "")
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	stubber, teardown := prompt.InitAskStubber(t)
