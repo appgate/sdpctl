@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -254,7 +253,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	rebootRegex := regexp.MustCompile(`a reboot is required for the upgrade to go into effect`)
 	toReboot := []string{}
 	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
@@ -268,7 +266,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					appliances = append(appliances[:i], appliances[i+1:]...)
 				}
 			}
-		} else if result.Status == appliancepkg.UpgradeStatusSuccess && rebootRegex.MatchString(result.Details) {
+		} else if result.Status == appliancepkg.UpgradeStatusSuccess {
 			toReboot = append(toReboot, result.Name)
 		}
 	}
@@ -554,7 +552,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					if err != nil {
 						return err
 					}
-					if rebootRegex.MatchString(status.GetDetails()) {
+					if status.GetStatus() == appliancepkg.UpgradeStatusSuccess {
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
 							return err
 						}
