@@ -77,7 +77,7 @@ func GetMinMaxAPIVersion(f *factory.Factory) (*MinMax, error) {
 	// to compute the correct peerVersion used in the selected collective.
 	_, minMax, err := authenticator.Authentication(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, 5)), loginOpts)
 	if err != nil && minMax == nil {
-		return nil, fmt.Errorf("Invalid credentials %w", err)
+		return nil, err
 	}
 	if minMax != nil {
 		return minMax, nil
