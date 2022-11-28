@@ -42,6 +42,7 @@ type Factory struct {
 	Stdin        io.ReadCloser
 	StdErr       io.Writer
 	SpinnerOut   io.Writer
+	neverPrompt  bool
 }
 
 func New(appVersion string, config *configuration.Config) *Factory {
@@ -63,7 +64,14 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	return f
 }
 
+func (f *Factory) DisablePrompt(v bool) {
+	f.neverPrompt = v
+}
+
 func (f *Factory) CanPrompt() bool {
+	if f.neverPrompt {
+		return false
+	}
 	return cmdutil.IsTTYRead(f.Stdin) && cmdutil.IsTTY(f.StdErr)
 }
 
