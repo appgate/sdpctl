@@ -844,8 +844,6 @@ controller2    ✓         5.5.7+28767        6.0.0+29426
 gateway        ✓         5.5.7+28767        6.0.0+29426
 
 
-3. Delete upgrade image from Controller
-
 WARNING: This upgrade requires all controllers to be upgraded to the same version, but not all
 controllers are being prepared for upgrade.
 A partial major or minor controller upgrade is not supported. The upgrade will fail unless all
