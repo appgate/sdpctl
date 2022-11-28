@@ -21,7 +21,7 @@ func NewLocal(f *factory.Factory) *Local {
 
 func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provider openapi.IdentityProvidersNamesGet200ResponseDataInner) (*signInResponse, error) {
 	cfg := l.Factory.Config
-
+	canPrompt := l.Factory.CanPrompt()
 	client, err := l.Factory.APIClient(cfg)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 		return nil, err
 	}
 
-	if len(credentials.Username) <= 0 {
+	if len(credentials.Username) <= 0 && canPrompt {
 		err := prompt.SurveyAskOne(&survey.Input{
 			Message: "Username:",
 		}, &credentials.Username, survey.WithValidator(survey.Required))
@@ -40,7 +40,7 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 			return nil, err
 		}
 	}
-	if len(credentials.Password) <= 0 {
+	if len(credentials.Password) <= 0 && canPrompt {
 		err := prompt.SurveyAskOne(&survey.Password{
 			Message: "Password:",
 		}, &credentials.Password, survey.WithValidator(survey.Required))
