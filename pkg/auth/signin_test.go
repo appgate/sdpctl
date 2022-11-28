@@ -89,6 +89,42 @@ var (
                     }`))
 			}
 		}}
+	identityProviderMultipleNames = httpmock.Stub{
+		URL: "/identity-providers/names",
+		Responder: func(rw http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodGet {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				fmt.Fprint(rw, string(`{
+                    "data": [
+                        {
+                            "authUrl": "https://idp.url/oauth2/v2.0/authorize",
+                            "certificatePriorities": [],
+                            "clientId": "xxxx",
+                            "displayName": "AD OIDC",
+                            "name": "AD OIDC",
+                            "scope": "",
+                            "tokenUrl": "https://idp.url/oauth2/v2.0/token",
+                            "type": "Oidc"
+                        },
+                        {
+                            "certificatePriorities": [],
+                            "displayName": "AD SAML Admin",
+                            "name": "SAML Admin",
+                            "redirectUrl": "http://redirect.url",
+                            "type": "Saml"
+                        },
+                        {
+                            "certificatePriorities": [],
+                            "displayName": "local",
+                            "name": "local",
+                            "type": "Credentials"
+                        }
+                    ]
+                }
+                `))
+			}
+		}}
 
 	authorizationGET = httpmock.Stub{
 		URL: "/authorization",
@@ -128,6 +164,115 @@ var (
 		}}
 )
 
+func TestSignProviderSelection(t *testing.T) {
+	tests := []struct {
+		name                 string
+		askStubs             func(*prompt.AskStubber)
+		environmentVariables map[string]string
+		httpStubs            []httpmock.Stub
+		wantErr              bool
+		provider             *string
+	}{
+		{
+			name: "Test with invalid provider name",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
+			},
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderMultipleNames,
+			},
+			wantErr:  true,
+			provider: openapi.PtrString("NotAValidProviderValue"),
+		},
+		{
+			name: "Test with valid provider name",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
+			},
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderMultipleNames,
+				authorizationGET,
+			},
+			wantErr:  false,
+			provider: openapi.PtrString("local"),
+		},
+		{
+			name: "test with no provider set",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
+			},
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderMultipleNames,
+				authorizationGET,
+			},
+			wantErr:  false,
+			provider: nil,
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubPrompt("Choose a provider:").AnswerWith("local")
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			registry := httpmock.NewRegistry(t)
+			for _, v := range tt.httpStubs {
+				registry.Register(v.URL, v.Responder)
+			}
+			defer registry.Teardown()
+			registry.Serve()
+			f := &factory.Factory{
+				Config: &configuration.Config{
+					Debug:    false,
+					URL:      "http://localhost",
+					Provider: tt.provider,
+				},
+				IOOutWriter: os.Stdout,
+				Stdin:       os.Stdin,
+				StdErr:      os.Stderr,
+			}
+			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
+				return registry.Client, nil
+			}
+
+			for k, v := range tt.environmentVariables {
+				t.Setenv(k, v)
+			}
+			dir := t.TempDir()
+			t.Setenv("SDPCTL_CONFIG_DIR", dir)
+
+			pty, tty, err := pseudotty.Open()
+			if err != nil {
+				t.Fatalf("failed to open pseudotty: %v", err)
+			}
+			term := vt10x.New(vt10x.WithWriter(tty))
+			c, err := expect.NewConsole(expect.WithStdin(pty), expect.WithStdout(term), expect.WithCloser(pty, tty))
+			if err != nil {
+				t.Fatalf("failed to create console: %v", err)
+			}
+
+			defer c.Close()
+			stubber, teardown := prompt.InitAskStubber(t)
+			defer teardown()
+			if tt.askStubs != nil {
+				tt.askStubs(stubber)
+				tt.askStubs = nil
+			}
+			if err := Signin(f); (err != nil) != tt.wantErr {
+				t.Fatal(err)
+			}
+			configFile := filepath.Join(dir, "config.json")
+			if ok, err := util.FileExists(configFile); ok && err == nil {
+				t.Fatalf("found config file %s but did not expect it", configFile)
+			}
+		})
+	}
+}
 func TestSignInNoPromptOrEnv(t *testing.T) {
 	f := &factory.Factory{
 		Config: &configuration.Config{
