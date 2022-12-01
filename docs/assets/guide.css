@@ -37,7 +37,8 @@
 
 @media all and (max-width: 736px) {
   :root {
-    --spacing-page-hor: 1.5rem;
+    --spacing-page-hor: 0.75rem;
+    --spacing-page-ver: 0.75rem;
     --spacing-box-hor: 1.5rem;
   }
 }
