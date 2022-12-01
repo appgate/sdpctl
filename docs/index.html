@@ -142,8 +142,8 @@
       <div id="panel-success">
         <h2 class="margin-bottom">Download</h2>
         <p class="margin-bottom">
-          Appgate sdpctl is compatible with SDP Collectives versions 6 or newer.<br />
-          Always download the latest version <span data-varid="version" class="tag"></span> for your operating system.
+          Appgate sdpctl is compatible with SDP Collectives versions 6 and newer.<br />
+          Check this page regularly to get the latest version which is <span data-varid="version" class="tag"></span>
         </p>
         <div class="columns wraps-980" id="os-all">
           <div id="os-macos">
@@ -199,14 +199,15 @@
         <details class="text-left margin-bottom-small">
           <summary class="example-summary">Complete the initial setup after downloading</summary>
           <pre class="code-editor"><code>
-# Extract the executable first
-# Provide the Admin UI url. If you use self-signed cert on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
+# Step 1: Extract the executable
+
+# Step 2: Provide the Admin UI url. If you use self-signed cert on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
 &gt; <span data-varid="command">sdpctl.exe</span> configure
   ? Enter the url for the Controller API (example https://controller.company.com:8443) https://ag-ctrl.company.com:8443
   Configuration updated successfully
 
 
-# Signin to your Collective
+# Step 3: Signin to your Collective
 &gt; <span data-varid="command">sdpctl.exe</span> configure signin
   ? Choose a provider:  [Use arrows to move, type to filter]
   ❯ Azure AD SAML Admin
@@ -217,19 +218,22 @@
   Successfully signed in
 
 
-# Verify the configuration
+# Step 4: Verify the configuration
 &gt; <span data-varid="command">sdpctl.exe</span> appliance status
   Name                    Status     Function      CPU     Memory    Network out/in           Disk    Version
   ----                    ------     --------      ---     ------    --------------           ----    -------
   Singapore Controller    healthy    Controller    1.4%    13.9%     34.9 Kbps / 17.1 Kbps    1.7%    6.0.1+30125
   Singapore Gateway       healthy    Gateway       0.3%    12.7%     0.64 Kbps / 0.12 Kbps    0.9%    6.0.1+30125
+
+
+# Step 5: Optionally, check the Completion command to enable command completion for your shell for convenience
           </code></pre>
         </details>
 
         <details class="text-left margin-bottom-small">
           <summary class="example-summary">Upgrade a Collective</summary>
           <pre class="code-editor"><code>
-# Prepare the upgrade
+# Step 1: Prepare the upgrade
 &gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade prepare --image=&lt;upgrade-image-zip-or-url&gt;
   PREPARE SUMMARY
 
@@ -243,7 +247,7 @@
   [2022-09-27T15:05:09+02:00] PREPARE COMPLETE
 
 
-# Backup then complete the upgrade
+# Step 2: Backup then complete the upgrade
 &gt; <span data-varid="command">sdpctl.exe</span> appliance upgrade complete
   ? Do you want to backup before proceeding? Yes
   ? Path to where backup should be saved /Users/ann.gills/Downloads/appgate/backup
@@ -295,7 +299,7 @@
           <summary class="example-summary">List and renew tokens</summary>
           <pre class="code-editor"><code>
 # list distinguished names with active tokens
-&gt; <span data-varid="command">sdpctl.exe</span> appliance tokens list
+&gt; <span data-varid="command">sdpctl.exe</span> tokens list
   Distinguished Name                     Device ID       Last Token Issued At           Provider Name    Username
   ------------------                     ---------       --------------------           -------------    --------
   CN=2cc1a54a...,CN=ann.gills,OU=ldap    2cc1a54a-...    2022-11-22T09:42:09.738773Z    ldap             ann.gills
@@ -303,7 +307,7 @@
 
 
 # renew all tokens for ann.gills
-&gt; <span data-varid="command">sdpctl.exe</span> appliance tokens revoke "CN=2cc1a54...,CN=ann.gills,OU=ldap"
+&gt; <span data-varid="command">sdpctl.exe</span> tokens revoke "CN=2cc1a54...,CN=ann.gills,OU=ldap"
   ID           Type            Distinguished Name                   Issued          Expires         Revoked  Site ID    Site Name   Revocation Time
   --           ----            ------------------                   ------          -------         -------  -------    ---------   ---------------
   e9abaff5...  Entitlement     CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true      8a4add    SG-01       2022-11-22 ...
@@ -311,7 +315,7 @@
 
 
 # renew all entitlement tokens
-&gt; <span data-varid="command">sdpctl.exe</span> appliance tokens revoke --by-token-type entitlement
+&gt; <span data-varid="command">sdpctl.exe</span> tokens revoke --by-token-type entitlement
   ID           Type            Distinguished Name                   Issued          Expires         Revoked  Site ID    Site Name   Revocation Time
   --           ----            ------------------                   ------          -------         -------  -------    ---------   ---------------
   e9abaff5...  Entitlement     CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true      8a4add    SG-01       2022-11-22 ...
