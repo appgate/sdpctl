@@ -340,7 +340,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			}
 		}
 	}
-	forceAllControllerUpgrade := appliancepkg.NeedsMultiControllerUpgrade(upgradeStatuses, online, allOnlineControllers, isMajorOrMinorUpgrade)
+	forceAllControllerUpgrade, err := appliancepkg.NeedsMultiControllerUpgrade(upgradeStatuses, initialStats.GetData(), online, allOnlineControllers, isMajorOrMinorUpgrade)
+	if err != nil {
+		return err
+	}
 	if forceAllControllerUpgrade {
 		return errors.New("All Controllers need upgrading when doing major or minor version upgrade, but not all controllers are prepared for upgrade. Please prepare the remaining controllers before running 'upgrade complete' again.")
 	}

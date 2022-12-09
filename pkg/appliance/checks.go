@@ -334,15 +334,43 @@ func controllerCount(appliances []openapi.Appliance) int {
 	return i
 }
 
-func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, all, preparing []openapi.Appliance, majorOrMinor bool) bool {
+func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, initialStatData []openapi.StatsAppliancesListAllOfData, all, preparing []openapi.Appliance, majorOrMinor bool) (bool, error) {
 	controllerCount := controllerCount(all)
 	controllerPrepareCount := 0
+	alreadySameVersion := 0
+	unpreparedCurrentVersions := []*version.Version{}
+	var highestPreparedVersion *version.Version
 	for _, a := range preparing {
 		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
 			if ugs := upgradeStatuses[a.GetId()]; ugs.Status == UpgradeStatusReady {
+				preparedVersion, err := ParseVersionString(ugs.Details)
+				if err != nil {
+					return false, err
+				}
+				if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, preparedVersion); highestPreparedVersion == nil || res >= 1 {
+					highestPreparedVersion = preparedVersion
+				}
 				controllerPrepareCount++
+			} else {
+				for _, data := range initialStatData {
+					if data.GetId() != a.GetId() {
+						continue
+					}
+					currentVersion, err := ParseVersionString(data.GetVersion())
+					if err != nil {
+						return false, err
+					}
+					unpreparedCurrentVersions = append(unpreparedCurrentVersions, currentVersion)
+				}
 			}
 		}
 	}
-	return (controllerCount != controllerPrepareCount) && majorOrMinor
+	if controllerCount != controllerPrepareCount {
+		for _, uv := range unpreparedCurrentVersions {
+			if !IsMajorUpgrade(uv, highestPreparedVersion) || !IsMinorUpgrade(uv, highestPreparedVersion) {
+				alreadySameVersion++
+			}
+		}
+	}
+	return (controllerCount != controllerPrepareCount+alreadySameVersion) && majorOrMinor, nil
 }
