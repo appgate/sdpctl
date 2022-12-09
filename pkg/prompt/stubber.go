@@ -85,7 +85,7 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 			}
 		}
 		if stub == nil {
-			return fmt.Errorf("Mo prompt stub for %q", message)
+			return fmt.Errorf("No prompt stub for %q", message)
 		}
 
 		if len(stub.options) > 0 {
