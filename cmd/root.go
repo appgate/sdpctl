@@ -267,6 +267,11 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 
 func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+
+		if value, err := cmd.Flags().GetBool("no-interactive"); err == nil && value {
+			f.DisablePrompt(value)
+		}
+
 		logLevel := strings.ToLower(util.Getenv("SDPCTL_LOG_LEVEL", "info"))
 
 		switch logLevel {
@@ -336,6 +341,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 					}
 				}
 			}
+
 			if err := auth.Signin(f); err != nil {
 				result = multierror.Append(result, err)
 				return result
