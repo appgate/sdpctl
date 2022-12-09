@@ -83,7 +83,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
 			hasStdin = true
 		}
-		answer, err := prompt.GetPassphrase(opts.In, opts.CanPrompt, hasStdin, "The passphrase to encrypt Appliance Backups when backup API is used:")
+		answer, err := prompt.GetPassphrase(opts.In, !opts.NoInteractive, hasStdin, "The passphrase to encrypt the appliance backups when the Backup API is used:")
 		if err != nil {
 			return err
 		}
