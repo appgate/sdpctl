@@ -367,7 +367,7 @@ func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult,
 	}
 	if controllerCount != controllerPrepareCount {
 		for _, uv := range unpreparedCurrentVersions {
-			if !IsMajorUpgrade(uv, highestPreparedVersion) || !IsMinorUpgrade(uv, highestPreparedVersion) {
+			if v, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, uv); v == 0 {
 				alreadySameVersion++
 			}
 		}
