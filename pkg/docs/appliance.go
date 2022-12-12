@@ -300,4 +300,27 @@ NOTE: Although the '--include' and '--exclude' flags are provided as options her
 			},
 		},
 	}
+
+	ApplianceSeedDocs = CommandDoc{
+		Short: "Export seed for an inactive Appliance",
+		Long: `Generate a seed file in JSON (or iso format)
+
+
+for More information, see: https://sdphelp.appgate.com/adminguide/new-appliance.html
+        `,
+		Examples: []ExampleDoc{
+			{
+				Description: "export seed file in JSON format with cloud authentication",
+				Command:     "sdpctl appliance export-seed 08cd20c0-f175-4503-96f7-c5b429c19236 --provide-cloud-ssh-key",
+			},
+			{
+				Description: "export seed file in iso format with passphrase",
+				Command:     `echo "YourSuperSecretPassword" | sdpctl appliance export-seed 08cd20c0-f175-4503-96f7-c5b429c19236 --iso-format`,
+			},
+			{
+				Description: "Interactive prompt to configure the seed file",
+				Command:     "sdpctl appliance export-seed",
+			},
+		},
+	}
 )

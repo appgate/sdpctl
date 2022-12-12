@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/prompt"
 )
 
+// PromptSelect from online appliances
 func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[string]string) (string, error) {
 	appliances, err := a.List(ctx, filter)
 	if err != nil {
@@ -21,7 +23,19 @@ func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[strin
 	if err != nil {
 		return "", err
 	}
+	return promptAppliance(appliances)
+}
 
+// PromptSelectAll from all appliances, offline and online
+func PromptSelectAll(ctx context.Context, a *Appliance, filter map[string]map[string]string) (string, error) {
+	appliances, err := a.List(ctx, filter)
+	if err != nil {
+		return "", err
+	}
+	return promptAppliance(appliances)
+}
+
+func promptAppliance(appliances []openapi.Appliance) (string, error) {
 	names := []string{}
 	for _, a := range appliances {
 		names = append(names, fmt.Sprintf("%s - %s - %s", a.GetName(), a.GetSiteName(), a.GetTags()))

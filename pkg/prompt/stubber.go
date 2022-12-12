@@ -23,6 +23,10 @@ func (s *QuestionStub) AnswerWith(v interface{}) *QuestionStub {
 	s.Value = v
 	return s
 }
+func (s *QuestionStub) AnswerDefault() *QuestionStub {
+	s.Default = true
+	return s
+}
 
 type PromptStub struct {
 	Value   interface{}
@@ -81,7 +85,7 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 			}
 		}
 		if stub == nil {
-			return fmt.Errorf("Mo prompt stub for %q", message)
+			return fmt.Errorf("No prompt stub for %q", message)
 		}
 
 		if len(stub.options) > 0 {

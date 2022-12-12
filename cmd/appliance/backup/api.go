@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
-	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -85,7 +83,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
 			hasStdin = true
 		}
-		answer, err := getPassPhrase(opts.In, !opts.NoInteractive, hasStdin)
+		answer, err := prompt.GetPassphrase(opts.In, !opts.NoInteractive, hasStdin, "The passphrase to encrypt the appliance backups when the Backup API is used:")
 		if err != nil {
 			return err
 		}
@@ -100,18 +98,4 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 	}
 	fmt.Fprintln(opts.Out, message)
 	return nil
-}
-
-func getPassPhrase(stdIn io.Reader, canPrompt, hasStdin bool) (string, error) {
-	if hasStdin {
-		buf, err := io.ReadAll(stdIn)
-		if err != nil {
-			return "", fmt.Errorf("Could not read input from stdin %s", err)
-		}
-		return strings.TrimSuffix(string(buf), "\n"), nil
-	}
-	if !canPrompt {
-		return "", fmt.Errorf("no interactive mode or %w", cmdutil.ErrMissingTTY)
-	}
-	return prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
 }
