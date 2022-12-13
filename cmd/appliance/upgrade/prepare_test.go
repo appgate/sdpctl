@@ -394,6 +394,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					URL:       "/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_5.5.1.json"),
 				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+					},
+				},
 			},
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details`),
@@ -624,10 +640,11 @@ func TestCheckImageFilename(t *testing.T) {
 
 func Test_showPrepareUpgradeMessage(t *testing.T) {
 	type args struct {
-		f         string
-		appliance []openapi.Appliance
-		skip      []appliancepkg.SkipUpgrade
-		stats     []openapi.StatsAppliancesListAllOfData
+		f                             string
+		appliance                     []openapi.Appliance
+		skip                          []appliancepkg.SkipUpgrade
+		stats                         []openapi.StatsAppliancesListAllOfData
+		multiControllerUpgradeWarning bool
 	}
 	tests := []struct {
 		name    string
@@ -775,6 +792,64 @@ gateway        ✓         5.5.7+28767        6.0.0+29426
 
 `,
 		},
+		{
+			name: "prepare appliance no-skipped",
+			args: args{
+				f:                             "appgate-6.0.0-29426-release.img.zip",
+				multiControllerUpgradeWarning: true,
+				appliance: []openapi.Appliance{
+					{
+						Id:   openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name: "controller1",
+					},
+					{
+						Id:   openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name: "controller2",
+					},
+					{
+						Id:   openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name: "gateway",
+					},
+				},
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:    openapi.PtrString("controller1"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:    openapi.PtrString("controller2"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+					{
+						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:    openapi.PtrString("gateway"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("5.5.7+28767"),
+					},
+				},
+			},
+			want: `PREPARE SUMMARY
+
+1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
+2. Prepare upgrade on the following appliances:
+
+Appliance      Online    Current version    Prepare version
+---------      ------    ---------------    ---------------
+controller1    ✓         5.5.7+28767        6.0.0+29426
+controller2    ✓         5.5.7+28767        6.0.0+29426
+gateway        ✓         5.5.7+28767        6.0.0+29426
+
+
+WARNING: This upgrade requires all controllers to be upgraded to the same version, but not all
+controllers are being prepared for upgrade.
+A partial major or minor controller upgrade is not supported. The upgrade will fail unless all
+controllers are prepared for upgrade when running 'upgrade complete'.
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -782,7 +857,7 @@ gateway        ✓         5.5.7+28767        6.0.0+29426
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
-			got, err := showPrepareUpgradeMessage(tt.args.f, prepareVersion, tt.args.appliance, tt.args.skip, tt.args.stats)
+			got, err := showPrepareUpgradeMessage(tt.args.f, prepareVersion, tt.args.appliance, tt.args.skip, tt.args.stats, tt.args.multiControllerUpgradeWarning)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("showPrepareUpgradeMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return

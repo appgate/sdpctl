@@ -165,6 +165,17 @@ type SkipUpgrade struct {
 	Appliance openapi.Appliance
 }
 
+const (
+	SkipReasonNotPrepared     = "appliance is not prepared for upgrade"
+	SkipReasonOffline         = "appliance is offline"
+	SkipReasonFiltered        = "filtered using the '--include' and/or '--exclude' flag"
+	SkipReasonAlreadyPrepared = "appliance is already prepared for upgrade with a higher or equal version"
+)
+
+func (su SkipUpgrade) Error() string {
+	return fmt.Sprintf("%s: %s", su.Appliance.GetName(), su.Reason)
+}
+
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
 func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipUpgrade) {
@@ -267,4 +278,99 @@ func HasDiffVersions(stats []openapi.StatsAppliancesListAllOfData) (bool, map[st
 	}
 	unique := uniqueString(versionList)
 	return len(unique) != 1, res
+}
+
+const (
+	MajorVersion = uint8(4)
+	MinorVersion = uint8(2)
+	PatchVersion = uint8(1)
+)
+
+func getUpgradeVersionType(x, y *version.Version) uint8 {
+	var patch, minor, major uint8
+
+	if x == nil || y == nil {
+		return 0
+	}
+
+	xSeg := x.Segments()
+	ySeg := y.Segments()
+
+	// Patch
+	if xSeg[2] < ySeg[2] {
+		patch = PatchVersion
+	}
+	// Minor
+	if xSeg[1] < ySeg[1] {
+		minor = MinorVersion
+	}
+	// Major
+	if xSeg[0] < ySeg[0] {
+		major = MajorVersion
+	}
+
+	return major | minor | patch
+}
+
+func IsMajorUpgrade(current, next *version.Version) bool {
+	return getUpgradeVersionType(current, next)&MajorVersion == MajorVersion
+}
+
+func IsMinorUpgrade(current, next *version.Version) bool {
+	return getUpgradeVersionType(current, next)&MinorVersion == MinorVersion
+}
+
+func IsPatchUpgrade(current, next *version.Version) bool {
+	return getUpgradeVersionType(current, next)&PatchVersion == PatchVersion
+}
+
+func controllerCount(appliances []openapi.Appliance) int {
+	i := 0
+	for _, a := range appliances {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			i++
+		}
+	}
+	return i
+}
+
+func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, initialStatData []openapi.StatsAppliancesListAllOfData, all, preparing []openapi.Appliance, majorOrMinor bool) (bool, error) {
+	controllerCount := controllerCount(all)
+	controllerPrepareCount := 0
+	alreadySameVersion := 0
+	unpreparedCurrentVersions := []*version.Version{}
+	var highestPreparedVersion *version.Version
+	for _, a := range preparing {
+		if v, ok := a.GetControllerOk(); ok && v.GetEnabled() {
+			if ugs := upgradeStatuses[a.GetId()]; ugs.Status == UpgradeStatusReady {
+				preparedVersion, err := ParseVersionString(ugs.Details)
+				if err != nil {
+					return false, err
+				}
+				if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, preparedVersion); highestPreparedVersion == nil || res >= 1 {
+					highestPreparedVersion = preparedVersion
+				}
+				controllerPrepareCount++
+			} else {
+				for _, data := range initialStatData {
+					if data.GetId() != a.GetId() {
+						continue
+					}
+					currentVersion, err := ParseVersionString(data.GetVersion())
+					if err != nil {
+						return false, err
+					}
+					unpreparedCurrentVersions = append(unpreparedCurrentVersions, currentVersion)
+				}
+			}
+		}
+	}
+	if controllerCount != controllerPrepareCount {
+		for _, uv := range unpreparedCurrentVersions {
+			if v, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, uv); v == 0 {
+				alreadySameVersion++
+			}
+		}
+	}
+	return (controllerCount != controllerPrepareCount+alreadySameVersion) && majorOrMinor, nil
 }

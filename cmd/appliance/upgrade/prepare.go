@@ -233,7 +233,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	online, offline, _ := appliancepkg.FilterAvailable(Allappliances, initialStats.GetData())
 	for _, a := range offline {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
-			Reason:    "appliance is offline",
+			Reason:    appliancepkg.SkipReasonOffline,
 			Appliance: a,
 		})
 	}
@@ -244,7 +244,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	for _, f := range filtered {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Appliance: f,
-			Reason:    "appliance was filtered using the '--include' or '--exclude' flag",
+			Reason:    appliancepkg.SkipReasonFiltered,
 		})
 	}
 
@@ -289,16 +289,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
+	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
+	if err != nil {
+		return err
+	}
 	if !opts.forcePrepare {
 		var skip []appliancepkg.SkipUpgrade
 		appliances, skip = appliancepkg.CheckVersions(ctx, *initialStats, appliances, opts.targetVersion)
 		skipAppliances = append(skipAppliances, skip...)
 
 		postPrepared := []openapi.Appliance{}
-		upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
-		if err != nil {
-			return err
-		}
 		for _, app := range appliances {
 			us := upgradeStatuses[app.GetId()]
 			if us.Status != appliancepkg.UpgradeStatusReady {
@@ -313,7 +313,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if res, err := appliancepkg.CompareVersionsAndBuildNumber(opts.targetVersion, prepareVersion); err == nil && res >= 0 {
 				skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 					Appliance: app,
-					Reason:    "appliance is already prepared for upgrade with a higher or equal version",
+					Reason:    appliancepkg.SkipReasonAlreadyPrepared,
 				})
 				continue
 			}
@@ -326,7 +326,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details"))
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
-					errs = multierr.Append(errs, fmt.Errorf("%s skipped: %s", skip.Appliance.GetName(), skip.Reason))
+					errs = multierr.Append(errs, skip)
 				}
 			}
 			return errs
@@ -337,11 +337,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	majorOrMinorUpgrade := appliancepkg.IsMajorUpgrade(currentPrimaryControllerVersion, opts.targetVersion) || appliancepkg.IsMinorUpgrade(currentPrimaryControllerVersion, opts.targetVersion)
+	ctrlUpgradeWarning, err := appliancepkg.NeedsMultiControllerUpgrade(upgradeStatuses, initialStats.GetData(), Allappliances, appliances, majorOrMinorUpgrade)
+	if err != nil {
+		return err
+	}
 
 	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
 
-	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData())
+	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning)
 	if err != nil {
 		return err
 	}
@@ -723,16 +728,25 @@ const prepareUpgradeMessage = `PREPARE SUMMARY
 
 The following appliances will be skipped:
 
-{{ .SkipTable }}{{ end }}
+{{ .SkipTable }}{{ end }}{{ if .MultiControllerUpgradeWarning }}
+
+WARNING: This upgrade requires all controllers to be upgraded to the same version, but not all
+controllers are being prepared for upgrade.
+A partial major or minor controller upgrade is not supported. The upgrade will fail unless all
+controllers are prepared for upgrade when running 'upgrade complete'.{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData) (string, error) {
+func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning bool) (string, error) {
 	type stub struct {
-		Filepath       string
-		ApplianceTable string
-		SkipTable      string
+		Filepath                      string
+		ApplianceTable                string
+		SkipTable                     string
+		MultiControllerUpgradeWarning bool
 	}
-	data := stub{Filepath: f}
+	data := stub{
+		Filepath:                      f,
+		MultiControllerUpgradeWarning: multiControllerUpgradeWarning,
+	}
 
 	abuf := &bytes.Buffer{}
 	at := util.NewPrinter(abuf, 4)
