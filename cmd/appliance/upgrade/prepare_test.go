@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2/core"
-	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/util"

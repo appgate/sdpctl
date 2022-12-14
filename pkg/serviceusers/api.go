@@ -3,7 +3,7 @@ package serviceusers
 import (
 	"context"
 
-	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 )
 
