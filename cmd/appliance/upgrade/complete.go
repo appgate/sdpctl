@@ -606,11 +606,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if !util.InSlice(i.GetName(), toReboot) {
 					err := backoff.Retry(func() error {
 						err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition)
-					if err != nil {
-						logEntry.Warnf("Attempting to run upgrade complete %s", err)
-						return err
-					}
-					return nil
+						if err != nil {
+							logEntry.Warnf("Attempting to run upgrade complete %s", err)
+							return err
+						}
+						return nil
 					}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 					if err != nil {
 						return fmt.Errorf("Could not complete upgrade on %s %w", i.GetName(), err)
