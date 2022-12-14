@@ -216,6 +216,16 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+
+	token, err := opts.Config.GetBearTokenHeaderValue()
+	if err != nil {
+		return err
+	}
+	ac := change.ApplianceChange{
+		APIClient: a.APIClient,
+		Token:     token,
+	}
+
 	if len(opts.actualHostname) > 0 {
 		host = opts.actualHostname
 	}
@@ -628,19 +638,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					return err
 				}
 				if opts.Config.Version >= 15 {
-					t, err := opts.Config.GetBearTokenHeaderValue()
+					c, err := ac.RetryUntilCompleted(ctx, changeID, qs.appliance.GetId())
 					if err != nil {
 						queueContinue <- queueStruct{err: err}
 						return err
 					}
-					ac := change.ApplianceChange{
-						APIClient: a.APIClient,
-						Token:     t,
-					}
-					if _, err = ac.RetryUntilCompleted(ctx, changeID, qs.appliance.GetId()); err != nil {
-						queueContinue <- queueStruct{err: err}
-						return err
-					}
+					log.Infof("prepare image change %s %s %s", c.GetResult(), c.GetStatus(), c.GetDetails())
 					unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {

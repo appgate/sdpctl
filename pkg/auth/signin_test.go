@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
@@ -380,14 +381,34 @@ func TestSigninNoKeyringNoconfig(t *testing.T) {
 }
 
 func TestSignin(t *testing.T) {
-
+	type testConfig struct {
+		ExpiresAt   *string
+		BearerToken *string
+		Version     int
+	}
 	tests := []struct {
 		name                 string
 		askStubs             func(*prompt.AskStubber)
 		environmentVariables map[string]string
+		testConfig           testConfig
 		httpStubs            []httpmock.Stub
 		wantErr              bool
 	}{
+		{
+			name: "signin stored bearer token is valid",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
+			},
+			httpStubs: []httpmock.Stub{
+				authorizationGET,
+			},
+			testConfig: testConfig{
+				ExpiresAt:   openapi.PtrString(time.Now().AddDate(0, 0, 3).String()),
+				BearerToken: openapi.PtrString("MyExistingBearerToken"),
+				Version:     18,
+			},
+		},
 		{
 			name: "signin with environment variables",
 			environmentVariables: map[string]string{
@@ -518,7 +539,8 @@ func TestSignin(t *testing.T) {
 				identityProviderNames,
 				authorizationGET,
 			},
-		}}
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			zkeyring.MockInit()
@@ -545,8 +567,11 @@ func TestSignin(t *testing.T) {
 
 			f := &factory.Factory{
 				Config: &configuration.Config{
-					Debug: false,
-					URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
+					Debug:       false,
+					URL:         fmt.Sprintf("http://appgate.com:%d", registry.Port),
+					ExpiresAt:   tt.testConfig.ExpiresAt,
+					BearerToken: tt.testConfig.BearerToken,
+					Version:     tt.testConfig.Version,
 				},
 				IOOutWriter: tty,
 				Stdin:       pty,

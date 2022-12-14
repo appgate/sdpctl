@@ -10,6 +10,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
@@ -111,14 +112,15 @@ func TestNewResolveNameCmdJSON(t *testing.T) {
 
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
-
-			_, err := cmd.ExecuteC()
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("NewResolveNameCmd() error = %v, wantErr %v", err, tt.wantErr)
+			cmd.SetErr(stdout)
+			exitCode := cmdutil.ExecuteCommand(cmd)
+			if (exitCode != cmdutil.ExitOK) != tt.wantErr {
+				t.Fatalf("NewResolveNameCmd() ExitCode = %v, wantErr %v", exitCode, tt.wantErr)
 			}
-			if err != nil && tt.wantErrOut != nil {
-				if !tt.wantErrOut.MatchString(err.Error()) {
-					t.Errorf("Expected output to match, got:\n%s\n expected: \n%s\n", tt.wantErrOut, err.Error())
+			if tt.wantErrOut != nil {
+				if !tt.wantErrOut.MatchString(stdout.String()) {
+					t.Logf("FOO ERROR\n%q\n", stdout.String())
+					t.Errorf("Expected output to match, got:\n%s\n expected: \n%s\n", tt.wantErrOut, stdout.String())
 				}
 				return
 			}

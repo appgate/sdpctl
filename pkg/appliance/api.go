@@ -9,6 +9,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/cenkalti/backoff/v4"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -68,6 +69,19 @@ func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (*ope
 	return status, nil
 }
 
+func (a *Appliance) UpgradeStatusRetry(ctx context.Context, applianceID string) (*openapi.AppliancesIdUpgradeDelete200Response, error) {
+	var status *openapi.AppliancesIdUpgradeDelete200Response
+	err := backoff.Retry(func() error {
+		s, err := a.UpgradeStatus(ctx, applianceID)
+		if err != nil {
+			return err
+		}
+		status = s
+		return nil
+	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+	return status, err
+}
+
 type UpgradeStatusResult struct {
 	Status, Details, Name string
 }
@@ -82,7 +96,7 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 	for _, appliance := range appliances {
 		i := appliance
 		g.Go(func() error {
-			status, err := a.UpgradeStatus(ctx, i.GetId())
+			status, err := a.UpgradeStatusRetry(ctx, i.GetId())
 			if err != nil {
 				return fmt.Errorf("Could not read status of %s %w", i.GetId(), err)
 			}

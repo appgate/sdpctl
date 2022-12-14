@@ -111,9 +111,20 @@ func Signin(f *factory.Factory) error {
 		loginOpts.ProviderName = *cfg.Provider
 	}
 
+	authenticator := NewAuth(client)
+	ctx := context.Background()
+	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
+
 	bearer, err := cfg.GetBearTokenHeaderValue()
 	if err == nil && cfg.ExpiredAtValid() && len(bearer) > 0 && cfg.Version > 0 {
-		return nil
+		// Make a test request and see if the locally stored auth bearer token
+		// is valid, if we get any errors here, we can assume the token has been revoked.
+		_, err := authenticator.Authorization(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, cfg.Version)), bearer)
+		if err == nil {
+			// if we don't get any errors here, we can be sure that the locally stored bearer token
+			// is still valid.
+			return nil
+		}
 	}
 	if !f.CanPrompt() {
 		if !hasRequiredEnv() {
@@ -126,9 +137,7 @@ func Signin(f *factory.Factory) error {
 	}
 	viper.Set("api_version", minMax.Max)
 	cfg.Version = int(minMax.Max)
-	ctx := context.Background()
-	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
-	authenticator := NewAuth(client)
+
 	acceptValue := fmt.Sprintf(acceptHeaderFormatString, minMax.Max)
 	ctxWithAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, acceptValue)
 	providers, err := authenticator.ProviderNames(ctxWithAccept)
