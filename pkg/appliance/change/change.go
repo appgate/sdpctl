@@ -35,6 +35,12 @@ func (ac *ApplianceChange) RetryUntilCompleted(ctx context.Context, changeID, ap
 		if change.GetStatus() == "running" {
 			return errors.New("Change is still running, retry")
 		}
+		if change.GetResult() == "failure" {
+			if v, ok := change.GetDetailsOk(); ok && len(*v) > 0 {
+				return backoff.Permanent(fmt.Errorf("unable to apply on appliance id %s change %s", applianceID, *v))
+			}
+			return backoff.Permanent(fmt.Errorf("appliance change failed on appliance id %s %s %s", applianceID, change.GetResult(), change.GetDetails()))
+		}
 		if change.GetResult() != "success" && change.GetStatus() == "completed" {
 			return fmt.Errorf("Got result %s and status %s", change.GetResult(), change.GetStatus())
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,7 +28,7 @@ var defaultExponentialBackOff = &backoff.ExponentialBackOff{
 }
 
 type WaitForUpgradeStatus interface {
-	// WaitForUpgradeStatus does expodential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
+	// WaitForUpgradeStatus does exponential backoff retries on upgrade status until it reaches a desiredStatuses and reports it to current <- string
 	WaitForUpgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) error
 }
 
@@ -35,27 +36,43 @@ type UpgradeStatus struct {
 	Appliance *Appliance
 }
 
+type IsPrimaryUpgrade string
+
+const PrimaryUpgrade IsPrimaryUpgrade = "IsPrimaryUpgrade"
+
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) backoff.Operation {
 	name := appliance.GetName()
 	logEntry := log.WithField("appliance", name)
 	logEntry.WithField("want", desiredStatuses).Info("Polling for upgrade status")
 	hasRebooted := false
+	offlineRegex := regexp.MustCompile(`No response Get`)
+	onlineRegex := regexp.MustCompile(`Bad Gateway`)
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
 			if tracker != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					tracker.Update("Rebooting, waiting for appliance to come back online")
-					hasRebooted = true
-				} else if hasRebooted {
-					tracker.Update("Switching partition")
-				} else {
-					tracker.Update("Installing")
+				msg := "switching partition"
+				if _, ok := ctx.Value(PrimaryUpgrade).(bool); ok {
+					if offlineRegex.MatchString(err.Error()) {
+						hasRebooted = true
+					} else if onlineRegex.MatchString(err.Error()) {
+						if hasRebooted {
+							msg = "initializing"
+						} else {
+							msg = "installing"
+						}
+					} else {
+						msg = err.Error()
+					}
+				} else if !errors.Is(err, context.DeadlineExceeded) {
+					msg = err.Error()
 				}
+
+				tracker.Update(msg)
 			}
-			logEntry.WithError(err).Debug("Appliance unreachable")
+			logEntry.WithError(err).Debug("no response, appliance offline")
 			return err
 		}
 		var s string
@@ -71,7 +88,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 					// send error details for tracker
 					tracker.Fail(s + " - " + details)
 				}
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s - %s", name, details))
+				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s %s %s", name, s, details))
 			}
 			if util.InSlice(s, desiredStatuses) {
 				logEntry.Info("Reached wanted upgrade status")

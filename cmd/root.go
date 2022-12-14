@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"context"
-	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -172,73 +170,14 @@ func BindEnvs(iface interface{}, parts ...string) {
 	}
 }
 
-type exitCode int
-
-var ErrExitAuth = errors.New("no authentication")
-
-const (
-	exitOK     exitCode = 0
-	exitError  exitCode = 1
-	exitCancel exitCode = 2
-	exitAuth   exitCode = 4
-)
-
-func Execute() exitCode {
+func Execute() cmdutil.ExitCode {
 	var currentProfile string
 	rFlag := pflag.NewFlagSet("", pflag.ContinueOnError)
 	rFlag.StringVarP(&currentProfile, "profile", "p", "", "")
 	rFlag.Usage = func() {}
 	rFlag.Parse(os.Args[1:])
-	root := NewCmdRoot(&currentProfile)
-	cmd, err := root.ExecuteC()
-	if err != nil {
-		var result *multierror.Error
-		// Unwrap error and check if we have a nested multierr
-		// if we do, we will make the errors flat for 1 level
-		// otherwise, append error to new multierr list
-		if we := errors.Unwrap(err); we != nil {
-			if merr, ok := we.(*multierror.Error); ok {
-				for _, e := range merr.Errors {
-					result = multierror.Append(result, e)
-				}
-			} else {
-				result = multierror.Append(result, err)
-			}
-		} else {
-			result = multierror.Append(result, err)
-		}
 
-		// if error is DeadlineExceeded, add custom ErrCommandTimeout
-		if errors.Is(err, context.DeadlineExceeded) {
-			result = multierror.Append(result, cmdutil.ErrCommandTimeout)
-		}
-
-		// if we during any request get a SSL error, (un-trusted certificate) error, prompt the user to import the pem file.
-		var sslErr x509.UnknownAuthorityError
-		if errors.As(err, &sslErr) {
-			result = multierror.Append(result, errors.New("Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'"))
-		}
-
-		// print all multierrors to stderr, then return correct exitcode based on error type
-		fmt.Fprintln(os.Stderr, result.ErrorOrNil())
-
-		if errors.Is(err, ErrExitAuth) {
-			return exitAuth
-		}
-		if errors.Is(err, cmdutil.ErrExecutionCanceledByUser) {
-			return exitCancel
-		}
-		// only show usage prompt if we get invalid args / flags
-		errorString := err.Error()
-		if strings.Contains(errorString, "arg(s)") || strings.Contains(errorString, "flag") || strings.Contains(errorString, "command") {
-			fmt.Fprintln(os.Stderr)
-			fmt.Fprintln(os.Stderr, cmd.UsageString())
-			return exitError
-		}
-
-		return exitError
-	}
-	return exitOK
+	return cmdutil.ExecuteCommand(NewCmdRoot(&currentProfile))
 }
 
 // logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
@@ -352,7 +291,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
 			var result error
 			result = multierror.Append(result, errors.New("To authenticate, please run `sdpctl configure signin`"))
-			result = multierror.Append(result, ErrExitAuth)
+			result = multierror.Append(result, cmdutil.ErrExitAuth)
 			return result
 		}
 

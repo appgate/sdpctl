@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/google/go-cmp/cmp"
 )
@@ -401,9 +402,18 @@ func TestAuthInitializeOTP(t *testing.T) {
 				t.Errorf("Auth.InitializeOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if err != nil && tt.wantErr && !strings.Contains(err.Error(), "name may not be null") {
+			found := false
+			if ae, ok := err.(*api.Error); ok {
+				for _, e := range ae.Errors {
+					if strings.Contains(e.Error(), "name may not be null") {
+						found = true
+					}
+				}
+			}
+			if err != nil && tt.wantErr && !found {
 				t.Fatalf("Invalid error message, got %s", err)
 			}
+
 			if got.GetType() != tt.typeMethod {
 				t.Fatalf("Expected %s, got %s", tt.typeMethod, got.GetType())
 			}

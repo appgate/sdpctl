@@ -13,6 +13,7 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -548,8 +549,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
 			}
-			logEntry.WithField("want", appliancepkg.StatReady).Info("Waiting for the primary Controller to reach a wanted state")
-			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
+			msg := "Upgrading primary Controller, installing and rebooting..."
+			logEntry.WithField("want", appliancepkg.StatReady).Info(msg)
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.PrimaryUpgrade, true), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 				return err
 			}
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
@@ -602,31 +604,39 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 				}
 				if !util.InSlice(i.GetName(), toReboot) {
-					if err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition); err != nil {
-						return err
+					err := backoff.Retry(func() error {
+						err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition)
+						if err != nil {
+							logEntry.Warnf("Attempting to run upgrade complete %s", err)
+							return err
+						}
+						return nil
+					}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+					if err != nil {
+						return fmt.Errorf("Could not complete upgrade on %s %w", i.GetName(), err)
 					}
 				}
 				logEntry.Info("Install the downloaded upgrade image to the other partition")
 				if !SwitchPartition {
 					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
-						return err
+						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
-					status, err := a.UpgradeStatus(ctx, i.GetId())
+					status, err := a.UpgradeStatusRetry(ctx, i.GetId())
 					if err != nil {
-						return err
+						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					if status.GetStatus() == appliancepkg.UpgradeStatusSuccess {
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
-							return err
+							return fmt.Errorf("%s %w", i.GetName(), err)
 						}
 						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
-					return err
+					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 				if err := a.ApplianceStats.WaitForApplianceState(ctx, i, appliancepkg.StatReady, t); err != nil {
-					return err
+					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
 				s, _, err := a.Stats(ctx)
@@ -654,8 +664,15 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			close(upgradeChan)
 		}()
 		if err := g.Wait(); err != nil {
-			log.WithError(err).Error(err.Error())
-			return fmt.Errorf("Error during upgrade of an appliance %w", err)
+			if ae, ok := err.(*api.Error); ok {
+				for _, e := range ae.Errors {
+					log.Error(e)
+				}
+			} else {
+				log.Error(err)
+			}
+
+			return err
 		}
 		return nil
 	}
@@ -700,10 +717,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				t = p.AddTracker(controller.GetName(), "upgraded")
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
-			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
+			err := backoff.Retry(func() error {
+				return a.UpgradeComplete(ctx, controller.GetId(), true)
+			}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
+			if err != nil {
 				return err
 			}
-			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
+			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.PrimaryUpgrade, "applying upgrade"), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 				log.WithFields(f).WithError(err).Error("The Controller never reached desired upgrade status")
 				return err
 			}
@@ -784,7 +804,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	for index, chunk := range chunks {
 		fmt.Fprintf(opts.Out, "\n[%s] Upgrading additional appliances (Batch %d / %d):\n", time.Now().Format(time.RFC3339), index+1, chunkLength)
 		if err := batchUpgrade(ctx, chunk, false); err != nil {
-			return fmt.Errorf("Failed during upgrade of additional appliances %w", err)
+			return err
 		}
 	}
 
