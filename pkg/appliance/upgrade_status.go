@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -35,31 +36,43 @@ type UpgradeStatus struct {
 	Appliance *Appliance
 }
 
-type UpgradeStatusCtx string
+type IsPrimaryUpgrade string
 
-const UpgradeStatusGetErrorMessage UpgradeStatusCtx = "UpgradeStatusGetErrorMessage"
+const PrimaryUpgrade IsPrimaryUpgrade = "IsPrimaryUpgrade"
 
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) backoff.Operation {
 	name := appliance.GetName()
 	logEntry := log.WithField("appliance", name)
 	logEntry.WithField("want", desiredStatuses).Info("Polling for upgrade status")
+	hasRebooted := false
+	offlineRegex := regexp.MustCompile(`No response Get`)
+	onlineRegex := regexp.MustCompile(`Bad Gateway`)
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
 			if tracker != nil {
-				msg := "no response, appliance offline"
-				if !errors.Is(err, context.DeadlineExceeded) {
+				msg := "switching partition"
+				if _, ok := ctx.Value(PrimaryUpgrade).(bool); ok {
+					if offlineRegex.MatchString(err.Error()) {
+						hasRebooted = true
+					} else if onlineRegex.MatchString(err.Error()) {
+						if hasRebooted {
+							msg = "initializing"
+						} else {
+							msg = "installing"
+						}
+					} else {
+						msg = err.Error()
+					}
+				} else if !errors.Is(err, context.DeadlineExceeded) {
 					msg = err.Error()
-				}
-				if v, ok := ctx.Value(UpgradeStatusGetErrorMessage).(string); ok {
-					msg = v
 				}
 
 				tracker.Update(msg)
 			}
-			logEntry.WithError(err).Debug("Appliance unreachable")
+			logEntry.WithError(err).Debug("no response, appliance offline")
 			return err
 		}
 		var s string
