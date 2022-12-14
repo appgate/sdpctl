@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v17/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"

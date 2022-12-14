@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/adrg/xdg v0.4.0
-	github.com/appgate/sdp-api-client-go v1.0.7-0.20221024132005-72954ecc7c32
+	github.com/appgate/sdp-api-client-go v1.0.7-0.20221212090649-3f438a88fb5e
 	github.com/billgraziano/dpapi v0.4.0
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/cheynewallace/tabby v1.1.1
