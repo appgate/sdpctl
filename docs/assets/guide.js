@@ -39,7 +39,12 @@ function highlightCode() {
           break;
       }
     }
-    code.innerHTML = lines.join("\n").trim();
+
+    // trim the new line characters in the beginning
+    while(lines.length > 0 && !lines[0]) {
+      lines.shift();
+    }
+    code.innerHTML = lines.join("\n");
   }
 }
 
