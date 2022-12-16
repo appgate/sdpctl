@@ -79,7 +79,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		details := status.GetDetails()
 		if v, ok := status.GetStatusOk(); ok {
 			s = *v
-			logEntry.WithField("current", s).Debug("Received upgrade status")
+			logEntry.WithField("current", s).Debug("Received status")
 			if tracker != nil {
 				tracker.Update(s)
 			}
@@ -88,10 +88,12 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 					// send error details for tracker
 					tracker.Fail(s + " - " + details)
 				}
-				return backoff.Permanent(fmt.Errorf("Upgrade failed on %s %s %s", name, s, details))
+				err := fmt.Errorf("Upgrade failed on %s %s %s", name, s, details)
+				logEntry.WithError(err).WithFields(log.Fields{"status": s, "details": details}).Error("Got unwanted status")
+				return backoff.Permanent(err)
 			}
 			if util.InSlice(s, desiredStatuses) {
-				logEntry.Info("Reached wanted upgrade status")
+				logEntry.Info("Reached wanted status")
 				return nil
 			}
 		}
