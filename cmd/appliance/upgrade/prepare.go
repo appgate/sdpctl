@@ -39,23 +39,23 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config                *configuration.Config
-	Out                   io.Writer
-	Appliance             func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	SpinnerOut            func() io.Writer
-	debug                 bool
-	NoInteractive         bool
-	image                 string
-	DevKeyring            bool
-	remoteImage           bool
-	filename              string
-	timeout               time.Duration
-	defaultFilter         map[string]map[string]string
-	hostOnController      bool
-	forcePrepare          bool
-	ciMode                bool
-	primaryControllerHost string
-	targetVersion         *version.Version
+	Config           *configuration.Config
+	Out              io.Writer
+	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	SpinnerOut       func() io.Writer
+	debug            bool
+	NoInteractive    bool
+	image            string
+	DevKeyring       bool
+	remoteImage      bool
+	filename         string
+	timeout          time.Duration
+	defaultFilter    map[string]map[string]string
+	hostOnController bool
+	forcePrepare     bool
+	ciMode           bool
+	actualHostname   string
+	targetVersion    *version.Version
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -168,7 +168,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.DevKeyring, "dev-keyring", false, "Use the development keyring to verify the upgrade image")
 	flags.Int("throttle", 5, "Upgrade is done in batches using a throttle value. You can control the throttle using this flag")
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
-	flags.StringVar(&opts.primaryControllerHost, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
+	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
 
 	return prepareCmd
@@ -212,6 +212,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
+	host, err := opts.Config.GetHost()
+	if err != nil {
+		return err
+	}
 
 	token, err := opts.Config.GetBearTokenHeaderValue()
 	if err != nil {
@@ -222,13 +226,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		Token:     token,
 	}
 
-	if len(opts.primaryControllerHost) <= 0 {
-		if opts.primaryControllerHost, err = opts.Config.GetHost(); err != nil {
-			return err
-		}
+	if len(opts.actualHostname) > 0 {
+		host = opts.actualHostname
 	}
 
-	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, opts.primaryControllerHost, true)
+	primaryController, err := appliancepkg.FindPrimaryController(Allappliances, host, true)
 	if err != nil {
 		return err
 	}
@@ -526,13 +528,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 2
-	remoteFilePath := fmt.Sprintf("controller://%s/%s", opts.primaryControllerHost, opts.filename)
+	primaryControllerHostname := primaryController.GetHostname()
+	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryControllerHostname, opts.filename)
 	// NOTE: Backwards compatibility with appliances older than API version 13.
 	// Appliances before API version require that the peer port be passed explicitly as part of the download URL.
 	// Insert the peer port into the URL if necessary.
 	if opts.Config.Version < 13 {
 		if v, ok := primaryController.GetPeerInterfaceOk(); ok {
-			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", opts.primaryControllerHost, int(v.GetHttpsPort()), opts.filename)
+			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", primaryControllerHostname, int(v.GetHttpsPort()), opts.filename)
 		}
 	}
 
@@ -687,7 +690,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}(&wg, errChan)
 
 		for err := range errChan {
-			log.WithError(err).Error("Error while preparing")
 			errs = multierr.Append(err, errs)
 		}
 
