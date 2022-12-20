@@ -323,4 +323,10 @@ for More information, see: https://sdphelp.appgate.com/adminguide/new-appliance.
 			},
 		},
 	}
+
+	ApplianceForceDisableControllerDocs = CommandDoc{
+		Short:    "Force disable misbehaving Controllers using this command. USE WITH CAUTION!",
+		Long:     "",
+		Examples: []ExampleDoc{},
+	}
 )
