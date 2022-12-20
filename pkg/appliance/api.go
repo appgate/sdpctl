@@ -9,7 +9,9 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -306,4 +308,51 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
+}
+
+func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string, ids []string) (*openapi.AppliancesForceDisableControllersPost200Response, string, error) {
+	normalizedURL, err := configuration.NormalizeURL(hostname)
+	if err != nil {
+		return nil, "", err
+	}
+	cfg := a.APIClient.GetConfig()
+	cfg.Servers[0].URL = normalizedURL
+
+	apiClient := openapi.NewAPIClient(cfg)
+	logrus.Debug(apiClient)
+	postBody := openapi.AppliancesForceDisableControllersPostRequest{
+		ApplianceIds: ids,
+	}
+	result, response, err := apiClient.AppliancesApi.AppliancesForceDisableControllersPost(ctx).AppliancesForceDisableControllersPostRequest(postBody).Authorization(a.Token).Execute()
+	if err != nil {
+		return nil, "", api.HTTPErrorResponse(response, err)
+	}
+	changeID := response.Header.Get("Change-ID")
+	if len(changeID) <= 0 {
+		return result, changeID, errors.New("No change ID sent")
+	}
+
+	return result, changeID, nil
+}
+
+func (a *Appliance) RepartitionIPAllocations(ctx context.Context, hostname string) (string, error) {
+	normalizedURL, err := configuration.NormalizeURL(hostname)
+	if err != nil {
+		return "", err
+	}
+	cfg := a.APIClient.GetConfig()
+	cfg.Servers[0].URL = normalizedURL
+
+	apiClient := openapi.NewAPIClient(cfg)
+	logrus.Debug(apiClient)
+	resp, err := apiClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Authorization(a.Token).Execute()
+	if err != nil {
+		return "", api.HTTPErrorResponse(resp, err)
+	}
+	changeID := resp.Header.Get("Change-ID")
+	if len(changeID) <= 0 {
+		return changeID, errors.New("No change ID sent")
+	}
+
+	return changeID, nil
 }
