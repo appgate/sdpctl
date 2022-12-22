@@ -528,14 +528,17 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	// Step 2
-	primaryControllerHostname := primaryController.GetHostname()
-	remoteFilePath := fmt.Sprintf("controller://%s/%s", primaryControllerHostname, opts.filename)
+	primaryControllerHostname, ok := primaryController.GetHostnameOk()
+	if !ok || primaryControllerHostname == nil {
+		return errors.New("failed to fetch configured hostname for primary controller")
+	}
+	remoteFilePath := fmt.Sprintf("controller://%s/%s", *primaryControllerHostname, opts.filename)
 	// NOTE: Backwards compatibility with appliances older than API version 13.
 	// Appliances before API version require that the peer port be passed explicitly as part of the download URL.
 	// Insert the peer port into the URL if necessary.
 	if opts.Config.Version < 13 {
 		if v, ok := primaryController.GetPeerInterfaceOk(); ok {
-			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", primaryControllerHostname, int(v.GetHttpsPort()), opts.filename)
+			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", *primaryControllerHostname, int(v.GetHttpsPort()), opts.filename)
 		}
 	}
 
