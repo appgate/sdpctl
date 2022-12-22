@@ -299,7 +299,7 @@
           <summary class="example-summary">List and renew tokens</summary>
           <pre class="code-editor"><code>
 # list distinguished names with active tokens
-&gt; <span data-varid="command">sdpctl.exe</span> tokens list
+&gt; <span data-varid="command">sdpctl.exe</span> token list
   Distinguished Name                     Device ID       Last Token Issued At           Provider Name    Username
   ------------------                     ---------       --------------------           -------------    --------
   CN=2cc1a54a...,CN=ann.gills,OU=ldap    2cc1a54a-...    2022-11-22T09:42:09.738773Z    ldap             ann.gills
@@ -307,7 +307,7 @@
 
 
 # renew all tokens for ann.gills
-&gt; <span data-varid="command">sdpctl.exe</span> tokens revoke "CN=2cc1a54...,CN=ann.gills,OU=ldap"
+&gt; <span data-varid="command">sdpctl.exe</span> token revoke "CN=2cc1a54...,CN=ann.gills,OU=ldap"
   ID           Type            Distinguished Name                   Issued          Expires         Revoked  Site ID    Site Name   Revocation Time
   --           ----            ------------------                   ------          -------         -------  -------    ---------   ---------------
   e9abaff5...  Entitlement     CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true      8a4add    SG-01       2022-11-22 ...
@@ -315,7 +315,7 @@
 
 
 # renew all entitlement tokens
-&gt; <span data-varid="command">sdpctl.exe</span> tokens revoke --by-token-type entitlement
+&gt; <span data-varid="command">sdpctl.exe</span> token revoke --by-token-type entitlement
   ID           Type            Distinguished Name                   Issued          Expires         Revoked  Site ID    Site Name   Revocation Time
   --           ----            ------------------                   ------          -------         -------  -------    ---------   ---------------
   e9abaff5...  Entitlement     CN=2cc1a54a...,CN=ann.gills,OU=ldap  2022-11-22 ...  2022-11-23 ...  true      8a4add    SG-01       2022-11-22 ...
