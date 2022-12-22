@@ -310,7 +310,7 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 	return nil
 }
 
-func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string, ids []string) (*openapi.AppliancesForceDisableControllersPost200Response, string, error) {
+func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string, disable []openapi.Appliance) (*openapi.AppliancesForceDisableControllersPost200Response, string, error) {
 	normalizedURL, err := configuration.NormalizeURL(hostname)
 	if err != nil {
 		return nil, "", err
@@ -319,7 +319,12 @@ func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string
 	cfg.Servers[0].URL = normalizedURL
 
 	apiClient := openapi.NewAPIClient(cfg)
-	logrus.Debug(apiClient)
+
+	ids := []string{}
+	for _, a := range disable {
+		ids = append(ids, a.GetId())
+	}
+
 	postBody := openapi.AppliancesForceDisableControllersPostRequest{
 		ApplianceIds: ids,
 	}

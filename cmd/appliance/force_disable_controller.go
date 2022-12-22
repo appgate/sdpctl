@@ -1,12 +1,13 @@
 package appliance
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"sync"
-	"time"
+	"text/template"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
@@ -92,6 +93,14 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	controllers := appliancepkg.GroupByFunctions(appliances)[appliancepkg.FunctionController]
 	log.WithField("controllers", controllers).Debug("controller list fetched")
 
+	stats, _, err := a.Stats(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Error is ignored here since the function returns an error when either a controller or logserver is offline, which is fine at this point
+	controllers, offline, _ := appliancepkg.FilterAvailable(controllers, stats.GetData())
+
 	if len(args) <= 0 {
 		hostnames := []string{}
 		for _, ctrl := range controllers {
@@ -99,24 +108,35 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 		qs := &survey.MultiSelect{
 			PageSize: len(hostnames),
-			Message:  "Select controllers to force disable",
+			Message:  "Select Controllers to force disable",
 			Options:  hostnames,
 		}
 		if err := prompt.SurveyAskOne(qs, &args); err != nil {
 			return err
 		}
 		if len(args) <= 0 {
-			return errors.New("No controllers selected to disable")
+			return errors.New("No Controllers selected to disable")
 		}
 	}
 
 	announceList := []openapi.Appliance{}
-	disableList := []string{}
+	disableList := []openapi.Appliance{}
 	for _, ctrl := range controllers {
 		if util.InSlice(ctrl.GetHostname(), args) {
-			disableList = append(disableList, ctrl.GetId())
+			disableList = append(disableList, ctrl)
 		} else {
 			announceList = append(announceList, ctrl)
+		}
+	}
+
+	summary, err := printSummary(stats.GetData(), disableList, announceList, offline)
+	if err != nil {
+		return err
+	}
+	fmt.Fprint(opts.Out, summary)
+	if !opts.NoInteractive {
+		if err := prompt.AskConfirmation(); err != nil {
+			return err
 		}
 	}
 
@@ -134,11 +154,9 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		p = tui.New(ctx, opts.SpinnerOut())
 		defer p.Wait()
 	}
-	confirmationChan := make(chan confirmationStruct)
+	confirmationChan := make(chan confirmationStruct, len(announceList))
 	errChan := make(chan error, len(announceList))
 	var wg1 sync.WaitGroup
-	// Used for synronizing API calls when force-disabling controller
-	timer := time.NewTimer(2 * time.Second)
 	for _, ctrl := range announceList {
 		wg1.Add(1)
 		var t *tui.Tracker
@@ -148,19 +166,18 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 				t.Watch([]string{"complete"}, []string{"failed"})
 			}(t)
 		}
-		go func(ctx context.Context, wg *sync.WaitGroup, timer *time.Timer, confirmationChan chan confirmationStruct, errChan chan error, ctrl openapi.Appliance) {
+		go func(ctx context.Context, wg *sync.WaitGroup, confirmationChan chan confirmationStruct, errChan chan error, ctrl openapi.Appliance) {
 			defer wg.Done()
 			hostname := ctrl.GetHostname()
-			<-timer.C
 			if t != nil {
 				t.Update("disabling")
 			}
 			response, changeID, err := a.ForceDisableControllers(ctx, hostname, disableList)
 			if err != nil {
-				errChan <- err
 				if t != nil {
 					t.Fail(err.Error())
 				}
+				errChan <- err
 				return
 			}
 			deadControllers := response.GetOfflineControllers()
@@ -172,15 +189,16 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 					tracker:    t,
 				},
 			}
-		}(ctx, &wg1, timer, confirmationChan, errChan, ctrl)
+		}(ctx, &wg1, confirmationChan, errChan, ctrl)
 	}
 
 	var errs *multierror.Error
 	go func(errs *multierror.Error) {
 		for err := range errChan {
 			// Abort if any controller fails
-			cancel()
 			log.WithError(err).Error("force disable controller command error")
+			p.Abort()
+			cancel()
 			errs = multierror.Append(errs, err)
 		}
 	}(errs)
@@ -274,4 +292,77 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	wg2.Wait()
 
 	return errs.ErrorOrNil()
+}
+
+const tplString string = `
+FORCE-DISABLE-CONTROLLER SUMMARY
+
+This will force disable the selected controllers and announce it to the remaining controllers. The following Controllers are going to be disabled:
+
+{{ .DisableTable }}{{ if .ShowAnnounceTable }}
+
+The following Controllers are online and will be be notified of the disablements:
+
+{{ .AnnounceTable }}{{ end }}{{ if .ShowOfflineTable }}
+
+The following Controllers are unreachable and will not recieve the announcement:
+
+{{ .OfflineTable }}{{ end }}
+`
+
+func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable, announce, offline []openapi.Appliance) (string, error) {
+	type stub struct {
+		DisableTable, AnnounceTable, OfflineTable string
+		ShowAnnounceTable, ShowOfflineTable       bool
+	}
+	disableBuffer := &bytes.Buffer{}
+	dt := util.NewPrinter(disableBuffer, 4)
+	dt.AddHeader("Name", "Hostname", "Status", "Version")
+
+	announceBuffer := &bytes.Buffer{}
+	at := util.NewPrinter(announceBuffer, 4)
+	at.AddHeader("Name", "Hostname", "Status", "Version")
+
+	offlineBuffer := &bytes.Buffer{}
+	ot := util.NewPrinter(offlineBuffer, 4)
+	ot.AddHeader("Name", "Hostname", "Status", "Version")
+
+	data := stub{
+		ShowAnnounceTable: false,
+		ShowOfflineTable:  false,
+	}
+	for _, s := range stats {
+		for _, a := range disable {
+			if s.GetId() == a.GetId() {
+				dt.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
+			}
+		}
+		for _, a := range announce {
+			if s.GetId() == a.GetId() {
+				data.ShowAnnounceTable = true
+				at.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
+			}
+		}
+		for _, a := range offline {
+			if s.GetId() == a.GetId() {
+				data.ShowOfflineTable = true
+				ot.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
+			}
+		}
+	}
+	dt.Print()
+	at.Print()
+	ot.Print()
+
+	data.DisableTable = disableBuffer.String()
+	data.AnnounceTable = announceBuffer.String()
+	data.OfflineTable = offlineBuffer.String()
+
+	tpl := template.Must(template.New("").Parse(tplString))
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, data); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
