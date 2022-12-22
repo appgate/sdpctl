@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"text/template"
 
@@ -90,8 +91,30 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	if err != nil {
 		return err
 	}
-	controllers := appliancepkg.GroupByFunctions(appliances)[appliancepkg.FunctionController]
-	log.WithField("controllers", controllers).Debug("controller list fetched")
+
+	primaryHost, err := cfg.GetHost()
+	if err != nil {
+		return err
+	}
+	primaryController, err := appliancepkg.FindPrimaryController(appliances, primaryHost, true)
+	if err != nil {
+		return err
+	}
+	log.WithField("controller", primaryController.GetName()).Info("Found primary Controller")
+
+	if util.InSlice(primaryController.GetHostname(), args) {
+		return errors.New("Illegal operation. Disabling the primary Controller is not allowed")
+	}
+
+	rawControllers := appliancepkg.GroupByFunctions(appliances)[appliancepkg.FunctionController]
+	// Remove primary Controller from list
+	controllers := []openapi.Appliance{}
+	for _, ctrl := range rawControllers {
+		if ctrl.GetId() == primaryController.GetId() {
+			continue
+		}
+		controllers = append(controllers, ctrl)
+	}
 
 	stats, _, err := a.Stats(ctx)
 	if err != nil {
@@ -102,24 +125,33 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	controllers, offline, _ := appliancepkg.FilterAvailable(controllers, stats.GetData())
 
 	if len(args) <= 0 {
-		hostnames := []string{}
+		selectable := []string{}
 		for _, ctrl := range controllers {
-			hostnames = append(hostnames, ctrl.GetHostname())
+			selectable = append(selectable, fmt.Sprintf("%s (%s)", ctrl.GetName(), ctrl.GetHostname()))
 		}
 		qs := &survey.MultiSelect{
-			PageSize: len(hostnames),
+			PageSize: len(selectable),
 			Message:  "Select Controllers to force disable",
-			Options:  hostnames,
+			Options:  selectable,
 		}
-		if err := prompt.SurveyAskOne(qs, &args); err != nil {
+		selected := []string{}
+		if err := prompt.SurveyAskOne(qs, &selected); err != nil {
 			return err
 		}
-		if len(args) <= 0 {
+		if len(selected) <= 0 {
 			return errors.New("No Controllers selected to disable")
+		}
+		for _, ctrl := range controllers {
+			for _, s := range selected {
+				if strings.Contains(s, ctrl.GetName()) {
+					args = append(args, ctrl.GetHostname())
+				}
+			}
 		}
 	}
 
-	announceList := []openapi.Appliance{}
+	// Primary Controller needs to be announced as well
+	announceList := []openapi.Appliance{*primaryController}
 	disableList := []openapi.Appliance{}
 	for _, ctrl := range controllers {
 		if util.InSlice(ctrl.GetHostname(), args) {
@@ -129,7 +161,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	}
 
-	summary, err := printSummary(stats.GetData(), disableList, announceList, offline)
+	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, announceList, offline)
 	if err != nil {
 		return err
 	}
@@ -310,7 +342,7 @@ The following Controllers are unreachable and will not recieve the announcement:
 {{ .OfflineTable }}{{ end }}
 `
 
-func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable, announce, offline []openapi.Appliance) (string, error) {
+func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable, announce, offline []openapi.Appliance) (string, error) {
 	type stub struct {
 		DisableTable, AnnounceTable, OfflineTable string
 		ShowAnnounceTable, ShowOfflineTable       bool
@@ -321,7 +353,7 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable, announc
 
 	announceBuffer := &bytes.Buffer{}
 	at := util.NewPrinter(announceBuffer, 4)
-	at.AddHeader("Name", "Hostname", "Status", "Version")
+	at.AddHeader("Name", "Hostname", "Status", "Version", "Primary")
 
 	offlineBuffer := &bytes.Buffer{}
 	ot := util.NewPrinter(offlineBuffer, 4)
@@ -340,7 +372,11 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable, announc
 		for _, a := range announce {
 			if s.GetId() == a.GetId() {
 				data.ShowAnnounceTable = true
-				at.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
+				if a.GetId() == primaryControllerID {
+					at.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion(), tui.Check)
+					continue
+				}
+				at.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion(), "")
 			}
 		}
 		for _, a := range offline {
