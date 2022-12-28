@@ -2586,7 +2586,7 @@ func TestGetRealHostname(t *testing.T) {
 		{
 			name:     "no hostname",
 			wantErr:  true,
-			matchErr: regexp.MustCompile("Failed to determine hostname for the Controller admin nterface"),
+			matchErr: regexp.MustCompile("Failed to determine hostname for the Controller admin interface"),
 		},
 	}
 	for _, tt := range testCases {
