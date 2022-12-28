@@ -9,9 +9,7 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
-	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -310,16 +308,7 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 	return nil
 }
 
-func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string, disable []openapi.Appliance) (*openapi.AppliancesForceDisableControllersPost200Response, string, error) {
-	normalizedURL, err := configuration.NormalizeURL(hostname)
-	if err != nil {
-		return nil, "", err
-	}
-	cfg := a.APIClient.GetConfig()
-	cfg.Servers[0].URL = normalizedURL
-
-	apiClient := openapi.NewAPIClient(cfg)
-
+func (a *Appliance) ForceDisableControllers(ctx context.Context, disable []openapi.Appliance) (*openapi.AppliancesForceDisableControllersPost200Response, string, error) {
 	ids := []string{}
 	for _, a := range disable {
 		ids = append(ids, a.GetId())
@@ -328,7 +317,7 @@ func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string
 	postBody := openapi.AppliancesForceDisableControllersPostRequest{
 		ApplianceIds: ids,
 	}
-	result, response, err := apiClient.AppliancesApi.AppliancesForceDisableControllersPost(ctx).AppliancesForceDisableControllersPostRequest(postBody).Authorization(a.Token).Execute()
+	result, response, err := a.APIClient.AppliancesApi.AppliancesForceDisableControllersPost(ctx).AppliancesForceDisableControllersPostRequest(postBody).Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, "", api.HTTPErrorResponse(response, err)
 	}
@@ -340,17 +329,8 @@ func (a *Appliance) ForceDisableControllers(ctx context.Context, hostname string
 	return result, changeID, nil
 }
 
-func (a *Appliance) RepartitionIPAllocations(ctx context.Context, hostname string) (string, error) {
-	normalizedURL, err := configuration.NormalizeURL(hostname)
-	if err != nil {
-		return "", err
-	}
-	cfg := a.APIClient.GetConfig()
-	cfg.Servers[0].URL = normalizedURL
-
-	apiClient := openapi.NewAPIClient(cfg)
-	logrus.Debug(apiClient)
-	resp, err := apiClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Authorization(a.Token).Execute()
+func (a *Appliance) RepartitionIPAllocations(ctx context.Context) (string, error) {
+	resp, err := a.APIClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return "", api.HTTPErrorResponse(resp, err)
 	}

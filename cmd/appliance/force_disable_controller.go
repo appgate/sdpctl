@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"sync"
 	"text/template"
@@ -83,6 +84,10 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	if err != nil {
 		return err
 	}
+	changeAPI := change.ApplianceChange{
+		APIClient: a.APIClient,
+		Token:     a.Token,
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -114,6 +119,10 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			continue
 		}
 		controllers = append(controllers, ctrl)
+	}
+
+	if len(controllers) <= 0 {
+		return fmt.Errorf("No controllers to disable")
 	}
 
 	stats, _, err := a.Stats(ctx)
@@ -150,9 +159,8 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	}
 
-	// Primary Controller needs to be announced as well
-	announceList := []openapi.Appliance{*primaryController}
 	disableList := []openapi.Appliance{}
+	announceList := []openapi.Appliance{}
 	for _, ctrl := range controllers {
 		if util.InSlice(ctrl.GetHostname(), args) {
 			disableList = append(disableList, ctrl)
@@ -161,7 +169,8 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	}
 
-	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, announceList, offline)
+	// Summary
+	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, offline)
 	if err != nil {
 		return err
 	}
@@ -172,177 +181,100 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	}
 
-	type changeStruct struct {
-		changeID   string
-		controller openapi.Appliance
-		tracker    *tui.Tracker
-	}
-	type confirmationStruct struct {
-		changeDetails   changeStruct
-		deadControllers []string
-	}
 	var p *tui.Progress
+	var t *tui.Tracker
 	if !opts.CiMode {
 		p = tui.New(ctx, opts.SpinnerOut())
 		defer p.Wait()
-	}
-	confirmationChan := make(chan confirmationStruct, len(announceList))
-	errChan := make(chan error, len(announceList))
-	var wg1 sync.WaitGroup
-	for _, ctrl := range announceList {
-		wg1.Add(1)
-		var t *tui.Tracker
-		if !opts.CiMode {
-			t = p.AddTracker(ctrl.GetName(), "complete")
-			go func(t *tui.Tracker) {
-				t.Watch([]string{"complete"}, []string{"failed"})
-			}(t)
+
+		msg := "disabling controller"
+		if len(disableList) > 1 {
+			msg += "s"
 		}
-		go func(ctx context.Context, wg *sync.WaitGroup, confirmationChan chan confirmationStruct, errChan chan error, ctrl openapi.Appliance) {
-			defer wg.Done()
-			hostname := ctrl.GetHostname()
-			if t != nil {
-				t.Update("disabling")
-			}
-			response, changeID, err := a.ForceDisableControllers(ctx, hostname, disableList)
-			if err != nil {
-				if t != nil {
-					t.Fail(err.Error())
-				}
-				errChan <- err
-				return
-			}
-			deadControllers := response.GetOfflineControllers()
-			confirmationChan <- confirmationStruct{
-				deadControllers: deadControllers,
-				changeDetails: changeStruct{
-					changeID:   changeID,
-					controller: ctrl,
-					tracker:    t,
-				},
-			}
-		}(ctx, &wg1, confirmationChan, errChan, ctrl)
+		t = p.AddTracker(msg, "done")
+		go func(t *tui.Tracker) {
+			t.Watch([]string{"done"}, []string{})
+		}(t)
+		defer t.Update("done")
 	}
+
+	if t != nil {
+		t.Update("disabling")
+	}
+	res, changeID, err := a.ForceDisableControllers(ctx, disableList)
+	if err != nil {
+		if t != nil {
+			t.Fail(err.Error())
+		}
+		return err
+	}
+
+	// Re-add primary controller and sort the list
+	announceList = append(announceList, *primaryController)
+	sort.SliceStable(announceList, func(i, j int) bool {
+		return announceList[i].GetName() > announceList[j].GetName()
+	})
 
 	var errs *multierror.Error
-	go func(errs *multierror.Error) {
-		for err := range errChan {
-			// Abort if any controller fails
-			log.WithError(err).Error("force disable controller command error")
-			p.Abort()
-			cancel()
-			errs = multierror.Append(errs, err)
-		}
-	}(errs)
-
-	go func(wg *sync.WaitGroup) {
-		wg.Wait()
-		close(confirmationChan)
-	}(&wg1)
-
-	deadControllers := []string{}
-	changeList := []changeStruct{}
-	for c := range confirmationChan {
-		if len(c.deadControllers) > 0 {
-			for _, v := range c.deadControllers {
-				deadControllers = util.AppendIfMissing(deadControllers, v)
+	if o, ok := res.GetOfflineControllersOk(); ok {
+		for _, a := range announceList {
+			if util.InSlice(a.GetId(), o) {
+				errs = multierror.Append(errs, fmt.Errorf("Failed to send disable command to Controller %s", a.GetName()))
 			}
 		}
-		changeList = append(changeList, c.changeDetails)
-	}
-
-	if len(deadControllers) > 0 {
-		fmt.Fprintln(opts.Out, "Some Controllers seem to be offline and unable to recieve the force-disable-controller request.")
-		fmt.Fprintln(opts.Out, "Please confirm that the following Controllers are in fact offline and unreachable before continuing:")
-		for _, c := range deadControllers {
-			fmt.Fprintln(opts.Out, c)
-		}
-		if !opts.NoInteractive {
-			if err := prompt.AskConfirmation("All listed Controllers are offline"); err != nil {
-				return err
-			}
+		if errs != nil {
+			return errs.ErrorOrNil()
 		}
 	}
 
-	var wg2 sync.WaitGroup
-	for _, c := range changeList {
-		wg2.Add(1)
-		go func(wg *sync.WaitGroup, changeDetails changeStruct) {
+	var wg1 sync.WaitGroup
+	for _, a := range announceList {
+		wg1.Add(1)
+		go func(ctx context.Context, wg *sync.WaitGroup, a *openapi.Appliance) {
 			defer wg.Done()
-			ac := change.ApplianceChange{
-				APIClient: a.APIClient,
-				Token:     a.Token,
+			if _, err := changeAPI.RetryUntilCompleted(ctx, changeID, a.GetId()); err != nil {
+				errs = multierror.Append(errs, err)
 			}
-			ch, err := ac.RetryUntilCompleted(ctx, changeDetails.changeID, changeDetails.controller.GetId())
-			if err != nil {
-				errChan <- err
-				if changeDetails.tracker != nil {
-					changeDetails.tracker.Fail(err.Error())
-				}
-				return
-			}
-			log.WithFields(log.Fields{
-				"controller": changeDetails.controller.GetName(),
-				"change-ID":  ch.GetId(),
-				"status":     ch.GetStatus(),
-				"result":     ch.GetResult(),
-				"details":    ch.GetDetails(),
-			}).Info("change was successfully applied to Controller. Re-allocating IPs")
-			hostname := changeDetails.controller.GetHostname()
-			if !opts.CiMode {
-				changeDetails.tracker.Update("re-allocating IPs")
-			}
-			changeID, err := a.RepartitionIPAllocations(ctx, hostname)
-			if err != nil {
-				errChan <- err
-				if changeDetails.tracker != nil {
-					changeDetails.tracker.Fail(err.Error())
-				}
-				return
-			}
-			ch, err = ac.RetryUntilCompleted(ctx, changeID, changeDetails.controller.GetId())
-			if err != nil {
-				errChan <- err
-				if changeDetails.tracker != nil {
-					changeDetails.tracker.Fail(err.Error())
-				}
-				return
-			}
-			if changeDetails.tracker != nil {
-				changeDetails.tracker.Update("complete")
-			}
-			log.WithFields(log.Fields{
-				"controller": changeDetails.controller.GetName(),
-				"change-ID":  ch.GetId(),
-				"status":     ch.GetStatus(),
-				"result":     ch.GetResult(),
-				"details":    ch.GetDetails(),
-			}).Info("IPs successfully re-allocated")
-		}(&wg2, c)
+		}(ctx, &wg1, &a)
 	}
+	wg1.Wait()
 
+	if t != nil {
+		t.Update("re-allocating IP:s")
+	}
+	changeID, err = a.RepartitionIPAllocations(ctx)
+	if err != nil {
+		return err
+	}
+	var wg2 sync.WaitGroup
+	for _, ctrl := range announceList {
+		wg2.Add(1)
+		go func(ctx context.Context, wg *sync.WaitGroup, ctrl *openapi.Appliance) {
+			defer wg.Done()
+			if _, err := changeAPI.RetryUntilCompleted(ctx, changeID, ctrl.GetId()); err != nil {
+				errs = multierror.Append(errs, fmt.Errorf("IP re-allocation failed for %s: %s", ctrl.GetName(), err.Error()))
+			}
+		}(ctx, &wg2, &ctrl)
+	}
 	wg2.Wait()
 
 	return errs.ErrorOrNil()
 }
 
-const tplString string = `
+const summaryTPLString string = `
 FORCE-DISABLE-CONTROLLER SUMMARY
 
 This will force disable the selected controllers and announce it to the remaining controllers. The following Controllers are going to be disabled:
 
-{{ .DisableTable }}{{ if .ShowAnnounceTable }}
+{{ .DisableTable }}{{ if .ShowOfflineTable }}
 
-The following Controllers are online and will be be notified of the disablements:
-
-{{ .AnnounceTable }}{{ end }}{{ if .ShowOfflineTable }}
-
-The following Controllers are unreachable and will not recieve the announcement:
+WARNING:
+The following Controllers are unreachable and will likely not recieve the announcement. Please confirm that these controllers are, in fact, offline before continuing:
 
 {{ .OfflineTable }}{{ end }}
 `
 
-func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable, announce, offline []openapi.Appliance) (string, error) {
+func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable, offline []openapi.Appliance) (string, error) {
 	type stub struct {
 		DisableTable, AnnounceTable, OfflineTable string
 		ShowAnnounceTable, ShowOfflineTable       bool
@@ -351,32 +283,17 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControlle
 	dt := util.NewPrinter(disableBuffer, 4)
 	dt.AddHeader("Name", "Hostname", "Status", "Version")
 
-	announceBuffer := &bytes.Buffer{}
-	at := util.NewPrinter(announceBuffer, 4)
-	at.AddHeader("Name", "Hostname", "Status", "Version", "Primary")
-
 	offlineBuffer := &bytes.Buffer{}
 	ot := util.NewPrinter(offlineBuffer, 4)
 	ot.AddHeader("Name", "Hostname", "Status", "Version")
 
 	data := stub{
-		ShowAnnounceTable: false,
-		ShowOfflineTable:  false,
+		ShowOfflineTable: false,
 	}
 	for _, s := range stats {
 		for _, a := range disable {
 			if s.GetId() == a.GetId() {
 				dt.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
-			}
-		}
-		for _, a := range announce {
-			if s.GetId() == a.GetId() {
-				data.ShowAnnounceTable = true
-				if a.GetId() == primaryControllerID {
-					at.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion(), tui.Check)
-					continue
-				}
-				at.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion(), "")
 			}
 		}
 		for _, a := range offline {
@@ -387,14 +304,12 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControlle
 		}
 	}
 	dt.Print()
-	at.Print()
 	ot.Print()
 
 	data.DisableTable = disableBuffer.String()
-	data.AnnounceTable = announceBuffer.String()
 	data.OfflineTable = offlineBuffer.String()
 
-	tpl := template.Must(template.New("").Parse(tplString))
+	tpl := template.Must(template.New("").Parse(summaryTPLString))
 	var buf bytes.Buffer
 	if err := tpl.Execute(&buf, data); err != nil {
 		return "", err
