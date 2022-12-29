@@ -84,6 +84,11 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	if err != nil {
 		return err
 	}
+	if a.ApplianceStats == nil {
+		a.ApplianceStats = &appliancepkg.ApplianceStatus{
+			Appliance: a,
+		}
+	}
 	changeAPI := change.ApplianceChange{
 		APIClient: a.APIClient,
 		Token:     a.Token,
@@ -158,6 +163,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			}
 		}
 	}
+	log.WithField("controllers", args).Debug("selected")
 
 	disableList := []openapi.Appliance{}
 	announceList := []openapi.Appliance{}
@@ -249,12 +255,24 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	var wg2 sync.WaitGroup
 	for _, ctrl := range announceList {
 		wg2.Add(1)
-		go func(ctx context.Context, wg *sync.WaitGroup, ctrl *openapi.Appliance) {
+		go func(ctx context.Context, wg *sync.WaitGroup, ctrl openapi.Appliance) {
 			defer wg.Done()
 			if _, err := changeAPI.RetryUntilCompleted(ctx, changeID, ctrl.GetId()); err != nil {
 				errs = multierror.Append(errs, fmt.Errorf("IP re-allocation failed for %s: %s", ctrl.GetName(), err.Error()))
 			}
-		}(ctx, &wg2, &ctrl)
+			if err := a.ApplianceStats.WaitForApplianceStatus(ctx, ctrl, appliancepkg.StatusNotBusy, nil); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}(ctx, &wg2, ctrl)
+	}
+	for _, ctrl := range disableList {
+		wg2.Add(1)
+		go func(ctx context.Context, wg *sync.WaitGroup, ctrl openapi.Appliance) {
+			defer wg.Done()
+			if err := a.ApplianceStats.WaitForApplianceStatus(ctx, ctrl, appliancepkg.StatusNotBusy, nil); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}(ctx, &wg2, ctrl)
 	}
 	wg2.Wait()
 
