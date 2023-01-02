@@ -22,7 +22,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hinshun/vt10x v0.0.0-20220119200601-820417d04eec
 	github.com/keybase/go-keychain v0.0.0-20220610143837-c2ce06069005
-	github.com/mattn/go-isatty v0.0.16
+	github.com/mattn/go-isatty v0.0.17
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
