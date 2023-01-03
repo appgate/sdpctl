@@ -325,10 +325,13 @@ for More information, see: https://sdphelp.appgate.com/adminguide/new-appliance.
 	}
 
 	ApplianceUpgradeSwitchPartitionDoc = CommandDoc{
-		Short: "Switch partition",
+		Short: "Reboot the appliance and switch the secondary partition to become the primary.",
 		Long: `Reboot the appliance and switch the secondary partition to become the primary.
 
-`,
+An appliance typically keeps two partitions: one primary, which is the it boots into, and a secondary. The secondary partition is kept as a crude backup of a previous appliance state.
+The secondary partition can be made into the primary partition using this command. This may be useful if, for example, an upgrade failed on the appliance.
+
+WARNING: `,
 		Examples: []ExampleDoc{
 			{
 				Description: "Interactive prompt to select and confirm which appliance to switch partition on",
