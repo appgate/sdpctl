@@ -32,7 +32,7 @@ require (
 	github.com/spf13/viper v1.14.0
 	github.com/stretchr/testify v1.8.1
 	github.com/vbauerster/mpb/v7 v7.5.3
-	github.com/zalando/go-keyring v0.2.1
+	github.com/zalando/go-keyring v0.2.2
 	golang.org/x/sync v0.1.0
 	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
