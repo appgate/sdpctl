@@ -13,7 +13,7 @@ import (
 func HelpTemplate() string {
 	cobra.AddTemplateFunc("now", time.Now)
 	cobra.AddTemplateFunc("caller", getCaller)
-	return `© {{ now.Year }} Appgate Cybersecurity, Inc.
+	return `© Appgate Cybersecurity, Inc.
 All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
 https://www.appgate.com
 
