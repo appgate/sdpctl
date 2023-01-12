@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
