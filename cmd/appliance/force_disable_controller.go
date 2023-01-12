@@ -138,10 +138,14 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	// Error is ignored here since the function returns an error when either a controller or logserver is offline, which is fine at this point
 	controllers, offline, _ := appliancepkg.FilterAvailable(controllers, stats.GetData())
 
+	unselectedOffline := []openapi.Appliance{}
 	if len(args) <= 0 {
 		selectable := []string{}
 		for _, ctrl := range controllers {
 			selectable = append(selectable, fmt.Sprintf("%s (%s)", ctrl.GetName(), ctrl.GetHostname()))
+		}
+		for _, ctrl := range offline {
+			selectable = append(selectable, fmt.Sprintf("%s (%s) [OFFLINE]", ctrl.GetName(), ctrl.GetHostname()))
 		}
 		qs := &survey.MultiSelect{
 			PageSize: len(selectable),
@@ -162,6 +166,15 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 				}
 			}
 		}
+		for _, ctrl := range offline {
+			for _, s := range selected {
+				if strings.Contains(s, ctrl.GetName()) {
+					args = append(args, ctrl.GetHostname())
+				} else {
+					unselectedOffline = append(unselectedOffline, ctrl)
+				}
+			}
+		}
 	}
 	log.WithField("controllers", args).Debug("selected")
 
@@ -174,9 +187,14 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			announceList = append(announceList, ctrl)
 		}
 	}
+	for _, ctrl := range offline {
+		if util.InSlice(ctrl.GetHostname(), args) {
+			disableList = append(disableList, ctrl)
+		}
+	}
 
 	// Summary
-	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, offline)
+	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, unselectedOffline)
 	if err != nil {
 		return err
 	}
