@@ -193,6 +193,14 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	}
 
+	// Sort
+	sort.SliceStable(disableList, func(i, j int) bool {
+		return disableList[i].GetName() < disableList[j].GetName()
+	})
+	sort.SliceStable(offline, func(i, j int) bool {
+		return offline[i].GetName() < offline[j].GetName()
+	})
+
 	// Summary
 	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, unselectedOffline)
 	if err != nil {
