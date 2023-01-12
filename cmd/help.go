@@ -4,16 +4,14 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"time"
 
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 
 func HelpTemplate() string {
-	cobra.AddTemplateFunc("now", time.Now)
 	cobra.AddTemplateFunc("caller", getCaller)
-	return `© {{ now.Year }} Appgate Cybersecurity, Inc.
+	return `© 2022-2023 Appgate Cybersecurity, Inc.
 All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
 https://www.appgate.com
 
