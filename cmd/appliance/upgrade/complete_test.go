@@ -355,6 +355,14 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{
+					URL:       "/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL:       "/appliances/9c557978-1dcd-4b42-ad56-afb6abf1490c/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
 					URL:       "/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 				},
@@ -380,6 +388,14 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL:       "/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/upgrade",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
+				},
+				{
+					URL:       "/appliances/9c557978-1dcd-4b42-ad56-afb6abf1490c/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_ready.json"),
 				},
 				{

@@ -409,6 +409,414 @@
             ]
         },
         {
+            "id": "21ac20ec-410a-4b59-baf3-fdacbe455581",
+            "name": "controller3-21ac20ec-410a-4b59-baf3-fdacbe455581-site1",
+            "notes": "",
+            "created": "2021-11-02T14:09:46.904196Z",
+            "updated": "2021-11-02T14:58:46.820505Z",
+            "tags": [],
+            "activated": true,
+            "pendingCertificateRenewal": false,
+            "version": 14,
+            "hostname": "ctrl3.cryptzone.com",
+            "site": "8a4add9e-0e99-4bb1-949c-c9faf9a49ad4",
+            "siteName": "Default Site",
+            "connectToPeersUsingClientPortWithSpa": true,
+            "clientInterface": {
+                "proxyProtocol": false,
+                "hostname": "ctrl3.cryptzone.com",
+                "httpsPort": 443,
+                "dtlsPort": 443,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "peerInterface": {
+                "hostname": "ctrl3.cryptzone.com",
+                "httpsPort": 444,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "networking": {
+                "hosts": [],
+                "nics": [
+                    {
+                        "enabled": true,
+                        "name": "eth0",
+                        "ipv4": {
+                            "dhcp": {
+                                "enabled": false,
+                                "dns": false,
+                                "routers": false,
+                                "ntp": false,
+                                "mtu": false
+                            },
+                            "static": [
+                                {
+                                    "address": "10.97.158.4",
+                                    "netmask": 26,
+                                    "snat": false
+                                }
+                            ]
+                        },
+                        "ipv6": {
+                            "dhcp": {
+                                "enabled": false,
+                                "dns": false,
+                                "routers": false,
+                                "ntp": false,
+                                "mtu": false
+                            },
+                            "static": []
+                        }
+                    }
+                ],
+                "dnsServers": [
+                    "1.1.1.1",
+                    "8.8.8.8"
+                ],
+                "dnsDomains": [],
+                "routes": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0,
+                        "gateway": "10.97.158.1"
+                    }
+                ]
+            },
+            "ntp": {
+                "servers": [
+                    {
+                        "hostname": "1.1.1.1"
+                    },
+                    {
+                        "hostname": "8.8.8.8"
+                    }
+                ]
+            },
+            "sshServer": {
+                "enabled": true,
+                "port": 22,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ],
+                "passwordAuthentication": true
+            },
+            "snmpServer": {
+                "enabled": false,
+                "udpPort": 161,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ],
+                "snmpd.conf": "rocommunity public default"
+            },
+            "healthcheckServer": {
+                "enabled": false,
+                "port": 5555,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "prometheusExporter": {
+                "enabled": false,
+                "port": 5556,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "ping": {
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "logServer": {
+                "enabled": false,
+                "retentionDays": 30
+            },
+            "controller": {
+                "enabled": true,
+                "database": {
+                    "location": "internal"
+                }
+            },
+            "gateway": {
+                "enabled": false,
+                "vpn": {
+                    "weight": 100,
+                    "allowDestinations": []
+                }
+            },
+            "logForwarder": {
+                "enabled": false,
+                "tcpClients": [],
+                "awsKineses": [],
+                "sites": []
+            },
+            "connector": {
+                "enabled": false,
+                "expressClients": [],
+                "advancedClients": []
+            },
+            "rsyslogDestinations": [],
+            "hostnameAliases": [
+                "10.97.158.4"
+            ]
+        },
+        {
+            "id": "9c557978-1dcd-4b42-ad56-afb6abf1490c",
+            "name": "controller4-9c557978-1dcd-4b42-ad56-afb6abf1490c-site1",
+            "notes": "",
+            "created": "2021-11-02T14:09:46.904196Z",
+            "updated": "2021-11-02T14:58:46.820505Z",
+            "tags": [],
+            "activated": true,
+            "pendingCertificateRenewal": false,
+            "version": 14,
+            "hostname": "ctrl4.cryptzone.com",
+            "site": "8a4add9e-0e99-4bb1-949c-c9faf9a49ad4",
+            "siteName": "Default Site",
+            "connectToPeersUsingClientPortWithSpa": true,
+            "clientInterface": {
+                "proxyProtocol": false,
+                "hostname": "ctrl4.cryptzone.com",
+                "httpsPort": 443,
+                "dtlsPort": 443,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "peerInterface": {
+                "hostname": "ctrl4.cryptzone.com",
+                "httpsPort": 444,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "networking": {
+                "hosts": [],
+                "nics": [
+                    {
+                        "enabled": true,
+                        "name": "eth0",
+                        "ipv4": {
+                            "dhcp": {
+                                "enabled": false,
+                                "dns": false,
+                                "routers": false,
+                                "ntp": false,
+                                "mtu": false
+                            },
+                            "static": [
+                                {
+                                    "address": "10.97.158.5",
+                                    "netmask": 26,
+                                    "snat": false
+                                }
+                            ]
+                        },
+                        "ipv6": {
+                            "dhcp": {
+                                "enabled": false,
+                                "dns": false,
+                                "routers": false,
+                                "ntp": false,
+                                "mtu": false
+                            },
+                            "static": []
+                        }
+                    }
+                ],
+                "dnsServers": [
+                    "1.1.1.1",
+                    "8.8.8.8"
+                ],
+                "dnsDomains": [],
+                "routes": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0,
+                        "gateway": "10.97.158.1"
+                    }
+                ]
+            },
+            "ntp": {
+                "servers": [
+                    {
+                        "hostname": "1.1.1.1"
+                    },
+                    {
+                        "hostname": "8.8.8.8"
+                    }
+                ]
+            },
+            "sshServer": {
+                "enabled": true,
+                "port": 22,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ],
+                "passwordAuthentication": true
+            },
+            "snmpServer": {
+                "enabled": false,
+                "udpPort": 161,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ],
+                "snmpd.conf": "rocommunity public default"
+            },
+            "healthcheckServer": {
+                "enabled": false,
+                "port": 5555,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "prometheusExporter": {
+                "enabled": false,
+                "port": 5556,
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "ping": {
+                "allowSources": [
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "logServer": {
+                "enabled": false,
+                "retentionDays": 30
+            },
+            "controller": {
+                "enabled": true,
+                "database": {
+                    "location": "internal"
+                }
+            },
+            "gateway": {
+                "enabled": false,
+                "vpn": {
+                    "weight": 100,
+                    "allowDestinations": []
+                }
+            },
+            "logForwarder": {
+                "enabled": false,
+                "tcpClients": [],
+                "awsKineses": [],
+                "sites": []
+            },
+            "connector": {
+                "enabled": false,
+                "expressClients": [],
+                "advancedClients": []
+            },
+            "rsyslogDestinations": [],
+            "hostnameAliases": [
+                "10.97.158.5"
+            ]
+        },
+        {
             "id": "ee639d70-e075-4f01-596b-930d5f24f569",
             "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
             "notes": "",

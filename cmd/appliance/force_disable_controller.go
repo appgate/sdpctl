@@ -134,9 +134,15 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	if err != nil {
 		return err
 	}
+	statData := stats.GetData()
 
 	// Error is ignored here since the function returns an error when either a controller or logserver is offline, which is fine at this point
-	controllers, offline, _ := appliancepkg.FilterAvailable(controllers, stats.GetData())
+	controllers, offline, _ := appliancepkg.FilterAvailable(controllers, statData)
+
+	// Sort slices by appliance name
+	sort.SliceStable(controllers, func(i, j int) bool { return controllers[i].GetName() < controllers[j].GetName() })
+	sort.SliceStable(offline, func(i, j int) bool { return offline[i].GetName() < offline[j].GetName() })
+	sort.SliceStable(statData, func(i, j int) bool { return statData[i].GetName() < statData[j].GetName() })
 
 	unselectedOffline := []openapi.Appliance{}
 	if len(args) <= 0 {
@@ -193,16 +199,8 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	}
 
-	// Sort
-	sort.SliceStable(disableList, func(i, j int) bool {
-		return disableList[i].GetName() < disableList[j].GetName()
-	})
-	sort.SliceStable(offline, func(i, j int) bool {
-		return offline[i].GetName() < offline[j].GetName()
-	})
-
 	// Summary
-	summary, err := printSummary(stats.GetData(), primaryController.GetId(), disableList, unselectedOffline)
+	summary, err := printSummary(statData, primaryController.GetId(), disableList, unselectedOffline)
 	if err != nil {
 		return err
 	}
@@ -262,12 +260,12 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	var wg1 sync.WaitGroup
 	for _, a := range announceList {
 		wg1.Add(1)
-		go func(ctx context.Context, wg *sync.WaitGroup, a *openapi.Appliance) {
+		go func(ctx context.Context, wg *sync.WaitGroup, a openapi.Appliance) {
 			defer wg.Done()
 			if _, err := changeAPI.RetryUntilCompleted(ctx, changeID, a.GetId()); err != nil {
 				errs = multierror.Append(errs, err)
 			}
-		}(ctx, &wg1, &a)
+		}(ctx, &wg1, a)
 	}
 	wg1.Wait()
 
@@ -320,8 +318,8 @@ The following Controllers are unreachable and will likely not recieve the announ
 
 func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable, offline []openapi.Appliance) (string, error) {
 	type stub struct {
-		DisableTable, AnnounceTable, OfflineTable string
-		ShowAnnounceTable, ShowOfflineTable       bool
+		DisableTable, OfflineTable string
+		ShowOfflineTable           bool
 	}
 	disableBuffer := &bytes.Buffer{}
 	dt := util.NewPrinter(disableBuffer, 4)
