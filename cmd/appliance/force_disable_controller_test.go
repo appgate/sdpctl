@@ -335,7 +335,7 @@ appliance2    appliance2.example.com    healthy    6.1.1-12345
 
 
 WARNING:
-The following Controllers are unreachable and will likely not recieve the announcement. Please confirm that these controllers are, in fact, offline before continuing:
+The following Controllers are unreachable and will likely not receive the announcement. Please confirm that these controllers are, in fact, offline before continuing:
 
 Name          Hostname                  Status     Version
 ----          --------                  ------     -------
