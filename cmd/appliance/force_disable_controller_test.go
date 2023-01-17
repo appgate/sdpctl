@@ -228,7 +228,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 				return a, nil
 			}
 
-			cmd := NewForceDisableControllerCMD(f)
+			cmd := NewForceDisableControllerCmd(f)
 			flags := cmd.PersistentFlags()
 			flags.Bool("ci-mode", false, "ci-mode")
 			flags.Bool("no-interactive", false, "no-interactive")

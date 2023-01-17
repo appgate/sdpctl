@@ -35,7 +35,7 @@ type cmdOpts struct {
 	CiMode        bool
 }
 
-func NewForceDisableControllerCMD(f *factory.Factory) *cobra.Command {
+func NewForceDisableControllerCmd(f *factory.Factory) *cobra.Command {
 	opts := cmdOpts{
 		Appliance:  f.Appliance,
 		Config:     f.Config,

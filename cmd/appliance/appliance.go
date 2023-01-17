@@ -39,7 +39,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(files.NewFilesCmd(f))
 	cmd.AddCommand(maintenance.NewMaintenanceCmd(f))
 	cmd.AddCommand(NewSeedCmd(f))
-	cmd.AddCommand(NewForceDisableControllerCMD(f))
+	cmd.AddCommand(NewForceDisableControllerCmd(f))
 
 	return cmd
 }
