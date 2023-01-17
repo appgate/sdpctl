@@ -776,7 +776,7 @@ func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, applia
 		}
 	}
 	at.Print()
-	data.ApplianceTable = abuf.String()
+	data.ApplianceTable = util.PrefixStringLines(abuf.String(), " ", 2)
 
 	if len(skip) > 0 {
 		bbuf := &bytes.Buffer{}
@@ -801,7 +801,7 @@ func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, applia
 			}
 		}
 		bt.Print()
-		data.SkipTable = bbuf.String()
+		data.SkipTable = util.PrefixStringLines(bbuf.String(), " ", 2)
 	}
 
 	tpl := template.Must(template.New("").Parse(prepareUpgradeMessage))
