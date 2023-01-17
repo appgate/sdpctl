@@ -311,7 +311,7 @@ This will force disable the selected controllers and announce it to the remainin
 {{ .DisableTable }}{{ if .ShowOfflineTable }}
 
 WARNING:
-The following Controllers are unreachable and will likely not recieve the announcement. Please confirm that these controllers are, in fact, offline before continuing:
+The following Controllers are unreachable and will likely not receive the announcement. Please confirm that these controllers are, in fact, offline before continuing:
 
 {{ .OfflineTable }}{{ end }}
 `
