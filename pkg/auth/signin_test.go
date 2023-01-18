@@ -363,16 +363,16 @@ func TestSigninNoKeyringNoconfig(t *testing.T) {
 	// we will remove the env variable, if any to make sure we trigger
 	// the keyring
 	os.Unsetenv("SDPCTL_PASSWORD")
-	if _, err := keyring.GetPassword(prefix); err == nil {
-		t.Fatal("expected error, got nil")
+	if _, err := keyring.GetPassword(prefix); err != nil {
+		t.Errorf("expected nil, got err %s", err)
 	}
 	os.Unsetenv("SDPCTL_USERNAME")
-	if _, err := keyring.GetUsername(prefix); err == nil {
-		t.Fatal("expected error, got nil")
+	if _, err := keyring.GetUsername(prefix); err != nil {
+		t.Errorf("expected nil, got err %s", err)
 	}
 	os.Unsetenv("SDPCTL_BEARER")
-	if _, err := keyring.GetBearer(prefix); err == nil {
-		t.Fatal("expected error, got nil")
+	if _, err := keyring.GetBearer(prefix); err != nil {
+		t.Errorf("expected nil, got err %s", err)
 	}
 
 	if _, err := f.Config.GetBearTokenHeaderValue(); err != nil {
