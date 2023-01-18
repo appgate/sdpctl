@@ -153,6 +153,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		for _, ctrl := range offline {
 			selectable = append(selectable, fmt.Sprintf("%s (%s) [OFFLINE]", ctrl.GetName(), ctrl.GetHostname()))
 		}
+		sort.SliceStable(selectable, func(i, j int) bool { return selectable[i] < selectable[j] })
 		qs := &survey.MultiSelect{
 			PageSize: len(selectable),
 			Message:  "Select Controllers to force disable",
@@ -181,6 +182,28 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 				}
 			}
 		}
+	} else {
+		hostnameArgs := []string{}
+		for _, arg := range args {
+			if util.IsUUID(arg) {
+				for _, ctrl := range controllers {
+					if arg == ctrl.GetId() {
+						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					}
+				}
+				for _, ctrl := range offline {
+					if arg == ctrl.GetId() {
+						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					}
+				}
+				continue
+			}
+			hostnameArgs = append(hostnameArgs, arg)
+		}
+		args = hostnameArgs
+	}
+	if len(args) <= 0 {
+		return errors.New("No Controllers selected to disable")
 	}
 	log.WithField("controllers", args).Debug("selected")
 

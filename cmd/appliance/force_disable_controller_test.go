@@ -128,6 +128,46 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			},
 		},
 		{
+			name: "disable two controllers using ID",
+			cli:  "ed95fac8-9098-472b-b9f0-fe741881e2ca ctrl3.cryptzone.com",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
+				},
+				{
+					URL: "/appliances/force-disable-controllers",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Change-ID", "ba86a668-a965-44bb-a6b0-07df8f449c01")
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
+					},
+				},
+				{
+					URL: "/appliances/repartition-ip-allocations",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Change-ID", "1012ad03-f4ac-4760-ab21-b9bfc2c769d7")
+					},
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
+					},
+				},
+			},
+		},
+		{
 			name: "disable offline controller",
 			cli:  "ctrl4.cryptzone.com",
 			httpStubs: []httpmock.Stub{
