@@ -2,6 +2,7 @@ package configure
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -12,13 +13,15 @@ import (
 )
 
 type signinOptions struct {
-	f *factory.Factory
+	f      *factory.Factory
+	StdErr io.Writer
 }
 
 // NewSigninCmd return a new signin command
 func NewSigninCmd(f *factory.Factory) *cobra.Command {
 	opts := signinOptions{
-		f: f,
+		f:      f,
+		StdErr: f.StdErr,
 	}
 	var signinCmd = &cobra.Command{
 		Use: "signin",
@@ -42,6 +45,7 @@ func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
 	// If there's an existing bearer token present, we will clear it and renew the authentication
 	if err := cfg.ClearBearer(); err != nil {
 		// not a fatal error
+		fmt.Fprintln(opts.StdErr, auth.KeyringWarningMessage)
 		log.WithError(err).Warn("Failed to delete auth token")
 	}
 	if err := auth.Signin(opts.f); err != nil {
