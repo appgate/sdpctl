@@ -8,11 +8,11 @@ jobs:
     name: "Static analysis"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: WillAbides/setup-go-faster@v1.7.0
+      - uses: actions/setup-go@v3
         with:
           go-version: "1.19.x"
       - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@v0.3.3"
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
       - uses: actions/cache@v3
