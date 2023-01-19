@@ -36,7 +36,7 @@ func (ac *ApplianceChange) RetryUntilCompleted(ctx context.Context, changeID, ap
 		}
 		if change.GetStatus() == "running" {
 			err := errors.New("Change is still running, retry")
-			log.WithError(err).Error("")
+			log.WithError(err).Info("Change still running")
 			return err
 		}
 		if change.GetResult() == "failure" {
