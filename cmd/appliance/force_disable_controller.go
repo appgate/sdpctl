@@ -43,7 +43,7 @@ func NewForceDisableControllerCmd(f *factory.Factory) *cobra.Command {
 		SpinnerOut: f.GetSpinnerOutput(),
 	}
 	cmd := &cobra.Command{
-		Use:         "force-disable-controller [hostname...]",
+		Use:         "force-disable-controller [hostname|ID...]",
 		Short:       docs.ApplianceForceDisableControllerDocs.Short,
 		Long:        docs.ApplianceForceDisableControllerDocs.Long,
 		Example:     docs.ApplianceForceDisableControllerDocs.ExampleString(),
@@ -144,7 +144,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	sort.SliceStable(offline, func(i, j int) bool { return offline[i].GetName() < offline[j].GetName() })
 	sort.SliceStable(statData, func(i, j int) bool { return statData[i].GetName() < statData[j].GetName() })
 
-	unselectedOffline := []openapi.Appliance{}
+	unselectedOffline := []string{}
 	if len(args) <= 0 {
 		selectable := []string{}
 		preSelected := []string{}
@@ -170,19 +170,20 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		if len(selected) <= 0 {
 			return errors.New("No Controllers selected to disable")
 		}
-		for _, ctrl := range controllers {
-			for _, s := range selected {
+		for _, s := range selectable {
+			if !util.InSlice(s, selected) && strings.Contains(s, "[OFFLINE]") {
+				unselectedOffline = append(unselectedOffline, s)
+			}
+		}
+		for _, s := range selected {
+			for _, ctrl := range controllers {
 				if strings.Contains(s, ctrl.GetName()) {
 					args = append(args, ctrl.GetHostname())
 				}
 			}
-		}
-		for _, ctrl := range offline {
-			for _, s := range selected {
+			for _, ctrl := range offline {
 				if strings.Contains(s, ctrl.GetName()) {
 					args = append(args, ctrl.GetHostname())
-				} else {
-					unselectedOffline = append(unselectedOffline, ctrl)
 				}
 			}
 		}
