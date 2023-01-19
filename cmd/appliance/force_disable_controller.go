@@ -188,16 +188,18 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	} else {
 		hostnameArgs := []string{}
-		// automatically add offline controllers to disable list
-		for _, ctrl := range offline {
-			hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
-		}
 	ARG_LOOP:
 		for _, arg := range args {
 			if util.IsUUID(arg) {
 				for _, ctrl := range controllers {
 					if arg == ctrl.GetId() {
-						hostnameArgs = util.AppendIfMissing(hostnameArgs, ctrl.GetHostname())
+						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+						continue ARG_LOOP
+					}
+				}
+				for _, ctrl := range offline {
+					if arg == ctrl.GetId() {
+						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
 						continue ARG_LOOP
 					}
 				}
@@ -206,11 +208,23 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			}
 			for _, ctrl := range controllers {
 				if arg == ctrl.GetHostname() {
-					hostnameArgs = util.AppendIfMissing(hostnameArgs, ctrl.GetHostname())
+					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					continue ARG_LOOP
+				}
+			}
+			for _, ctrl := range offline {
+				if arg == ctrl.GetHostname() {
+					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
 					continue ARG_LOOP
 				}
 			}
 			log.WithField("arg", arg).Info("No Controller found with provided hostname")
+		}
+		// automatically add offline controllers to disable list, but only if the user has actively selected a valid controller first
+		if len(hostnameArgs) > 0 {
+			for _, ctrl := range offline {
+				hostnameArgs = util.AppendIfMissing(hostnameArgs, ctrl.GetHostname())
+			}
 		}
 		args = hostnameArgs
 	}
@@ -238,7 +252,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	}
 
 	// Summary
-	summary, err := printSummary(statData, primaryController.GetId(), disableList, unselectedOffline)
+	summary, err := printSummary(statData, primaryController.GetId(), disableList)
 	if err != nil {
 		return err
 	}
@@ -354,7 +368,7 @@ The following Controllers are unreachable and will likely not receive the announ
 {{ .OfflineTable }}{{ end }}
 `
 
-func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable, offline []openapi.Appliance) (string, error) {
+func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable []openapi.Appliance) (string, error) {
 	type stub struct {
 		DisableTable, OfflineTable string
 		ShowOfflineTable           bool
@@ -374,12 +388,6 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControlle
 		for _, a := range disable {
 			if s.GetId() == a.GetId() {
 				dt.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
-			}
-		}
-		for _, a := range offline {
-			if s.GetId() == a.GetId() {
-				data.ShowOfflineTable = true
-				ot.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
 			}
 		}
 	}

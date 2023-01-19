@@ -306,7 +306,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 
 			_, err = cmd.ExecuteC()
 			if (err != nil) != tt.wantErr {
-				t.Fatalf("TestUpgradeCompleteCommand() error = %v, wantErr %v", err, tt.wantErr)
+				t.Fatalf("TestForceDisableControllerCommand() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err != nil && tt.wantErrOut != nil {
 				if !tt.wantErrOut.MatchString(err.Error()) {
@@ -327,7 +327,6 @@ func Test_printSummary(t *testing.T) {
 		stats               []openapi.StatsAppliancesListAllOfData
 		primaryControllerID string
 		disable             []openapi.Appliance
-		offline             []openapi.Appliance
 	}
 	tests := []struct {
 		name    string
@@ -340,7 +339,6 @@ func Test_printSummary(t *testing.T) {
 			args: args{
 				stats:   stats.GetData(),
 				disable: []openapi.Appliance{app1},
-				offline: []openapi.Appliance{},
 			},
 			want: `
 FORCE-DISABLE-CONTROLLER SUMMARY
@@ -358,7 +356,6 @@ appliance1    appliance1.example.com    healthy    6.1.1-12345
 			args: args{
 				stats:   stats.GetData(),
 				disable: []openapi.Appliance{app1, app2},
-				offline: []openapi.Appliance{},
 			},
 			want: `
 FORCE-DISABLE-CONTROLLER SUMMARY
@@ -377,7 +374,6 @@ appliance2    appliance2.example.com    healthy    6.1.1-12345
 			args: args{
 				stats:   stats.GetData(),
 				disable: []openapi.Appliance{app1, app2},
-				offline: []openapi.Appliance{app3},
 			},
 			want: `
 FORCE-DISABLE-CONTROLLER SUMMARY
@@ -389,14 +385,6 @@ Name          Hostname                  Status     Version
 appliance1    appliance1.example.com    healthy    6.1.1-12345
 appliance2    appliance2.example.com    healthy    6.1.1-12345
 
-
-WARNING:
-The following Controllers are unreachable and will likely not receive the announcement. Please confirm that these controllers are, in fact, offline before continuing:
-
-Name          Hostname                  Status     Version
-----          --------                  ------     -------
-appliance3    appliance3.example.com    offline    unknown
-
 `,
 		},
 		{
@@ -404,7 +392,6 @@ appliance3    appliance3.example.com    offline    unknown
 			args: args{
 				stats:   stats.GetData(),
 				disable: []openapi.Appliance{app3},
-				offline: []openapi.Appliance{},
 			},
 			want: `
 FORCE-DISABLE-CONTROLLER SUMMARY
@@ -420,7 +407,7 @@ appliance3    appliance3.example.com    offline    unknown
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := printSummary(tt.args.stats, tt.args.primaryControllerID, tt.args.disable, tt.args.offline)
+			got, err := printSummary(tt.args.stats, tt.args.primaryControllerID, tt.args.disable)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("printSummary() error = %v, wantErr %v", err, tt.wantErr)
 				return
