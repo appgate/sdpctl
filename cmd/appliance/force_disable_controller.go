@@ -147,17 +147,21 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	unselectedOffline := []openapi.Appliance{}
 	if len(args) <= 0 {
 		selectable := []string{}
+		preSelected := []string{}
 		for _, ctrl := range controllers {
 			selectable = append(selectable, fmt.Sprintf("%s (%s)", ctrl.GetName(), ctrl.GetHostname()))
 		}
 		for _, ctrl := range offline {
-			selectable = append(selectable, fmt.Sprintf("%s (%s) [OFFLINE]", ctrl.GetName(), ctrl.GetHostname()))
+			selectableString := fmt.Sprintf("%s (%s) [OFFLINE]", ctrl.GetName(), ctrl.GetHostname())
+			selectable = append(selectable, selectableString)
+			preSelected = append(preSelected, selectableString)
 		}
 		sort.SliceStable(selectable, func(i, j int) bool { return selectable[i] < selectable[j] })
 		qs := &survey.MultiSelect{
 			PageSize: len(selectable),
 			Message:  "Select Controllers to force disable",
 			Options:  selectable,
+			Default:  preSelected,
 		}
 		selected := []string{}
 		if err := prompt.SurveyAskOne(qs, &selected); err != nil {
@@ -184,33 +188,25 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	} else {
 		hostnameArgs := []string{}
+		// automatically add offline controllers to disable list
+		for _, ctrl := range offline {
+			hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+		}
 	ARG_LOOP:
 		for _, arg := range args {
 			if util.IsUUID(arg) {
 				for _, ctrl := range controllers {
 					if arg == ctrl.GetId() {
-						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+						hostnameArgs = util.AppendIfMissing(hostnameArgs, ctrl.GetHostname())
 						continue ARG_LOOP
 					}
 				}
-				for _, ctrl := range offline {
-					if arg == ctrl.GetId() {
-						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
-						continue ARG_LOOP
-					}
-				}
-				log.WithField("arg", arg).Info("No Controller found with provided id")
+				log.WithField("id", arg).Info("No Controller found with provided id")
 				continue
 			}
 			for _, ctrl := range controllers {
 				if arg == ctrl.GetHostname() {
-					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
-					continue ARG_LOOP
-				}
-			}
-			for _, ctrl := range offline {
-				if arg == ctrl.GetHostname() {
-					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					hostnameArgs = util.AppendIfMissing(hostnameArgs, ctrl.GetHostname())
 					continue ARG_LOOP
 				}
 			}
@@ -220,6 +216,9 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	}
 	if len(args) <= 0 {
 		return errors.New("No Controllers selected to disable")
+	}
+	if len(unselectedOffline) > 0 {
+		return errors.New("Illegal operation: all OFFLINE Controllers must be disabled when disabling any other Controller.")
 	}
 	log.WithField("controllers", args).Debug("selected")
 
