@@ -184,21 +184,37 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		}
 	} else {
 		hostnameArgs := []string{}
+	ARG_LOOP:
 		for _, arg := range args {
 			if util.IsUUID(arg) {
 				for _, ctrl := range controllers {
 					if arg == ctrl.GetId() {
 						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+						continue ARG_LOOP
 					}
 				}
 				for _, ctrl := range offline {
 					if arg == ctrl.GetId() {
 						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+						continue ARG_LOOP
 					}
 				}
+				log.WithField("arg", arg).Info("No Controller found with provided id")
 				continue
 			}
-			hostnameArgs = append(hostnameArgs, arg)
+			for _, ctrl := range controllers {
+				if arg == ctrl.GetHostname() {
+					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					continue ARG_LOOP
+				}
+			}
+			for _, ctrl := range offline {
+				if arg == ctrl.GetHostname() {
+					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					continue ARG_LOOP
+				}
+			}
+			log.WithField("arg", arg).Info("No Controller found with provided hostname")
 		}
 		args = hostnameArgs
 	}

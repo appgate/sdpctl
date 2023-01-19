@@ -235,6 +235,22 @@ func TestForceDisableControllerCMD(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:       "disable non existing hostname",
+			cli:        "foobar",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`No Controllers selected to disable`),
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
+				},
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
