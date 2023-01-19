@@ -309,7 +309,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	wg1.Wait()
 
 	if t != nil {
-		t.Update("re-allocating IP:s")
+		t.Update("re-partitioning IP allocations")
 	}
 	changeID, err = a.RepartitionIPAllocations(ctx)
 	if err != nil {
@@ -321,7 +321,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		go func(ctx context.Context, wg *sync.WaitGroup, ctrl openapi.Appliance) {
 			defer wg.Done()
 			if _, err := changeAPI.RetryUntilCompleted(ctx, changeID, ctrl.GetId()); err != nil {
-				errs = multierror.Append(errs, fmt.Errorf("IP re-allocation failed for %s: %s", ctrl.GetName(), err.Error()))
+				errs = multierror.Append(errs, fmt.Errorf("IP re-partition failed for %s: %s", ctrl.GetName(), err.Error()))
 			}
 			if err := a.ApplianceStats.WaitForApplianceStatus(ctx, ctrl, appliancepkg.StatusNotBusy, nil); err != nil {
 				errs = multierror.Append(errs, err)
