@@ -21,7 +21,7 @@
 			<hr />
       <div class="content text-left">
       <h2 class="text-left margin-bottom">sdpctl appliance force-disable-controller</h2><p>Force disable misbehaving Controllers using this command. USE WITH CAUTION!</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Force disable Controllers that are misbehaving in any way. This will send a disable command to the primary Controller, which will notify the remaining Controllers of the change.
-The command will accept one or more hostnames of Controllers that will be disabled as an argument. You can get the hostnames by running &lsquo;sdpctl appliance stats&rsquo;.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance force-disable-controller [hostname...] [flags]
+The command will accept one or more hostnames or ID:s of Controllers that will be disabled as an argument. You can get the hostnames by running &lsquo;sdpctl appliance stats&rsquo;.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance force-disable-controller [hostname|ID...] [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # force disable a Controller with the hostname 'failedcontroller.example.com'
@@ -29,6 +29,9 @@ The command will accept one or more hostnames of Controllers that will be disabl
 
   # force disable multiple controllers
   &gt; sdpctl appliance force-disable-controller failed1.example.com failed2.example.com
+
+  # force disable using ID:s
+  &gt; sdpctl appliance force-disable-controller f905ff0b-91a6-4d12-afbe-f9a9506f02da
 
   # using the command without arguments will prompt for which controllers to disable
   &gt; sdpctl appliance force-disable-controller
