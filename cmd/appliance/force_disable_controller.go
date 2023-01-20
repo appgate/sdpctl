@@ -253,7 +253,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	}
 
 	// Summary
-	summary, err := printSummary(statData, primaryController.GetId(), disableList)
+	summary, err := printSummary(statData, disableList)
 	if err != nil {
 		return err
 	}
@@ -361,30 +361,18 @@ FORCE-DISABLE-CONTROLLER SUMMARY
 
 This will force disable the selected controllers and announce it to the remaining controllers. The following Controllers are going to be disabled:
 
-{{ .DisableTable }}{{ if .ShowOfflineTable }}
-
-WARNING:
-The following Controllers are unreachable and will likely not receive the announcement. Please confirm that these controllers are, in fact, offline before continuing:
-
-{{ .OfflineTable }}{{ end }}
+{{ .DisableTable }}
 `
 
-func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControllerID string, disable []openapi.Appliance) (string, error) {
+func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable []openapi.Appliance) (string, error) {
 	type stub struct {
-		DisableTable, OfflineTable string
-		ShowOfflineTable           bool
+		DisableTable string
 	}
 	disableBuffer := &bytes.Buffer{}
 	dt := util.NewPrinter(disableBuffer, 4)
 	dt.AddHeader("Name", "Hostname", "Status", "Version")
 
-	offlineBuffer := &bytes.Buffer{}
-	ot := util.NewPrinter(offlineBuffer, 4)
-	ot.AddHeader("Name", "Hostname", "Status", "Version")
-
-	data := stub{
-		ShowOfflineTable: false,
-	}
+	data := stub{}
 	for _, s := range stats {
 		for _, a := range disable {
 			if s.GetId() == a.GetId() {
@@ -393,10 +381,8 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, primaryControlle
 		}
 	}
 	dt.Print()
-	ot.Print()
 
 	data.DisableTable = disableBuffer.String()
-	data.OfflineTable = offlineBuffer.String()
 
 	tpl := template.Must(template.New("").Parse(summaryTPLString))
 	var buf bytes.Buffer

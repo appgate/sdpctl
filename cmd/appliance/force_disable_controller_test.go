@@ -324,9 +324,8 @@ func Test_printSummary(t *testing.T) {
 	stats := openapi.NewStatsAppliancesListAllOf()
 	stats.Data = append(stats.Data, app1data, app2data, app3data)
 	type args struct {
-		stats               []openapi.StatsAppliancesListAllOfData
-		primaryControllerID string
-		disable             []openapi.Appliance
+		stats   []openapi.StatsAppliancesListAllOfData
+		disable []openapi.Appliance
 	}
 	tests := []struct {
 		name    string
@@ -407,7 +406,7 @@ appliance3    appliance3.example.com    offline    unknown
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := printSummary(tt.args.stats, tt.args.primaryControllerID, tt.args.disable)
+			got, err := printSummary(tt.args.stats, tt.args.disable)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("printSummary() error = %v, wantErr %v", err, tt.wantErr)
 				return
