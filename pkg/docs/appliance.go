@@ -323,4 +323,32 @@ for More information, see: https://sdphelp.appgate.com/adminguide/new-appliance.
 			},
 		},
 	}
+
+	ApplianceForceDisableControllerDocs = CommandDoc{
+		Short: "Force disable misbehaving Controllers using this command. USE WITH CAUTION!",
+		Long: `Force disable Controllers that are misbehaving in any way. This will send a disable command to the primary Controller, which will notify the remaining Controllers of the change.
+The command will accept one or more hostnames or ID:s of Controllers that will be disabled as an argument. You can get the hostnames by running 'sdpctl appliance stats'.`,
+		Examples: []ExampleDoc{
+			{
+				Description: "force disable a Controller with the hostname 'failedcontroller.example.com'",
+				Command:     "sdpctl appliance force-disable-controller failedcontroller.example.com",
+			},
+			{
+				Description: "force disable multiple controllers",
+				Command:     "sdpctl appliance force-disable-controller failed1.example.com failed2.example.com",
+			},
+			{
+				Description: "force disable using ID:s",
+				Command:     "sdpctl appliance force-disable-controller f905ff0b-91a6-4d12-afbe-f9a9506f02da",
+			},
+			{
+				Description: "using the command without arguments will prompt for which controllers to disable",
+				Command:     "sdpctl appliance force-disable-controller",
+				Output: `? Select Controllers to force disable  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
+[ ] failed-controller-1 (failed1.example.com)
+[ ] failed-controller-2 (failed2.example.com)
+[ ] offline-controller (offline.example.com) [OFFLINE]`,
+			},
+		},
+	}
 )

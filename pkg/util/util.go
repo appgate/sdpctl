@@ -22,7 +22,7 @@ func Getenv(key, fallback string) string {
 	return value
 }
 
-func AppendIfMissing(slice []int, i int) []int {
+func AppendIfMissing[V comparable](slice []V, i V) []V {
 	for _, ele := range slice {
 		if ele == i {
 			return slice

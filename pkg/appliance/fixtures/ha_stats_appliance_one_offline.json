@@ -162,11 +162,11 @@
         {
             "id": "9c557978-1dcd-4b42-ad56-afb6abf1490c",
             "name": "controller4-9c557978-1dcd-4b42-ad56-afb6abf1490c-site1",
-            "online": true,
+            "online": false,
             "version": "5.3.4-24950",
             "state": "multi_controller_ready",
             "volumeNumber": 2,
-            "status": "healthy",
+            "status": "offline",
             "controller": {
                 "status": "healthy",
                 "details": "Database size is 12 MB"

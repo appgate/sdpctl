@@ -1,0 +1,66 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>sdpctl Reference Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+  <script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">Quick Start Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
+      <div class="content text-left">
+      <h2 class="text-left margin-bottom">sdpctl appliance force-disable-controller</h2><p>Force disable misbehaving Controllers using this command. USE WITH CAUTION!</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Force disable Controllers that are misbehaving in any way. This will send a disable command to the primary Controller, which will notify the remaining Controllers of the change.
+The command will accept one or more hostnames or ID:s of Controllers that will be disabled as an argument. You can get the hostnames by running &lsquo;sdpctl appliance stats&rsquo;.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance force-disable-controller [hostname|ID...] [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # force disable a Controller with the hostname 'failedcontroller.example.com'
+  &gt; sdpctl appliance force-disable-controller failedcontroller.example.com
+
+  # force disable multiple controllers
+  &gt; sdpctl appliance force-disable-controller failed1.example.com failed2.example.com
+
+  # force disable using ID:s
+  &gt; sdpctl appliance force-disable-controller f905ff0b-91a6-4d12-afbe-f9a9506f02da
+
+  # using the command without arguments will prompt for which controllers to disable
+  &gt; sdpctl appliance force-disable-controller
+  ? Select Controllers to force disable  [Use arrows to move, space to select, &lt;right&gt; to all, &lt;left&gt; to none, type to filter]
+  [ ] failed-controller-1 (failed1.example.com)
+  [ ] failed-controller-2 (failed2.example.com)
+  [ ] offline-controller (offline.example.com) [OFFLINE]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -h, --help   help for force-disable-controller
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+      --ci-mode                  Log to stderr instead of file and disable progress-bars
+      --debug                    Enable debug logging
+  -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
+                                 Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
+  -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
+      --no-interactive           Suppress interactive prompt with auto accept
+      --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string           Profile configuration to use
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p><a href="sdpctl_appliance.html">sdpctl appliance</a>	 - Manage the appliances and perform tasks such as backups, ugprades, metrics etc</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>
