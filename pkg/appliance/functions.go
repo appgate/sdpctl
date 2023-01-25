@@ -422,7 +422,7 @@ var DefaultCommandFilter = map[string]map[string]string{
 	"exclude": {},
 }
 
-func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) ([]openapi.Appliance, []openapi.Appliance, error) {
+func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.Appliance, []openapi.Appliance, error) {
 	include := make([]openapi.Appliance, len(appliances))
 	copy(include, appliances)
 	var errs *multierror.Error
@@ -464,11 +464,11 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 	}
 
 	// Sort appliances
-	include, err = orderAppliances(include, []string{"name"}, false)
+	include, err = orderAppliances(include, orderBy, descending)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}
-	exclude, err = orderAppliances(exclude, []string{"name"}, false)
+	exclude, err = orderAppliances(exclude, orderBy, descending)
 	if err != nil {
 		errs = multierror.Append(errs, err)
 	}

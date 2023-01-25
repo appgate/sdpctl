@@ -208,8 +208,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
-	Allappliances, err := a.List(ctx, nil)
+	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
+	Allappliances, err := a.List(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			Appliance: a,
 		})
 	}
-	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
+	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}

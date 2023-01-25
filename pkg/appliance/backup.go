@@ -47,6 +47,8 @@ type BackupOpts struct {
 	CurrentFlag   bool
 	NoInteractive bool
 	FilterFlag    map[string]map[string]string
+	OrderBy       []string
+	Descending    bool
 	Quiet         bool
 	CiMode        bool
 }
@@ -102,7 +104,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it")
 	}
 
-	appliances, err := app.List(ctx, nil)
+	appliances, err := app.List(ctx, nil, []string{"name"}, false)
 	if err != nil {
 		return backupIDs, err
 	}
@@ -117,7 +119,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			"exclude": {},
 		}
 		if reflect.DeepEqual(opts.FilterFlag, nullFilter) || opts.FilterFlag == nil {
-			opts.FilterFlag = util.ParseFilteringFlags(cmd.Flags(), DefaultCommandFilter)
+			opts.FilterFlag, opts.OrderBy, opts.Descending = util.ParseFilteringFlags(cmd.Flags(), DefaultCommandFilter)
 		}
 
 		if opts.PrimaryFlag || opts.NoInteractive {
@@ -158,7 +160,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 
 		if !reflect.DeepEqual(nullFilter, opts.FilterFlag) {
-			res, _, err := FilterAppliances(appliances, opts.FilterFlag)
+			res, _, err := FilterAppliances(appliances, opts.FilterFlag, opts.OrderBy, opts.Descending)
 			if err != nil {
 				return nil, err
 			}
@@ -372,7 +374,7 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	// Filter out all but Controllers, LogServers and Portals
 	appliances, _, err := FilterAppliances(appliances, map[string]map[string]string{
 		"include": {"function": strings.Join([]string{FunctionController, FunctionLogServer, FunctionPortal}, FilterDelimiter)},
-	})
+	}, []string{"name"}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +409,7 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 		"include": {
 			"name": strings.Join(selected, FilterDelimiter),
 		},
-	})
+	}, []string{"name"}, false)
 	if err != nil {
 		return nil, err
 	}

@@ -95,7 +95,7 @@ func IsValidURL(addr string) bool {
 	return true
 }
 
-func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[string]string) map[string]map[string]string {
+func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[string]string) (map[string]map[string]string, []string, bool) {
 	result := defaultFilter
 
 	for v := range result {
@@ -108,7 +108,10 @@ func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[stri
 		}
 	}
 
-	return result
+	orderBy, _ := flags.GetStringSlice("order-by")
+	descending, _ := flags.GetBool("descending")
+
+	return result, orderBy, descending
 }
 
 func IsUUID(str string) bool {

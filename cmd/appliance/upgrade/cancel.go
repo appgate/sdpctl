@@ -95,12 +95,12 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	opts.ciMode = ciFlag
 
 	ctx := context.WithValue(context.Background(), appliancepkg.Caller, cmd.CalledAs())
-	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
+	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
 	stats, _, err := a.Stats(ctx)
 	if err != nil {
 		return err
 	}
-	allAppliances, err := a.List(ctx, filter)
+	allAppliances, err := a.List(ctx, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}

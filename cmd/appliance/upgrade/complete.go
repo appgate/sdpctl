@@ -148,8 +148,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = context.WithValue(ctx, appliancepkg.Caller, cmd.CalledAs())
-	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
-	rawAppliances, err := a.List(ctx, nil)
+	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
+	rawAppliances, err := a.List(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			Reason:    appliancepkg.SkipReasonOffline,
 		})
 	}
-	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
+	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}

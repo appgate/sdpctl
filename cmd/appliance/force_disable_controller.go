@@ -99,7 +99,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	appliances, err := a.List(ctx, nil)
+	appliances, err := a.List(ctx, nil, []string{"name"}, false)
 	if err != nil {
 		return err
 	}

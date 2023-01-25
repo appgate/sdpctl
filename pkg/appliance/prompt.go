@@ -11,7 +11,7 @@ import (
 
 // PromptSelect from online appliances
 func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[string]string) (string, error) {
-	appliances, err := a.List(ctx, filter)
+	appliances, err := a.List(ctx, filter, []string{"name"}, false)
 	if err != nil {
 		return "", err
 	}
@@ -28,7 +28,7 @@ func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[strin
 
 // PromptSelectAll from all appliances, offline and online
 func PromptSelectAll(ctx context.Context, a *Appliance, filter map[string]map[string]string) (string, error) {
-	appliances, err := a.List(ctx, filter)
+	appliances, err := a.List(ctx, filter, []string{"name"}, false)
 	if err != nil {
 		return "", err
 	}

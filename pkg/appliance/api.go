@@ -25,12 +25,12 @@ type Appliance struct {
 
 // List from the Collective
 // Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
-func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string) ([]openapi.Appliance, error) {
+func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.Appliance, error) {
 	appliances, response, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	result, _, err := FilterAppliances(appliances.GetData(), filter)
+	result, _, err := FilterAppliances(appliances.GetData(), filter, orderBy, descending)
 	if err != nil {
 		return nil, err
 	}

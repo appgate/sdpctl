@@ -487,6 +487,8 @@ func TestFilterAndExclude(t *testing.T) {
 	type args struct {
 		appliances []openapi.Appliance
 		filter     map[string]map[string]string
+		orderBy    []string
+		descending bool
 	}
 	mockControllers := map[string]openapi.Appliance{
 		"primaryController": {
@@ -575,6 +577,7 @@ func TestFilterAndExclude(t *testing.T) {
 						"name": "*",
 					},
 				},
+				orderBy: []string{"name"},
 			},
 			wantErr: true,
 		},
@@ -593,6 +596,7 @@ func TestFilterAndExclude(t *testing.T) {
 						word: value,
 					},
 				},
+				orderBy: []string{"name"},
 			},
 			want: []openapi.Appliance{
 				mockControllers["primaryController"],
@@ -615,6 +619,7 @@ func TestFilterAndExclude(t *testing.T) {
 						word: value,
 					},
 				},
+				orderBy: []string{"name"},
 			},
 			want: []openapi.Appliance{
 				mockControllers["gateway"],
@@ -628,7 +633,7 @@ func TestFilterAndExclude(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, filtered, err := FilterAppliances(tt.args.appliances, tt.args.filter)
+			got, filtered, err := FilterAppliances(tt.args.appliances, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if !tt.wantErr && err != nil {
 				t.Errorf("FilterAppliances() = %v", err)
 			}
