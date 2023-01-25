@@ -8,10 +8,12 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
+	tx "github.com/appgate/sdpctl/testing"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterAvailable(t *testing.T) {
@@ -2865,6 +2867,94 @@ func TestGetApplianceVersion(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetApplianceVersion() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func Test_sortAppliances(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+		orderBy    []string
+		descending bool
+	}
+
+	// Generate appliances
+	app1, _ := tx.GenerateApplianceWithStats([]int{tx.FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "healthy")
+	app2, _ := tx.GenerateApplianceWithStats([]int{tx.FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "healthy")
+	app3, _ := tx.GenerateApplianceWithStats([]int{tx.FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "healthy")
+	app4, _ := tx.GenerateApplianceWithStats([]int{tx.FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "healthy")
+	app5, _ := tx.GenerateApplianceWithStats([]int{tx.FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "healthy")
+
+	// Modify appliances for tests
+	app3.SetActivated(false)
+	app5.SetActivated(false)
+
+	tests := []struct {
+		name    string
+		args    args
+		want    []openapi.Appliance
+		wantErr bool
+	}{
+		{
+			name: "order by name",
+			args: args{
+				orderBy:    []string{"name"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app1, app2, app3, app4, app5},
+		},
+		{
+			name: "order by name descending",
+			args: args{
+				descending: true,
+				orderBy:    []string{"name"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app5, app4, app3, app2, app1},
+		},
+		{
+			name: "order by activated",
+			args: args{
+				orderBy:    []string{"activated"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app1, app2, app4, app3, app5},
+		},
+		{
+			name: "order by activated desc",
+			args: args{
+				descending: true,
+				orderBy:    []string{"activated"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app3, app5, app1, app2, app4},
+		},
+		{
+			name: "order by activated and hostname",
+			args: args{
+				orderBy:    []string{"activated", "hostname"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app4, app1, app2, app3, app5},
+		},
+		{
+			name: "order by activated and hostname descending",
+			args: args{
+				descending: true,
+				orderBy:    []string{"activated", "hostname"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app5, app3, app2, app1, app4},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := orderAppliances(tt.args.appliances, tt.args.orderBy, tt.args.descending)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("sortAppliances() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			assert.Equal(t, got, tt.want)
 		})
 	}
 }
