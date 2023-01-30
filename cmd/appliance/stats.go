@@ -120,5 +120,10 @@ func statsActiveFunction(s openapi.StatsAppliancesListAllOfData) string {
 			functions = append(functions, appliancepkg.FunctionGateway)
 		}
 	}
+	if v, ok := s.GetPortalOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, appliancepkg.FunctionPortal)
+		}
+	}
 	return strings.Join(functions, ", ")
 }
