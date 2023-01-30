@@ -11,7 +11,7 @@ var (
     with an interactive prompt.
     `
 	MaintenanceRootDoc = CommandDoc{
-		Short: "Manually mange maintenance mode on Controllers",
+		Short: "Manually manage maintenance mode on Controllers",
 		Long:  ``,
 	}
 
