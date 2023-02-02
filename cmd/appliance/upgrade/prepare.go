@@ -236,7 +236,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	initialStats, _, err := a.Stats(ctx)
+	initialStats, _, err := a.Stats(ctx, orderBy, descending)
 	if err != nil {
 		return err
 	}

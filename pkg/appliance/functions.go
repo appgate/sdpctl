@@ -340,20 +340,6 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	)
 }
 
-func GetRealHostname(controller openapi.Appliance) (string, error) {
-	realHost := controller.GetHostname()
-	if i, ok := controller.GetPeerInterfaceOk(); ok {
-		realHost = i.GetHostname()
-	}
-	if i, ok := controller.GetAdminInterfaceOk(); ok {
-		realHost = i.GetHostname()
-	}
-	if err := ValidateHostname(controller, realHost); err != nil {
-		return "", err
-	}
-	return realHost, nil
-}
-
 func ValidateHostname(controller openapi.Appliance, hostname string) error {
 	var h string
 	if ai, ok := controller.GetAdminInterfaceOk(); ok {
@@ -647,6 +633,83 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 		}
 	}
 	return appliances, nil
+}
+
+func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
+
+	for i := len(orderBy) - 1; i >= 0; i-- {
+		switch orderBy[i] {
+		case "name":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() > stats[j].GetName() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() < stats[j].GetName() })
+			}
+		case "disk":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetDisk() > stats[j].GetDisk() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetDisk() < stats[j].GetDisk() })
+			}
+		case "mem", "memory":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetMemory() > stats[j].GetMemory() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetMemory() < stats[j].GetMemory() })
+			}
+		case "cpu":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetCpu() > stats[j].GetCpu() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetCpu() < stats[j].GetCpu() })
+			}
+		case "version":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() > stats[j].GetVersion() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() < stats[j].GetVersion() })
+			}
+		case "net-in":
+			sort.SliceStable(stats, func(i, j int) bool {
+				inet := stats[i].GetNetwork()
+				jnet := stats[j].GetNetwork()
+				irx := inet.GetRxSpeed()
+				jrx := jnet.GetRxSpeed()
+				if descending {
+					return irx > jrx
+				} else {
+					return irx < jrx
+				}
+			})
+		case "net-out":
+			sort.SliceStable(stats, func(i, j int) bool {
+				inet := stats[i].GetNetwork()
+				jnet := stats[j].GetNetwork()
+				itx := inet.GetTxSpeed()
+				jtx := jnet.GetTxSpeed()
+				if descending {
+					return itx > jtx
+				} else {
+					return itx < jtx
+				}
+			})
+		case "function":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() > stats[j].GetFunction() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() < stats[j].GetFunction() })
+			}
+		case "status":
+			if descending {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() > stats[j].GetStatus() })
+			} else {
+				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() < stats[j].GetStatus() })
+			}
+		default:
+			log.WithField("keyword", orderBy[i]).Warn("not a sortable keyword")
+		}
+	}
+	return stats, nil
 }
 
 const (

@@ -139,11 +139,16 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 	return nil
 }
 
-func (a *Appliance) Stats(ctx context.Context) (*openapi.StatsAppliancesList, *http.Response, error) {
+func (a *Appliance) Stats(ctx context.Context, orderBy []string, descending bool) (*openapi.StatsAppliancesList, *http.Response, error) {
 	status, response, err := a.APIClient.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}
+	orderedData, err := orderApplianceStats(status.GetData(), orderBy, descending)
+	if err != nil {
+		return nil, nil, err
+	}
+	status.SetData(orderedData)
 	return status, response, nil
 }
 

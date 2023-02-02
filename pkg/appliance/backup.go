@@ -176,7 +176,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 
 	// Filter offline appliances
-	initialStats, _, err := app.Stats(ctx)
+	initialStats, _, err := app.Stats(ctx, opts.OrderBy, opts.Descending)
 	if err != nil {
 		return backupIDs, err
 	}

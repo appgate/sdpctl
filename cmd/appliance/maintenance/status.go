@@ -50,7 +50,7 @@ func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	stats, _, err := a.Stats(ctx)
+	stats, _, err := a.Stats(ctx, nil, false)
 	if err != nil {
 		return err
 	}

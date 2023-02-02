@@ -15,7 +15,7 @@ func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[strin
 	if err != nil {
 		return "", err
 	}
-	stats, _, err := a.Stats(ctx)
+	stats, _, err := a.Stats(ctx, nil, false)
 	if err != nil {
 		return "", err
 	}

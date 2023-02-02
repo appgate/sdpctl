@@ -52,8 +52,9 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	if err != nil {
 		return err
 	}
+	_, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 	ctx := context.Background()
-	stats, _, err := a.Stats(ctx)
+	stats, _, err := a.Stats(ctx, orderBy, descending)
 	if err != nil {
 		return err
 	}
