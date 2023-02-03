@@ -397,26 +397,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err != nil {
 			return err
 		}
-		content, err := io.ReadAll(imageFile)
-		if err != nil {
-			return err
-		}
-		body := new(bytes.Buffer)
-		writer := multipart.NewWriter(body)
-		part, err := writer.CreateFormFile("file", fileStat.Name())
-		if err != nil {
-			return err
-		}
-		part.Write(content)
-		if err = writer.Close(); err != nil {
-			return err
-		}
+		fileSize := fileStat.Size()
 
-		uploadWithProgress := func(ctx context.Context, body *bytes.Buffer, headers map[string]string) error {
+		uploadWithProgress := func(ctx context.Context, reader io.Reader, headers map[string]string) error {
 			uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
 			defer uploadProgress.Wait()
 			barName := fileStat.Name() + ":"
-			bar := uploadProgress.AddBar(int64(body.Len()),
+			bar := uploadProgress.AddBar(fileSize,
 				mpb.BarWidth(50),
 				mpb.BarFillerOnComplete("uploaded"),
 				mpb.PrependDecorators(
@@ -437,7 +424,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				mpb.BarQueueAfter(bar, false),
 			)
 
-			reader := io.LimitReader(body, int64(body.Len()))
 			proxyReader := bar.ProxyReader(reader)
 			defer func() {
 				proxyReader.Close()
@@ -453,6 +439,24 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return nil
 		}
 
+		pr, pw := io.Pipe()
+		writer := multipart.NewWriter(pw)
+		go func() {
+			defer pw.Close()
+			defer writer.Close()
+
+			part, err := writer.CreateFormFile("file", fileStat.Name())
+			if err != nil {
+				log.Warnf("multipart form err %s", err)
+				return
+			}
+
+			if _, err = io.Copy(part, imageFile); err != nil {
+				log.Warnf("copy err %s", err)
+				return
+			}
+		}()
+
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
 			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
@@ -460,9 +464,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		fmt.Fprintf(opts.Out, "[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 		if !opts.ciMode {
-			err = uploadWithProgress(ctx, body, headers)
+			err = uploadWithProgress(ctx, pr, headers)
 		} else {
-			err = a.UploadFile(ctx, body, headers)
+			err = a.UploadFile(ctx, pr, headers)
 		}
 		if err != nil {
 			return err
