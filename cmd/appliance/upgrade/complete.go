@@ -147,6 +147,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	ctx = context.WithValue(ctx, appliancepkg.Caller, cmd.CalledAs())
 	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	rawAppliances, err := a.List(ctx, nil)
 	if err != nil {

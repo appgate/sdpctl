@@ -196,6 +196,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	spinnerOut := opts.SpinnerOut()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	ctx = context.WithValue(ctx, appliancepkg.Caller, cmd.CalledAs())
 	if a.UpgradeStatusWorker == nil {
 		a.UpgradeStatusWorker = &appliancepkg.UpgradeStatus{
 			Appliance: a,
