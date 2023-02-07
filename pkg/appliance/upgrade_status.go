@@ -37,8 +37,12 @@ type UpgradeStatus struct {
 }
 
 type IsPrimaryUpgrade string
+type CalledAs string
 
-const PrimaryUpgrade IsPrimaryUpgrade = "IsPrimaryUpgrade"
+const (
+	PrimaryUpgrade IsPrimaryUpgrade = "IsPrimaryUpgrade"
+	Caller         CalledAs         = "calledAs"
+)
 
 func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.Appliance, desiredStatuses []string, undesiredStatuses []string, tracker *tui.Tracker) backoff.Operation {
 	name := appliance.GetName()
@@ -88,7 +92,10 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 					// send error details for tracker
 					tracker.Fail(s + " - " + details)
 				}
-				err := fmt.Errorf("Upgrade failed on %s %s %s", name, s, details)
+				err := fmt.Errorf("Command failed on %s %s %s", name, s, details)
+				if calledAs, ok := ctx.Value(Caller).(string); ok {
+					err = fmt.Errorf("%s failed on %s %s %s", calledAs, name, s, details)
+				}
 				logEntry.WithError(err).WithFields(log.Fields{"status": s, "details": details}).Error("Got unwanted status")
 				return backoff.Permanent(err)
 			}
