@@ -29,6 +29,14 @@ func ArgsSelectAppliance(cmd *cobra.Command, args []string, opts *AppliancCmdOpt
 	if !opts.CanPrompt {
 		opts.NoInteractive = true
 	}
+	orderBy, err := cmd.Flags().GetStringSlice("order-by")
+	if err != nil {
+		return err
+	}
+	descending, err := cmd.Flags().GetBool("descending")
+	if err != nil {
+		return err
+	}
 	switch len(args) {
 	case 0:
 		if opts.NoInteractive {
@@ -39,7 +47,7 @@ func ArgsSelectAppliance(cmd *cobra.Command, args []string, opts *AppliancCmdOpt
 		if err != nil {
 			return err
 		}
-		applianceID, err := appliancepkg.PromptSelect(context.Background(), a, opts.Filter)
+		applianceID, err := appliancepkg.PromptSelect(context.Background(), a, opts.Filter, orderBy, descending)
 		if err != nil {
 			return err
 		}

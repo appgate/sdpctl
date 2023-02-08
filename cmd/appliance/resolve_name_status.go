@@ -51,8 +51,16 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 					"function": "gateway",
 				},
 			}
+			orderBy, err := cmd.Flags().GetStringSlice("order-by")
+			if err != nil {
+				return err
+			}
+			descending, err := cmd.Flags().GetBool("descending")
+			if err != nil {
+				return err
+			}
 			if len(args) != 1 {
-				opts.applianceID, err = appliancepkg.PromptSelect(ctx, a, filter)
+				opts.applianceID, err = appliancepkg.PromptSelect(ctx, a, filter, orderBy, descending)
 				if err != nil {
 					return err
 				}
@@ -64,7 +72,7 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 			_, err = uuid.Parse(uuidArg)
 			if err != nil {
 				log.WithField("error", err).Info("Invalid ID. Please select appliance instead")
-				uuidArg, err = appliancepkg.PromptSelect(ctx, a, filter)
+				uuidArg, err = appliancepkg.PromptSelect(ctx, a, filter, orderBy, descending)
 				if err != nil {
 					return err
 				}
