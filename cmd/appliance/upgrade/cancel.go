@@ -202,7 +202,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 	}
 
 	if opts.delete {
-		files, err := a.ListFiles(context.Background())
+		files, err := a.ListFiles(context.Background(), nil, false)
 		if err != nil {
 			return err
 		}

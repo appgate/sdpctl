@@ -667,6 +667,39 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 	return stats, nil
 }
 
+func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) []openapi.File {
+	for i := len(orderBy) - 1; i >= 0; i-- {
+		switch orderBy[i] {
+		case "name":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetName() < files[j].GetName() })
+		case "status":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetStatus() < files[j].GetStatus() })
+		case "failure-reason":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetFailureReason() < files[j].GetFailureReason() })
+		case "creation-time", "created":
+			sort.SliceStable(files, func(i, j int) bool {
+				iTime := files[i].GetCreationTime()
+				jTime := files[j].GetCreationTime()
+				return iTime.Before(jTime)
+			})
+		case "last-modified", "modified":
+			sort.SliceStable(files, func(i, j int) bool {
+				iTime := files[i].GetLastModifiedTime()
+				jTime := files[j].GetLastModifiedTime()
+				return iTime.Before(jTime)
+			})
+		case "checksum":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetChecksum() < files[j].GetChecksum() })
+		default:
+			log.WithField("keyword", orderBy[i]).Warn("not a sortable keyword")
+		}
+	}
+	if descending {
+		return reverse(files)
+	}
+	return files
+}
+
 const (
 	statControllerReady       string = "controller_ready"
 	statSingleControllerReady string = "single_controller_ready"

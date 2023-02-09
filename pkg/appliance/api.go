@@ -215,12 +215,12 @@ func (a *Appliance) UploadToController(ctx context.Context, url, filename string
 	return nil
 }
 
-func (a *Appliance) ListFiles(ctx context.Context) ([]openapi.File, error) {
+func (a *Appliance) ListFiles(ctx context.Context, orderBy []string, descending bool) ([]openapi.File, error) {
 	list, response, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return list.GetData(), nil
+	return orderApplianceFiles(list.GetData(), orderBy, descending), nil
 }
 
 // DeleteFile Delete a File from the current Controller.

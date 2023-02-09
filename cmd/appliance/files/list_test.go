@@ -56,6 +56,8 @@ func TestFilesList(t *testing.T) {
 	defer registry.Teardown()
 
 	cmd := NewFilesCmd(f)
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"list"})
@@ -83,6 +85,8 @@ func TestFilesListJSON(t *testing.T) {
 	defer registry.Teardown()
 
 	cmd := NewFilesCmd(f)
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"list", "--json"})

@@ -11,10 +11,12 @@ import (
 )
 
 type FilesOptions struct {
-	Config    *configuration.Config
-	Appliance func(c *configuration.Config) (*appliance.Appliance, error)
-	Out       io.Writer
-	JSON      bool
+	Config     *configuration.Config
+	Appliance  func(c *configuration.Config) (*appliance.Appliance, error)
+	Out        io.Writer
+	JSON       bool
+	OrderBy    []string
+	Descending bool
 }
 
 func NewFilesCmd(f *factory.Factory) *cobra.Command {
