@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: "1.20.x"
-      - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@v0.3.3"
+      - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@2023.1"
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
