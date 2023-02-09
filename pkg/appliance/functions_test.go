@@ -2850,6 +2850,14 @@ func Test_orderAppliances(t *testing.T) {
 			want: []openapi.Appliance{app1, app2, app4, app3, app5},
 		},
 		{
+			name: "order by activated mixed casing",
+			args: args{
+				orderBy:    []string{"AcTivated"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app1, app2, app4, app3, app5},
+		},
+		{
 			name: "order by activated desc",
 			args: args{
 				descending: true,

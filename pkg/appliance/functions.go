@@ -598,7 +598,7 @@ func reverse[S ~[]T, T any](items S) S {
 func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
 	// reverse loop the slice to prioritize the ordering. First entered has priority
 	for i := len(orderBy) - 1; i >= 0; i-- {
-		switch orderBy[i] {
+		switch strings.ToLower(orderBy[i]) {
 		case "name":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() < appliances[j].GetName() })
 		case "id":
@@ -624,9 +624,8 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 }
 
 func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
-
 	for i := len(orderBy) - 1; i >= 0; i-- {
-		switch orderBy[i] {
+		switch strings.ToLower(orderBy[i]) {
 		case "name":
 			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() < stats[j].GetName() })
 		case "disk":
@@ -669,7 +668,7 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 
 func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) []openapi.File {
 	for i := len(orderBy) - 1; i >= 0; i-- {
-		switch orderBy[i] {
+		switch strings.ToLower(orderBy[i]) {
 		case "name":
 			sort.SliceStable(files, func(i, j int) bool { return files[i].GetName() < files[j].GetName() })
 		case "status":
