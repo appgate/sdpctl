@@ -656,6 +656,8 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() < stats[j].GetFunction() })
 		case "status":
 			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() < stats[j].GetStatus() })
+		case "sessions":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetNumberOfSessions() < stats[j].GetNumberOfSessions() })
 		default:
 			log.WithField("keyword", orderBy[i]).Warn("not a sortable keyword")
 		}
