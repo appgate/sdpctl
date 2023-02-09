@@ -584,53 +584,38 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	return filteredAppliances, nil
 }
 
+func reverse[T openapi.Appliance | openapi.StatsAppliancesListAllOfData](a []T) []T {
+	rev := []T{}
+	for i := len(a) - 1; i >= 0; i-- {
+		rev = append(rev, a[i])
+	}
+	return rev
+}
+
 func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
 	// reverse loop the slice to prioritize the ordering. First entered has priority
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch orderBy[i] {
 		case "name":
-			if descending {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() > appliances[j].GetName() })
-			} else {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() < appliances[j].GetName() })
-			}
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() < appliances[j].GetName() })
 		case "id":
-			if descending {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetId() > appliances[j].GetId() })
-			} else {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetId() < appliances[j].GetId() })
-			}
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetId() < appliances[j].GetId() })
 		case "site":
-			if descending {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSite() > appliances[j].GetSite() })
-			} else {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSite() < appliances[j].GetSite() })
-			}
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSite() < appliances[j].GetSite() })
 		case "site-name":
-			if descending {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSiteName() > appliances[j].GetSiteName() })
-			} else {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSiteName() < appliances[j].GetSiteName() })
-			}
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSiteName() < appliances[j].GetSiteName() })
 		case "hostname", "host":
-			if descending {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetHostname() > appliances[j].GetHostname() })
-			} else {
-				sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetHostname() < appliances[j].GetHostname() })
-			}
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetHostname() < appliances[j].GetHostname() })
 		case "activated", "active":
-			if descending {
-				sort.SliceStable(appliances, func(i, j int) bool {
-					return !appliances[i].GetActivated() && appliances[i].GetActivated() != appliances[j].GetActivated()
-				})
-			} else {
-				sort.SliceStable(appliances, func(i, j int) bool {
-					return appliances[i].GetActivated() && appliances[i].GetActivated() != appliances[j].GetActivated()
-				})
-			}
+			sort.SliceStable(appliances, func(i, j int) bool {
+				return appliances[i].GetActivated() && appliances[i].GetActivated() != appliances[j].GetActivated()
+			})
 		default:
 			log.WithField("keyword", orderBy[i]).Warn("keyword not sortable, ignoring")
 		}
+	}
+	if descending {
+		return reverse(appliances), nil
 	}
 	return appliances, nil
 }
@@ -640,46 +625,22 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch orderBy[i] {
 		case "name":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() > stats[j].GetName() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() < stats[j].GetName() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() < stats[j].GetName() })
 		case "disk":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetDisk() > stats[j].GetDisk() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetDisk() < stats[j].GetDisk() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetDisk() < stats[j].GetDisk() })
 		case "mem", "memory":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetMemory() > stats[j].GetMemory() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetMemory() < stats[j].GetMemory() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetMemory() < stats[j].GetMemory() })
 		case "cpu":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetCpu() > stats[j].GetCpu() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetCpu() < stats[j].GetCpu() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetCpu() < stats[j].GetCpu() })
 		case "version":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() > stats[j].GetVersion() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() < stats[j].GetVersion() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() < stats[j].GetVersion() })
 		case "net-in":
 			sort.SliceStable(stats, func(i, j int) bool {
 				inet := stats[i].GetNetwork()
 				jnet := stats[j].GetNetwork()
 				irx := inet.GetRxSpeed()
 				jrx := jnet.GetRxSpeed()
-				if descending {
-					return irx > jrx
-				} else {
-					return irx < jrx
-				}
+				return irx < jrx
 			})
 		case "net-out":
 			sort.SliceStable(stats, func(i, j int) bool {
@@ -687,27 +648,18 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 				jnet := stats[j].GetNetwork()
 				itx := inet.GetTxSpeed()
 				jtx := jnet.GetTxSpeed()
-				if descending {
-					return itx > jtx
-				} else {
-					return itx < jtx
-				}
+				return itx < jtx
 			})
 		case "function":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() > stats[j].GetFunction() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() < stats[j].GetFunction() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() < stats[j].GetFunction() })
 		case "status":
-			if descending {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() > stats[j].GetStatus() })
-			} else {
-				sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() < stats[j].GetStatus() })
-			}
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() < stats[j].GetStatus() })
 		default:
 			log.WithField("keyword", orderBy[i]).Warn("not a sortable keyword")
 		}
+	}
+	if descending {
+		return reverse(stats), nil
 	}
 	return stats, nil
 }

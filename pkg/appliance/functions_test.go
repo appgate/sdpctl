@@ -2856,7 +2856,7 @@ func Test_sortAppliances(t *testing.T) {
 				orderBy:    []string{"activated"},
 				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
 			},
-			want: []openapi.Appliance{app3, app5, app1, app2, app4},
+			want: []openapi.Appliance{app5, app3, app4, app2, app1},
 		},
 		{
 			name: "order by activated and hostname",
