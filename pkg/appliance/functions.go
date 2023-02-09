@@ -584,12 +584,15 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	return filteredAppliances, nil
 }
 
-func reverse[T openapi.Appliance | openapi.StatsAppliancesListAllOfData](a []T) []T {
-	rev := []T{}
-	for i := len(a) - 1; i >= 0; i-- {
-		rev = append(rev, a[i])
+func reverse[S ~[]T, T any](items S) S {
+	if len(items) <= 1 {
+		return items
 	}
-	return rev
+	result := make([]T, 0, len(items))
+	for i := len(items) - 1; i >= 0; i-- {
+		result = append(result, items[i])
+	}
+	return result
 }
 
 func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
