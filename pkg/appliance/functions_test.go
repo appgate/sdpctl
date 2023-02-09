@@ -2886,11 +2886,7 @@ func Test_orderAppliances(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := orderAppliances(tt.args.appliances, tt.args.orderBy, tt.args.descending)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("orderAppliances() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			got := orderAppliances(tt.args.appliances, tt.args.orderBy, tt.args.descending)
 			assert.Equal(t, got, tt.want)
 		})
 	}

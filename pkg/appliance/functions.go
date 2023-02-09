@@ -450,14 +450,8 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 	}
 
 	// Sort appliances
-	include, err = orderAppliances(include, orderBy, descending)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
-	exclude, err = orderAppliances(exclude, orderBy, descending)
-	if err != nil {
-		errs = multierror.Append(errs, err)
-	}
+	include = orderAppliances(include, orderBy, descending)
+	exclude = orderAppliances(exclude, orderBy, descending)
 
 	return include, exclude, errs.ErrorOrNil()
 }
@@ -595,7 +589,7 @@ func reverse[S ~[]T, T any](items S) S {
 	return result
 }
 
-func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
+func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) []openapi.Appliance {
 	// reverse loop the slice to prioritize the ordering. First entered has priority
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
@@ -618,12 +612,12 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 		}
 	}
 	if descending {
-		return reverse(appliances), nil
+		return reverse(appliances)
 	}
-	return appliances, nil
+	return appliances
 }
 
-func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
+func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) []openapi.StatsAppliancesListAllOfData {
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
 		case "name":
@@ -663,9 +657,9 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 		}
 	}
 	if descending {
-		return reverse(stats), nil
+		return reverse(stats)
 	}
-	return stats, nil
+	return stats
 }
 
 func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) []openapi.File {

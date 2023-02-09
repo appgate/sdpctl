@@ -144,11 +144,7 @@ func (a *Appliance) Stats(ctx context.Context, orderBy []string, descending bool
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}
-	orderedData, err := orderApplianceStats(status.GetData(), orderBy, descending)
-	if err != nil {
-		return nil, nil, err
-	}
-	status.SetData(orderedData)
+	status.SetData(orderApplianceStats(status.GetData(), orderBy, descending))
 	return status, response, nil
 }
 
