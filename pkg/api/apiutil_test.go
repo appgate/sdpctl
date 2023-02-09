@@ -97,6 +97,20 @@ func TestHTTPErrorResponse(t *testing.T) {
 			},
 			errorString: "HTTP 422 - cc",
 		},
+		{
+			name: "HTTP 403 no error",
+			args: args{
+				response: &http.Response{
+					StatusCode: 403,
+					Body: io.NopCloser(strings.NewReader(`{
+                        "id": "forbidden",
+                        "message": "You don't have permission to access this resource."
+                    }`)),
+				},
+				err: nil,
+			},
+			errorString: "You don't have permission to access this resource.",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
