@@ -1,8 +1,11 @@
 package configuration
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -13,9 +16,15 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type Meta struct {
+	DisableVersionCheck bool   `mapstructure:"disable_version_check" json:"disable_version_check"`
+	LastChecked         string `mapstructure:"last_checked" json:"last_checked"`
+}
 
 type Config struct {
 	URL         string  `mapstructure:"url"`
@@ -28,6 +37,7 @@ type Config struct {
 	DeviceID    string  `mapstructure:"device_id"`
 	PemFilePath string  `mapstructure:"pem_filepath"`
 	Timeout     int     // HTTP timeout, not supported in the config file.
+	Meta        Meta    `mapstructure:"meta"`
 }
 
 type Credentials struct {
@@ -279,4 +289,75 @@ func (c *Config) KeyringPrefix() (string, error) {
 		}
 	}
 	return h, nil
+}
+
+func (c *Config) CheckForUpdate(out io.Writer, current string) error {
+	// Check if version check is disabled in configuration
+	if c.Meta.DisableVersionCheck {
+		return errors.New("version check disabled")
+	}
+
+	// Check if version check has already been done today
+	yesterday := time.Now().AddDate(0, 0, -1)
+	lastCheck, _ := time.Parse(time.RFC3339Nano, c.Meta.LastChecked)
+	if !lastCheck.Before(yesterday) {
+		return errors.New("version check already done today")
+	}
+
+	// Perform version check
+	const cliReleasesURL = "https://api.github.com/repos/appgate/sdpctl/releases"
+	req, err := http.NewRequest(http.MethodGet, cliReleasesURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Accept", "application/vnd.github+json")
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	type githubRelease struct {
+		TagName    string `json:"tag_name"`
+		PreRelease bool   `json:"pre_release"`
+		Draft      bool   `json:"draft"`
+	}
+
+	type releaseList []githubRelease
+
+	// Write new check time to config after request is successful
+	c.Meta.LastChecked = time.Now().Format(time.RFC3339Nano)
+	viper.Set("meta", c.Meta)
+	viper.WriteConfig()
+
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	var releases releaseList
+	if err := json.Unmarshal(b, &releases); err != nil {
+		return err
+	}
+
+	v, err := version.NewVersion(current)
+	if err != nil {
+		return err
+	}
+
+	var latest *version.Version
+	r := releases[0]
+	n, err := version.NewVersion(r.TagName)
+	if err != nil {
+		return err
+	}
+	if !r.Draft && !r.PreRelease && n.GreaterThan(v) {
+		latest = n
+	}
+	if latest == nil {
+		return errors.New("already at latest version")
+	}
+	fmt.Fprintf(out, "NOTICE: A new version of sdpctl is available for download: %s\nDownload it here: https://github.com/appgate/sdpctl/releases/tag/%s\n\n", latest.Original(), latest.Original())
+	return nil
 }

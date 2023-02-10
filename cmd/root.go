@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	version         string = "dev"
+	version         string = "0.0.0-dev"
 	commit          string
 	buildDate       string
 	longDescription string = `The official CLI tool for managing your Collective.`
@@ -299,6 +299,12 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if err := configuration.CheckMinAPIVersionRestriction(cmd, cfg.Version); err != nil {
 			return err
 		}
+
+		// Check for new sdpctl version
+		if err := cfg.CheckForUpdate(f.IOOutWriter, version); err != nil {
+			log.WithError(err).Info("version check result")
+		}
+
 		return nil
 	}
 }
