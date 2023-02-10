@@ -26,7 +26,13 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("HTTP %d - %s", e.StatusCode, e.Err.Error())
+	if e.Err != nil {
+		return fmt.Sprintf("HTTP %d - %s", e.StatusCode, e.Err.Error())
+	}
+	if len(e.Errors) > 0 {
+		return stderrors.Join(e.Errors...).Error()
+	}
+	return "Internal error"
 }
 
 func HTTPErrorResponse(response *http.Response, err error) error {
