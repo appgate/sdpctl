@@ -301,8 +301,13 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 
 		// Check for new sdpctl version
-		if err := cfg.CheckForUpdate(f.IOOutWriter, version); err != nil {
+		meta, err := cfg.CheckForUpdate(f.StdErr, version)
+		if err != nil {
 			log.WithError(err).Info("version check result")
+		}
+		viper.Set("meta", meta)
+		if err := viper.WriteConfig(); err != nil {
+			return err
 		}
 
 		return nil
