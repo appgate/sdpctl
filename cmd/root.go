@@ -273,11 +273,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 				if err == nil && minMax != nil {
 					viper.Set("api_version", minMax.Max)
 					f.Config.Version = int(minMax.Max)
-					if err := viper.WriteConfig(); err != nil {
-						if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-							fmt.Fprintf(f.StdErr, "[error] %s\n", err)
-						}
-					}
 				}
 			}
 
@@ -301,13 +296,19 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 
 		// Check for new sdpctl version
-		meta, err := cfg.CheckForUpdate(f.StdErr, version)
+		client, err := f.HTTPClient()
+		if err != nil {
+			return err
+		}
+		meta, err := cfg.CheckForUpdate(f.StdErr, client, version)
 		if err != nil {
 			log.WithError(err).Info("version check result")
 		}
 		viper.Set("meta", meta)
 		if err := viper.WriteConfig(); err != nil {
-			return err
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				fmt.Fprintf(f.StdErr, "[error] %s\n", err)
+			}
 		}
 
 		return nil

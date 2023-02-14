@@ -292,7 +292,7 @@ func (c *Config) KeyringPrefix() (string, error) {
 	return h, nil
 }
 
-func (c *Config) CheckForUpdate(out io.Writer, current string) (Meta, error) {
+func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current string) (Meta, error) {
 	// Check if version check is disabled in configuration
 	if c.Meta.DisableVersionCheck {
 		return c.Meta, errors.New("version check disabled")
@@ -301,7 +301,7 @@ func (c *Config) CheckForUpdate(out io.Writer, current string) (Meta, error) {
 	// Check if version check has already been done today
 	lastCheck, err := time.Parse(time.RFC3339Nano, c.Meta.LastChecked)
 	if err == nil {
-        yesterday := time.Now().AddDate(0, 0, -1)
+		yesterday := time.Now().AddDate(0, 0, -1)
 		if !lastCheck.Before(yesterday) {
 			return c.Meta, errors.New("version check already done today")
 		}
@@ -318,7 +318,6 @@ func (c *Config) CheckForUpdate(out io.Writer, current string) (Meta, error) {
 		return c.Meta, err
 	}
 	req.Header.Add("Accept", "application/vnd.github+json")
-	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		return c.Meta, err
@@ -332,6 +331,10 @@ func (c *Config) CheckForUpdate(out io.Writer, current string) (Meta, error) {
 	}
 
 	type releaseList []githubRelease
+
+	if res.StatusCode != http.StatusOK {
+		return c.Meta, fmt.Errorf("unexpected request status: %d", res.StatusCode)
+	}
 
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
