@@ -299,13 +299,12 @@ func (c *Config) CheckForUpdate(out io.Writer, current string) (Meta, error) {
 	}
 
 	// Check if version check has already been done today
-	yesterday := time.Now().AddDate(0, 0, -1)
 	lastCheck, err := time.Parse(time.RFC3339Nano, c.Meta.LastChecked)
-	if err != nil {
-		return c.Meta, err
-	}
-	if !lastCheck.Before(yesterday) {
-		return c.Meta, errors.New("version check already done today")
+	if err == nil {
+        yesterday := time.Now().AddDate(0, 0, -1)
+		if !lastCheck.Before(yesterday) {
+			return c.Meta, errors.New("version check already done today")
+		}
 	}
 
 	// Perform version check
