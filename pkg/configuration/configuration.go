@@ -22,23 +22,19 @@ import (
 	"golang.org/x/net/context"
 )
 
-type Meta struct {
-	DisableVersionCheck bool   `mapstructure:"disable_version_check" json:"disable_version_check"`
-	LastChecked         string `mapstructure:"last_checked" json:"last_checked"`
-}
-
 type Config struct {
-	URL         string  `mapstructure:"url"`
-	Provider    *string `mapstructure:"provider"`
-	Insecure    bool    `mapstructure:"insecure"`
-	Debug       bool    `mapstructure:"debug"`         // http debug flag
-	Version     int     `mapstructure:"api_version"`   // api peer interface version
-	BearerToken *string `mapstructure:"bearer:squash"` // current logged in user token
-	ExpiresAt   *string `mapstructure:"expires_at"`
-	DeviceID    string  `mapstructure:"device_id"`
-	PemFilePath string  `mapstructure:"pem_filepath"`
-	Timeout     int     // HTTP timeout, not supported in the config file.
-	Meta        Meta    `mapstructure:"meta"`
+	URL                 string  `mapstructure:"url"`
+	Provider            *string `mapstructure:"provider"`
+	Insecure            bool    `mapstructure:"insecure"`
+	Debug               bool    `mapstructure:"debug"`         // http debug flag
+	Version             int     `mapstructure:"api_version"`   // api peer interface version
+	BearerToken         *string `mapstructure:"bearer:squash"` // current logged in user token
+	ExpiresAt           *string `mapstructure:"expires_at"`
+	DeviceID            string  `mapstructure:"device_id"`
+	PemFilePath         string  `mapstructure:"pem_filepath"`
+	Timeout             int     // HTTP timeout, not supported in the config file.
+	DisableVersionCheck bool    `mapstructure:"disable_version_check"`
+	LastVersionCheck    string  `mapstructure:"last_version_check"`
 }
 
 type Credentials struct {
@@ -292,18 +288,18 @@ func (c *Config) KeyringPrefix() (string, error) {
 	return h, nil
 }
 
-func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current string) (Meta, error) {
+func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current string) (*Config, error) {
 	// Check if version check is disabled in configuration
-	if c.Meta.DisableVersionCheck {
-		return c.Meta, errors.New("version check disabled")
+	if c.DisableVersionCheck {
+		return c, errors.New("version check disabled")
 	}
 
 	// Check if version check has already been done today
-	lastCheck, err := time.Parse(time.RFC3339Nano, c.Meta.LastChecked)
+	lastCheck, err := time.Parse(time.RFC3339Nano, c.LastVersionCheck)
 	if err == nil {
 		yesterday := time.Now().AddDate(0, 0, -1)
 		if !lastCheck.Before(yesterday) {
-			return c.Meta, errors.New("version check already done today")
+			return c, errors.New("version check already done today")
 		}
 	}
 
@@ -313,14 +309,15 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cliReleasesURL, nil)
 	// Write new check time to config after request is made
-	c.Meta.LastChecked = time.Now().Format(time.RFC3339Nano)
+	c.LastVersionCheck = time.Now().Format(time.RFC3339Nano)
+	viper.Set("last_version_check", c.LastVersionCheck)
 	if err != nil {
-		return c.Meta, err
+		return c, err
 	}
 	req.Header.Add("Accept", "application/vnd.github+json")
 	res, err := client.Do(req)
 	if err != nil {
-		return c.Meta, err
+		return c, err
 	}
 	defer res.Body.Close()
 
@@ -333,36 +330,36 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	type releaseList []githubRelease
 
 	if res.StatusCode != http.StatusOK {
-		return c.Meta, fmt.Errorf("unexpected request status: %d", res.StatusCode)
+		return c, fmt.Errorf("unexpected request status: %d", res.StatusCode)
 	}
 
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
-		return c.Meta, err
+		return c, err
 	}
 
 	var releases releaseList
 	if err := json.Unmarshal(b, &releases); err != nil {
-		return c.Meta, err
+		return c, err
 	}
 
 	v, err := version.NewVersion(current)
 	if err != nil {
-		return c.Meta, err
+		return c, err
 	}
 
 	var latest *version.Version
 	r := releases[0]
 	n, err := version.NewVersion(r.TagName)
 	if err != nil {
-		return c.Meta, err
+		return c, err
 	}
 	if !r.Draft && !r.PreRelease && n.GreaterThan(v) {
 		latest = n
 	}
 	if latest == nil {
-		return c.Meta, errors.New("already at latest version")
+		return c, errors.New("already at latest version")
 	}
 	fmt.Fprintf(out, "NOTICE: A new version of sdpctl is available for download: %s\nDownload it here: https://github.com/appgate/sdpctl/releases/tag/%s\n\n", latest.Original(), latest.Original())
-	return c.Meta, nil
+	return c, nil
 }

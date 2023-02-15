@@ -300,11 +300,10 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if err != nil {
 			return err
 		}
-		meta, err := cfg.CheckForUpdate(f.StdErr, client, version)
+		cfg, err = cfg.CheckForUpdate(f.StdErr, client, version)
 		if err != nil {
 			log.WithError(err).Info("version check result")
 		}
-		viper.Set("meta", meta)
 		if err := viper.WriteConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 				fmt.Fprintf(f.StdErr, "[error] %s\n", err)
