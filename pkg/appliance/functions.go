@@ -450,8 +450,14 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 	}
 
 	// Sort appliances
-	include = orderAppliances(include, orderBy, descending)
-	exclude = orderAppliances(exclude, orderBy, descending)
+	include, err = orderAppliances(include, orderBy, descending)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	exclude, err = orderAppliances(exclude, orderBy, descending)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
 	return include, exclude, errs.ErrorOrNil()
 }
@@ -589,7 +595,8 @@ func reverse[S ~[]T, T any](items S) S {
 	return result
 }
 
-func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) []openapi.Appliance {
+func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
+	var errs *multierror.Error
 	// reverse loop the slice to prioritize the ordering. First entered has priority
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
@@ -608,16 +615,17 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 				return appliances[i].GetActivated() && appliances[i].GetActivated() != appliances[j].GetActivated()
 			})
 		default:
-			log.WithField("keyword", orderBy[i]).Warn("keyword not sortable, ignoring")
+			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
 		}
 	}
 	if descending {
-		return reverse(appliances)
+		return reverse(appliances), errs.ErrorOrNil()
 	}
-	return appliances
+	return appliances, errs.ErrorOrNil()
 }
 
-func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) []openapi.StatsAppliancesListAllOfData {
+func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
+	var errs *multierror.Error
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
 		case "name":
@@ -653,16 +661,17 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 		case "sessions":
 			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetNumberOfSessions() < stats[j].GetNumberOfSessions() })
 		default:
-			log.WithField("keyword", orderBy[i]).Warn("not a sortable keyword")
+			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
 		}
 	}
 	if descending {
-		return reverse(stats)
+		return reverse(stats), errs.ErrorOrNil()
 	}
-	return stats
+	return stats, errs.ErrorOrNil()
 }
 
-func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) []openapi.File {
+func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) ([]openapi.File, error) {
+	var errs *multierror.Error
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
 		case "name":
@@ -686,13 +695,13 @@ func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool
 		case "checksum":
 			sort.SliceStable(files, func(i, j int) bool { return files[i].GetChecksum() < files[j].GetChecksum() })
 		default:
-			log.WithField("keyword", orderBy[i]).Warn("not a sortable keyword")
+			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
 		}
 	}
 	if descending {
-		return reverse(files)
+		return reverse(files), errs.ErrorOrNil()
 	}
-	return files
+	return files, errs.ErrorOrNil()
 }
 
 const (

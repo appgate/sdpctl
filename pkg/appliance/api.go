@@ -144,7 +144,11 @@ func (a *Appliance) Stats(ctx context.Context, orderBy []string, descending bool
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}
-	status.SetData(orderApplianceStats(status.GetData(), orderBy, descending))
+	stats, err := orderApplianceStats(status.GetData(), orderBy, descending)
+	if err != nil {
+		return status, response, err
+	}
+	status.SetData(stats)
 	return status, response, nil
 }
 
@@ -216,7 +220,7 @@ func (a *Appliance) ListFiles(ctx context.Context, orderBy []string, descending 
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return orderApplianceFiles(list.GetData(), orderBy, descending), nil
+	return orderApplianceFiles(list.GetData(), orderBy, descending)
 }
 
 // DeleteFile Delete a File from the current Controller.
