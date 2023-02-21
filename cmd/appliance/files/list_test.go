@@ -56,6 +56,8 @@ func TestFilesList(t *testing.T) {
 	defer registry.Teardown()
 
 	cmd := NewFilesCmd(f)
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"list"})
@@ -71,8 +73,8 @@ func TestFilesList(t *testing.T) {
 
 	expect := `Name                                Status    Created                                 Modified                                Failure Reason
 ----                                ------    -------                                 --------                                --------------
-appgate-6.0.1-29983-beta.img.zip    Failed    2022-08-18 11:25:52.494572 +0000 UTC    2022-08-18 11:25:52.494572 +0000 UTC    401 Unauthorized
 appgate-5.5.1-29983.img.zip         Ready     2022-08-18 11:26:52.494572 +0000 UTC    2022-08-18 12:25:52.494572 +0000 UTC    
+appgate-6.0.1-29983-beta.img.zip    Failed    2022-08-18 11:25:52.494572 +0000 UTC    2022-08-18 11:25:52.494572 +0000 UTC    401 Unauthorized
 `
 
 	assert.Equal(t, string(actual), expect)
@@ -83,6 +85,8 @@ func TestFilesListJSON(t *testing.T) {
 	defer registry.Teardown()
 
 	cmd := NewFilesCmd(f)
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"list", "--json"})

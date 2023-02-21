@@ -15,6 +15,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -74,6 +75,7 @@ func NewForceDisableControllerCmd(f *factory.Factory) *cobra.Command {
 			return forceDisableControllerRunE(opts, args)
 		},
 	}
+	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 
 	return cmd
 }
@@ -97,7 +99,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	appliances, err := a.List(ctx, nil)
+	appliances, err := a.List(ctx, nil, []string{"name"}, false)
 	if err != nil {
 		return err
 	}
@@ -130,7 +132,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		return fmt.Errorf("No controllers to disable")
 	}
 
-	stats, _, err := a.Stats(ctx)
+	stats, _, err := a.Stats(ctx, nil, false)
 	if err != nil {
 		return err
 	}

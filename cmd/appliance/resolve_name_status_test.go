@@ -95,6 +95,8 @@ func TestNewResolveNameStatusCmdJSON(t *testing.T) {
 			}
 			cmd := NewResolveNameStatusCmd(f)
 			cmd.SetArgs([]string{"0a11e7ba-4d18-4be1-bdc1-083be1411d7e", "--json"})
+			cmd.PersistentFlags().Bool("descending", false, "")
+			cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
 
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)

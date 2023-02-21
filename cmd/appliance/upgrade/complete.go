@@ -148,8 +148,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ctx = context.WithValue(ctx, appliancepkg.Caller, cmd.CalledAs())
-	filter := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
-	rawAppliances, err := a.List(ctx, nil)
+	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
+	rawAppliances, err := a.List(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -218,7 +218,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	skipping := []appliancepkg.SkipUpgrade{}
-	initialStats, _, err := a.Stats(ctx)
+	initialStats, _, err := a.Stats(ctx, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			Reason:    appliancepkg.SkipReasonOffline,
 		})
 	}
-	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter)
+	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -558,7 +558,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
 				return err
 			}
-			s, _, err := a.Stats(ctx)
+			s, _, err := a.Stats(ctx, orderBy, descending)
 			if err != nil {
 				return err
 			}
@@ -640,7 +640,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
-				s, _, err := a.Stats(ctx)
+				s, _, err := a.Stats(ctx, orderBy, descending)
 				if err != nil {
 					return err
 				}
@@ -764,7 +764,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 			}
-			s, _, err := a.Stats(ctx)
+			s, _, err := a.Stats(ctx, orderBy, descending)
 			if err != nil {
 				return err
 			}
@@ -810,7 +810,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// Check if all appliances are running the same version after upgrade complete
-	newStats, _, err := a.Stats(ctx)
+	newStats, _, err := a.Stats(ctx, orderBy, descending)
 	if err != nil {
 		return err
 	}

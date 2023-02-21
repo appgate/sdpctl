@@ -48,9 +48,18 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
+			orderBy, err := cmd.Flags().GetStringSlice("order-by")
+			if err != nil {
+				return err
+			}
+			descending, err := cmd.Flags().GetBool("descending")
+			if err != nil {
+				return err
+			}
+
 			switch len(args) {
 			case 0:
-				applianceID, err := appliancepkg.PromptSelect(ctx, a, nil)
+				applianceID, err := appliancepkg.PromptSelect(ctx, a, nil, orderBy, descending)
 				if err != nil {
 					return err
 				}
@@ -59,7 +68,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 				if util.IsUUID(args[0]) {
 					opts.applianceID = args[0]
 				} else {
-					applianceID, err := appliancepkg.PromptSelect(ctx, a, nil)
+					applianceID, err := appliancepkg.PromptSelect(ctx, a, nil, orderBy, descending)
 					if err != nil {
 						return err
 					}

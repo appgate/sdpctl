@@ -58,6 +58,8 @@ func TestNewLogsCmd(t *testing.T) {
 	}
 	cmd := NewLogsCmd(f)
 	cmd.PersistentFlags().Bool("no-interactive", false, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
 	cmd.SetArgs([]string{"20e75a08-96c6-4ea3-833e-cdbac346e2ae", "--path", dir})
 	_, err := cmd.ExecuteC()
 	if err != nil {

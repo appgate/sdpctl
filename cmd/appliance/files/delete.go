@@ -27,6 +27,19 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 		Long:      docs.FilesDeleteDocs.Long,
 		Example:   docs.FilesDeleteDocs.ExampleString(),
 		ValidArgs: []string{"filename"},
+		Args: func(cmd *cobra.Command, args []string) error {
+			var errs *multierror.Error
+			var err error
+			opts.OrderBy, err = cmd.Flags().GetStringSlice("order-by")
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
+			opts.Descending, err = cmd.Flags().GetBool("descending")
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
+			return errs.ErrorOrNil()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := opts.Appliance(f.Config)
 			if err != nil {
@@ -52,7 +65,7 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			fileList, err := a.ListFiles(ctx)
+			fileList, err := a.ListFiles(ctx, opts.OrderBy, opts.Descending)
 			if err != nil {
 				return err
 			}

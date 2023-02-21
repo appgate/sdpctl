@@ -60,6 +60,14 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 		return err
 	}
 	opts.noInteractive = noInteractive
+	orderBy, err := cmd.Flags().GetStringSlice("order-by")
+	if err != nil {
+		return err
+	}
+	descending, err := cmd.Flags().GetBool("descending")
+	if err != nil {
+		return err
+	}
 	a, err := opts.Appliance(opts.Config)
 	if err != nil {
 		return err
@@ -74,7 +82,7 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 		if opts.noInteractive {
 			return errors.New("Provide the Controller UUID when using --no-interactive, sdpctl appliance maintenance disable controllerUUID")
 		}
-		applianceID, err := appliancepkg.PromptSelect(ctx, a, filter(primaryControllerHostname))
+		applianceID, err := appliancepkg.PromptSelect(ctx, a, filter(primaryControllerHostname), orderBy, descending)
 		if err != nil {
 			return err
 		}

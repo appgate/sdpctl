@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
@@ -12,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterAvailable(t *testing.T) {
@@ -485,6 +487,8 @@ func TestFilterAndExclude(t *testing.T) {
 	type args struct {
 		appliances []openapi.Appliance
 		filter     map[string]map[string]string
+		orderBy    []string
+		descending bool
 	}
 	mockControllers := map[string]openapi.Appliance{
 		"primaryController": {
@@ -573,6 +577,7 @@ func TestFilterAndExclude(t *testing.T) {
 						"name": "*",
 					},
 				},
+				orderBy: []string{"name"},
 			},
 			wantErr: true,
 		},
@@ -591,6 +596,7 @@ func TestFilterAndExclude(t *testing.T) {
 						word: value,
 					},
 				},
+				orderBy: []string{"name"},
 			},
 			want: []openapi.Appliance{
 				mockControllers["primaryController"],
@@ -613,6 +619,7 @@ func TestFilterAndExclude(t *testing.T) {
 						word: value,
 					},
 				},
+				orderBy: []string{"name"},
 			},
 			want: []openapi.Appliance{
 				mockControllers["gateway"],
@@ -626,7 +633,7 @@ func TestFilterAndExclude(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, filtered, err := FilterAppliances(tt.args.appliances, tt.args.filter)
+			got, filtered, err := FilterAppliances(tt.args.appliances, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if !tt.wantErr && err != nil {
 				t.Errorf("FilterAppliances() = %v", err)
 			}
@@ -2549,82 +2556,6 @@ func TestChunkApplianceGroup(t *testing.T) {
 	}
 }
 
-func TestGetRealHostname(t *testing.T) {
-	testCases := []struct {
-		name                   string
-		expect                 string
-		hostname               string
-		peerInterfaceHostname  string
-		adminInterfaceHostname string
-		wantErr                bool
-		matchErr               *regexp.Regexp
-	}{
-		{
-			name:                   "test admin interface hostname",
-			expect:                 "appgate.com",
-			hostname:               "fakehost1.devops",
-			peerInterfaceHostname:  "fakehost2.devops",
-			adminInterfaceHostname: "appgate.com",
-		},
-		{
-			name:                  "test no admin interface",
-			expect:                "appgate.com",
-			hostname:              "fakehost1.devops",
-			peerInterfaceHostname: "appgate.com",
-		},
-		{
-			name:                   "empty hostname",
-			expect:                 "appgate.com",
-			adminInterfaceHostname: "appgate.com",
-		},
-		{
-			name:                  "empty admin hostname",
-			expect:                "appgate.com",
-			hostname:              "fakehost.devops",
-			peerInterfaceHostname: "appgate.com",
-		},
-		{
-			name:     "no hostname",
-			wantErr:  true,
-			matchErr: regexp.MustCompile("Failed to determine hostname for the Controller admin interface"),
-		},
-	}
-	for _, tt := range testCases {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := openapi.Appliance{
-				Id:        openapi.PtrString(uuid.New().String()),
-				Name:      "controller",
-				Activated: openapi.PtrBool(true),
-			}
-			if len(tt.hostname) > 0 {
-				ctrl.Hostname = tt.hostname
-			}
-			if len(tt.peerInterfaceHostname) > 0 {
-				ctrl.PeerInterface = &openapi.ApplianceAllOfPeerInterface{
-					Hostname: *openapi.PtrString(tt.peerInterfaceHostname),
-				}
-			}
-			if len(tt.adminInterfaceHostname) > 0 {
-				ctrl.AdminInterface = &openapi.ApplianceAllOfAdminInterface{
-					Hostname: *openapi.PtrString(tt.adminInterfaceHostname),
-				}
-			}
-			result, err := GetRealHostname(ctrl)
-			if err != nil {
-				if !tt.wantErr {
-					t.Fatalf("GetRealHostname() error: %v", err)
-				}
-				if !tt.matchErr.MatchString(err.Error()) {
-					t.Fatalf("GetRealHostname() - error does not match. WANT: %s, GOT: %s", tt.matchErr.String(), err.Error())
-				}
-			}
-			if result != tt.expect {
-				t.Fatalf("GetRealHostname() - unexpected result. WANT: %s, GOT: %s", tt.expect, result)
-			}
-		})
-	}
-}
-
 func TestValidateHostname(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -2867,4 +2798,170 @@ func TestGetApplianceVersion(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_orderAppliances(t *testing.T) {
+	type args struct {
+		appliances []openapi.Appliance
+		orderBy    []string
+		descending bool
+	}
+
+	// Generate appliances
+	app1, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "healthy")
+	app2, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "healthy")
+	app3, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "healthy")
+	app4, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "healthy")
+	app5, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "healthy")
+
+	// Modify appliances for tests
+	app3.SetActivated(false)
+	app5.SetActivated(false)
+
+	tests := []struct {
+		name    string
+		args    args
+		want    []openapi.Appliance
+		wantErr bool
+	}{
+		{
+			name: "order by name",
+			args: args{
+				orderBy:    []string{"name"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app1, app2, app3, app4, app5},
+		},
+		{
+			name: "order by name descending",
+			args: args{
+				descending: true,
+				orderBy:    []string{"name"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app5, app4, app3, app2, app1},
+		},
+		{
+			name: "order by activated",
+			args: args{
+				orderBy:    []string{"activated"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app1, app2, app4, app3, app5},
+		},
+		{
+			name: "order by activated mixed casing",
+			args: args{
+				orderBy:    []string{"AcTivated"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app1, app2, app4, app3, app5},
+		},
+		{
+			name: "order by activated desc",
+			args: args{
+				descending: true,
+				orderBy:    []string{"activated"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app5, app3, app4, app2, app1},
+		},
+		{
+			name: "order by activated and hostname",
+			args: args{
+				orderBy:    []string{"activated", "hostname"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app4, app1, app2, app3, app5},
+		},
+		{
+			name: "order by activated and hostname descending",
+			args: args{
+				descending: true,
+				orderBy:    []string{"activated", "hostname"},
+				appliances: []openapi.Appliance{app1, app2, app3, app4, app5},
+			},
+			want: []openapi.Appliance{app5, app3, app2, app1, app4},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := orderAppliances(tt.args.appliances, tt.args.orderBy, tt.args.descending)
+			if err != nil && !tt.wantErr {
+				t.Fatalf("FAIL orderAppliances() - %v", err)
+			}
+			assert.Equal(t, got, tt.want)
+		})
+	}
+}
+
+func GenerateApplianceWithStats(activeFunctions []string, name, hostname, version, status string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData) {
+	id := uuid.NewString()
+	now := time.Now()
+	ctrl := &openapi.ApplianceAllOfController{}
+	ls := &openapi.ApplianceAllOfLogServer{}
+	gw := &openapi.ApplianceAllOfGateway{}
+	lf := &openapi.ApplianceAllOfLogForwarder{}
+	con := &openapi.ApplianceAllOfConnector{}
+	portal := &openapi.Portal{}
+
+	for _, f := range activeFunctions {
+		switch f {
+		case FunctionController:
+			ctrl.SetEnabled(true)
+		case FunctionGateway:
+			gw.SetEnabled(true)
+		case FunctionLogServer:
+			ls.SetEnabled(true)
+		case FunctionLogForwarder:
+			lf.SetEnabled(true)
+		case FunctionPortal:
+			portal.SetEnabled(true)
+		case FunctionConnector:
+			con.SetEnabled(true)
+		}
+	}
+
+	app := openapi.Appliance{
+		Id:                                   openapi.PtrString(id),
+		Name:                                 name,
+		Notes:                                nil,
+		Created:                              openapi.PtrTime(now),
+		Updated:                              openapi.PtrTime(now),
+		Tags:                                 []string{},
+		ConnectToPeersUsingClientPortWithSpa: nil,
+		PeerInterface:                        &openapi.ApplianceAllOfPeerInterface{},
+		Activated:                            openapi.PtrBool(true),
+		PendingCertificateRenewal:            openapi.PtrBool(false),
+		Version:                              openapi.PtrInt32(18),
+		Hostname:                             hostname,
+		Site:                                 openapi.PtrString("Default Site"),
+		SiteName:                             new(string),
+		Customization:                        new(string),
+		ClientInterface:                      openapi.ApplianceAllOfClientInterface{},
+		AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+			Hostname:  hostname,
+			HttpsPort: openapi.PtrInt32(8443),
+		},
+		Networking:          openapi.ApplianceAllOfNetworking{},
+		Ntp:                 &openapi.ApplianceAllOfNtp{},
+		SshServer:           &openapi.ApplianceAllOfSshServer{},
+		SnmpServer:          &openapi.ApplianceAllOfSnmpServer{},
+		HealthcheckServer:   &openapi.ApplianceAllOfHealthcheckServer{},
+		PrometheusExporter:  &openapi.ApplianceAllOfPrometheusExporter{},
+		Ping:                &openapi.ApplianceAllOfPing{},
+		LogServer:           ls,
+		Controller:          ctrl,
+		Gateway:             gw,
+		LogForwarder:        lf,
+		Connector:           con,
+		Portal:              portal,
+		RsyslogDestinations: []openapi.ApplianceAllOfRsyslogDestinations{},
+		HostnameAliases:     []string{},
+	}
+	appstatdata := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
+	appstatdata.SetId(app.GetId())
+	appstatdata.SetStatus(status)
+	appstatdata.SetVersion(version)
+	return app, appstatdata
 }

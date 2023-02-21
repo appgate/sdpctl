@@ -63,6 +63,8 @@ func TestDeleteSingleFile(t *testing.T) {
 	registry.Serve()
 
 	cmd := NewFilesCmd(f)
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"delete", "appgate-6.0.1-29983-beta.img.zip"})
@@ -103,6 +105,8 @@ func TestDeleteAllFiles(t *testing.T) {
 	registry.Serve()
 
 	cmd := NewFilesCmd(f)
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"delete", "--all"})
@@ -117,8 +121,8 @@ func TestDeleteAllFiles(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 
-	expect := `appgate-6.0.1-29983-beta.img.zip: deleted
-appgate-5.5.1-29983.img.zip: deleted
+	expect := `appgate-5.5.1-29983.img.zip: deleted
+appgate-6.0.1-29983-beta.img.zip: deleted
 `
 
 	assert.Equal(t, expect, string(actual))
@@ -132,6 +136,8 @@ func TestFilesDeleteNoInteractive(t *testing.T) {
 
 	cmd := NewFilesCmd(f)
 	cmd.PersistentFlags().Bool("no-interactive", false, "")
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetOut(out)
 	cmd.SetErr(out)
 	cmd.SetArgs([]string{"delete", "--no-interactive"})

@@ -399,6 +399,8 @@ func TestNewSeedCmd(t *testing.T) {
 			}
 			cmd := NewSeedCmd(f)
 			cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
+			cmd.PersistentFlags().Bool("descending", false, "")
+			cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
 			cmd.SetArgs(tt.args)
 
 			cmd.SetOut(io.Discard)

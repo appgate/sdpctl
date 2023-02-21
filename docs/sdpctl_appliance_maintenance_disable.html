@@ -59,11 +59,13 @@ with an interactive prompt.
 <pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
       --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
+      --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the ''--order-by' flag.
   -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
                                  Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
   -i, --include stringToString   Include appliances. Adheres to the same syntax and key-value pairs as '--exclude' (default [])
       --no-interactive           Suppress interactive prompt with auto accept
       --no-verify                Don't verify TLS on for the given command, overriding settings from config file
+      --order-by strings         Order appliance lists by keywords, i.e. 'name', 'id' etc. Accepts a comma seperated list of keywords, where first mentioned has priority. Applies to the 'appliance list' and 'appliance stats' commands. (default [name])
   -p, --profile string           Profile configuration to use
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>

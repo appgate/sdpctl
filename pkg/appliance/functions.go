@@ -340,20 +340,6 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	)
 }
 
-func GetRealHostname(controller openapi.Appliance) (string, error) {
-	realHost := controller.GetHostname()
-	if i, ok := controller.GetPeerInterfaceOk(); ok {
-		realHost = i.GetHostname()
-	}
-	if i, ok := controller.GetAdminInterfaceOk(); ok {
-		realHost = i.GetHostname()
-	}
-	if err := ValidateHostname(controller, realHost); err != nil {
-		return "", err
-	}
-	return realHost, nil
-}
-
 func ValidateHostname(controller openapi.Appliance, hostname string) error {
 	var h string
 	if ai, ok := controller.GetAdminInterfaceOk(); ok {
@@ -422,7 +408,7 @@ var DefaultCommandFilter = map[string]map[string]string{
 	"exclude": {},
 }
 
-func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string) ([]openapi.Appliance, []openapi.Appliance, error) {
+func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.Appliance, []openapi.Appliance, error) {
 	include := make([]openapi.Appliance, len(appliances))
 	copy(include, appliances)
 	var errs *multierror.Error
@@ -463,13 +449,15 @@ func FilterAppliances(appliances []openapi.Appliance, filter map[string]map[stri
 		exclude = AppendUniqueAppliance(exclude, a)
 	}
 
-	// Sort results by name
-	sort.SliceStable(include, func(i, j int) bool {
-		return include[i].GetName() < include[j].GetName()
-	})
-	sort.SliceStable(exclude, func(i, j int) bool {
-		return exclude[i].GetName() < exclude[j].GetName()
-	})
+	// Sort appliances
+	include, err = orderAppliances(include, orderBy, descending)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	exclude, err = orderAppliances(exclude, orderBy, descending)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
 
 	return include, exclude, errs.ErrorOrNil()
 }
@@ -594,6 +582,126 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	}
 
 	return filteredAppliances, nil
+}
+
+func reverse[S ~[]T, T any](items S) S {
+	if len(items) <= 1 {
+		return items
+	}
+	result := make([]T, 0, len(items))
+	for i := len(items) - 1; i >= 0; i-- {
+		result = append(result, items[i])
+	}
+	return result
+}
+
+func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
+	var errs *multierror.Error
+	// reverse loop the slice to prioritize the ordering. First entered has priority
+	for i := len(orderBy) - 1; i >= 0; i-- {
+		switch strings.ToLower(orderBy[i]) {
+		case "name":
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() < appliances[j].GetName() })
+		case "id":
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetId() < appliances[j].GetId() })
+		case "site":
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSite() < appliances[j].GetSite() })
+		case "site-name":
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSiteName() < appliances[j].GetSiteName() })
+		case "hostname", "host":
+			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetHostname() < appliances[j].GetHostname() })
+		case "activated", "active":
+			sort.SliceStable(appliances, func(i, j int) bool {
+				return appliances[i].GetActivated() && appliances[i].GetActivated() != appliances[j].GetActivated()
+			})
+		default:
+			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
+		}
+	}
+	if descending {
+		return reverse(appliances), errs.ErrorOrNil()
+	}
+	return appliances, errs.ErrorOrNil()
+}
+
+func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
+	var errs *multierror.Error
+	for i := len(orderBy) - 1; i >= 0; i-- {
+		switch strings.ToLower(orderBy[i]) {
+		case "name":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetName() < stats[j].GetName() })
+		case "disk":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetDisk() < stats[j].GetDisk() })
+		case "mem", "memory":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetMemory() < stats[j].GetMemory() })
+		case "cpu":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetCpu() < stats[j].GetCpu() })
+		case "version":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() < stats[j].GetVersion() })
+		case "net-in":
+			sort.SliceStable(stats, func(i, j int) bool {
+				inet := stats[i].GetNetwork()
+				jnet := stats[j].GetNetwork()
+				irx := inet.GetRxSpeed()
+				jrx := jnet.GetRxSpeed()
+				return irx < jrx
+			})
+		case "net-out":
+			sort.SliceStable(stats, func(i, j int) bool {
+				inet := stats[i].GetNetwork()
+				jnet := stats[j].GetNetwork()
+				itx := inet.GetTxSpeed()
+				jtx := jnet.GetTxSpeed()
+				return itx < jtx
+			})
+		case "function":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() < stats[j].GetFunction() })
+		case "status":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() < stats[j].GetStatus() })
+		case "sessions":
+			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetNumberOfSessions() < stats[j].GetNumberOfSessions() })
+		default:
+			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
+		}
+	}
+	if descending {
+		return reverse(stats), errs.ErrorOrNil()
+	}
+	return stats, errs.ErrorOrNil()
+}
+
+func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) ([]openapi.File, error) {
+	var errs *multierror.Error
+	for i := len(orderBy) - 1; i >= 0; i-- {
+		switch strings.ToLower(orderBy[i]) {
+		case "name":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetName() < files[j].GetName() })
+		case "status":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetStatus() < files[j].GetStatus() })
+		case "failure-reason":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetFailureReason() < files[j].GetFailureReason() })
+		case "creation-time", "created":
+			sort.SliceStable(files, func(i, j int) bool {
+				iTime := files[i].GetCreationTime()
+				jTime := files[j].GetCreationTime()
+				return iTime.Before(jTime)
+			})
+		case "last-modified", "modified":
+			sort.SliceStable(files, func(i, j int) bool {
+				iTime := files[i].GetLastModifiedTime()
+				jTime := files[j].GetLastModifiedTime()
+				return iTime.Before(jTime)
+			})
+		case "checksum":
+			sort.SliceStable(files, func(i, j int) bool { return files[i].GetChecksum() < files[j].GetChecksum() })
+		default:
+			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
+		}
+	}
+	if descending {
+		return reverse(files), errs.ErrorOrNil()
+	}
+	return files, errs.ErrorOrNil()
 }
 
 const (

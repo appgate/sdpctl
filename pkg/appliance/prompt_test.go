@@ -10,7 +10,9 @@ import (
 
 func TestPromptSelect(t *testing.T) {
 	type args struct {
-		filter map[string]map[string]string
+		filter     map[string]map[string]string
+		orderBy    []string
+		descending bool
 	}
 	tests := []struct {
 		name    string
@@ -21,7 +23,8 @@ func TestPromptSelect(t *testing.T) {
 		{
 			name: "select gateway",
 			args: args{
-				filter: nil,
+				filter:  nil,
+				orderBy: []string{"name"},
 			},
 			want:    "ee639d70-e075-4f01-596b-930d5f24f569",
 			wantErr: false,
@@ -44,7 +47,7 @@ func TestPromptSelect(t *testing.T) {
 			defer teardown()
 			defer registry.Teardown()
 			registry.Serve()
-			got, err := PromptSelect(ctx, a, tt.args.filter)
+			got, err := PromptSelect(ctx, a, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PromptSelect() error = %v, wantErr %v", err, tt.wantErr)
 				return

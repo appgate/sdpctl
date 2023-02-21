@@ -85,13 +85,21 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 					"activated": "false",
 				},
 			}
+			orderBy, err := cmd.Flags().GetStringSlice("order-by")
+			if err != nil {
+				return err
+			}
+			descending, err := cmd.Flags().GetBool("descending")
+			if err != nil {
+				return err
+			}
 			switch len(args) {
 			// no arguments will provider a interactive experience for the user, if TTY support it
 			case 0:
 				if noInteractive || !opts.CanPrompt {
 					return errors.New("can't prompt, You need to provide all arguments")
 				}
-				applianceID, err := appliancepkg.PromptSelectAll(ctx, a, filter)
+				applianceID, err := appliancepkg.PromptSelectAll(ctx, a, filter, orderBy, descending)
 				if err != nil {
 					// no inactive appliance found
 					return nil

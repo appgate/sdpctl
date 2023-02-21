@@ -25,12 +25,12 @@ type Appliance struct {
 
 // List from the Collective
 // Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
-func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string) ([]openapi.Appliance, error) {
+func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.Appliance, error) {
 	appliances, response, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	result, _, err := FilterAppliances(appliances.GetData(), filter)
+	result, _, err := FilterAppliances(appliances.GetData(), filter, orderBy, descending)
 	if err != nil {
 		return nil, err
 	}
@@ -139,11 +139,16 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 	return nil
 }
 
-func (a *Appliance) Stats(ctx context.Context) (*openapi.StatsAppliancesList, *http.Response, error) {
+func (a *Appliance) Stats(ctx context.Context, orderBy []string, descending bool) (*openapi.StatsAppliancesList, *http.Response, error) {
 	status, response, err := a.APIClient.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}
+	stats, err := orderApplianceStats(status.GetData(), orderBy, descending)
+	if err != nil {
+		return status, response, err
+	}
+	status.SetData(stats)
 	return status, response, nil
 }
 
@@ -210,12 +215,12 @@ func (a *Appliance) UploadToController(ctx context.Context, url, filename string
 	return nil
 }
 
-func (a *Appliance) ListFiles(ctx context.Context) ([]openapi.File, error) {
+func (a *Appliance) ListFiles(ctx context.Context, orderBy []string, descending bool) ([]openapi.File, error) {
 	list, response, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
-	return list.GetData(), nil
+	return orderApplianceFiles(list.GetData(), orderBy, descending)
 }
 
 // DeleteFile Delete a File from the current Controller.
