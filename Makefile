@@ -1,6 +1,6 @@
 BIN_NAME=sdpctl
 GOFMT_FILES?=$$(find . -name '*.go' | grep -v vendor)
-GORELEASER_CROSS_VERSION=v1.18.3
+GORELEASER_CROSS_VERSION=v1.20.0
 DESTDIR :=
 prefix  := /usr/local
 bindir  := ${prefix}/bin
