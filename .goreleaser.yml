@@ -20,6 +20,13 @@ builds:
         - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .Tag }}{{ .Tag }}{{ else }}dev{{ end }}"
         - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
         - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+    id: linux
+    goos: [linux]
+    goarch: [amd64, arm64]
+    env:
+      - CGO_ENABLED=0
+
+  - <<: *build_defaults
     id: macos
     goos: [darwin]
     goarch: [arm64, amd64]
@@ -28,13 +35,6 @@ builds:
     hooks:
       post:
         - "{{ .Env.HOOK_PATH }}/sign-macos.sh '{{ .Path }}'"
-
-  - <<: *build_defaults
-    id: linux
-    goos: [linux]
-    goarch: [amd64, arm64]
-    env:
-      - CGO_ENABLED=0
 
   - <<: *build_defaults
     id: windows
@@ -77,10 +77,10 @@ nfpms:
           group: root
       - src: ./build/man/*.gz
         dst: /usr/share/man/man3/
-        type: documentation
+        type: config
       - src: LICENSE
         dst: /usr/share/doc/sdpctl/copyright
-        type: documentation
+        type: config
         file_info:
           group: root
           mode: 0644
