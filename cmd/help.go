@@ -99,6 +99,9 @@ Available Variables:
     Options:  See 'sdpctl profile list'
   SDPCTL_NO_KEYRING:
     Description: Disable keyring integration. Does not attempt to store anything in the os keychain.
+  SDPCTL_DISABLE_VERSION_CHECK:
+    Description: Disable version checking when running commands
+    Options: true, false
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 

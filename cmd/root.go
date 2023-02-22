@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	version         string = "dev"
+	version         string = "0.0.0-dev"
 	commit          string
 	buildDate       string
 	longDescription string = `The official CLI tool for managing your Collective.`
@@ -273,11 +273,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 				if err == nil && minMax != nil {
 					viper.Set("api_version", minMax.Max)
 					f.Config.Version = int(minMax.Max)
-					if err := viper.WriteConfig(); err != nil {
-						if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-							fmt.Fprintf(f.StdErr, "[error] %s\n", err)
-						}
-					}
 				}
 			}
 
@@ -299,6 +294,22 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if err := configuration.CheckMinAPIVersionRestriction(cmd, cfg.Version); err != nil {
 			return err
 		}
+
+		// Check for new sdpctl version
+		client, err := f.HTTPClient()
+		if err != nil {
+			return err
+		}
+		cfg, err = cfg.CheckForUpdate(f.StdErr, client, version)
+		if err != nil {
+			log.WithError(err).Info("version check result")
+		}
+		if err := viper.WriteConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+				fmt.Fprintf(f.StdErr, "[error] %s\n", err)
+			}
+		}
+
 		return nil
 	}
 }
