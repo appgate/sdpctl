@@ -10,6 +10,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -30,7 +31,9 @@ func NewStatusCmd(f *factory.Factory) *cobra.Command {
 		Out:       f.IOOutWriter,
 	}
 	var cmd = &cobra.Command{
-		Use: "status",
+		Use:   "status",
+		Short: docs.MaintenanceStatusDoc.Short,
+		Long:  docs.MaintenanceStatusDoc.Long,
 		Annotations: map[string]string{
 			"MinAPIVersion": "18",
 			"ErrorMessage":  "sdpctl appliance maintenance status requires appliance version higher or equal to 6.1 with API Version 18",
