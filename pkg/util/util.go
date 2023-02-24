@@ -128,3 +128,14 @@ func PrefixStringLines(s, prefixChar string, prefixLength int) string {
 	}
 	return strings.Join(split, "\n")
 }
+
+func Reverse[S ~[]T, T any](items S) S {
+	if len(items) <= 1 {
+		return items
+	}
+	result := make([]T, 0, len(items))
+	for i := len(items) - 1; i >= 0; i-- {
+		result = append(result, items[i])
+	}
+	return result
+}
