@@ -15,10 +15,25 @@ func NewTokenListCmd(opts *TokenOptions) *cobra.Command {
 		Long:    docs.TokenListDoc.Long,
 		Example: docs.TokenListDoc.ExampleString(),
 		Aliases: []string{"ls"},
+		Args: func(cmd *cobra.Command, args []string) error {
+			var err error
+			opts.orderBy, err = cmd.Flags().GetStringSlice("order-by")
+			if err != nil {
+				return err
+			}
+			opts.descending, err = cmd.Flags().GetBool("descending")
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return tokenListRun(opts)
 		},
 	}
+
+	listCmd.Flags().StringSlice("order-by", []string{"distinguished-name"}, "Order tokens list by keyword. Available keywords are 'distinguished-name', 'hostname', 'username', 'provider-name', 'device-id' and 'username'")
+	listCmd.Flags().Bool("descending", false, "Reverses the order of the token list")
 
 	return listCmd
 }
@@ -30,7 +45,7 @@ func tokenListRun(opts *TokenOptions) error {
 		return err
 	}
 
-	distinguishedNames, err := t.ListDistinguishedNames(ctx)
+	distinguishedNames, err := t.ListDistinguishedNames(ctx, opts.orderBy, opts.descending)
 	if err != nil {
 		return err
 	}
