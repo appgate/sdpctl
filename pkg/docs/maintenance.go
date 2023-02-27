@@ -15,6 +15,10 @@ var (
 		Long:  ``,
 	}
 
+	MaintenanceStatusDoc = CommandDoc{
+		Short: "View maintenance status of appliances",
+	}
+
 	MaintenanceDisable = CommandDoc{
 		Short: "Disable maintenance mode on a single Controller",
 		Long:  MaintenanceModeLongDescription,

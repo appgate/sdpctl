@@ -10,11 +10,13 @@ import (
 )
 
 type TokenOptions struct {
-	Config  *configuration.Config
-	Out     io.Writer
-	Token   func(c *configuration.Config) (*token.Token, error)
-	Debug   bool
-	useJSON bool
+	Config     *configuration.Config
+	Out        io.Writer
+	Token      func(c *configuration.Config) (*token.Token, error)
+	Debug      bool
+	useJSON    bool
+	orderBy    []string
+	descending bool
 }
 
 func NewTokenCmd(f *factory.Factory) *cobra.Command {

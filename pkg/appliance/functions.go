@@ -584,17 +584,6 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 	return filteredAppliances, nil
 }
 
-func reverse[S ~[]T, T any](items S) S {
-	if len(items) <= 1 {
-		return items
-	}
-	result := make([]T, 0, len(items))
-	for i := len(items) - 1; i >= 0; i-- {
-		result = append(result, items[i])
-	}
-	return result
-}
-
 func orderAppliances(appliances []openapi.Appliance, orderBy []string, descending bool) ([]openapi.Appliance, error) {
 	var errs *multierror.Error
 	// reverse loop the slice to prioritize the ordering. First entered has priority
@@ -619,7 +608,7 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 		}
 	}
 	if descending {
-		return reverse(appliances), errs.ErrorOrNil()
+		return util.Reverse(appliances), errs.ErrorOrNil()
 	}
 	return appliances, errs.ErrorOrNil()
 }
@@ -665,7 +654,7 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 		}
 	}
 	if descending {
-		return reverse(stats), errs.ErrorOrNil()
+		return util.Reverse(stats), errs.ErrorOrNil()
 	}
 	return stats, errs.ErrorOrNil()
 }
@@ -699,7 +688,7 @@ func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool
 		}
 	}
 	if descending {
-		return reverse(files), errs.ErrorOrNil()
+		return util.Reverse(files), errs.ErrorOrNil()
 	}
 	return files, errs.ErrorOrNil()
 }
