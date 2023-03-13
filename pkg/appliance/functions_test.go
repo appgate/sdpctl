@@ -1383,7 +1383,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&log_forwarder=true&log_server=false&connector=false&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=false&log_forwarder=true&log_server=false&portal=false")),
 		},
 		{
 			name: "log server enabled",
@@ -1408,7 +1408,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&log_forwarder=false&log_server=true&connector=false&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=false&log_forwarder=false&log_server=true&portal=false")),
 		},
 		{
 			name: "gateway enabled",
@@ -1458,7 +1458,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&log_forwarder=false&log_server=false&connector=true&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=true")),
 		},
 		{
 			name: "portal enabled",
@@ -1483,7 +1483,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&log_forwarder=false&log_server=false&connector=false&portal=true")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=false&log_forwarder=false&log_server=false&portal=true")),
 		},
 		{
 			name: "gateway and log_forwarder enabled",
