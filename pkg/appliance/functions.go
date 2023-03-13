@@ -208,6 +208,10 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 	for index, slice := range chunks {
 		if len(slice) == 1 {
 			item, org := slice[len(slice)-1], slice[:len(slice)-1]
+			if v, ok := item.GetGatewayOk(); ok && v.GetEnabled() {
+				// needed so that we don't accidentally add same site gateways to the same batch
+				continue
+			}
 			chunks[index] = org
 			candidates = append(candidates, item)
 		}
@@ -249,14 +253,19 @@ func applianceGroupHash(appliance openapi.Appliance) int {
 	if len(appliance.GetSite()) > 0 {
 		buf.WriteString(appliance.GetSite())
 	}
+	if v, ok := appliance.GetGatewayOk(); ok {
+		enabled := v.GetEnabled()
+		buf.WriteString(fmt.Sprintf("%s=%t", "&gateway", enabled))
+		if enabled {
+			// all enabled gateways with same site need to be grouped together regardless of other functions enabled
+			return hashcode.String(buf.String())
+		}
+	}
 	if v, ok := appliance.GetLogForwarderOk(); ok {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&log_forwarder", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetLogServerOk(); ok {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&log_server", v.GetEnabled()))
-	}
-	if v, ok := appliance.GetGatewayOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s=%t", "&gateway", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetConnectorOk(); ok {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&connector", v.GetEnabled()))
