@@ -212,6 +212,9 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 				// needed so that we don't accidentally add same site gateways to the same batch
 				continue
 			}
+			if v, ok := item.GetConnectorOk(); ok && v.GetEnabled() {
+				continue
+			}
 			chunks[index] = org
 			candidates = append(candidates, item)
 		}
@@ -261,14 +264,19 @@ func applianceGroupHash(appliance openapi.Appliance) int {
 			return hashcode.String(buf.String())
 		}
 	}
+	if v, ok := appliance.GetConnectorOk(); ok {
+		enabled := v.GetEnabled()
+		buf.WriteString(fmt.Sprintf("%s=%t", "&connector", enabled))
+		if enabled {
+			// same rules apply to connectors as gateways
+			return hashcode.String(buf.String())
+		}
+	}
 	if v, ok := appliance.GetLogForwarderOk(); ok {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&log_forwarder", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetLogServerOk(); ok {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&log_server", v.GetEnabled()))
-	}
-	if v, ok := appliance.GetConnectorOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s=%t", "&connector", v.GetEnabled()))
 	}
 	if v, ok := appliance.GetPortalOk(); ok {
 		buf.WriteString(fmt.Sprintf("%s=%t", "&portal", v.GetEnabled()))
