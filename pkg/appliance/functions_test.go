@@ -2657,6 +2657,62 @@ func TestChunkApplianceGroup(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "two connectors same site",
+			args: args{
+				divisor: 2,
+				appliances: map[int][]openapi.Appliance{
+					hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=false&connector=true")): {
+						{
+							Name: "conn1",
+							Connector: &openapi.ApplianceAllOfConnector{
+								Enabled: openapi.PtrBool(true),
+							},
+							AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+								Hostname: "conn1.devops",
+							},
+							Site: sites["A"],
+						},
+						{
+							Name: "conn2",
+							Connector: &openapi.ApplianceAllOfConnector{
+								Enabled: openapi.PtrBool(true),
+							},
+							AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+								Hostname: "conn2.devops",
+							},
+							Site: sites["A"],
+						},
+					},
+				},
+			},
+			want: [][]openapi.Appliance{
+				{
+					{
+						Name: "conn2",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "conn2.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+				{
+					{
+						Name: "conn1",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "conn1.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
