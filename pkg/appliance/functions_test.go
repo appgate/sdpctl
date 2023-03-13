@@ -1256,6 +1256,85 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "gateways with multiple functions enabled",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "g1",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g1.devops",
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "g2",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g2.devops",
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "g3",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g3.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+			},
+			want: map[int][]openapi.Appliance{
+				hashcode.String(fmt.Sprintf("%s%s", *sites["B"], "&gateway=true")): {
+					{
+						Name: "g2",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g2.devops",
+						},
+						Site: sites["B"],
+					},
+				},
+				hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=true")): {
+					{
+						Name: "g1",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g1.devops",
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "g3",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g3.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+			},
+		},
 	}
 	opts := []cmp.Option{cmp.AllowUnexported(openapi.NullableElasticsearch{})}
 	for _, tt := range tests {
@@ -1304,7 +1383,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=false&connector=false&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=false&log_forwarder=true&log_server=false&portal=false")),
 		},
 		{
 			name: "log server enabled",
@@ -1329,7 +1408,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=true&gateway=false&connector=false&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=false&log_forwarder=false&log_server=true&portal=false")),
 		},
 		{
 			name: "gateway enabled",
@@ -1354,7 +1433,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=true&connector=false&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=true")),
 		},
 		{
 			name: "connector enabled",
@@ -1379,7 +1458,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=true&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=true")),
 		},
 		{
 			name: "portal enabled",
@@ -1404,7 +1483,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=false&log_server=false&gateway=false&connector=false&portal=true")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=false&connector=false&log_forwarder=false&log_server=false&portal=true")),
 		},
 		{
 			name: "gateway and log_forwarder enabled",
@@ -1429,7 +1508,7 @@ func TestApplianceGroupHash(t *testing.T) {
 				},
 				Site: site,
 			},
-			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&log_forwarder=true&log_server=false&gateway=true&connector=false&portal=false")),
+			expect: hashcode.String(fmt.Sprintf("%s%s", *site, "&gateway=true")),
 		},
 		{
 			name: "controller enabled",
@@ -2518,6 +2597,118 @@ func TestChunkApplianceGroup(t *testing.T) {
 							Hostname: "connectorb.devops",
 						},
 						Site: nil,
+					},
+				},
+			},
+		},
+		{
+			name: "two gateways same site",
+			args: args{
+				divisor: 2,
+				appliances: map[int][]openapi.Appliance{
+					hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=true")): {
+						{
+							Name: "g1",
+							Gateway: &openapi.ApplianceAllOfGateway{
+								Enabled: openapi.PtrBool(true),
+							},
+							AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+								Hostname: "g1.devops",
+							},
+							Site: sites["A"],
+						},
+						{
+							Name: "g2",
+							Gateway: &openapi.ApplianceAllOfGateway{
+								Enabled: openapi.PtrBool(true),
+							},
+							AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+								Hostname: "g2.devops",
+							},
+							Site: sites["A"],
+						},
+					},
+				},
+			},
+			want: [][]openapi.Appliance{
+				{
+					{
+						Name: "g2",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g2.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+				{
+					{
+						Name: "g1",
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "g1.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+			},
+		},
+		{
+			name: "two connectors same site",
+			args: args{
+				divisor: 2,
+				appliances: map[int][]openapi.Appliance{
+					hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=false&connector=true")): {
+						{
+							Name: "conn1",
+							Connector: &openapi.ApplianceAllOfConnector{
+								Enabled: openapi.PtrBool(true),
+							},
+							AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+								Hostname: "conn1.devops",
+							},
+							Site: sites["A"],
+						},
+						{
+							Name: "conn2",
+							Connector: &openapi.ApplianceAllOfConnector{
+								Enabled: openapi.PtrBool(true),
+							},
+							AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+								Hostname: "conn2.devops",
+							},
+							Site: sites["A"],
+						},
+					},
+				},
+			},
+			want: [][]openapi.Appliance{
+				{
+					{
+						Name: "conn2",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "conn2.devops",
+						},
+						Site: sites["A"],
+					},
+				},
+				{
+					{
+						Name: "conn1",
+						Connector: &openapi.ApplianceAllOfConnector{
+							Enabled: openapi.PtrBool(true),
+						},
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "conn1.devops",
+						},
+						Site: sites["A"],
 					},
 				},
 			},
