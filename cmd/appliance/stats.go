@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
@@ -67,7 +68,11 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 		return nil
 	}
 	w := util.NewPrinter(opts.Out, 4)
-	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", "Disk", "Version")
+	diskHeader := "Disk"
+	if cfg.Version >= 18 {
+		diskHeader += " (used / total)"
+	}
+	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", diskHeader, "Version")
 	for _, s := range stats.GetData() {
 		version := s.GetVersion()
 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
@@ -80,7 +85,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 			fmt.Sprintf("%g%%", s.GetCpu()),
 			fmt.Sprintf("%g%%", s.GetMemory()),
 			statsNetworkPrettyPrint(s.GetNetwork()),
-			fmt.Sprintf("%g%%", s.GetDisk()),
+			statsDiskUsage(cfg.Version, s),
 			version,
 		)
 	}
@@ -90,6 +95,27 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 
 func statsNetworkPrettyPrint(n openapi.StatsAppliancesListAllOfNetwork) string {
 	return fmt.Sprintf("%s / %s", n.GetTxSpeed(), n.GetRxSpeed())
+}
+
+func statsDiskUsage(apiVersion int, stats openapi.StatsAppliancesListAllOfData) string {
+	if apiVersion < 18 {
+		return fmt.Sprintf("%g%%", stats.GetDisk())
+	}
+	diskInfo := stats.GetDiskInfo()
+	used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
+	percentUsed := (used / total) * 100
+	r := fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, prettyBytes(float64(used)), prettyBytes(float64(total)))
+	return r
+}
+
+func prettyBytes(v float64) string {
+	for _, unit := range []string{"", "K", "M", "G", "T", "P", "E", "Z"} {
+		if math.Abs(float64(v)) < 1024.0 {
+			return fmt.Sprintf("%.2f%sB", v, unit)
+		}
+		v /= 1024.0
+	}
+	return fmt.Sprintf("%.2fYB", v)
 }
 
 const na = "n/a"
