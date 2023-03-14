@@ -124,11 +124,11 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByDnDistinguishedNamePut(ctx, args[0])
 
 	if opts.TokenType != "" {
-		request.TokenType(opts.TokenType)
+		request = request.TokenType(opts.TokenType)
 	}
 
 	if opts.SiteID != "" {
-		request.SiteId(opts.SiteID)
+		request = request.SiteId(opts.SiteID)
 	}
 
 	body := openapi.TokenRevocationRequest{
@@ -167,7 +167,7 @@ func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
 	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByTypeTokenTypePut(ctx, opts.ByTokenType)
 
 	if opts.SiteID != "" {
-		request.SiteId(opts.SiteID)
+		request = request.SiteId(opts.SiteID)
 	}
 
 	body := openapi.TokenRevocationRequest{
