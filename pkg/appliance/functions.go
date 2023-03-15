@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -764,4 +765,14 @@ func ShouldDisable(from, to *version.Version) bool {
 	}
 
 	return false
+}
+
+func PrettyBytes(v float64) string {
+	for _, unit := range []string{"", "K", "M", "G", "T", "P", "E", "Z"} {
+		if math.Abs(float64(v)) < 1024.0 {
+			return fmt.Sprintf("%.2f%sB", v, unit)
+		}
+		v /= 1024.0
+	}
+	return fmt.Sprintf("%.2fYB", v)
 }

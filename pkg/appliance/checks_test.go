@@ -14,7 +14,8 @@ import (
 
 func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 	type args struct {
-		stats []openapi.StatsAppliancesListAllOfData
+		stats      []openapi.StatsAppliancesListAllOfData
+		apiVersion int
 	}
 	tests := []struct {
 		name string
@@ -22,7 +23,7 @@ func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 		want string
 	}{
 		{
-			name: "warning",
+			name: "warning version < 18",
 			args: args{
 				stats: []openapi.StatsAppliancesListAllOfData{
 					{
@@ -36,6 +37,7 @@ func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 						Version: openapi.PtrString("5.5.4"),
 					},
 				},
+				apiVersion: 17,
 			},
 			want: `
 WARNING: Some appliances have very little space available
@@ -50,11 +52,51 @@ To avoid problems during the upgrade process it's recommended to
 increase the space on those appliances.
 `,
 		},
+		{
+			name: "warning version >= 18",
+			args: args{
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Name:    openapi.PtrString("controller"),
+						Disk:    openapi.PtrFloat32(90),
+						Version: openapi.PtrString("5.5.4"),
+						DiskInfo: &openapi.StatsAppliancesListAllOfDiskInfo{
+							Total: openapi.PtrFloat32(100000000000),
+							Used:  openapi.PtrFloat32(90000000000),
+							Free:  openapi.PtrFloat32(10000000000),
+						},
+					},
+					{
+						Name:    openapi.PtrString("controller2"),
+						Disk:    openapi.PtrFloat32(75),
+						Version: openapi.PtrString("5.5.4"),
+						DiskInfo: &openapi.StatsAppliancesListAllOfDiskInfo{
+							Total: openapi.PtrFloat32(100000000000),
+							Used:  openapi.PtrFloat32(75000000000),
+							Free:  openapi.PtrFloat32(25000000000),
+						},
+					},
+				},
+				apiVersion: 18,
+			},
+			want: `
+WARNING: Some appliances have very little space available
+
+Name           Disk Usage (used / total)
+----           -------------------------
+controller     90.00% (83.82GB / 93.13GB)
+controller2    75.00% (69.85GB / 93.13GB)
+
+Upgrading requires the upload and decompression of big images.
+To avoid problems during the upgrade process it's recommended to
+increase the space on those appliances.
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var b bytes.Buffer
-			PrintDiskSpaceWarningMessage(&b, tt.args.stats)
+			PrintDiskSpaceWarningMessage(&b, tt.args.stats, tt.args.apiVersion)
 			if res := b.String(); res != tt.want {
 				t.Errorf("ShowDiskSpaceWarning() - want: %s, got: %s", tt.want, res)
 			}

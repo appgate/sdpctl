@@ -15,11 +15,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) {
+func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData, apiVersion int) {
 	p := util.NewPrinter(out, 4)
-	p.AddHeader("Name", "Disk Usage")
+	diskHeader := "Disk Usage"
+	if apiVersion >= 18 {
+		diskHeader += " (used / total)"
+	}
+	p.AddHeader("Name", diskHeader)
 	for _, a := range stats {
-		p.AddLine(a.GetName(), fmt.Sprintf("%v%%", a.GetDisk()))
+		diskUsage := fmt.Sprintf("%v%%", a.GetDisk())
+		if apiVersion >= 18 {
+			diskInfo := a.GetDiskInfo()
+			used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
+			percentUsed := (used / total) * 100
+			diskUsage = fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, PrettyBytes(float64(used)), PrettyBytes(float64(total)))
+		}
+		p.AddLine(a.GetName(), diskUsage)
 	}
 
 	fmt.Fprint(out, "\nWARNING: Some appliances have very little space available\n\n")

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
@@ -104,18 +103,8 @@ func statsDiskUsage(apiVersion int, stats openapi.StatsAppliancesListAllOfData) 
 	diskInfo := stats.GetDiskInfo()
 	used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
 	percentUsed := (used / total) * 100
-	r := fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, prettyBytes(float64(used)), prettyBytes(float64(total)))
+	r := fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, appliancepkg.PrettyBytes(float64(used)), appliancepkg.PrettyBytes(float64(total)))
 	return r
-}
-
-func prettyBytes(v float64) string {
-	for _, unit := range []string{"", "K", "M", "G", "T", "P", "E", "Z"} {
-		if math.Abs(float64(v)) < 1024.0 {
-			return fmt.Sprintf("%.2f%sB", v, unit)
-		}
-		v /= 1024.0
-	}
-	return fmt.Sprintf("%.2fYB", v)
 }
 
 const na = "n/a"
