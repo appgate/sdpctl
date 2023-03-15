@@ -611,9 +611,9 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() < appliances[j].GetName() })
 		case "id":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetId() < appliances[j].GetId() })
-		case "site":
+		case "site-id":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSite() < appliances[j].GetSite() })
-		case "site-name":
+		case "site-name", "site":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSiteName() < appliances[j].GetSiteName() })
 		case "hostname", "host":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetHostname() < appliances[j].GetHostname() })
