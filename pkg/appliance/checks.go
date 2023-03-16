@@ -24,8 +24,8 @@ func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliances
 	p.AddHeader("Name", diskHeader)
 	for _, a := range stats {
 		diskUsage := fmt.Sprintf("%v%%", a.GetDisk())
-		if apiVersion >= 18 {
-			diskInfo := a.GetDiskInfo()
+		if v, ok := a.GetDiskInfoOk(); ok {
+			diskInfo := *v
 			used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
 			percentUsed := (used / total) * 100
 			diskUsage = fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, PrettyBytes(float64(used)), PrettyBytes(float64(total)))

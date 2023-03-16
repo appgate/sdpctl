@@ -84,7 +84,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 			fmt.Sprintf("%g%%", s.GetCpu()),
 			fmt.Sprintf("%g%%", s.GetMemory()),
 			statsNetworkPrettyPrint(s.GetNetwork()),
-			statsDiskUsage(cfg.Version, s),
+			statsDiskUsage(s),
 			version,
 		)
 	}
@@ -96,15 +96,14 @@ func statsNetworkPrettyPrint(n openapi.StatsAppliancesListAllOfNetwork) string {
 	return fmt.Sprintf("%s / %s", n.GetTxSpeed(), n.GetRxSpeed())
 }
 
-func statsDiskUsage(apiVersion int, stats openapi.StatsAppliancesListAllOfData) string {
-	if apiVersion < 18 {
-		return fmt.Sprintf("%g%%", stats.GetDisk())
+func statsDiskUsage(stats openapi.StatsAppliancesListAllOfData) string {
+	if v, ok := stats.GetDiskInfoOk(); ok {
+		diskInfo := *v
+		used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
+		percentUsed := (used / total) * 100
+		return fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, appliancepkg.PrettyBytes(float64(used)), appliancepkg.PrettyBytes(float64(total)))
 	}
-	diskInfo := stats.GetDiskInfo()
-	used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
-	percentUsed := (used / total) * 100
-	r := fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, appliancepkg.PrettyBytes(float64(used)), appliancepkg.PrettyBytes(float64(total)))
-	return r
+	return fmt.Sprintf("%g%%", stats.GetDisk())
 }
 
 const na = "n/a"
