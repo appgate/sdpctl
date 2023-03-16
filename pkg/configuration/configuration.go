@@ -32,7 +32,6 @@ type Config struct {
 	ExpiresAt           *string `mapstructure:"expires_at"`
 	DeviceID            string  `mapstructure:"device_id"`
 	PemFilePath         string  `mapstructure:"pem_filepath"`
-	Timeout             int     // HTTP timeout, not supported in the config file.
 	DisableVersionCheck bool    `mapstructure:"disable_version_check"`
 	LastVersionCheck    string  `mapstructure:"last_version_check"`
 }

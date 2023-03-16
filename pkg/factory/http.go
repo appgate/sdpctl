@@ -5,11 +5,9 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/serviceusers"
@@ -88,11 +86,6 @@ func (f *Factory) GetSpinnerOutput() func() io.Writer {
 func httpTransport(f *Factory) func() (*http.Transport, error) {
 	return func() (*http.Transport, error) {
 		cfg := f.Config
-		timeout := 5
-		if cfg.Timeout > timeout {
-			timeout = cfg.Timeout
-		}
-		timeoutDuration := time.Duration(timeout)
 		rootCAs, _ := x509.SystemCertPool()
 		if rootCAs == nil {
 			rootCAs = x509.NewCertPool()
@@ -111,10 +104,6 @@ func httpTransport(f *Factory) func() (*http.Transport, error) {
 				InsecureSkipVerify: cfg.Insecure,
 				RootCAs:            rootCAs,
 			},
-			Dial: (&net.Dialer{
-				Timeout: timeoutDuration * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout: timeoutDuration * time.Second,
 		}
 		if key, ok := os.LookupEnv("HTTP_PROXY"); ok {
 			proxyURL, err := url.Parse(key)
@@ -176,20 +165,12 @@ func customHTTPClient(f *Factory) func() (*http.Client, error) {
 
 func httpClientFunc(f *Factory) func() (*http.Client, error) {
 	return func() (*http.Client, error) {
-		cfg := f.Config
-		timeout := 5
-		if cfg.Timeout > timeout {
-			timeout = cfg.Timeout
-		}
-
-		timeoutDuration := time.Duration(timeout)
 		tr, err := f.HTTPTransport()
 		if err != nil {
 			return nil, err
 		}
 		c := &http.Client{
 			Transport: tr,
-			Timeout:   ((timeoutDuration * 2) * time.Second),
 		}
 		return c, nil
 	}
