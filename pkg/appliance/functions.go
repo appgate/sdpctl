@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -610,9 +611,9 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetName() < appliances[j].GetName() })
 		case "id":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetId() < appliances[j].GetId() })
-		case "site":
+		case "site-id":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSite() < appliances[j].GetSite() })
-		case "site-name":
+		case "site-name", "site":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetSiteName() < appliances[j].GetSiteName() })
 		case "hostname", "host":
 			sort.SliceStable(appliances, func(i, j int) bool { return appliances[i].GetHostname() < appliances[j].GetHostname() })
@@ -764,4 +765,14 @@ func ShouldDisable(from, to *version.Version) bool {
 	}
 
 	return false
+}
+
+func PrettyBytes(v float64) string {
+	for _, unit := range []string{"", "K", "M", "G", "T", "P", "E", "Z"} {
+		if math.Abs(float64(v)) < 1024.0 {
+			return fmt.Sprintf("%.2f%sB", v, unit)
+		}
+		v /= 1024.0
+	}
+	return fmt.Sprintf("%.2fYB", v)
 }

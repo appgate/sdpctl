@@ -67,7 +67,11 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 		return nil
 	}
 	w := util.NewPrinter(opts.Out, 4)
-	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", "Disk", "Version")
+	diskHeader := "Disk"
+	if cfg.Version >= 18 {
+		diskHeader += " (used / total)"
+	}
+	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", diskHeader, "Version")
 	for _, s := range stats.GetData() {
 		version := s.GetVersion()
 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
@@ -80,7 +84,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 			fmt.Sprintf("%g%%", s.GetCpu()),
 			fmt.Sprintf("%g%%", s.GetMemory()),
 			statsNetworkPrettyPrint(s.GetNetwork()),
-			fmt.Sprintf("%g%%", s.GetDisk()),
+			statsDiskUsage(s),
 			version,
 		)
 	}
@@ -90,6 +94,16 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 
 func statsNetworkPrettyPrint(n openapi.StatsAppliancesListAllOfNetwork) string {
 	return fmt.Sprintf("%s / %s", n.GetTxSpeed(), n.GetRxSpeed())
+}
+
+func statsDiskUsage(stats openapi.StatsAppliancesListAllOfData) string {
+	if v, ok := stats.GetDiskInfoOk(); ok {
+		diskInfo := *v
+		used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
+		percentUsed := (used / total) * 100
+		return fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, appliancepkg.PrettyBytes(float64(used)), appliancepkg.PrettyBytes(float64(total)))
+	}
+	return fmt.Sprintf("%g%%", stats.GetDisk())
 }
 
 const na = "n/a"
