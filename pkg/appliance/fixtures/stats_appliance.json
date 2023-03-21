@@ -11,6 +11,7 @@
             "state": "single_controller_ready",
             "volumeNumber": 2,
             "status": "healthy",
+            "numberOfSessions": 0,
             "controller": {
                 "status": "healthy",
                 "details": "Database size is 12 MB"
@@ -63,6 +64,7 @@
             "state": "appliance_ready",
             "volumeNumber": 1,
             "status": "healthy",
+            "numberOfSessions": 5,
             "controller": {
                 "status": "n/a"
             },
@@ -74,7 +76,7 @@
             },
             "gateway": {
                 "status": "healthy",
-                "numberOfSessions": 0
+                "numberOfSessions": 5
             },
             "connector": {
                 "status": "n/a"

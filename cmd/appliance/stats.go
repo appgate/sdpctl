@@ -71,7 +71,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	if cfg.Version >= 18 {
 		diskHeader += " (used / total)"
 	}
-	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", diskHeader, "Version")
+	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", diskHeader, "Version", "Sessions")
 	for _, s := range stats.GetData() {
 		version := s.GetVersion()
 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
@@ -86,6 +86,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 			statsNetworkPrettyPrint(s.GetNetwork()),
 			statsDiskUsage(s),
 			version,
+			s.GetNumberOfSessions(),
 		)
 	}
 	w.Print()
