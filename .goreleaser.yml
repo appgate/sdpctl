@@ -5,7 +5,7 @@ before:
   - make clean
   - make deps
 snapshot:
-  name_template: "{{ incpatch .Version }}"
+  name_template: "dev-{{ .Date }}"
 changelog:
   skip: true
 github_urls:
@@ -14,7 +14,7 @@ github_urls:
 builds:
 
   - <<: &build_defaults
-      binary: "{{ if .IsSnapshot }}{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ else }}{{ .ProjectName }}{{ end }}"
+      binary: "{{ .ProjectName }}"
       main: ./main.go
       ldflags:
         - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .Tag }}{{ .Tag }}{{ else }}dev{{ end }}"
