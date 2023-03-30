@@ -276,7 +276,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		if len(disableList) > 1 {
 			msg += "s"
 		}
-		t = p.AddTracker(msg, "done")
+		t = p.AddTracker(msg, "waiting", "done")
 		go func(t *tui.Tracker) {
 			t.Watch([]string{"done"}, []string{})
 		}(t)
