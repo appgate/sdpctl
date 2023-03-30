@@ -38,6 +38,8 @@ import (
 	"github.com/vbauerster/mpb/v7/decor"
 )
 
+var dockerRegistry string
+
 type prepareUpgradeOptions struct {
 	Config           *configuration.Config
 	Out              io.Writer
@@ -56,6 +58,7 @@ type prepareUpgradeOptions struct {
 	ciMode           bool
 	actualHostname   string
 	targetVersion    *version.Version
+	dockerRegistry   string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -101,6 +104,23 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if err := checkImageFilename(opts.filename); err != nil {
 				return err
 			}
+
+			// Get the docker registry address
+			opts.dockerRegistry = os.Getenv("SDPCTL_DOCKER_REGISTRY")
+			if len(opts.dockerRegistry) <= 0 {
+				opts.dockerRegistry, err = cmd.Flags().GetString("docker-registry")
+				if err != nil {
+					return err
+				}
+				if len(opts.dockerRegistry) <= 0 {
+					if len(dockerRegistry) > 0 {
+						opts.dockerRegistry = dockerRegistry
+					} else {
+						return errors.New("no docker registry address found")
+					}
+				}
+			}
+			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 
 			// allow remote addr for image, such as aws s3 bucket
 			if util.IsValidURL(opts.image) {
@@ -169,6 +189,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
+	flags.StringVar(&opts.dockerRegistry, "docker-registry", "", "Custom registry where the docker images should be fetched from")
 
 	return prepareCmd
 }
