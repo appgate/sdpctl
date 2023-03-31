@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
+	"github.com/vbauerster/mpb/v7"
 )
 
 const (
@@ -886,7 +887,7 @@ func DownloadDockerBundle(ctx context.Context, out io.Writer, client *http.Clien
 			bodyReader := layerRes.Body
 			if p != nil {
 				size := layerRes.ContentLength
-				bodyReader = p.FileDownloadProgress(f[0:7], "downloaded", size, 25, bodyReader)
+				bodyReader = p.FileDownloadProgress(f[0:7], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
 			}
 
 			buf := &bytes.Buffer{}

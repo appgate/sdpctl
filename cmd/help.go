@@ -102,6 +102,8 @@ Available Variables:
   SDPCTL_DISABLE_VERSION_CHECK:
     Description: Disable version checking when running commands
     Options: true, false
+  SDPCTL_DOCKER_REGISTRY:
+    Description: Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.
   HTTP_PROXY:
     Description: HTTP Proxy for the client
 

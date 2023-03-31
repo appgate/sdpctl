@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -34,16 +35,17 @@ import (
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v7"
-	"github.com/vbauerster/mpb/v7/decor"
 )
 
-var dockerRegistry string
+var (
+	dockerRegistry string
+)
 
 type prepareUpgradeOptions struct {
 	Config           *configuration.Config
 	Out              io.Writer
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	HTTPClient       func() (*http.Client, error)
 	SpinnerOut       func() io.Writer
 	debug            bool
 	NoInteractive    bool
@@ -66,6 +68,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	opts := &prepareUpgradeOptions{
 		Config:     f.Config,
 		Appliance:  f.Appliance,
+		HTTPClient: f.HTTPClient,
 		debug:      f.Config.Debug,
 		Out:        f.IOOutWriter,
 		SpinnerOut: f.GetSpinnerOutput(),
@@ -189,7 +192,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
-	flags.StringVar(&opts.dockerRegistry, "docker-registry", "", "Custom registry where the docker images should be fetched from")
+	flags.StringVar(&opts.dockerRegistry, "docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
 
 	return prepareCmd
 }
@@ -407,6 +410,86 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if existingFile.GetStatus() == appliancepkg.FileReady {
 		log.WithField("file", existingFile.GetName()).Info("File already exists, using it as is")
 	}
+
+	uploadWithProgress := func(ctx context.Context, reader io.Reader, name string, size int64, headers map[string]string) error {
+		p := tui.New(ctx, spinnerOut)
+		defer p.Wait()
+		endMsg := "uploaded"
+		proxyReader, t := p.FileUploadProgress(name, endMsg, size, reader)
+		go t.Watch([]string{endMsg}, []string{"failed"})
+		log.WithField("file", name).Info("Uploading file")
+		if err = a.UploadFile(ctx, proxyReader, headers); err != nil {
+			t.Fail(err.Error())
+			return err
+		}
+		t.Update(endMsg)
+		return nil
+	}
+
+	// Check if we need to bundle docker image and upload as well
+	constraint62, err := version.NewConstraint(">=6.2-alpha")
+	if err != nil {
+		return err
+	}
+
+	if constraint62.Check(opts.targetVersion) {
+		// Download image bundle and zip it up
+		client, err := opts.HTTPClient()
+		if err != nil {
+			return err
+		}
+		dockerImage := "aitorbot"
+		dockerTag := "6.17.9"
+		fmt.Fprintf(opts.Out, "Downloading %s-%s image layers:\n", dockerImage, dockerTag)
+		zipFile, _, err := appliancepkg.DownloadDockerBundle(ctx, spinnerOut, client, opts.dockerRegistry, dockerImage, dockerTag, opts.ciMode)
+		if err != nil {
+			return err
+		}
+
+		imageName := fmt.Sprintf("%s-%s.zip", dockerImage, dockerTag)
+		pr, pw := io.Pipe()
+		writer := multipart.NewWriter(pw)
+		go func() {
+			defer pw.Close()
+			defer writer.Close()
+
+			part, err := writer.CreateFormFile("file", imageName)
+			if err != nil {
+				log.Warnf("multipart form err %s", err)
+				return
+			}
+
+			size, err := io.Copy(part, zipFile)
+			if err != nil {
+				log.Warnf("copy err %s", err)
+				return
+			}
+			log.Debug(size)
+		}()
+		headers := map[string]string{
+			"Content-Type":        writer.FormDataContentType(),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", imageName),
+		}
+		var p *tui.Progress
+		var t *tui.Tracker
+		if !opts.ciMode {
+			p = tui.New(ctx, spinnerOut)
+			t = p.AddTracker("uploading images", "waiting", "uploaded")
+			go t.Watch([]string{"uploaded"}, []string{"failed"})
+		}
+		if err := a.UploadFile(ctx, pr, headers); err != nil {
+			if !opts.ciMode {
+				t.Fail(err.Error())
+			}
+			return err
+		}
+		if !opts.ciMode {
+			t.Update("uploaded")
+			p.Wait()
+		}
+		fmt.Fprint(opts.Out, "image bundles prepared\n\n")
+	}
+
 	if shouldUpload && !opts.remoteImage {
 		imageFile, err := os.Open(opts.image)
 		if err != nil {
@@ -417,47 +500,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		fileStat, err := imageFile.Stat()
 		if err != nil {
 			return err
-		}
-		fileSize := fileStat.Size()
-
-		uploadWithProgress := func(ctx context.Context, reader io.Reader, headers map[string]string) error {
-			uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
-			defer uploadProgress.Wait()
-			barName := fileStat.Name() + ":"
-			bar := uploadProgress.AddBar(fileSize,
-				mpb.BarWidth(50),
-				mpb.BarFillerOnComplete("uploaded"),
-				mpb.PrependDecorators(
-					decor.Spinner(tui.SpinnerStyle, decor.WC{W: 2}),
-					decor.Name(barName, decor.WC{W: len(barName) + 1}),
-				),
-				mpb.AppendDecorators(
-					decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
-					decor.OnComplete(decor.Name(" | "), ""),
-					decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
-				),
-			)
-			waitSpinner := tui.AddDefaultSpinner(
-				uploadProgress,
-				fileStat.Name(),
-				"waiting for server ok",
-				"upload complete",
-				mpb.BarQueueAfter(bar, false),
-			)
-
-			proxyReader := bar.ProxyReader(reader)
-			defer func() {
-				proxyReader.Close()
-				bar.Wait()
-				waitSpinner.Increment()
-			}()
-
-			log.WithField("file", imageFile.Name()).Info("Uploading file")
-			if err := a.UploadFile(ctx, proxyReader, headers); err != nil {
-				bar.Abort(false)
-				return err
-			}
-			return nil
 		}
 
 		pr, pw := io.Pipe()
@@ -485,7 +527,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		fmt.Fprintf(opts.Out, "[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 		if !opts.ciMode {
-			err = uploadWithProgress(ctx, pr, headers)
+			err = uploadWithProgress(ctx, pr, fileStat.Name(), fileStat.Size(), headers)
 		} else {
 			err = a.UploadFile(ctx, pr, headers)
 		}
@@ -508,18 +550,17 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "[%s] The primary Controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 
-		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 		if err := a.UploadToController(ctx, opts.image, opts.filename); err != nil {
 			return err
 		}
-		fileUploadStatus := func(ctx context.Context, controller openapi.Appliance, p *mpb.Progress) error {
+		fileUploadStatus := func(ctx context.Context, controller openapi.Appliance) error {
 			status := ""
-			var uploadProgress *tui.Progress
+			var p *tui.Progress
 			var t *tui.Tracker
 			if !opts.ciMode {
-				uploadProgress = tui.New(ctx, spinnerOut)
-				defer uploadProgress.Wait()
-				t = uploadProgress.AddTracker(controller.GetName(), "uploaded")
+				p = tui.New(ctx, spinnerOut)
+				defer p.Wait()
+				t = p.AddTracker(controller.GetName(), "waiting", "uploaded")
 				go t.Watch([]string{appliancepkg.FileReady}, []string{appliancepkg.FileFailed})
 			}
 			for status != appliancepkg.FileReady {
@@ -545,11 +586,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
 		defer fileStatusCancel()
-		if err := fileUploadStatus(fileStatusCtx, *primaryController, p); err != nil {
+		if err := fileUploadStatus(fileStatusCtx, *primaryController); err != nil {
 			return err
 		}
-
-		p.Wait()
 	}
 
 	// Step 2
@@ -627,7 +666,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = updateProgressBars.AddTracker(appliance.GetName(), appliancepkg.UpgradeStatusReady)
+				t = updateProgressBars.AddTracker(appliance.GetName(), "waiting", appliancepkg.UpgradeStatusReady)
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 

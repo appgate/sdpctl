@@ -89,9 +89,8 @@ func (p *Progress) FileUploadProgress(name, endMsg string, size int64, reader io
 	return bar.ProxyReader(reader), qt
 }
 
-func (p *Progress) FileDownloadProgress(name, endMsg string, size int64, width int, reader io.Reader) io.ReadCloser {
-	bar := p.pc.AddBar(
-		size,
+func (p *Progress) FileDownloadProgress(name, endMsg string, size int64, width int, reader io.Reader, opts ...mpb.BarOption) io.ReadCloser {
+	barOpts := []mpb.BarOption{
 		mpb.BarWidth(width),
 		mpb.BarFillerOnComplete(endMsg),
 		mpb.PrependDecorators(
@@ -103,6 +102,13 @@ func (p *Progress) FileDownloadProgress(name, endMsg string, size int64, width i
 			decor.OnComplete(decor.Name(" | "), ""),
 			decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
 		),
+	}
+	if len(opts) > 0 {
+		barOpts = append(barOpts, opts...)
+	}
+	bar := p.pc.AddBar(
+		size,
+		barOpts...,
 	)
 	return bar.ProxyReader(reader)
 }
