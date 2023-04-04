@@ -38,7 +38,11 @@ import (
 )
 
 var (
-	dockerRegistry string
+	dockerRegistry  string
+	logServerImages map[string]string = map[string]string{
+		"cz-opensearch":           "latest",
+		"cz-opensearchdashboards": "latest",
+	}
 )
 
 type prepareUpgradeOptions struct {
@@ -46,6 +50,7 @@ type prepareUpgradeOptions struct {
 	Out              io.Writer
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	HTTPClient       func() (*http.Client, error)
+	BasicAuthClient  func(username, password string) (*http.Client, error)
 	SpinnerOut       func() io.Writer
 	debug            bool
 	NoInteractive    bool
@@ -63,16 +68,22 @@ type prepareUpgradeOptions struct {
 	dockerRegistry   string
 }
 
+var (
+	// Set at build time or in env varibales
+	dockerRegistryUsername, dockerRegistryPassword string
+)
+
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	opts := &prepareUpgradeOptions{
-		Config:     f.Config,
-		Appliance:  f.Appliance,
-		HTTPClient: f.HTTPClient,
-		debug:      f.Config.Debug,
-		Out:        f.IOOutWriter,
-		SpinnerOut: f.GetSpinnerOutput(),
-		timeout:    DefaultTimeout,
+		Config:          f.Config,
+		Appliance:       f.Appliance,
+		HTTPClient:      f.HTTPClient,
+		BasicAuthClient: f.BasicAuthClient,
+		debug:           f.Config.Debug,
+		Out:             f.IOOutWriter,
+		SpinnerOut:      f.GetSpinnerOutput(),
+		timeout:         DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
@@ -432,43 +443,56 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	if constraint62.Check(opts.targetVersion) {
+	if constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0 {
 		// Download image bundle and zip it up
 		client, err := opts.HTTPClient()
 		if err != nil {
 			return err
 		}
-		dockerImage := "aitorbot"
-		dockerTag := "6.17.9"
-		fmt.Fprintf(opts.Out, "Downloading %s-%s image layers:\n", dockerImage, dockerTag)
-		zipFile, _, err := appliancepkg.DownloadDockerBundle(ctx, spinnerOut, client, opts.dockerRegistry, dockerImage, dockerTag, opts.ciMode)
+		if u := os.Getenv("SDPCTL_DOCKER_REGISTRY_USERNAME"); len(u) > 0 {
+			dockerRegistryUsername = u
+		}
+		if p := os.Getenv("SDPCTL_DOCKER_REGISTRY_PASSWORD"); len(p) > 0 {
+			dockerRegistryPassword = p
+		}
+		// use basic auth client if username and password is set
+		if len(dockerRegistryUsername) > 0 && len(dockerRegistryPassword) > 0 {
+			client, err = opts.BasicAuthClient(dockerRegistryUsername, dockerRegistryPassword)
+			if err != nil {
+				return err
+			}
+		}
+
+		fmt.Fprintln(opts.Out, "Downloading image layers for LogServer:")
+		logServerZipName := fmt.Sprintf("logserver-%s", opts.targetVersion.String())
+		zipFile, zipInfo, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 		if err != nil {
 			return err
 		}
+		defer os.Remove(zipFile.Name())
 
-		imageName := fmt.Sprintf("%s-%s.zip", dockerImage, dockerTag)
 		pr, pw := io.Pipe()
 		writer := multipart.NewWriter(pw)
 		go func() {
 			defer pw.Close()
 			defer writer.Close()
 
-			part, err := writer.CreateFormFile("file", imageName)
+			part, err := writer.CreateFormFile("file", zipFile.Name())
 			if err != nil {
 				log.Warnf("multipart form err %s", err)
 				return
 			}
 
-			size, err := io.Copy(part, zipFile)
+			_, err = io.Copy(part, zipFile)
 			if err != nil {
 				log.Warnf("copy err %s", err)
 				return
 			}
-			log.Debug(size)
 		}()
+		
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
-			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", imageName),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
 		}
 		var p *tui.Progress
 		var t *tui.Tracker

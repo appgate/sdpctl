@@ -10,12 +10,14 @@ import (
 	"io"
 	"io/fs"
 	"math"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
@@ -803,7 +805,51 @@ type ImageJSON struct {
 	Image string `json:"image"`
 }
 
-func DownloadDockerBundle(ctx context.Context, out io.Writer, client *http.Client, registry, image, tag string, ciMode bool) (*os.File, fs.FileInfo, error) {
+func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName, registry string, images map[string]string, ciMode bool) (*os.File, fs.FileInfo, error) {
+	// Create zip-archive
+	archive, err := os.Create(fmt.Sprintf("/tmp/%s.zip", zipName))
+	if err != nil {
+		return nil, nil, err
+	}
+	defer archive.Close()
+	zipWriter := zip.NewWriter(archive)
+	defer zipWriter.Close()
+	fileStat, err := archive.Stat()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	log.Info("downloading image layers for ", zipName)
+	var p *tui.Progress
+	if !ciMode {
+		p = tui.New(ctx, out)
+		defer p.Wait()
+	}
+	errChan := make(chan error)
+	var wg sync.WaitGroup
+	wg.Add(len(images))
+	for image, tag := range images {
+		go downloadDockerImageBundle(ctx, out, client, ciMode, zipWriter, registry, image, tag, p, errChan, &wg)
+	}
+
+	go func(wg *sync.WaitGroup, errChan chan error) {
+		wg.Wait()
+		close(errChan)
+	}(&wg, errChan)
+
+	var errs *multierror.Error
+	for err := range errChan {
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+	}
+	log.Info("docker layers downloaded")
+
+	return archive, fileStat, errs.ErrorOrNil()
+}
+
+func downloadDockerImageBundle(ctx context.Context, out io.Writer, client *http.Client, ciMode bool, zipWriter *zip.Writer, registry, image, tag string, p *tui.Progress, mainErrChan chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
 	headers := map[string]string{
 		"Accept":       "application/vnd.docker.distribution.manifest.v2+json",
 		"Content-Type": "application/json",
@@ -813,59 +859,61 @@ func DownloadDockerBundle(ctx context.Context, out io.Writer, client *http.Clien
 	manifestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", registry, image, tag)
 	manifestReq, err := http.NewRequestWithContext(ctx, http.MethodGet, manifestURL, nil)
 	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	for k, v := range headers {
 		manifestReq.Header.Set(k, v)
 	}
 	manifestRes, err := client.Do(manifestReq)
 	if manifestRes.StatusCode != http.StatusOK || err != nil {
-		return nil, nil, api.HTTPErrorResponse(manifestRes, err)
+		mainErrChan <- api.HTTPErrorResponse(manifestRes, err)
+		return
 	}
 	defer manifestRes.Body.Close()
 
 	manifestBuf := &bytes.Buffer{}
 	if _, err := io.Copy(manifestBuf, manifestRes.Body); err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	JSONManifest := DockerManifest{}
 	if err := json.Unmarshal(manifestBuf.Bytes(), &JSONManifest); err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 
 	// Download config.json
-	imageID := JSONManifest.Config.Digest
-	configURL := fmt.Sprintf("%s/v2/%s/blobs/%s", registry, image, imageID)
+	ImageID := JSONManifest.Config.Digest
+	configURL := fmt.Sprintf("%s/v2/%s/blobs/%s", registry, image, ImageID)
 	configReq, err := http.NewRequestWithContext(ctx, http.MethodGet, configURL, nil)
 	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	for k, v := range headers {
 		configReq.Header.Set(k, v)
 	}
 	configRes, err := client.Do(configReq)
 	if configRes.StatusCode != http.StatusOK || err != nil {
-		return nil, nil, api.HTTPErrorResponse(configRes, err)
+		mainErrChan <- api.HTTPErrorResponse(configRes, err)
+		return
 	}
 	defer configRes.Body.Close()
 
 	configBuf := &bytes.Buffer{}
 	if _, err := io.Copy(configBuf, configRes.Body); err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 
 	// Download layers
-	var p *tui.Progress
-	if !ciMode {
-		p = tui.New(ctx, out)
-		defer p.Wait()
-	}
 	type bufName struct {
 		name string
 		buf  *bytes.Buffer
 	}
 	layerCount := len(JSONManifest.Layers)
-	layers := make(map[string]io.Reader, layerCount)
+	layers := make(map[string]io.Reader)
 	bufChan := make(chan bufName)
 	errChan := make(chan error)
 	for _, l := range JSONManifest.Layers {
@@ -887,7 +935,7 @@ func DownloadDockerBundle(ctx context.Context, out io.Writer, client *http.Clien
 			bodyReader := layerRes.Body
 			if p != nil {
 				size := layerRes.ContentLength
-				bodyReader = p.FileDownloadProgress(f[0:7], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
+				bodyReader = p.FileDownloadProgress(f[0:11], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
 			}
 
 			buf := &bytes.Buffer{}
@@ -912,59 +960,79 @@ func DownloadDockerBundle(ctx context.Context, out io.Writer, client *http.Clien
 		}
 	}
 
-	// Create zip-archive
-	archive, err := os.Create(fmt.Sprintf("/tmp/%s-%s.zip", image, tag))
+	// manifest.json -> <tag>.json
+	mw, err := zipWriter.Create(fmt.Sprintf("%s/%s.json", image, tag))
 	if err != nil {
-		return nil, nil, err
-	}
-	defer archive.Close()
-	zipWriter := zip.NewWriter(archive)
-	defer zipWriter.Close()
-	mw, err := zipWriter.Create("manifest.json")
-	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	if _, err := io.Copy(mw, manifestBuf); err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
-	cw, err := zipWriter.Create("config.json")
+
+	// config.json -> <digest>.json
+	cw, err := zipWriter.Create(fmt.Sprintf("%s/%s.json", image, strings.Replace(ImageID, "sha256:", "", 1)))
 	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	if _, err := io.Copy(cw, configBuf); err != nil {
-		return nil, nil, err
-	}
-	for k, l := range layers {
-		lw, err := zipWriter.Create(k)
-		if err != nil {
-			errs = multierror.Append(errs, err)
-			continue
-		}
-		if _, err := io.Copy(lw, l); err != nil {
-			errs = multierror.Append(errs, err)
-			continue
-		}
+		mainErrChan <- err
+		return
 	}
 
 	// Create image.json
-	iw, err := zipWriter.Create("image.json")
+	iw, err := zipWriter.Create(fmt.Sprintf("%s/image.json", image))
 	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	imageJSON := ImageJSON{
 		Image: fmt.Sprintf("%s/%s:%s", registry, image, tag),
 	}
 	ibytes, err := json.Marshal(imageJSON)
 	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 	if _, err := io.Copy(iw, bytes.NewReader(ibytes)); err != nil {
-		return nil, nil, err
-	}
-	fileStat, err := archive.Stat()
-	if err != nil {
-		return nil, nil, err
+		mainErrChan <- err
+		return
 	}
 
-	return archive, fileStat, errs.ErrorOrNil()
+	// create layers
+	for k, l := range layers {
+		layerName := fmt.Sprintf("%s/%s", image, k)
+		lw, err := zipWriter.Create(layerName)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		pr, pw := io.Pipe()
+		writer := multipart.NewWriter(pw)
+
+		go func(l io.Reader) {
+			defer pw.Close()
+			defer writer.Close()
+
+			part, err := writer.CreateFormFile("file", layerName)
+			if err != nil {
+				log.Warnf("multipart form err %s", err)
+				return
+			}
+
+			_, err = io.Copy(part, l)
+			if err != nil {
+				log.Warnf("copy err %s", err)
+				return
+			}
+		}(l)
+
+		if _, err := io.Copy(lw, pr); err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+	}
+	mainErrChan <- errs.ErrorOrNil()
 }
