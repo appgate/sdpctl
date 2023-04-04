@@ -116,7 +116,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			// Get the docker registry address
-			if flagRegistry, err := cmd.Flags().GetString("docker-registry"); err == nil && len(flagRegistry) <= 0 {
+			if flagRegistry, err := cmd.Flags().GetString("docker-registry"); err == nil && len(flagRegistry) > 0 {
 				opts.dockerRegistry = flagRegistry
 			}
 			if envRegistry := os.Getenv("SDPCTL_DOCKER_REGISTRY"); len(envRegistry) > 0 {
