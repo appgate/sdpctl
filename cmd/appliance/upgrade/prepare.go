@@ -38,8 +38,9 @@ import (
 )
 
 var (
-	dockerRegistry  string
-	logServerImages map[string]string = map[string]string{
+	// Set at build time or in env varibales
+	dockerRegistry, dockerRegistryUsername, dockerRegistryPassword string
+	logServerImages                                                map[string]string = map[string]string{
 		"cz-opensearch":           "latest",
 		"cz-opensearchdashboards": "latest",
 	}
@@ -67,11 +68,6 @@ type prepareUpgradeOptions struct {
 	targetVersion    *version.Version
 	dockerRegistry   string
 }
-
-var (
-	// Set at build time or in env varibales
-	dockerRegistryUsername, dockerRegistryPassword string
-)
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
@@ -120,7 +116,9 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			// Get the docker registry address
-			opts.dockerRegistry = os.Getenv("SDPCTL_DOCKER_REGISTRY")
+			if envRegistry := os.Getenv("SDPCTL_DOCKER_REGISTRY"); len(envRegistry) > 0 {
+				opts.dockerRegistry = envRegistry
+			}
 			if len(opts.dockerRegistry) <= 0 {
 				opts.dockerRegistry, err = cmd.Flags().GetString("docker-registry")
 				if err != nil {
