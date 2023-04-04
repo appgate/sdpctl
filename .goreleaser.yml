@@ -20,6 +20,9 @@ builds:
         - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .Tag }}{{ .Tag }}{{ else }}dev{{ end }}"
         - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
         - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
+        - -X "github.com/appgate/sdpctl/cmd/appliance/upgrade.dockerRegistry={{ .Env.DOCKER_REGISTRY_URL }}"
+        - -X "github.com/appgate/sdpctl/cmd/appliance/upgrade.dockerRegistryUsername={{ .Env.DOCKER_REGISTRY_USERNAME }}"
+        - -X "github.com/appgate/sdpctl/cmd/appliance/upgrade.dockerRegistryPassword={{ .Env.DOCKER_REGISTRY_PASSWORD }}"
     id: linux
     goos: [linux]
     goarch: [amd64, arm64]
