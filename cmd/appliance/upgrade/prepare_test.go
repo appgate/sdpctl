@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -56,7 +57,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 }
 
 func TestUpgradePrepareCommand(t *testing.T) {
-
+	os.Setenv("SDPCTL_DOCKER_REGISTRY", "https://localhost:5001")
 	tests := []struct {
 		name                string
 		cli                 string
