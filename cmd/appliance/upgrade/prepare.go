@@ -489,7 +489,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return
 			}
 		}()
-		
+
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
 			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
