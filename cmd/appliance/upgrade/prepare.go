@@ -38,9 +38,9 @@ import (
 )
 
 var (
-	// Set at build time or in env varibales
-	dockerRegistry, dockerRegistryUsername, dockerRegistryPassword string
-	logServerImages                                                map[string]string = map[string]string{
+	// Set at build time or in environment variables
+	dockerRegistry  string
+	logServerImages map[string]string = map[string]string{
 		"cz-opensearch":           "latest",
 		"cz-opensearchdashboards": "latest",
 	}
@@ -51,7 +51,6 @@ type prepareUpgradeOptions struct {
 	Out              io.Writer
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	HTTPClient       func() (*http.Client, error)
-	BasicAuthClient  func(username, password string) (*http.Client, error)
 	SpinnerOut       func() io.Writer
 	debug            bool
 	NoInteractive    bool
@@ -72,14 +71,13 @@ type prepareUpgradeOptions struct {
 // NewPrepareUpgradeCmd return a new prepare upgrade command
 func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	opts := &prepareUpgradeOptions{
-		Config:          f.Config,
-		Appliance:       f.Appliance,
-		HTTPClient:      f.HTTPClient,
-		BasicAuthClient: f.BasicAuthClient,
-		debug:           f.Config.Debug,
-		Out:             f.IOOutWriter,
-		SpinnerOut:      f.GetSpinnerOutput(),
-		timeout:         DefaultTimeout,
+		Config:     f.Config,
+		Appliance:  f.Appliance,
+		HTTPClient: f.HTTPClient,
+		debug:      f.Config.Debug,
+		Out:        f.IOOutWriter,
+		SpinnerOut: f.GetSpinnerOutput(),
+		timeout:    DefaultTimeout,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
@@ -442,19 +440,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		client, err := opts.HTTPClient()
 		if err != nil {
 			return err
-		}
-		if u := os.Getenv("SDPCTL_DOCKER_REGISTRY_USERNAME"); len(u) > 0 {
-			dockerRegistryUsername = u
-		}
-		if p := os.Getenv("SDPCTL_DOCKER_REGISTRY_PASSWORD"); len(p) > 0 {
-			dockerRegistryPassword = p
-		}
-		// use basic auth client if username and password is set
-		if len(dockerRegistryUsername) > 0 && len(dockerRegistryPassword) > 0 {
-			client, err = opts.BasicAuthClient(dockerRegistryUsername, dockerRegistryPassword)
-			if err != nil {
-				return err
-			}
 		}
 
 		fmt.Fprintln(opts.Out, "Downloading image layers for LogServer:")

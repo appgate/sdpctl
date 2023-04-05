@@ -27,8 +27,6 @@ type Factory struct {
 	// the custom HTTP client includes the default transport layer to import TLS certificate
 	// and applies Accept, Authorization, and User-Agent headers to all requests
 	CustomHTTPClient func() (*http.Client, error)
-	// BasicAuthClient is used when communicating with third party API:s that need basic authentication
-	BasicAuthClient func(username, password string) (*http.Client, error)
 	// HTTPTransport is used by all HTTP Clients to import custom TLS certificate and set timeout values
 	HTTPTransport func() (*http.Transport, error)
 	// APIClient is the generated api client based on the openapi-generator https://github.com/appgate/sdp-api-client-go
@@ -52,7 +50,6 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.HTTPTransport = httpTransport(f)       // depends on config
 	f.HTTPClient = httpClientFunc(f)         // depends on config
 	f.CustomHTTPClient = customHTTPClient(f) // depends on config
-	f.BasicAuthClient = basicAuthClient(f)   // depends on config
 	f.APIClient = apiClientFunc(f)           // depends on config
 	f.Appliance = applianceFunc(f)           // depends on config
 	f.Token = tokenFunc(f)                   // depends on config
@@ -161,51 +158,6 @@ func customHTTPClient(f *Factory) func() (*http.Client, error) {
 			accept:              fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
 			useragent:           f.userAgent,
 			underlyingTransport: parentTransport,
-		}
-		return client, nil
-	}
-}
-
-type basicAuthTransport struct {
-	username, password, useragent, accept string
-	underlyingTransport                   http.RoundTripper
-}
-
-func (bat basicAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("User-Agent", bat.useragent)
-	req.Header.Add("Accept", bat.accept)
-	req.SetBasicAuth(bat.username, bat.password)
-
-	// overwrite Accept header if we have anything in the context
-	if accept, ok := req.Context().Value(ContextAcceptValue).(string); ok {
-		req.Header.Set("Accept", accept)
-	}
-
-	return bat.underlyingTransport.RoundTrip(req)
-}
-
-func basicAuthClient(f *Factory) func(username, password string) (*http.Client, error) {
-	return func(username, password string) (*http.Client, error) {
-		client, err := f.HTTPClient()
-		if err != nil {
-			return nil, err
-		}
-		parentTransport, err := f.HTTPTransport()
-		if err != nil {
-			return nil, err
-		}
-		if u := os.Getenv("SDPCTL_DOCKER_REGISTRY_USERNAME"); len(u) > 0 {
-			username = u
-		}
-		if p := os.Getenv("SDPCTL_DOCKER_REGISTRY_PASSWORD"); len(p) > 0 {
-			password = p
-		}
-		client.Transport = basicAuthTransport{
-			underlyingTransport: parentTransport,
-			username:            username,
-			password:            password,
-			useragent:           f.userAgent,
-			accept:              fmt.Sprintf("application/vnd.appgate.peer-v%d+json", f.Config.Version),
 		}
 		return client, nil
 	}
