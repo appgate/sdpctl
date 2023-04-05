@@ -473,22 +473,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			"Content-Type":        writer.FormDataContentType(),
 			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
 		}
-		var p *tui.Progress
-		var t *tui.Tracker
-		if !opts.ciMode {
-			p = tui.New(ctx, spinnerOut)
-			t = p.AddTracker("uploading images", "waiting", "uploaded")
-			go t.Watch([]string{"uploaded"}, []string{"failed"})
-		}
 		if err := a.UploadFile(ctx, pr, headers); err != nil {
-			if !opts.ciMode {
-				t.Fail(err.Error())
-			}
 			return err
-		}
-		if !opts.ciMode {
-			t.Update("uploaded")
-			p.Wait()
 		}
 		fmt.Fprint(opts.Out, "image bundles prepared\n\n")
 	}
