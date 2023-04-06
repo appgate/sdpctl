@@ -450,58 +450,72 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 
-		fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", util.ApplianceVersionString(opts.targetVersion))
-		zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
-		if err != nil {
-			return err
+		// check if already exists
+		exists := true
+		if _, err := a.FileStatus(ctx, logServerZipName); err != nil {
+			// if we dont get 404, return err
+			if errors.Is(err, appliancepkg.ErrFileNotFound) {
+				exists = false
+			} else {
+				return err
+			}
 		}
-		zipFile, err := os.Open(zipPath)
-		if err != nil {
-			return err
-		}
-		defer zipFile.Close()
-
-		pr, pw := io.Pipe()
-		writer := multipart.NewWriter(pw)
-		go func() {
-			defer pw.Close()
-			defer writer.Close()
-
-			part, err := writer.CreateFormFile("file", logServerZipName)
+		if !exists {
+			fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
+			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 			if err != nil {
-				log.Warnf("multipart form err %s", err)
-				return
+				return err
+			}
+			zipFile, err := os.Open(zipPath)
+			if err != nil {
+				return err
+			}
+			defer zipFile.Close()
+
+			pr, pw := io.Pipe()
+			writer := multipart.NewWriter(pw)
+			go func() {
+				defer pw.Close()
+				defer writer.Close()
+
+				part, err := writer.CreateFormFile("file", logServerZipName)
+				if err != nil {
+					log.Warnf("multipart form err %s", err)
+					return
+				}
+
+				size, err := io.Copy(part, zipFile)
+				if err != nil {
+					log.Warnf("copy err %s", err)
+					return
+				}
+				log.WithField("size", size).WithField("zip", logServerZipName).Debug("wrote zip part")
+			}()
+
+			zipInfo, err := zipFile.Stat()
+			if err != nil {
+				return err
 			}
 
-			size, err := io.Copy(part, zipFile)
-			if err != nil {
-				log.Warnf("copy err %s", err)
-				return
+			headers := map[string]string{
+				"Content-Type":        writer.FormDataContentType(),
+				"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
 			}
-			log.WithField("size", size).WithField("zip", logServerZipName).Debug("wrote zip part")
-		}()
-
-		zipInfo, err := zipFile.Stat()
-		if err != nil {
-			return err
-		}
-
-		headers := map[string]string{
-			"Content-Type":        writer.FormDataContentType(),
-			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
-		}
-		if !opts.ciMode {
-			err = uploadWithProgress(ctx, pr, "uploading "+logServerZipName, zipInfo.Size(), headers)
+			if !opts.ciMode {
+				err = uploadWithProgress(ctx, pr, "uploading "+logServerZipName, zipInfo.Size(), headers)
+			} else {
+				err = a.UploadFile(ctx, pr, headers)
+				fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
+			}
+			if err != nil {
+				return err
+			}
+			os.Remove(zipPath)
+			fmt.Fprintln(opts.Out)
 		} else {
-			err = a.UploadFile(ctx, pr, headers)
-			fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
+			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
 		}
-		if err != nil {
-			return err
-		}
-		os.Remove(zipPath)
-		fmt.Fprintln(opts.Out)
 	}
 
 	if shouldUpload && !opts.remoteImage {
