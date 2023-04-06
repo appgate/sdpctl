@@ -451,8 +451,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 
 		fmt.Fprintln(opts.Out, "Downloading image layers for LogServer:")
-		logServerZipName := fmt.Sprintf("logserver-%s", util.ApplianceVersionString(opts.targetVersion))
-		zipFile, zipInfo, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
+		logServerZipName := fmt.Sprintf("logserver-%s.zip", util.ApplianceVersionString(opts.targetVersion))
+		zipFile, _, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 		if err != nil {
 			return err
 		}
@@ -464,7 +464,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			defer pw.Close()
 			defer writer.Close()
 
-			part, err := writer.CreateFormFile("file", zipFile.Name())
+			part, err := writer.CreateFormFile("file", logServerZipName)
 			if err != nil {
 				log.Warnf("multipart form err %s", err)
 				return
@@ -479,7 +479,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
-			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", logServerZipName),
 		}
 		if err := a.UploadFile(ctx, pr, headers); err != nil {
 			return err

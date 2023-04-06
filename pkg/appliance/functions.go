@@ -828,7 +828,7 @@ type imageBundleArgs struct {
 
 func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName, registry string, images map[string]string, ciMode bool) (*os.File, fs.FileInfo, error) {
 	// Create zip-archive
-	archive, err := os.CreateTemp("", fmt.Sprintf("%s.zip", zipName))
+	archive, err := os.CreateTemp("", zipName)
 	if err != nil {
 		return nil, nil, err
 	}
