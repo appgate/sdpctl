@@ -391,6 +391,13 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
 
+	// Check if we need to bundle docker image and upload as well
+	constraint62, err := version.NewConstraint(">=6.2-alpha")
+	if err != nil {
+		return err
+	}
+	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0
+
 	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning)
 	if err != nil {
 		return err
@@ -400,26 +407,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		if err := prompt.AskConfirmation(); err != nil {
 			return err
 		}
-	}
-
-	// Step 1
-
-	shouldUpload := false
-	existingFile, err := a.FileStatus(ctx, opts.filename)
-	if err != nil {
-		// if we dont get 404, return err
-		if errors.Is(err, appliancepkg.ErrFileNotFound) {
-			shouldUpload = true
-		} else {
-			return err
-		}
-	}
-	if !shouldUpload && existingFile.GetStatus() != appliancepkg.FileReady {
-		log.WithField("file", opts.filename).Infof("Remote file already exist, but is in status %s, overriding it", existingFile.GetStatus())
-		shouldUpload = true
-	}
-	if existingFile.GetStatus() == appliancepkg.FileReady {
-		log.WithField("file", existingFile.GetName()).Info("File already exists, using it as is")
 	}
 
 	uploadWithProgress := func(ctx context.Context, reader io.Reader, name string, size int64, headers map[string]string) error {
@@ -437,13 +424,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return nil
 	}
 
-	// Check if we need to bundle docker image and upload as well
-	constraint62, err := version.NewConstraint(">=6.2-alpha")
-	if err != nil {
-		return err
-	}
-
-	if constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0 {
+	// Step 1
+	if logserverbundleupload {
 		// Download image bundle and zip it up
 		client, err := opts.HTTPClient()
 		if err != nil {
@@ -516,6 +498,25 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		} else {
 			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
 		}
+	}
+
+	// Step 2
+	shouldUpload := false
+	existingFile, err := a.FileStatus(ctx, opts.filename)
+	if err != nil {
+		// if we dont get 404, return err
+		if errors.Is(err, appliancepkg.ErrFileNotFound) {
+			shouldUpload = true
+		} else {
+			return err
+		}
+	}
+	if !shouldUpload && existingFile.GetStatus() != appliancepkg.FileReady {
+		log.WithField("file", opts.filename).Infof("Remote file already exist, but is in status %s, overriding it", existingFile.GetStatus())
+		shouldUpload = true
+	}
+	if existingFile.GetStatus() == appliancepkg.FileReady {
+		log.WithField("file", existingFile.GetName()).Info("File already exists, using it as is")
 	}
 
 	if shouldUpload && !opts.remoteImage {
@@ -619,7 +620,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	// Step 2
+	// Step 3
 	primaryControllerHostname, ok := primaryController.GetHostnameOk()
 	if !ok || primaryControllerHostname == nil {
 		return errors.New("failed to fetch configured hostname for primary controller")
@@ -819,8 +820,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 const prepareUpgradeMessage = `PREPARE SUMMARY
 
-1. Upload upgrade image {{.Filepath}} to Controller
-2. Prepare upgrade on the following appliances:
+1. Bundle and upload LogServer docker image if needed
+2. Upload upgrade image {{.Filepath}} to Controller
+3. Prepare upgrade on the following appliances:
 
 {{ .ApplianceTable }}{{ if .SkipTable }}
 
