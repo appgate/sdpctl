@@ -21,7 +21,7 @@ func NewOpenCmd(f *factory.Factory) *cobra.Command {
 		},
 		Short: "Open the Admin UI in your browser",
 		RunE: func(c *cobra.Command, args []string) error {
-			addr, err := configuration.NormalizeURL(f.Config.URL)
+			addr, err := configuration.NormalizeConfigurationURL(f.Config.URL)
 			if err != nil {
 				return fmt.Errorf("Could not normalize addr %w", err)
 			}

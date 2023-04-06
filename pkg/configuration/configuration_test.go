@@ -225,7 +225,7 @@ func TestNormalizeURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			result, err := NormalizeURL(tt.URL)
+			result, err := NormalizeConfigurationURL(tt.URL)
 			if err != nil && !tt.err {
 				t.Fatalf("Test failed. Error: %v", err)
 			}

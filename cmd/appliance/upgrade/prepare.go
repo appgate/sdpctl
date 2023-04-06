@@ -124,7 +124,15 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				opts.dockerRegistry = envRegistry
 			}
 			if len(opts.dockerRegistry) <= 0 {
-				return errors.New("no docker registry URL found")
+				return errors.New("no docker registry URL found. Please set the 'SDPCTL_DOCKER_REGISTRY' environment variable.")
+			}
+			normalized, err := util.NormalizeURL(opts.dockerRegistry)
+			if err != nil {
+				return err
+			}
+			opts.dockerRegistry = normalized.String()
+			if !util.IsValidURL(opts.dockerRegistry) {
+				return fmt.Errorf("%s is not a valid URL", opts.dockerRegistry)
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 

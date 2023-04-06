@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"regexp"
@@ -93,6 +94,23 @@ func IsValidURL(addr string) bool {
 		return false
 	}
 	return true
+}
+
+func NormalizeURL(u string) (*url.URL, error) {
+	if len(u) <= 0 {
+		return nil, errors.New("no address set")
+	}
+	if r := regexp.MustCompile(`^https?://`); !r.MatchString(u) {
+		u = fmt.Sprintf("https://%s", u)
+	}
+	url, err := url.ParseRequestURI(u)
+	if err != nil {
+		return nil, err
+	}
+	if url.Scheme != "https" {
+		url.Scheme = "https"
+	}
+	return url, nil
 }
 
 func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[string]string) (map[string]map[string]string, []string, bool) {
