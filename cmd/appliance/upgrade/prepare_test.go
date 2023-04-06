@@ -722,8 +722,9 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 			},
 			want: `PREPARE SUMMARY
 
-1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
-2. Prepare upgrade on the following appliances:
+1. Bundle and upload LogServer docker image if needed
+2. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
+3. Prepare upgrade on the following appliances:
 
   Appliance      Online    Current version    Prepare version
   ---------      ------    ---------------    ---------------
@@ -782,8 +783,9 @@ The following appliances will be skipped:
 			},
 			want: `PREPARE SUMMARY
 
-1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
-2. Prepare upgrade on the following appliances:
+1. Bundle and upload LogServer docker image if needed
+2. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
+3. Prepare upgrade on the following appliances:
 
   Appliance      Online    Current version    Prepare version
   ---------      ------    ---------------    ---------------
@@ -835,8 +837,9 @@ The following appliances will be skipped:
 			},
 			want: `PREPARE SUMMARY
 
-1. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
-2. Prepare upgrade on the following appliances:
+1. Bundle and upload LogServer docker image if needed
+2. Upload upgrade image appgate-6.0.0-29426-release.img.zip to Controller
+3. Prepare upgrade on the following appliances:
 
   Appliance      Online    Current version    Prepare version
   ---------      ------    ---------------    ---------------
