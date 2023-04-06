@@ -451,7 +451,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 
 		fmt.Fprintln(opts.Out, "Downloading image layers for LogServer:")
-		logServerZipName := fmt.Sprintf("logserver-%s", opts.targetVersion.String())
+		logServerZipName := fmt.Sprintf("logserver-%s.zip", util.ApplianceVersionString(opts.targetVersion))
 		zipFile, zipInfo, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 		if err != nil {
 			return err

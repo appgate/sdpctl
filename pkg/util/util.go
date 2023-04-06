@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-version"
 	"github.com/spf13/pflag"
 )
 
@@ -156,4 +157,13 @@ func Reverse[S ~[]T, T any](items S) S {
 		result = append(result, items[i])
 	}
 	return result
+}
+
+func ApplianceVersionString(v *version.Version) string {
+	segments := v.Segments()
+	preString := v.Prerelease()
+	if len(preString) <= 0 {
+		preString = "release"
+	}
+	return fmt.Sprintf("%d.%d.%d-%s-%s", segments[0], segments[1], segments[2], v.Metadata(), preString)
 }
