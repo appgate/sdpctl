@@ -450,13 +450,17 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 
-		fmt.Fprintln(opts.Out, "Downloading image layers for LogServer:")
+		fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", util.ApplianceVersionString(opts.targetVersion))
-		zipFile, _, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
+		zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 		if err != nil {
 			return err
 		}
-		defer os.Remove(zipFile.Name())
+		zipFile, err := os.Open(zipPath)
+		if err != nil {
+			return err
+		}
+		defer zipFile.Close()
 
 		pr, pw := io.Pipe()
 		writer := multipart.NewWriter(pw)
@@ -470,21 +474,34 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return
 			}
 
-			_, err = io.Copy(part, zipFile)
+			size, err := io.Copy(part, zipFile)
 			if err != nil {
 				log.Warnf("copy err %s", err)
 				return
 			}
+			log.WithField("size", size).WithField("zip", logServerZipName).Debug("wrote zip part")
 		}()
+
+		zipInfo, err := zipFile.Stat()
+		if err != nil {
+			return err
+		}
 
 		headers := map[string]string{
 			"Content-Type":        writer.FormDataContentType(),
-			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", logServerZipName),
+			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
 		}
-		if err := a.UploadFile(ctx, pr, headers); err != nil {
+		if !opts.ciMode {
+			err = uploadWithProgress(ctx, pr, "uploading "+logServerZipName, zipInfo.Size(), headers)
+		} else {
+			err = a.UploadFile(ctx, pr, headers)
+			fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
+		}
+		if err != nil {
 			return err
 		}
-		fmt.Fprint(opts.Out, "image bundles prepared\n\n")
+		os.Remove(zipPath)
+		fmt.Fprintln(opts.Out)
 	}
 
 	if shouldUpload && !opts.remoteImage {

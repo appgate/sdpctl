@@ -9,9 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"math"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"regexp"
@@ -826,19 +824,15 @@ type imageBundleArgs struct {
 	p             *tui.Progress
 }
 
-func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName, registry string, images map[string]string, ciMode bool) (*os.File, fs.FileInfo, error) {
+func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName, registry string, images map[string]string, ciMode bool) (string, error) {
 	// Create zip-archive
 	archive, err := os.CreateTemp("", zipName)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
 	defer archive.Close()
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
-	fileStat, err := archive.Stat()
-	if err != nil {
-		return nil, nil, err
-	}
 
 	log.Info("downloading image layers for ", zipName)
 	var p *tui.Progress
@@ -884,32 +878,16 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 			continue
 		}
 
-		pr, pw := io.Pipe()
-		writer := multipart.NewWriter(pw)
-		go func() {
-			defer pw.Close()
-			defer writer.Close()
-
-			part, err := writer.CreateFormFile("file", v.path)
-			if err != nil {
-				log.Warnf("multipart form err %s", err)
-				return
-			}
-
-			_, err = io.Copy(part, v.r)
-			if err != nil {
-				log.Warnf("copy err %s", err)
-				return
-			}
-		}()
-
-		if _, err := io.Copy(fb, pr); err != nil {
+		size, err := io.Copy(fb, v.r)
+		if err != nil {
 			errs = multierror.Append(errs, err)
+			continue
 		}
+		log.WithField("path", v.path).WithField("size", size).Debug("wrote layer")
 	}
 	log.Info("docker layers downloaded")
 
-	return archive, fileStat, errs.ErrorOrNil()
+	return archive.Name(), errs.ErrorOrNil()
 }
 
 func downloadDockerImageBundle(args imageBundleArgs) {
@@ -1037,31 +1015,12 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 			bodyReader := layerRes.Body
 			if args.p != nil {
 				size := layerRes.ContentLength
-				bodyReader = args.p.FileDownloadProgress(f[0:11], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
+				bodyReader = args.p.FileDownloadProgress("downloading "+f[0:11], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
 			}
-
-			pr, pw := io.Pipe()
-			writer := multipart.NewWriter(pw)
-			go func() {
-				defer pw.Close()
-				defer writer.Close()
-
-				part, err := writer.CreateFormFile("file", f)
-				if err != nil {
-					log.Warnf("multipart form err %s", err)
-					return
-				}
-
-				_, err = io.Copy(part, bodyReader)
-				if err != nil {
-					log.Warnf("copy err %s", err)
-					return
-				}
-			}()
 
 			layerName := fmt.Sprintf("%s/%s", args.image, f)
 			buf := &bytes.Buffer{}
-			if _, err := io.Copy(buf, pr); err != nil {
+			if _, err := io.Copy(buf, bodyReader); err != nil {
 				return err
 			}
 			args.fileEntryChan <- fileEntry{
