@@ -65,7 +65,7 @@ type prepareUpgradeOptions struct {
 	ciMode           bool
 	actualHostname   string
 	targetVersion    *version.Version
-	dockerRegistry   string
+	dockerRegistry   *url.URL
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -114,24 +114,23 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			// Get the docker registry address
+			var reg string
 			if len(dockerRegistry) > 0 {
-				opts.dockerRegistry = dockerRegistry
+				reg = dockerRegistry
 			}
 			if flagRegistry, err := cmd.Flags().GetString("docker-registry"); err == nil && len(flagRegistry) > 0 {
-				opts.dockerRegistry = flagRegistry
+				reg = flagRegistry
 			}
 			if envRegistry := os.Getenv("SDPCTL_DOCKER_REGISTRY"); len(envRegistry) > 0 {
-				opts.dockerRegistry = envRegistry
+				reg = envRegistry
 			}
-			if len(opts.dockerRegistry) <= 0 {
+			if len(reg) <= 0 {
 				return errors.New("no docker registry URL found. Please set the 'SDPCTL_DOCKER_REGISTRY' environment variable.")
 			}
-			normalized, err := util.NormalizeURL(opts.dockerRegistry)
-			if err != nil {
+			if opts.dockerRegistry, err = util.NormalizeURL(reg); err != nil {
 				return err
 			}
-			opts.dockerRegistry = normalized.String()
-			if !util.IsValidURL(opts.dockerRegistry) {
+			if !util.IsValidURL(opts.dockerRegistry.String()) {
 				return fmt.Errorf("%s is not a valid URL", opts.dockerRegistry)
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
@@ -203,7 +202,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
-	flags.StringVar(&opts.dockerRegistry, "docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
+	flags.String("docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
 
 	return prepareCmd
 }

@@ -11,6 +11,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"sort"
@@ -818,13 +819,13 @@ type imageBundleArgs struct {
 	fileEntryChan chan<- fileEntry
 	wg            *sync.WaitGroup
 	ciMode        bool
-	registry      string
+	registry      *url.URL
 	image         string
 	tag           string
 	p             *tui.Progress
 }
 
-func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName, registry string, images map[string]string, ciMode bool) (string, error) {
+func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName string, registry *url.URL, images map[string]string, ciMode bool) (string, error) {
 	// Create zip-archive
 	archive, err := os.CreateTemp("", zipName)
 	if err != nil {
@@ -909,14 +910,8 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 	}
 
-	// Parse registry URL
-	url, err := util.NormalizeURL(args.registry)
-	if err != nil {
-		return
-	}
-
 	// Download mainfest.json
-	manifestURL := fmt.Sprintf("%s://%s/v2/%s/manifests/%s", url.Scheme, url.Host, args.image, args.tag)
+	manifestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", args.registry.String(), args.image, args.tag)
 	manifestReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, manifestURL, nil)
 	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
@@ -954,7 +949,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 
 	// Download config.json
 	ImageID := JSONManifest.Config.Digest
-	configURL := fmt.Sprintf("%s://%s/v2/%s/blobs/%s", url.Scheme, url.Host, args.image, ImageID)
+	configURL := fmt.Sprintf("%s/v2/%s/blobs/%s", args.registry.String(), args.image, ImageID)
 	configReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, configURL, nil)
 	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
@@ -987,7 +982,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 
 	// Create image.json
 	imageJSON := ImageJSON{
-		Image: fmt.Sprintf("%s/%s:%s", url.Host, args.image, args.tag),
+		Image: fmt.Sprintf("%s/%s:%s", args.registry.Host, args.image, args.tag),
 	}
 	ibytes, err := json.Marshal(imageJSON)
 	if err != nil {
@@ -1004,7 +999,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		digest := l.Digest
 		g.Go(func() error {
 			f := strings.Replace(digest, "sha256:", "", 1) + ".tar.gz"
-			layerURL := fmt.Sprintf("%s://%s/v2/%s/blobs/%s", url.Scheme, url.Host, args.image, digest)
+			layerURL := fmt.Sprintf("%s://%s/v2/%s/blobs/%s", args.registry.Scheme, args.registry.Host, args.image, digest)
 			layerReq, err := http.NewRequestWithContext(ctx, http.MethodGet, layerURL, nil)
 			if err != nil {
 				return err
