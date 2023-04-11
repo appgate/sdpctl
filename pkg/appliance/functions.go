@@ -891,6 +891,11 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 	return archive.Name(), errs.ErrorOrNil()
 }
 
+// Image bundle should contain the following artifacts:
+// - Manifest (<tag>.json)
+// - Config (<digest>.json)
+// - Repository/Image/Tag (image.json)
+// - Layers (<layer-digest>.tar.gz)
 func downloadDockerImageBundle(args imageBundleArgs) {
 	defer args.wg.Done()
 	headers := map[string]string{
@@ -910,7 +915,8 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 	}
 
-	// Download mainfest.json
+	// Download the image manifest
+	// See https://github.com/distribution/distribution/blob/main/docs/spec/manifest-v2-2.md#image-manifest-field-descriptions
 	manifestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", args.registry.String(), args.image, args.tag)
 	manifestReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, manifestURL, nil)
 	if err != nil {
@@ -941,13 +947,14 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		args.fileEntryChan <- fileEntry{err: err}
 		return
 	}
-	// manifest.json -> <tag>.json
+	// <tag>.json
 	args.fileEntryChan <- fileEntry{
 		path: fmt.Sprintf("%s/%s.json", args.image, args.tag),
 		r:    manifestBuf,
 	}
 
-	// Download config.json
+	// Download the container image configuration
+	// See https://github.com/opencontainers/image-spec/blob/main/config.md
 	ImageID := JSONManifest.Config.Digest
 	configURL := fmt.Sprintf("%s/v2/%s/blobs/%s", args.registry.String(), args.image, ImageID)
 	configReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, configURL, nil)
@@ -974,13 +981,15 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		args.fileEntryChan <- fileEntry{err: err}
 		return
 	}
-	// config.json -> <digest>.json
+	// <digest>.json
 	args.fileEntryChan <- fileEntry{
 		path: fmt.Sprintf("%s/%s.json", args.image, strings.Replace(ImageID, "sha256:", "", 1)),
 		r:    configBuf,
 	}
 
 	// Create image.json
+	// It provides repository/image/tag information for arc
+	// Example: { "image": "lhr-nexus.agi.appgate.com:5001/aitorbot:latest" }
 	imageJSON := ImageJSON{
 		Image: fmt.Sprintf("%s/%s:%s", args.registry.Host, args.image, args.tag),
 	}
@@ -994,6 +1003,9 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		r:    bytes.NewReader(ibytes),
 	}
 
+	// Download .tar.gz file containing the layers of the image
+	// Layers are stored in the blob portion of the registry, keyed by digest
+	// See https://docs.docker.com/registry/spec/api/#pulling-a-layer
 	g, ctx := errgroup.WithContext(args.ctx)
 	for _, l := range JSONManifest.Layers {
 		digest := l.Digest
