@@ -397,7 +397,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0
 
-	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning)
+	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning, logserverbundleupload)
 	if err != nil {
 		return err
 	}
@@ -820,9 +820,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 const prepareUpgradeMessage = `PREPARE SUMMARY
 
-1. Bundle and upload LogServer docker image if needed
+{{ if .DockerBundleDownload }}1. Bundle and upload LogServer docker image
 2. Upload upgrade image {{.Filepath}} to Controller
-3. Prepare upgrade on the following appliances:
+3. Prepare upgrade on the following appliances:{{ else -}}
+
+1. Upload upgrade image {{.Filepath}} to Controller
+2. Prepare upgrade on the following appliances:{{ end }}
 
 {{ .ApplianceTable }}{{ if .SkipTable }}
 
@@ -836,16 +839,18 @@ A partial major or minor controller upgrade is not supported. The upgrade will f
 controllers are prepared for upgrade when running 'upgrade complete'.{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning bool) (string, error) {
+func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning, dockerBundleDownload bool) (string, error) {
 	type stub struct {
 		Filepath                      string
 		ApplianceTable                string
 		SkipTable                     string
 		MultiControllerUpgradeWarning bool
+		DockerBundleDownload          bool
 	}
 	data := stub{
 		Filepath:                      f,
 		MultiControllerUpgradeWarning: multiControllerUpgradeWarning,
+		DockerBundleDownload:          dockerBundleDownload,
 	}
 
 	abuf := &bytes.Buffer{}
