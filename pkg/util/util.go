@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"regexp"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-version"
 	"github.com/spf13/pflag"
 )
 
@@ -95,6 +97,23 @@ func IsValidURL(addr string) bool {
 	return true
 }
 
+func NormalizeURL(u string) (*url.URL, error) {
+	if len(u) <= 0 {
+		return nil, errors.New("no address set")
+	}
+	if r := regexp.MustCompile(`^https?://`); !r.MatchString(u) {
+		u = fmt.Sprintf("https://%s", u)
+	}
+	url, err := url.ParseRequestURI(u)
+	if err != nil {
+		return nil, err
+	}
+	if url.Scheme != "https" {
+		url.Scheme = "https"
+	}
+	return url, nil
+}
+
 func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[string]string) (map[string]map[string]string, []string, bool) {
 	result := defaultFilter
 
@@ -138,4 +157,13 @@ func Reverse[S ~[]T, T any](items S) S {
 		result = append(result, items[i])
 	}
 	return result
+}
+
+func ApplianceVersionString(v *version.Version) string {
+	segments := v.Segments()
+	preString := v.Prerelease()
+	if len(preString) <= 0 {
+		preString = "release"
+	}
+	return fmt.Sprintf("%d.%d.%d-%s-%s", segments[0], segments[1], segments[2], v.Metadata(), preString)
 }

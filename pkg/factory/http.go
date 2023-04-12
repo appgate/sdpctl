@@ -183,7 +183,7 @@ func apiClientFunc(f *Factory) func(c *configuration.Config) (*openapi.APIClient
 			return nil, err
 		}
 
-		cfg.URL, err = configuration.NormalizeURL(cfg.URL)
+		cfg.URL, err = configuration.NormalizeConfigurationURL(cfg.URL)
 		if err != nil {
 			return nil, err
 		}

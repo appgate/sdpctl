@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -34,14 +35,22 @@ import (
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v7"
-	"github.com/vbauerster/mpb/v7/decor"
+)
+
+var (
+	// Set at build time or in environment variables
+	dockerRegistry  string
+	logServerImages map[string]string = map[string]string{
+		"cz-opensearch":           "latest",
+		"cz-opensearchdashboards": "latest",
+	}
 )
 
 type prepareUpgradeOptions struct {
 	Config           *configuration.Config
 	Out              io.Writer
 	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	HTTPClient       func() (*http.Client, error)
 	SpinnerOut       func() io.Writer
 	debug            bool
 	NoInteractive    bool
@@ -56,6 +65,7 @@ type prepareUpgradeOptions struct {
 	ciMode           bool
 	actualHostname   string
 	targetVersion    *version.Version
+	dockerRegistry   *url.URL
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -63,6 +73,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	opts := &prepareUpgradeOptions{
 		Config:     f.Config,
 		Appliance:  f.Appliance,
+		HTTPClient: f.HTTPClient,
 		debug:      f.Config.Debug,
 		Out:        f.IOOutWriter,
 		SpinnerOut: f.GetSpinnerOutput(),
@@ -101,6 +112,28 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if err := checkImageFilename(opts.filename); err != nil {
 				return err
 			}
+
+			// Get the docker registry address
+			var reg string
+			if len(dockerRegistry) > 0 {
+				reg = dockerRegistry
+			}
+			if flagRegistry, err := cmd.Flags().GetString("docker-registry"); err == nil && len(flagRegistry) > 0 {
+				reg = flagRegistry
+			}
+			if envRegistry := os.Getenv("SDPCTL_DOCKER_REGISTRY"); len(envRegistry) > 0 {
+				reg = envRegistry
+			}
+			if len(reg) <= 0 {
+				return errors.New("no docker registry URL found. Please set the 'SDPCTL_DOCKER_REGISTRY' environment variable.")
+			}
+			if opts.dockerRegistry, err = util.NormalizeURL(reg); err != nil {
+				return err
+			}
+			if !util.IsValidURL(opts.dockerRegistry.String()) {
+				return fmt.Errorf("%s is not a valid URL", opts.dockerRegistry)
+			}
+			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 
 			// allow remote addr for image, such as aws s3 bucket
 			if util.IsValidURL(opts.image) {
@@ -169,6 +202,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
+	flags.String("docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
 
 	return prepareCmd
 }
@@ -356,7 +390,14 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
 	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
 
-	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning)
+	// Check if we need to bundle docker image and upload as well
+	constraint62, err := version.NewConstraint(">=6.2-alpha")
+	if err != nil {
+		return err
+	}
+	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0
+
+	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning, logserverbundleupload)
 	if err != nil {
 		return err
 	}
@@ -367,8 +408,98 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	// Step 1
+	uploadWithProgress := func(ctx context.Context, reader io.Reader, name string, size int64, headers map[string]string) error {
+		p := tui.New(ctx, spinnerOut)
+		defer p.Wait()
+		endMsg := "uploaded"
+		proxyReader, t := p.FileUploadProgress(name, endMsg, size, reader)
+		defer proxyReader.Close()
+		go t.Watch([]string{endMsg}, []string{"failed"})
+		log.WithField("file", name).Info("Uploading file")
+		if err = a.UploadFile(ctx, proxyReader, headers); err != nil {
+			t.Fail(err.Error())
+			return err
+		}
+		t.Update(endMsg)
+		return nil
+	}
 
+	// Step 1
+	if logserverbundleupload {
+		// Download image bundle and zip it up
+		client, err := opts.HTTPClient()
+		if err != nil {
+			return err
+		}
+
+		logServerZipName := fmt.Sprintf("logserver-%s.zip", util.ApplianceVersionString(opts.targetVersion))
+		// check if already exists
+		exists := true
+		if _, err := a.FileStatus(ctx, logServerZipName); err != nil {
+			// if we dont get 404, return err
+			if errors.Is(err, appliancepkg.ErrFileNotFound) {
+				exists = false
+			} else {
+				return err
+			}
+		}
+		if !exists {
+			fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
+			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
+			if err != nil {
+				return err
+			}
+			zipFile, err := os.Open(zipPath)
+			if err != nil {
+				return err
+			}
+			defer zipFile.Close()
+
+			pr, pw := io.Pipe()
+			writer := multipart.NewWriter(pw)
+			go func() {
+				defer pw.Close()
+				defer writer.Close()
+
+				part, err := writer.CreateFormFile("file", logServerZipName)
+				if err != nil {
+					log.Warnf("multipart form err %s", err)
+					return
+				}
+
+				size, err := io.Copy(part, zipFile)
+				if err != nil {
+					log.Warnf("copy err %s", err)
+					return
+				}
+				log.WithField("size", size).WithField("zip", logServerZipName).Debug("wrote zip part")
+			}()
+
+			zipInfo, err := zipFile.Stat()
+			if err != nil {
+				return err
+			}
+
+			headers := map[string]string{
+				"Content-Type":        writer.FormDataContentType(),
+				"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
+			}
+			if !opts.ciMode {
+				err = uploadWithProgress(ctx, pr, "uploading "+logServerZipName, zipInfo.Size(), headers)
+			} else {
+				err = a.UploadFile(ctx, pr, headers)
+				fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
+			}
+			if err != nil {
+				return err
+			}
+			os.Remove(zipPath)
+		} else {
+			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
+		}
+	}
+
+	// Step 2
 	shouldUpload := false
 	existingFile, err := a.FileStatus(ctx, opts.filename)
 	if err != nil {
@@ -386,6 +517,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if existingFile.GetStatus() == appliancepkg.FileReady {
 		log.WithField("file", existingFile.GetName()).Info("File already exists, using it as is")
 	}
+
 	if shouldUpload && !opts.remoteImage {
 		imageFile, err := os.Open(opts.image)
 		if err != nil {
@@ -396,47 +528,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		fileStat, err := imageFile.Stat()
 		if err != nil {
 			return err
-		}
-		fileSize := fileStat.Size()
-
-		uploadWithProgress := func(ctx context.Context, reader io.Reader, headers map[string]string) error {
-			uploadProgress := mpb.New(mpb.WithOutput(spinnerOut))
-			defer uploadProgress.Wait()
-			barName := fileStat.Name() + ":"
-			bar := uploadProgress.AddBar(fileSize,
-				mpb.BarWidth(50),
-				mpb.BarFillerOnComplete("uploaded"),
-				mpb.PrependDecorators(
-					decor.Spinner(tui.SpinnerStyle, decor.WC{W: 2}),
-					decor.Name(barName, decor.WC{W: len(barName) + 1}),
-				),
-				mpb.AppendDecorators(
-					decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
-					decor.OnComplete(decor.Name(" | "), ""),
-					decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
-				),
-			)
-			waitSpinner := tui.AddDefaultSpinner(
-				uploadProgress,
-				fileStat.Name(),
-				"waiting for server ok",
-				"upload complete",
-				mpb.BarQueueAfter(bar, false),
-			)
-
-			proxyReader := bar.ProxyReader(reader)
-			defer func() {
-				proxyReader.Close()
-				bar.Wait()
-				waitSpinner.Increment()
-			}()
-
-			log.WithField("file", imageFile.Name()).Info("Uploading file")
-			if err := a.UploadFile(ctx, proxyReader, headers); err != nil {
-				bar.Abort(false)
-				return err
-			}
-			return nil
 		}
 
 		pr, pw := io.Pipe()
@@ -462,9 +553,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
 		}
 
-		fmt.Fprintf(opts.Out, "[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
+		fmt.Fprintf(opts.Out, "\n[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 		if !opts.ciMode {
-			err = uploadWithProgress(ctx, pr, headers)
+			err = uploadWithProgress(ctx, pr, fileStat.Name(), fileStat.Size(), headers)
 		} else {
 			err = a.UploadFile(ctx, pr, headers)
 		}
@@ -487,18 +578,17 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "[%s] The primary Controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 
-		p := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
 		if err := a.UploadToController(ctx, opts.image, opts.filename); err != nil {
 			return err
 		}
-		fileUploadStatus := func(ctx context.Context, controller openapi.Appliance, p *mpb.Progress) error {
+		fileUploadStatus := func(ctx context.Context, controller openapi.Appliance) error {
 			status := ""
-			var uploadProgress *tui.Progress
+			var p *tui.Progress
 			var t *tui.Tracker
 			if !opts.ciMode {
-				uploadProgress = tui.New(ctx, spinnerOut)
-				defer uploadProgress.Wait()
-				t = uploadProgress.AddTracker(controller.GetName(), "uploaded")
+				p = tui.New(ctx, spinnerOut)
+				defer p.Wait()
+				t = p.AddTracker(controller.GetName(), "waiting", "uploaded")
 				go t.Watch([]string{appliancepkg.FileReady}, []string{appliancepkg.FileFailed})
 			}
 			for status != appliancepkg.FileReady {
@@ -524,14 +614,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		fileStatusCtx, fileStatusCancel := context.WithTimeout(ctx, opts.timeout)
 		defer fileStatusCancel()
-		if err := fileUploadStatus(fileStatusCtx, *primaryController, p); err != nil {
+		if err := fileUploadStatus(fileStatusCtx, *primaryController); err != nil {
 			return err
 		}
-
-		p.Wait()
 	}
 
-	// Step 2
+	// Step 3
 	primaryControllerHostname, ok := primaryController.GetHostnameOk()
 	if !ok || primaryControllerHostname == nil {
 		return errors.New("failed to fetch configured hostname for primary controller")
@@ -606,7 +694,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			unwantedStatus := []string{appliancepkg.UpgradeStatusFailed}
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = updateProgressBars.AddTracker(appliance.GetName(), appliancepkg.UpgradeStatusReady)
+				t = updateProgressBars.AddTracker(appliance.GetName(), "waiting", appliancepkg.UpgradeStatusReady)
 				go t.Watch(prepareReady, unwantedStatus)
 			}
 
@@ -731,8 +819,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 const prepareUpgradeMessage = `PREPARE SUMMARY
 
+{{ if .DockerBundleDownload }}1. Bundle and upload LogServer docker image
+2. Upload upgrade image {{.Filepath}} to Controller
+3. Prepare upgrade on the following appliances:{{ else -}}
+
 1. Upload upgrade image {{.Filepath}} to Controller
-2. Prepare upgrade on the following appliances:
+2. Prepare upgrade on the following appliances:{{ end }}
 
 {{ .ApplianceTable }}{{ if .SkipTable }}
 
@@ -746,16 +838,18 @@ A partial major or minor controller upgrade is not supported. The upgrade will f
 controllers are prepared for upgrade when running 'upgrade complete'.{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning bool) (string, error) {
+func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning, dockerBundleDownload bool) (string, error) {
 	type stub struct {
 		Filepath                      string
 		ApplianceTable                string
 		SkipTable                     string
 		MultiControllerUpgradeWarning bool
+		DockerBundleDownload          bool
 	}
 	data := stub{
 		Filepath:                      f,
 		MultiControllerUpgradeWarning: multiControllerUpgradeWarning,
+		DockerBundleDownload:          dockerBundleDownload,
 	}
 
 	abuf := &bytes.Buffer{}

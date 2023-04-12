@@ -541,7 +541,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if !opts.ciMode {
 				primaryControllerBars = tui.New(ctx, spinnerOut)
 				defer primaryControllerBars.Wait()
-				t = primaryControllerBars.AddTracker(controller.GetName(), "upgraded")
+				t = primaryControllerBars.AddTracker(controller.GetName(), "waiting", "upgraded")
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
 
@@ -601,7 +601,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				logEntry.Info("checking if ready")
 				var t *tui.Tracker
 				if !opts.ciMode {
-					t = p.AddTracker(i.GetName(), "upgraded")
+					t = p.AddTracker(i.GetName(), "waiting", "upgraded")
 					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 				}
 				if !util.InSlice(i.GetName(), toReboot) {
@@ -715,7 +715,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 			var t *tui.Tracker
 			if !opts.ciMode && p != nil {
-				t = p.AddTracker(controller.GetName(), "upgraded")
+				t = p.AddTracker(controller.GetName(), "waiting", "upgraded")
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
 			err := backoff.Retry(func() error {

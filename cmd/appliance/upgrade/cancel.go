@@ -164,7 +164,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 		for _, appliance := range appliances {
 			var t *tui.Tracker
 			if !opts.ciMode {
-				t = bars.AddTracker(appliance.GetName(), "cancelled")
+				t = bars.AddTracker(appliance.GetName(), "waiting", "cancelled")
 				go t.Watch(appliancepkg.StatusNotBusy, undesiredStatus)
 			}
 			qs := queueStruct{

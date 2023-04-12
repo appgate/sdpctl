@@ -194,6 +194,9 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 		return api.HTTPErrorResponse(response, err)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusNoContent {
+		return api.HTTPErrorResponse(response, err)
+	}
 	return nil
 }
 

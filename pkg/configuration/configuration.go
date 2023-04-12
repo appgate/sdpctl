@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -128,19 +127,13 @@ func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {
 
 var ErrNoAddr = errors.New("No valid address set, run 'sdpctl configure' or set SDPCTL_URL")
 
-func NormalizeURL(u string) (string, error) {
+func NormalizeConfigurationURL(u string) (string, error) {
 	if len(u) <= 0 {
 		return "", ErrNoAddr
 	}
-	if r := regexp.MustCompile(`^https?://`); !r.MatchString(u) {
-		u = fmt.Sprintf("https://%s", u)
-	}
-	url, err := url.ParseRequestURI(u)
+	url, err := util.NormalizeURL(u)
 	if err != nil {
 		return "", err
-	}
-	if url.Scheme != "https" {
-		url.Scheme = "https"
 	}
 	if len(url.Port()) <= 0 {
 		url.Host = fmt.Sprintf("%s:%d", url.Hostname(), 8443)

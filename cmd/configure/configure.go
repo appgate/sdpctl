@@ -92,7 +92,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		}
 		viper.Set("pem_filepath", opts.PEM)
 	}
-	u, err := configuration.NormalizeURL(opts.URL)
+	u, err := configuration.NormalizeConfigurationURL(opts.URL)
 	if err != nil {
 		return fmt.Errorf("Could not determine URL for %s %s", opts.URL, err)
 	}

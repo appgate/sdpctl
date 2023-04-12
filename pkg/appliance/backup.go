@@ -293,7 +293,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 
 	for _, a := range toBackup {
-		t := progressBars.AddTracker(a.GetName(), "download complete")
+		t := progressBars.AddTracker(a.GetName(), "waiting", "download complete")
 		go t.Watch([]string{"download complete"}, []string{backup.Failure})
 		go func(appliance openapi.Appliance, tracker *tui.Tracker) {
 			defer wg.Done()

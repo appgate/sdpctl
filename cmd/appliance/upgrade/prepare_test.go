@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"testing"
@@ -56,7 +57,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 }
 
 func TestUpgradePrepareCommand(t *testing.T) {
-
+	os.Setenv("SDPCTL_DOCKER_REGISTRY", "https://localhost:5001")
 	tests := []struct {
 		name                string
 		cli                 string
@@ -645,6 +646,7 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 		skip                          []appliancepkg.SkipUpgrade
 		stats                         []openapi.StatsAppliancesListAllOfData
 		multiControllerUpgradeWarning bool
+		dockerBundleDownload          bool
 	}
 	tests := []struct {
 		name    string
@@ -850,14 +852,79 @@ A partial major or minor controller upgrade is not supported. The upgrade will f
 controllers are prepared for upgrade when running 'upgrade complete'.
 `,
 		},
+		{
+			name: "prepare >=6.2 appliance with log server",
+			args: args{
+				f:                    "appgate-6.2.0-89012-release.img.zip",
+				dockerBundleDownload: true,
+				appliance: []openapi.Appliance{
+					{
+						Id:   openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name: "controller1",
+					},
+					{
+						Id:   openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name: "controller2",
+					},
+					{
+						Id:   openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name: "gateway",
+					},
+					{
+						Id:   openapi.PtrString("3ab2caf1-2a6a-4e2c-a848-268d402492a1"),
+						Name: "logserver",
+					},
+				},
+				stats: []openapi.StatsAppliancesListAllOfData{
+					{
+						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:    openapi.PtrString("controller1"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("6.1.0+56789"),
+					},
+					{
+						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:    openapi.PtrString("controller2"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("6.1.0+56789"),
+					},
+					{
+						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:    openapi.PtrString("gateway"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("6.1.0+56789"),
+					},
+					{
+						Id:      openapi.PtrString("3ab2caf1-2a6a-4e2c-a848-268d402492a1"),
+						Name:    openapi.PtrString("logserver"),
+						Online:  openapi.PtrBool(true),
+						Version: openapi.PtrString("6.1.0+56789"),
+					},
+				},
+			},
+			want: `PREPARE SUMMARY
+
+1. Bundle and upload LogServer docker image
+2. Upload upgrade image appgate-6.2.0-89012-release.img.zip to Controller
+3. Prepare upgrade on the following appliances:
+
+  Appliance      Online    Current version    Prepare version
+  ---------      ------    ---------------    ---------------
+  controller1    ✓         6.1.0+56789        6.2.0+89012
+  controller2    ✓         6.1.0+56789        6.2.0+89012
+  gateway        ✓         6.1.0+56789        6.2.0+89012
+  logserver      ✓         6.1.0+56789        6.2.0+89012
+
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			prepareVersion, err := appliancepkg.ParseVersionString("6.0.0-29426-release.img.zip")
+			prepareVersion, err := appliancepkg.ParseVersionString(tt.args.f)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
-			got, err := showPrepareUpgradeMessage(tt.args.f, prepareVersion, tt.args.appliance, tt.args.skip, tt.args.stats, tt.args.multiControllerUpgradeWarning)
+			got, err := showPrepareUpgradeMessage(tt.args.f, prepareVersion, tt.args.appliance, tt.args.skip, tt.args.stats, tt.args.multiControllerUpgradeWarning, tt.args.dockerBundleDownload)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("showPrepareUpgradeMessage() error = %v, wantErr %v", err, tt.wantErr)
 				return

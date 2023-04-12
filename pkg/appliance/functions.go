@@ -1,22 +1,35 @@
 package appliance
 
 import (
+	"archive/zip"
 	"bytes"
+	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
+	"net/http"
+	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/network"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
+	"github.com/vbauerster/mpb/v7"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -775,4 +788,263 @@ func PrettyBytes(v float64) string {
 		v /= 1024.0
 	}
 	return fmt.Sprintf("%.2fYB", v)
+}
+
+type ManifestConfig struct {
+	MediaType string
+	Size      int
+	Digest    string
+}
+type DockerManifest struct {
+	SchemaVersion int
+	MediaType     string
+	Config        ManifestConfig
+	Layers        []ManifestConfig
+}
+
+type ImageJSON struct {
+	Image string `json:"image"`
+}
+
+type fileEntry struct {
+	r    io.Reader
+	path string
+	err  error
+}
+
+type imageBundleArgs struct {
+	ctx           context.Context
+	out           io.Writer
+	client        *http.Client
+	fileEntryChan chan<- fileEntry
+	wg            *sync.WaitGroup
+	ciMode        bool
+	registry      *url.URL
+	image         string
+	tag           string
+	p             *tui.Progress
+}
+
+func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName string, registry *url.URL, images map[string]string, ciMode bool) (string, error) {
+	// Create zip-archive
+	archive, err := os.CreateTemp("", zipName)
+	if err != nil {
+		return "", err
+	}
+	defer archive.Close()
+	zipWriter := zip.NewWriter(archive)
+	defer zipWriter.Close()
+
+	log.Info("downloading image layers for ", zipName)
+	var p *tui.Progress
+	if !ciMode {
+		p = tui.New(ctx, out)
+		defer p.Wait()
+	}
+	fileEntryChan := make(chan fileEntry)
+	var wg sync.WaitGroup
+	wg.Add(len(images))
+	for image, tag := range images {
+		go func(image, tag string) {
+			args := imageBundleArgs{
+				ctx:           ctx,
+				out:           out,
+				client:        client,
+				ciMode:        ciMode,
+				registry:      registry,
+				image:         image,
+				tag:           tag,
+				p:             p,
+				fileEntryChan: fileEntryChan,
+				wg:            &wg,
+			}
+			downloadDockerImageBundle(args)
+		}(image, tag)
+	}
+
+	go func(wg *sync.WaitGroup, ch chan fileEntry) {
+		wg.Wait()
+		close(ch)
+	}(&wg, fileEntryChan)
+
+	var errs *multierror.Error
+	for v := range fileEntryChan {
+		if v.err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		fb, err := zipWriter.Create(v.path)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		size, err := io.Copy(fb, v.r)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		log.WithField("path", v.path).WithField("size", size).Debug("wrote layer")
+	}
+	log.Info("docker layers downloaded")
+
+	return archive.Name(), errs.ErrorOrNil()
+}
+
+// Image bundle should contain the following artifacts:
+// - Manifest (<tag>.json)
+// - Config (<digest>.json)
+// - Repository/Image/Tag (image.json)
+// - Layers (<layer-digest>.tar.gz)
+func downloadDockerImageBundle(args imageBundleArgs) {
+	defer args.wg.Done()
+	headers := map[string]string{
+		"Accept":       "application/vnd.docker.distribution.manifest.v2+json",
+		"Content-Type": "application/json",
+	}
+	var username, password string
+	if u := os.Getenv("SDPCTL_DOCKER_REGISTRY_USERNAME"); len(u) > 0 {
+		username = u
+	}
+	if p := os.Getenv("SDPCTL_DOCKER_REGISTRY_PASSWORD"); len(p) > 0 {
+		password = p
+	}
+	// use basic auth if username and password is set
+	if len(username) > 0 && len(password) > 0 {
+		auth := username + ":" + password
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+	}
+
+	// Download the image manifest
+	// See https://github.com/distribution/distribution/blob/main/docs/spec/manifest-v2-2.md#image-manifest-field-descriptions
+	manifestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", args.registry.String(), args.image, args.tag)
+	manifestReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, manifestURL, nil)
+	if err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
+	for k, v := range headers {
+		manifestReq.Header.Set(k, v)
+	}
+	manifestRes, err := args.client.Do(manifestReq)
+	if err != nil || manifestRes == nil {
+		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		return
+	}
+	if manifestRes.StatusCode != http.StatusOK {
+		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		return
+	}
+	defer manifestRes.Body.Close()
+
+	manifestBuf := &bytes.Buffer{}
+	if _, err := io.Copy(manifestBuf, manifestRes.Body); err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
+	JSONManifest := DockerManifest{}
+	if err := json.Unmarshal(manifestBuf.Bytes(), &JSONManifest); err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
+	// <tag>.json
+	args.fileEntryChan <- fileEntry{
+		path: fmt.Sprintf("%s/%s.json", args.image, args.tag),
+		r:    manifestBuf,
+	}
+
+	// Download the container image configuration
+	// See https://github.com/opencontainers/image-spec/blob/main/config.md
+	ImageID := JSONManifest.Config.Digest
+	configURL := fmt.Sprintf("%s/v2/%s/blobs/%s", args.registry.String(), args.image, ImageID)
+	configReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, configURL, nil)
+	if err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
+	for k, v := range headers {
+		configReq.Header.Set(k, v)
+	}
+	configRes, err := args.client.Do(configReq)
+	if err != nil || configRes == nil {
+		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		return
+	}
+	if configRes.StatusCode != http.StatusOK {
+		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		return
+	}
+	defer configRes.Body.Close()
+
+	configBuf := &bytes.Buffer{}
+	if _, err := io.Copy(configBuf, configRes.Body); err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
+	// <digest>.json
+	args.fileEntryChan <- fileEntry{
+		path: fmt.Sprintf("%s/%s.json", args.image, strings.Replace(ImageID, "sha256:", "", 1)),
+		r:    configBuf,
+	}
+
+	// Create image.json
+	// It provides repository/image/tag information for arc
+	// Example: { "image": "docker-registry-url:5001/aitorbot:latest" }
+	imageJSON := ImageJSON{
+		Image: fmt.Sprintf("%s/%s:%s", args.registry.Host, args.image, args.tag),
+	}
+	ibytes, err := json.Marshal(imageJSON)
+	if err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
+	args.fileEntryChan <- fileEntry{
+		path: fmt.Sprintf("%s/image.json", args.image),
+		r:    bytes.NewReader(ibytes),
+	}
+
+	// Download .tar.gz file containing the layers of the image
+	// Layers are stored in the blob portion of the registry, keyed by digest
+	// See https://docs.docker.com/registry/spec/api/#pulling-a-layer
+	g, ctx := errgroup.WithContext(args.ctx)
+	for _, l := range JSONManifest.Layers {
+		digest := l.Digest
+		g.Go(func() error {
+			f := strings.Replace(digest, "sha256:", "", 1) + ".tar.gz"
+			layerURL := fmt.Sprintf("%s://%s/v2/%s/blobs/%s", args.registry.Scheme, args.registry.Host, args.image, digest)
+			layerReq, err := http.NewRequestWithContext(ctx, http.MethodGet, layerURL, nil)
+			if err != nil {
+				return err
+			}
+			layerRes, err := args.client.Do(layerReq)
+			if err != nil || layerRes == nil {
+				return api.HTTPErrorResponse(layerRes, err)
+			}
+			if layerRes.StatusCode != http.StatusOK {
+				return api.HTTPErrorResponse(layerRes, err)
+			}
+			defer layerRes.Body.Close()
+
+			bodyReader := layerRes.Body
+			if args.p != nil {
+				size := layerRes.ContentLength
+				bodyReader = args.p.FileDownloadProgress("downloading "+f[0:11], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
+			}
+
+			layerName := fmt.Sprintf("%s/%s", args.image, f)
+			buf := &bytes.Buffer{}
+			if _, err := io.Copy(buf, bodyReader); err != nil {
+				return err
+			}
+			args.fileEntryChan <- fileEntry{
+				path: layerName,
+				r:    buf,
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+	}
 }
