@@ -989,7 +989,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 
 	// Create image.json
 	// It provides repository/image/tag information for arc
-	// Example: { "image": "lhr-nexus.agi.appgate.com:5001/aitorbot:latest" }
+	// Example: { "image": "docker-registry-url:5001/aitorbot:latest" }
 	imageJSON := ImageJSON{
 		Image: fmt.Sprintf("%s/%s:%s", args.registry.Host, args.image, args.tag),
 	}
