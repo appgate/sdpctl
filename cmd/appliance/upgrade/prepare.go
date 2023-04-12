@@ -494,7 +494,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return err
 			}
 			os.Remove(zipPath)
-			fmt.Fprintln(opts.Out)
 		} else {
 			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
 		}
@@ -554,7 +553,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
 		}
 
-		fmt.Fprintf(opts.Out, "[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
+		fmt.Fprintf(opts.Out, "\n[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 		if !opts.ciMode {
 			err = uploadWithProgress(ctx, pr, fileStat.Name(), fileStat.Size(), headers)
 		} else {
