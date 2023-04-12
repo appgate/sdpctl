@@ -413,6 +413,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		defer p.Wait()
 		endMsg := "uploaded"
 		proxyReader, t := p.FileUploadProgress(name, endMsg, size, reader)
+		defer proxyReader.Close()
 		go t.Watch([]string{endMsg}, []string{"failed"})
 		log.WithField("file", name).Info("Uploading file")
 		if err = a.UploadFile(ctx, proxyReader, headers); err != nil {

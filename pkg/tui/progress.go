@@ -57,7 +57,7 @@ func (p *Progress) AddTracker(name, state, endMsg string, opts ...mpb.BarOption)
 	return &t
 }
 
-func (p *Progress) FileUploadProgress(name, endMsg string, size int64, reader io.Reader) (io.Reader, *Tracker) {
+func (p *Progress) FileUploadProgress(name, endMsg string, size int64, reader io.Reader) (io.ReadCloser, *Tracker) {
 	bar := p.pc.AddBar(
 		size,
 		mpb.BarWidth(50),
