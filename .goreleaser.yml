@@ -1,11 +1,13 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 project_name: sdpctl
+env:
+  - SNAPSHOT_VERSION={{ .Now.Format "2006.01.02" }}
 before:
   hooks:
   - make clean
   - make deps
 snapshot:
-  name_template: "dev-{{ .Date }}"
+  name_template: "{{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}{{ else }}{{ .Tag }}{{ end }}"
 changelog:
   skip: true
 github_urls:
@@ -17,7 +19,7 @@ builds:
       binary: "{{ .ProjectName }}"
       main: ./main.go
       ldflags:
-        - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .Tag }}{{ .Tag }}{{ else }}dev{{ end }}"
+        - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}-dev{{ else }}{{ .Version }}{{ end }}"
         - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
         - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
         - -X "github.com/appgate/sdpctl/cmd/appliance/upgrade.dockerRegistry={{ .Env.DOCKER_REGISTRY_URL }}"
