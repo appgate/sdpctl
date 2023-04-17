@@ -12,6 +12,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/serviceusers"
 	"github.com/appgate/sdpctl/pkg/token"
+	"golang.org/x/net/http/httpproxy"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
@@ -83,6 +84,15 @@ func (f *Factory) GetSpinnerOutput() func() io.Writer {
 	}
 }
 
+var proxyFunc func(*url.URL) (*url.URL, error)
+
+func proxyFromEnvironment(req *http.Request) (*url.URL, error) {
+	if proxyFunc == nil {
+		proxyFunc = httpproxy.FromEnvironment().ProxyFunc()
+	}
+	return proxyFunc(req.URL)
+}
+
 func httpTransport(f *Factory) func() (*http.Transport, error) {
 	return func() (*http.Transport, error) {
 		cfg := f.Config
@@ -104,14 +114,9 @@ func httpTransport(f *Factory) func() (*http.Transport, error) {
 				InsecureSkipVerify: cfg.Insecure,
 				RootCAs:            rootCAs,
 			},
+			Proxy: proxyFromEnvironment,
 		}
-		if key, ok := os.LookupEnv("HTTP_PROXY"); ok {
-			proxyURL, err := url.Parse(key)
-			if err != nil {
-				return nil, err
-			}
-			tr.Proxy = http.ProxyURL(proxyURL)
-		}
+
 		return tr, nil
 	}
 }

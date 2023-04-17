@@ -105,7 +105,20 @@ Available Variables:
   SDPCTL_DOCKER_REGISTRY:
     Description: Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.
   HTTP_PROXY:
-    Description: HTTP Proxy for the client
+    Description: It will be used as the proxy URL for HTTP requests unless overridden by NoProxy.
+  HTTPS_PROXY:
+    Description: It will be used as the proxy URL for HTTPS requests unless overridden by NoProxy.
+  NO_PROXY:
+    Description: It specifies a string that contains comma-separated values specifying hosts that should be excluded from proxying.
+	Each value is represented by an IP address prefix (1.2.3.4), an IP address prefix in
+	CIDR notation (1.2.3.4/8), a domain name, or a special DNS label (*).
+	An IP address prefix and domain name can also include a literal port
+	number (1.2.3.4:80).
+	A domain name matches that name and all subdomains. A domain name with
+	a leading "." matches subdomains only. For example "foo.com" matches
+	"foo.com" and "bar.foo.com"; ".y.com" matches "x.y.com" but not "y.com".
+	A single asterisk (*) indicates that no proxying should be done.
+	A best effort is made to parse the string and errors are ignored.
 
 Example Usage:
   SDPCTL_USERNAME=admin \
