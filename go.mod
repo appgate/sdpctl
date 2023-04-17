@@ -8,7 +8,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/appgate/sdp-api-client-go v1.0.7-0.20221219085725-a0b12df05f42
 	github.com/billgraziano/dpapi v0.4.0
-	github.com/cenkalti/backoff/v4 v4.2.0
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cheynewallace/tabby v1.1.1
 	github.com/creack/pty v1.1.18
 	github.com/denisbrodbeck/machineid v1.0.1
