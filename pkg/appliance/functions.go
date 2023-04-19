@@ -870,7 +870,7 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 	var errs *multierror.Error
 	for v := range fileEntryChan {
 		if v.err != nil {
-			errs = multierror.Append(errs, err)
+			errs = multierror.Append(errs, v.err)
 			continue
 		}
 		fb, err := zipWriter.Create(v.path)
@@ -932,7 +932,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		return
 	}
 	if manifestRes.StatusCode != http.StatusOK {
-		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, errors.New(manifestRes.Status))}
 		return
 	}
 	defer manifestRes.Body.Close()
@@ -971,7 +971,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		return
 	}
 	if configRes.StatusCode != http.StatusOK {
-		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, errors.New(configRes.Status))}
 		return
 	}
 	defer configRes.Body.Close()
@@ -1021,7 +1021,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 				return api.HTTPErrorResponse(layerRes, err)
 			}
 			if layerRes.StatusCode != http.StatusOK {
-				return api.HTTPErrorResponse(layerRes, err)
+				return api.HTTPErrorResponse(layerRes, errors.New(layerRes.Status))
 			}
 			defer layerRes.Body.Close()
 
