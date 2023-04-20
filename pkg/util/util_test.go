@@ -1,8 +1,11 @@
 package util
 
 import (
+	"os"
 	"reflect"
 	"testing"
+
+	"github.com/hashicorp/go-version"
 )
 
 func TestIsValidURL(t *testing.T) {
@@ -147,6 +150,51 @@ func TestSearchSlice(t *testing.T) {
 			}
 			if got := SearchSlice(tt.args.needle, tt.args.haystack, tt.args.caseInsensitive); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SearchSlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDockerTagVersion(t *testing.T) {
+	tests := []struct {
+		name string
+		env  string
+		v    string
+		want string
+	}{
+		{
+			name: "version 6.2.0",
+			v:    "6.2.0",
+			want: "6.2",
+		},
+		{
+			name: "version 6.2.1",
+			v:    "6.2.1",
+			want: "6.2",
+		},
+		{
+			name: "version 6.0.0",
+			v:    "6.0.0",
+			want: "6.0",
+		},
+		{
+			name: "override with env variable",
+			v:    "6.2.1",
+			env:  "latest",
+			want: "latest",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			v, err := version.NewVersion(tt.v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(tt.env) > 0 {
+				os.Setenv("SDPCTL_DOCKER_TAG", tt.env)
+			}
+			if got := DockerTagVersion(v); got != tt.want {
+				t.Errorf("DockerTagVersion() = %v, want %v", got, tt.want)
 			}
 		})
 	}
