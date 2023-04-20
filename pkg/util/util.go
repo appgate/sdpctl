@@ -168,11 +168,14 @@ func ApplianceVersionString(v *version.Version) string {
 	return fmt.Sprintf("%d.%d.%d-%s-%s", segments[0], segments[1], segments[2], v.Metadata(), preString)
 }
 
-func DockerTagVersion(v *version.Version) string {
+func DockerTagVersion(v *version.Version) (string, error) {
 	if envTag := os.Getenv("SDPCTL_DOCKER_TAG"); len(envTag) > 0 {
-		return envTag
+		return envTag, nil
+	}
+	if v == nil {
+		return "", errors.New("DockerTagVersion() - version is nil")
 	}
 	segments := v.Segments()
 	tagVersion := fmt.Sprintf("%d.%d", segments[0], segments[1])
-	return tagVersion
+	return tagVersion, nil
 }

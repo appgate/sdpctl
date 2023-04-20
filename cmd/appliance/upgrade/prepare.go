@@ -440,7 +440,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 		}
 		if !exists {
-			tagVersion := util.DockerTagVersion(opts.targetVersion)
+			tagVersion, err := util.DockerTagVersion(opts.targetVersion)
+			if err != nil {
+				return err
+			}
 			logServerImages := map[string]string{
 				"cz-opensearch":           tagVersion,
 				"cz-opensearchdashboards": tagVersion,

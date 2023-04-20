@@ -1,7 +1,6 @@
 package util
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
@@ -157,10 +156,11 @@ func TestSearchSlice(t *testing.T) {
 
 func TestDockerTagVersion(t *testing.T) {
 	tests := []struct {
-		name string
-		env  string
-		v    string
-		want string
+		name    string
+		env     string
+		v       string
+		want    string
+		wantErr bool
 	}{
 		{
 			name: "version 6.2.0",
@@ -183,15 +183,27 @@ func TestDockerTagVersion(t *testing.T) {
 			env:  "latest",
 			want: "latest",
 		},
+		{
+			name:    "version is nil",
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v, err := version.NewVersion(tt.v)
-			if err != nil {
-				t.Fatal(err)
+			var v *version.Version
+			var err error
+			if len(tt.v) > 0 {
+				v, err = version.NewVersion(tt.v)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 			t.Setenv("SDPCTL_DOCKER_TAG", tt.env)
-			if got := DockerTagVersion(v); got != tt.want {
+			got, err := DockerTagVersion(v)
+			if err != nil && !tt.wantErr {
+				t.Errorf("DockerTagVersion() = %v, want no err", err)
+			}
+			if got != tt.want {
 				t.Errorf("DockerTagVersion() = %v, want %v", got, tt.want)
 			}
 		})
