@@ -39,11 +39,7 @@ import (
 
 var (
 	// Set at build time or in environment variables
-	dockerRegistry  string
-	logServerImages map[string]string = map[string]string{
-		"cz-opensearch":           "latest",
-		"cz-opensearchdashboards": "latest",
-	}
+	dockerRegistry string
 )
 
 type prepareUpgradeOptions struct {
@@ -66,6 +62,7 @@ type prepareUpgradeOptions struct {
 	actualHostname   string
 	targetVersion    *version.Version
 	dockerRegistry   *url.URL
+	dockerTag        string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -134,6 +131,10 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("%s is not a valid URL", opts.dockerRegistry)
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
+
+			if envTag := os.Getenv("SDPCTL_DOCKER_TAG"); len(envTag) > 0 {
+				opts.dockerTag = envTag
+			}
 
 			// allow remote addr for image, such as aws s3 bucket
 			if util.IsValidURL(opts.image) {
@@ -444,6 +445,19 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 		}
 		if !exists {
+			segments := opts.targetVersion.Segments()
+			tagVersion := fmt.Sprintf("%d.%d", segments[0], segments[1])
+			if segments[2] > 0 {
+				tagVersion += fmt.Sprintf(".%d", segments[2])
+			}
+			if len(opts.dockerTag) > 0 {
+				tagVersion = opts.dockerTag
+			}
+			logServerImages := map[string]string{
+				"cz-opensearch":           tagVersion,
+				"cz-opensearchdashboards": tagVersion,
+			}
+
 			fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
 			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 			if err != nil {
