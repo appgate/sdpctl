@@ -190,9 +190,7 @@ func TestDockerTagVersion(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(tt.env) > 0 {
-				os.Setenv("SDPCTL_DOCKER_TAG", tt.env)
-			}
+			t.Setenv("SDPCTL_DOCKER_TAG", tt.env)
 			if got := DockerTagVersion(v); got != tt.want {
 				t.Errorf("DockerTagVersion() = %v, want %v", got, tt.want)
 			}
