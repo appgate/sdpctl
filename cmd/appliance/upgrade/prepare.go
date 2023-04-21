@@ -39,11 +39,7 @@ import (
 
 var (
 	// Set at build time or in environment variables
-	dockerRegistry  string
-	logServerImages map[string]string = map[string]string{
-		"cz-opensearch":           "latest",
-		"cz-opensearchdashboards": "latest",
-	}
+	dockerRegistry string
 )
 
 type prepareUpgradeOptions struct {
@@ -444,6 +440,15 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 		}
 		if !exists {
+			tagVersion, err := util.DockerTagVersion(opts.targetVersion)
+			if err != nil {
+				return err
+			}
+			logServerImages := map[string]string{
+				"cz-opensearch":           tagVersion,
+				"cz-opensearchdashboards": tagVersion,
+			}
+
 			fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
 			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 			if err != nil {

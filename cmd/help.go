@@ -104,6 +104,8 @@ Available Variables:
     Options: true, false
   SDPCTL_DOCKER_REGISTRY:
     Description: Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.
+  SDPCTL_DOCKER_TAG:
+    Description: Manually set a tag which will be used to try to pull downloadable docker images.
   HTTP_PROXY:
     Description: It will be used as the proxy URL for HTTP requests unless overridden by NoProxy.
   HTTPS_PROXY:
