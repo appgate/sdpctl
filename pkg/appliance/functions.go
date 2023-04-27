@@ -902,6 +902,30 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		"Accept":       "application/vnd.docker.distribution.manifest.v2+json",
 		"Content-Type": "application/json",
 	}
+
+	// Get the public token if public ECR registry is used
+	if args.registry.Host == "public.ecr.aws" {
+		type ecrToken struct {
+			Token string
+		}
+		res, err := args.client.Get("https://public.ecr.aws/token/")
+		if err != nil {
+			args.fileEntryChan <- fileEntry{err: err}
+			return
+		}
+		defer res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %s", res.Status)}
+			return
+		}
+		var token ecrToken
+		if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
+			args.fileEntryChan <- fileEntry{err: err}
+			return
+		}
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", token.Token)
+	}
+
 	var username, password string
 	if u := os.Getenv("SDPCTL_DOCKER_REGISTRY_USERNAME"); len(u) > 0 {
 		username = u
@@ -917,7 +941,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 
 	// Download the image manifest
 	// See https://github.com/distribution/distribution/blob/main/docs/spec/manifest-v2-2.md#image-manifest-field-descriptions
-	manifestURL := fmt.Sprintf("%s/v2/%s/manifests/%s", args.registry.String(), args.image, args.tag)
+	manifestURL := fmt.Sprintf("%s/%s/manifests/%s", args.registry.String(), args.image, args.tag)
 	manifestReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, manifestURL, nil)
 	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
@@ -956,7 +980,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	// Download the container image configuration
 	// See https://github.com/opencontainers/image-spec/blob/main/config.md
 	ImageID := JSONManifest.Config.Digest
-	configURL := fmt.Sprintf("%s/v2/%s/blobs/%s", args.registry.String(), args.image, ImageID)
+	configURL := fmt.Sprintf("%s/%s/blobs/%s", args.registry.String(), args.image, ImageID)
 	configReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, configURL, nil)
 	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
@@ -1011,10 +1035,13 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		digest := l.Digest
 		g.Go(func() error {
 			f := strings.Replace(digest, "sha256:", "", 1) + ".tar.gz"
-			layerURL := fmt.Sprintf("%s://%s/v2/%s/blobs/%s", args.registry.Scheme, args.registry.Host, args.image, digest)
+			layerURL := fmt.Sprintf("%s/%s/blobs/%s", args.registry.String(), args.image, digest)
 			layerReq, err := http.NewRequestWithContext(ctx, http.MethodGet, layerURL, nil)
 			if err != nil {
 				return err
+			}
+			for k, v := range headers {
+				layerReq.Header.Set(k, v)
 			}
 			layerRes, err := args.client.Do(layerReq)
 			if err != nil || layerRes == nil {
