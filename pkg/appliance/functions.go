@@ -908,7 +908,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		type ecrToken struct {
 			Token string
 		}
-		res, err := args.client.Get("https://public.ecr.aws/token/")
+		res, err := args.client.Get(fmt.Sprintf("https://public.ecr.aws/token/?scope=repository:appgate-sdp/%s:pull&service=public.ecr.aws", args.image))
 		if err != nil {
 			args.fileEntryChan <- fileEntry{err: err}
 			return
