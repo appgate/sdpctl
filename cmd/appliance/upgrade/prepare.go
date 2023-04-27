@@ -132,7 +132,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			}
 			if !strings.HasPrefix(opts.dockerRegistry.Path, "/v2") {
 				// add 'v2' to path if it doesn't exist
-				opts.dockerRegistry.Path = "/v2"
+				opts.dockerRegistry.Path = "/v2" + opts.dockerRegistry.Path
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 
