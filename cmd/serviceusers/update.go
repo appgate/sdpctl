@@ -3,6 +3,7 @@ package serviceusers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -88,11 +90,33 @@ func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		dto.Labels = toUpdate.GetLabels()
 		dto.Tags = toUpdate.GetTags()
 
+		var value string
+		argv := strings.Split(arg, "=")
+		if len(argv) > 1 {
+			arg = argv[0]
+			value = argv[1]
+		}
+
 		switch arg {
 		case "passphrase", "password":
-			dto.Password = args[2]
+			hasStdin := false
+			stat, err := os.Stdin.Stat()
+			if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				hasStdin = true
+			}
+			password, err := prompt.GetPassphrase(opts.In, false, hasStdin, "")
+			if err != nil {
+				return errors.New("You need to provide passphrase through stdin")
+			}
+			dto.Password = password
 		case "name", "username":
-			dto.Name = args[2]
+			if len(value) > 0 {
+				dto.Name = value
+			} else if len(args) == 3 {
+				dto.Name = args[2]
+			} else {
+				return fmt.Errorf("no value for argument %s", arg)
+			}
 		case "disable", "lock":
 			dto.Disabled = true
 		case "enable", "unlock":
