@@ -218,6 +218,8 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.PanicLevel)
 		case "fatal":
 			log.SetLevel(log.FatalLevel)
+		case "warn", "warning":
+			log.SetLevel(log.WarnLevel)
 		case "info":
 			log.SetLevel(log.InfoLevel)
 		case "debug":
