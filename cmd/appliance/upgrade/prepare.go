@@ -13,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -129,10 +128,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			}
 			if !util.IsValidURL(opts.dockerRegistry.String()) {
 				return fmt.Errorf("%s is not a valid URL", opts.dockerRegistry)
-			}
-			if !strings.HasPrefix(opts.dockerRegistry.Path, "/v2") {
-				// add 'v2' to path if it doesn't exist
-				opts.dockerRegistry.Path = "/v2" + opts.dockerRegistry.Path
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 
