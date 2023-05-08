@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
-	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/tui"
@@ -886,7 +885,6 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 		}
 		log.WithField("path", v.path).WithField("size", size).Debug("wrote layer")
 	}
-	log.Info("docker layers downloaded")
 
 	return archive.Name(), errs.ErrorOrNil()
 }
@@ -910,12 +908,12 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		}
 		res, err := args.client.Get(fmt.Sprintf("https://public.ecr.aws/token/?scope=repository:appgate-sdp/%s:pull&service=public.ecr.aws", args.image))
 		if err != nil {
-			args.fileEntryChan <- fileEntry{err: err}
+			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %w", err)}
 			return
 		}
 		defer res.Body.Close()
 		if res.StatusCode != http.StatusOK {
-			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %s", res.Status)}
+			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %s", res.Request.URL)}
 			return
 		}
 		var token ecrToken
@@ -952,11 +950,11 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	}
 	manifestRes, err := args.client.Do(manifestReq)
 	if err != nil || manifestRes == nil {
-		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image manifest: %w", err)}
 		return
 	}
 	if manifestRes.StatusCode != http.StatusOK {
-		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, errors.New(manifestRes.Status))}
+		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image manifest: %s - %s", manifestURL, manifestRes.Status)}
 		return
 	}
 	defer manifestRes.Body.Close()
@@ -991,11 +989,11 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	}
 	configRes, err := args.client.Do(configReq)
 	if err != nil || configRes == nil {
-		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, err)}
+		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image config: %w", err)}
 		return
 	}
 	if configRes.StatusCode != http.StatusOK {
-		args.fileEntryChan <- fileEntry{err: api.HTTPErrorResponse(manifestRes, errors.New(configRes.Status))}
+		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image config: %s - %s", configURL, configRes.Status)}
 		return
 	}
 	defer configRes.Body.Close()
@@ -1045,10 +1043,10 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 			}
 			layerRes, err := args.client.Do(layerReq)
 			if err != nil || layerRes == nil {
-				return api.HTTPErrorResponse(layerRes, err)
+				return fmt.Errorf("failed to fetch image layer: %w", err)
 			}
 			if layerRes.StatusCode != http.StatusOK {
-				return api.HTTPErrorResponse(layerRes, errors.New(layerRes.Status))
+				return fmt.Errorf("failed to fetch image layer: %s - %s", layerRes.Request.URL, layerRes.Status)
 			}
 			defer layerRes.Body.Close()
 
