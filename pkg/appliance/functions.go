@@ -939,7 +939,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 
 	// Download the image manifest
 	// See https://github.com/distribution/distribution/blob/main/docs/spec/manifest-v2-2.md#image-manifest-field-descriptions
-	manifestURL := fmt.Sprintf("%s/%s/manifests/%s", args.registry.String(), args.image, args.tag)
+	manifestURL := fmt.Sprintf("%s://%s%s/%s/manifests/%s", args.registry.Scheme, args.registry.Host, prependString(args.registry.Path, "/v2"), args.image, args.tag)
 	manifestReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, manifestURL, nil)
 	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
@@ -978,7 +978,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	// Download the container image configuration
 	// See https://github.com/opencontainers/image-spec/blob/main/config.md
 	ImageID := JSONManifest.Config.Digest
-	configURL := fmt.Sprintf("%s/%s/blobs/%s", args.registry.String(), args.image, ImageID)
+	configURL := fmt.Sprintf("%s://%s%s/%s/blobs/%s", args.registry.Scheme, args.registry.Host, prependString(args.registry.Path, "/v2"), args.image, ImageID)
 	configReq, err := http.NewRequestWithContext(args.ctx, http.MethodGet, configURL, nil)
 	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
@@ -1013,7 +1013,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	// It provides repository/image/tag information for arc
 	// Example: { "image": "docker-registry-url:5001/aitorbot:latest" }
 	imageJSON := ImageJSON{
-		Image: fmt.Sprintf("%s/%s:%s", args.registry.Host, args.image, args.tag),
+		Image: fmt.Sprintf("%s%s/%s:%s", args.registry.Host, args.registry.Path, args.image, args.tag),
 	}
 	ibytes, err := json.Marshal(imageJSON)
 	if err != nil {
@@ -1033,7 +1033,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		digest := l.Digest
 		g.Go(func() error {
 			f := strings.Replace(digest, "sha256:", "", 1) + ".tar.gz"
-			layerURL := fmt.Sprintf("%s/%s/blobs/%s", args.registry.String(), args.image, digest)
+			layerURL := fmt.Sprintf("%s://%s%s/%s/blobs/%s", args.registry.Scheme, args.registry.Host, prependString(args.registry.Path, "/v2"), args.image, digest)
 			layerReq, err := http.NewRequestWithContext(ctx, http.MethodGet, layerURL, nil)
 			if err != nil {
 				return err
@@ -1072,4 +1072,11 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	if err := g.Wait(); err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
 	}
+}
+
+func prependString(s, pre string) string {
+	if !strings.HasPrefix(s, pre) {
+		return pre + s
+	}
+	return s
 }
