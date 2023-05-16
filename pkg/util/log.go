@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,7 +32,8 @@ func NewHook(protocol, address string, levels []logrus.Level, version int) *Hook
 	}
 
 	fields := logrus.Fields{
-		"@version": fmt.Sprint(version),
+		"@version": fmt.Sprint(version), // API version used
+		"@key":     uuid.New(),          // This will be unique for every command being run
 	}
 
 	return &Hook{
