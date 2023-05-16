@@ -13,6 +13,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -392,6 +393,21 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0
+
+	upgradeNames := []string{}
+	skipNames := []string{}
+	for _, app := range appliances {
+		upgradeNames = append(upgradeNames, app.GetName())
+	}
+	for _, app := range skipAppliances {
+		skipNames = append(upgradeNames, app.Appliance.GetName())
+	}
+	log.WithFields(log.Fields{
+		"upgrading": strings.Join(upgradeNames, ", "),
+		"skipping":  strings.Join(skipNames, ", "),
+		"target_version": opts.targetVersion,
+		"current_version": currentPrimaryControllerVersion,
+	}).Info("upgrade information")
 
 	msg, err := showPrepareUpgradeMessage(opts.filename, opts.targetVersion, appliances, skipAppliances, initialStats.GetData(), ctrlUpgradeWarning, logserverbundleupload)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
 
@@ -178,4 +179,17 @@ func DockerTagVersion(v *version.Version) (string, error) {
 	segments := v.Segments()
 	tagVersion := fmt.Sprintf("%d.%d", segments[0], segments[1])
 	return tagVersion, nil
+}
+
+func AddSocketLogHook(path string, version int) error {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if stat.Mode().Type() != os.ModeSocket {
+		return fmt.Errorf("upgrade prepare failed: %s is not a unix domain socket", path)
+	}
+	hook := NewHook("unix", path, log.AllLevels, version)
+	log.AddHook(hook)
+	return nil
 }

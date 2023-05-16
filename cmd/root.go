@@ -119,6 +119,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "Don't verify TLS on for the given command, overriding settings from config file")
 	pFlags.Bool("no-interactive", false, "Suppress interactive prompt with auto accept")
 	pFlags.Bool("ci-mode", false, "Log to stderr instead of file and disable progress-bars")
+	pFlags.String("event-path", "", "")
 
 	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
 	// in Execute() because we need to parse it first before the others to be able
@@ -183,15 +184,18 @@ func Execute() cmdutil.ExitCode {
 // logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
 // if no TTY is available, stdout will be used
 func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config) io.Writer {
+	if v, err := cmd.Flags().GetString("event-path"); err == nil && len(v) > 0 {
+		if err := util.AddSocketLogHook(v, cfg.Version); err != nil {
+			log.WithError(err).Error("failed to initialize event-path")
+		}
+	}
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: time.RFC3339,
 		PadLevelText:    true,
 	})
-	if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
-		return f.StdErr
-	}
-	if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
+	noTTY := !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr)
+	if v, err := cmd.Flags().GetBool("ci-mode"); (err == nil && v) || noTTY {
 		return f.StdErr
 	}
 

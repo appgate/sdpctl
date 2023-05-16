@@ -93,6 +93,12 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 			}
 			opts.ciMode = ciModeFlag
 
+			if ep, err := cmd.Flags().GetString("event-path"); err == nil && len(ep) > 0 {
+				if err := util.AddSocketLogHook(ep, opts.Config.Version); err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
