@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -47,6 +48,9 @@ func compareOptions(expected, got []string) error {
 	}
 	return nil
 }
+
+var ErrNoPrompt = errors.New("No prompt stub")
+
 func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 	t.Helper()
 
@@ -85,7 +89,7 @@ func InitAskStubber(t *testing.T) (*AskStubber, func()) {
 			}
 		}
 		if stub == nil {
-			return fmt.Errorf("No prompt stub for %q", message)
+			return fmt.Errorf("%w for %q", ErrNoPrompt, message)
 		}
 
 		if len(stub.options) > 0 {
