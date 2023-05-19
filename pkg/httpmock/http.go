@@ -73,6 +73,9 @@ type Stub struct {
 	Responder http.HandlerFunc
 }
 
+func (r *Registry) RegisterStub(stub Stub) {
+	r.stubs = append(r.stubs, &stub)
+}
 func (r *Registry) Register(url string, resp http.HandlerFunc) {
 	r.stubs = append(r.stubs, &Stub{
 		URL:       url,
