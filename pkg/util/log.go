@@ -1,9 +1,9 @@
 package util
 
 import (
-	"fmt"
+	"io"
 	"net"
-	"time"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -23,19 +23,13 @@ var (
 		logrus.FieldKeyLevel: "@level",
 		logrus.FieldKeyMsg:   "message",
 	}
+	fields = logrus.Fields{
+		"@key": uuid.New(), // This will be unique for every command being run
+	}
 )
 
-func NewHook(protocol, address string, levels []logrus.Level, version int) *Hook {
-	formatter := &logrus.JSONFormatter{
-		FieldMap:        fieldMap,
-		TimestampFormat: time.RFC3339,
-	}
-
-	fields := logrus.Fields{
-		"@version": fmt.Sprint(version), // API version used
-		"@key":     uuid.New(),          // This will be unique for every command being run
-	}
-
+func NewHook(protocol, address string, levels []logrus.Level, formatter logrus.Formatter) *Hook {
+	logrus.New()
 	return &Hook{
 		formatter: formatter,
 		fields:    fields,
@@ -59,13 +53,21 @@ func (h *Hook) Fire(entry *logrus.Entry) error {
 		return err
 	}
 
-	conn, err := net.Dial(h.protocol, h.address)
-	if err != nil {
-		return err
+	var w io.WriteCloser
+	if h.protocol != "file" {
+		w, err = net.Dial(h.protocol, h.address)
+		if err != nil {
+			return err
+		}
+	} else {
+		w, err = os.OpenFile(h.address, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+		if err != nil {
+			return err
+		}
 	}
-	defer conn.Close()
+	defer w.Close()
 
-	_, err = conn.Write(bytes)
+	_, err = w.Write(bytes)
 	if err != nil {
 		return err
 	}

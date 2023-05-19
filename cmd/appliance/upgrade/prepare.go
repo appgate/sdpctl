@@ -384,8 +384,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return err
 	}
 
-	log.Infof("The primary Controller is: %s and running %s", primaryController.GetName(), currentPrimaryControllerVersion.String())
-	log.Infof("Appliances will be prepared for upgrade to version: %s", opts.targetVersion.String())
+	log.WithFields(log.Fields{
+		"primary-controller": primaryController.GetName(),
+		"version":            currentPrimaryControllerVersion.String(),
+		"target-version":     opts.targetVersion.String(),
+	}).Debug("upgrade version information")
 
 	// Check if we need to bundle docker image and upload as well
 	constraint62, err := version.NewConstraint(">=6.2-alpha")
@@ -403,9 +406,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		skipNames = append(upgradeNames, app.Appliance.GetName())
 	}
 	log.WithFields(log.Fields{
-		"upgrading": strings.Join(upgradeNames, ", "),
-		"skipping":  strings.Join(skipNames, ", "),
-		"target_version": opts.targetVersion,
+		"upgrading":       strings.Join(upgradeNames, ", "),
+		"skipping":        strings.Join(skipNames, ", "),
+		"target_version":  opts.targetVersion,
 		"current_version": currentPrimaryControllerVersion,
 	}).Info("upgrade information")
 
@@ -427,7 +430,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		proxyReader, t := p.FileUploadProgress(name, endMsg, size, reader)
 		defer proxyReader.Close()
 		go t.Watch([]string{endMsg}, []string{"failed"})
-		log.WithField("file", name).Info("Uploading file")
 		if err = a.UploadFile(ctx, proxyReader, headers); err != nil {
 			t.Fail(err.Error())
 			return err
@@ -759,7 +761,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						queueContinue <- queueStruct{err: err}
 						return err
 					}
-					log.Infof("prepare image change %s %s %s", c.GetResult(), c.GetStatus(), c.GetDetails())
+					log.WithFields(log.Fields{
+						"result":    c.GetResult(),
+						"status":    c.GetStatus(),
+						"details":   c.GetDetails(),
+						"appliance": qs.appliance.GetName(),
+					}).Info("prepare image change")
 					unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {
@@ -835,6 +842,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		log.Infof("File %s deleted from the Controller", opts.filename)
 	}
 	fmt.Fprintf(opts.Out, "\n[%s] PREPARE COMPLETE\n", time.Now().Format(time.RFC3339))
+	log.Info("prepare complete")
 	return nil
 }
 

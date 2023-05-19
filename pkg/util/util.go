@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
@@ -181,7 +182,7 @@ func DockerTagVersion(v *version.Version) (string, error) {
 	return tagVersion, nil
 }
 
-func AddSocketLogHook(path string, version int) error {
+func AddSocketLogHook(path string) error {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -189,7 +190,20 @@ func AddSocketLogHook(path string, version int) error {
 	if stat.Mode().Type() != os.ModeSocket {
 		return fmt.Errorf("upgrade prepare failed: %s is not a unix domain socket", path)
 	}
-	hook := NewHook("unix", path, log.AllLevels, version)
+	formatter := &log.JSONFormatter{
+		FieldMap:        fieldMap,
+		TimestampFormat: time.RFC3339,
+	}
+	hook := NewHook("unix", path, log.AllLevels, formatter)
+	log.AddHook(hook)
+	return nil
+}
+
+func AddFileHook(path string) error {
+	if _, err := os.Stat(path); err != nil {
+		return err
+	}
+	hook := NewHook("file", path, log.AllLevels, nil)
 	log.AddHook(hook)
 	return nil
 }

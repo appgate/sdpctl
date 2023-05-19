@@ -119,7 +119,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "Don't verify TLS on for the given command, overriding settings from config file")
 	pFlags.Bool("no-interactive", false, "Suppress interactive prompt with auto accept")
 	pFlags.Bool("ci-mode", false, "Log to stderr instead of file and disable progress-bars")
-	pFlags.String("event-path", "", "")
+	pFlags.String("events-path", "", "")
 
 	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
 	// in Execute() because we need to parse it first before the others to be able
@@ -184,9 +184,9 @@ func Execute() cmdutil.ExitCode {
 // logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
 // if no TTY is available, stdout will be used
 func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config) io.Writer {
-	if v, err := cmd.Flags().GetString("event-path"); err == nil && len(v) > 0 {
-		if err := util.AddSocketLogHook(v, cfg.Version); err != nil {
-			log.WithError(err).Error("failed to initialize event-path")
+	if v, err := cmd.Flags().GetString("events-path"); err == nil && len(v) > 0 {
+		if err := util.AddSocketLogHook(v); err != nil {
+			log.WithError(err).Error("failed to initialize events-path")
 		}
 	}
 	log.SetFormatter(&log.TextFormatter{
@@ -210,11 +210,6 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 
 func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-
-		if value, err := cmd.Flags().GetBool("no-interactive"); err == nil && value {
-			f.DisablePrompt(value)
-		}
-
 		logLevel := strings.ToLower(util.Getenv("SDPCTL_LOG_LEVEL", "info"))
 
 		switch logLevel {
@@ -257,9 +252,12 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
 				return err
 			}
-			log.Info("Output is not TTY. Using no-interactive and ci-mode")
+			log.Debug("Output is not TTY. Using no-interactive and ci-mode")
 		}
 
+		if value, err := cmd.Flags().GetBool("no-interactive"); err == nil {
+			f.DisablePrompt(value)
+		}
 		if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
 			f.SetSpinnerOutput(io.Discard)
 		}
