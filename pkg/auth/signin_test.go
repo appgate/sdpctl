@@ -172,6 +172,7 @@ func TestSignProviderSelection(t *testing.T) {
 		environmentVariables map[string]string
 		httpStubs            []httpmock.Stub
 		wantErr              bool
+		disablePrompt        bool
 		provider             *string
 	}{
 		{
@@ -218,6 +219,35 @@ func TestSignProviderSelection(t *testing.T) {
 				as.StubPrompt("Choose a provider:").AnswerWith("local")
 			},
 		},
+		{
+			name: "test with no provider set no prompt",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
+			},
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderMultipleNames,
+			},
+			wantErr:       true,
+			provider:      nil,
+			disablePrompt: true,
+		},
+		{
+			name: "test with provider and no prompt",
+			environmentVariables: map[string]string{
+				"SDPCTL_USERNAME": "bob",
+				"SDPCTL_PASSWORD": "alice",
+			},
+			httpStubs: []httpmock.Stub{
+				authenticationResponse,
+				identityProviderMultipleNames,
+				authorizationGET,
+			},
+			wantErr:       false,
+			provider:      openapi.PtrString("local"),
+			disablePrompt: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -227,25 +257,6 @@ func TestSignProviderSelection(t *testing.T) {
 			}
 			defer registry.Teardown()
 			registry.Serve()
-			f := &factory.Factory{
-				Config: &configuration.Config{
-					Debug:    false,
-					URL:      "http://localhost",
-					Provider: tt.provider,
-				},
-				IOOutWriter: os.Stdout,
-				Stdin:       os.Stdin,
-				StdErr:      os.Stderr,
-			}
-			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
-				return registry.Client, nil
-			}
-
-			for k, v := range tt.environmentVariables {
-				t.Setenv(k, v)
-			}
-			dir := t.TempDir()
-			t.Setenv("SDPCTL_CONFIG_DIR", dir)
 
 			pty, tty, err := pseudotty.Open()
 			if err != nil {
@@ -258,6 +269,30 @@ func TestSignProviderSelection(t *testing.T) {
 			}
 
 			defer c.Close()
+
+			f := &factory.Factory{
+				Config: &configuration.Config{
+					Debug:    false,
+					URL:      "http://localhost",
+					Provider: tt.provider,
+				},
+				IOOutWriter: tty,
+				Stdin:       pty,
+				StdErr:      pty,
+			}
+			if tt.disablePrompt {
+				f.DisablePrompt(true)
+			}
+			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
+				return registry.Client, nil
+			}
+
+			for k, v := range tt.environmentVariables {
+				t.Setenv(k, v)
+			}
+			dir := t.TempDir()
+			t.Setenv("SDPCTL_CONFIG_DIR", dir)
+
 			stubber, teardown := prompt.InitAskStubber(t)
 			defer teardown()
 			if tt.askStubs != nil {
@@ -265,6 +300,9 @@ func TestSignProviderSelection(t *testing.T) {
 				tt.askStubs = nil
 			}
 			if err := Signin(f); (err != nil) != tt.wantErr {
+				if errors.Is(err, prompt.ErrNoPrompt) && tt.disablePrompt {
+					t.Fatalf("got prompt for test %q has disabledPrompt %s", tt.name, err)
+				}
 				t.Fatal(err)
 			}
 			configFile := filepath.Join(dir, "config.json")
@@ -284,7 +322,10 @@ func TestSignInNoPromptOrEnv(t *testing.T) {
 		Stdin:       os.Stdin,
 		StdErr:      os.Stderr,
 	}
+	f.DisablePrompt(true)
 	registry := httpmock.NewRegistry(t)
+	registry.RegisterStub(identityProviderMultipleNames)
+	registry.RegisterStub(unauthorizedResponse)
 	defer registry.Teardown()
 	registry.Serve()
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
