@@ -1,11 +1,13 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
 
@@ -16,9 +18,8 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/keyring"
-	"github.com/appgate/sdpctl/pkg/util"
-
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	pseudotty "github.com/creack/pty"
 	"github.com/hinshun/vt10x"
 	zkeyring "github.com/zalando/go-keyring"
@@ -161,6 +162,64 @@ var (
                     "expires": "2019-08-24T14:15:22Z",
                     "messageOfTheDay": "Welcome to Appgate SDP."
                   }`))
+			}
+		}}
+	authorizationGETNeedOTP = httpmock.Stub{
+		URL: "/authorization",
+		Responder: func(rw http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodGet {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusPreconditionFailed)
+				fmt.Fprint(rw, string(`{
+					"id": "precondition failed",
+					"message": "Administrative authorization requires two-factor authentication.",
+					"otpRequired": true,
+					"username": "bob@appgate.com"
+				}`))
+			}
+		}}
+
+	authorizationInitAlreadySeeded = httpmock.Stub{
+		URL: "/authentication/otp/initialize",
+		Responder: func(rw http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				fmt.Fprint(rw, string(`{
+					"inputType": "Numeric",
+					"type": "AlreadySeeded"
+				}`))
+			}
+		}}
+	authorizationOtpAccepted = httpmock.Stub{
+		URL: "/authentication/otp",
+		Responder: func(rw http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				fmt.Fprint(rw, string(`{
+					"user": {
+						"name": "admin",
+						"needTwoFactorAuth": false,
+						"canAccessAuditLogs": false,
+						"privileges": []
+					},
+					"token": "newToken",
+					"expires": "2022-02-01T15:07:04.451882Z"
+				}`))
+			}
+		}}
+	authorizationOtpDenied = httpmock.Stub{
+		URL: "/authentication/otp",
+		Responder: func(rw http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprint(rw, string(`{
+					"failureType": "Mfa",
+					"id": "unauthorized",
+					"message": "Invalid one-time password. Please make sure the time on your device is correct."
+				}`))
 			}
 		}}
 )
@@ -520,38 +579,8 @@ func TestSignin(t *testing.T) {
 						}
 					},
 				},
-				{
-					URL: "/authentication/otp/initialize",
-					Responder: func(rw http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodPost {
-							rw.Header().Set("Content-Type", "application/json")
-							rw.WriteHeader(http.StatusOK)
-							fmt.Fprint(rw, string(`{
-		                        "inputType": "Numeric",
-		                        "type": "AlreadySeeded"
-		                    }`))
-						}
-					},
-				},
-				{
-					URL: "/authentication/otp",
-					Responder: func(rw http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodPost {
-							rw.Header().Set("Content-Type", "application/json")
-							rw.WriteHeader(http.StatusOK)
-							fmt.Fprint(rw, string(`{
-		                        "user": {
-		                            "name": "admin",
-		                            "needTwoFactorAuth": false,
-		                            "canAccessAuditLogs": false,
-		                            "privileges": []
-		                        },
-		                        "token": "newToken",
-		                        "expires": "2022-02-01T15:07:04.451882Z"
-		                    }`))
-						}
-					},
-				},
+				authorizationInitAlreadySeeded,
+				authorizationOtpAccepted,
 			},
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubPrompt("Username:").AnswerWith("bob")
@@ -648,6 +677,100 @@ func TestSignin(t *testing.T) {
 			}
 			if err := c.Tty().Close(); err != nil {
 				t.Errorf("error closing Tty: %v", err)
+			}
+		})
+	}
+}
+
+func TestAuthAndOTP(t *testing.T) {
+	type args struct {
+		ctx      context.Context
+		password *string
+		token    string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		want       *string
+		wantErr    bool
+		httpStubs  []httpmock.Stub
+		askStubs   func(*prompt.AskStubber)
+		wantErrOut *regexp.Regexp
+	}{
+		{
+			name: "auth interactive OTP",
+			args: args{
+				ctx: context.Background(),
+			},
+			httpStubs: []httpmock.Stub{
+				authorizationGETNeedOTP,
+				authorizationInitAlreadySeeded,
+				authorizationOtpAccepted,
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubPrompt("Please enter your one-time password:").AnswerWith("12345")
+			},
+			wantErr: false,
+			want:    openapi.PtrString("Bearer newToken"),
+		},
+		{
+			name: "auth interactive OTP wrong OTPs",
+			args: args{
+				ctx: context.Background(),
+			},
+			httpStubs: []httpmock.Stub{
+				authorizationGETNeedOTP,
+				authorizationInitAlreadySeeded,
+				authorizationOtpDenied,
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubPrompt("Please enter your one-time password:").AnswerWith("99999")
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`OTP required`),
+			want:       nil,
+		},
+		{
+			name: "auth no interactive supported",
+			args: args{
+				ctx: context.WithValue(context.Background(), contextKeyCanPrompt, false),
+			},
+			httpStubs: []httpmock.Stub{
+				authorizationGETNeedOTP,
+			},
+			wantErr:    true,
+			want:       nil,
+			wantErrOut: regexp.MustCompile(`authentication requires one-time-password, but a TTY prompt is not allowed, can't continue`),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			registry := httpmock.NewRegistry(t)
+			for _, v := range tt.httpStubs {
+				registry.Register(v.URL, v.Responder)
+			}
+			defer registry.Teardown()
+			registry.Serve()
+			authenticator := NewAuth(registry.Client)
+			stubber, teardown := prompt.InitAskStubber(t)
+			defer teardown()
+			if tt.askStubs != nil {
+				tt.askStubs(stubber)
+				tt.askStubs = nil
+			}
+
+			got, err := authAndOTP(tt.args.ctx, authenticator, tt.args.password, tt.args.token)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("authAndOTP() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err != nil && tt.wantErrOut != nil {
+				if !tt.wantErrOut.MatchString(err.Error()) {
+					t.Errorf("want %s got %s", tt.wantErrOut, err.Error())
+				}
+			}
+			if tt.want != nil && *got != *tt.want {
+				t.Errorf("authAndOTP() = %v, want %v", *got, *tt.want)
 			}
 		})
 	}

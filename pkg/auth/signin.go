@@ -261,13 +261,15 @@ func Signin(f *factory.Factory) error {
 	return nil
 }
 
+var ErrCantPromptOTP = errors.New("authentication requires one-time-password, but a TTY prompt is not allowed, can't continue")
+
 // authAndOTP returns the authorized bearer header value and prompt user for OTP if its required
 func authAndOTP(ctx context.Context, authenticator *Auth, password *string, token string) (*string, error) {
 	authToken := fmt.Sprintf("Bearer %s", token)
 	_, err := authenticator.Authorization(ctx, authToken)
 	if errors.Is(err, ErrPreConditionFailed) {
 		if v, ok := ctx.Value(contextKeyCanPrompt).(bool); ok && !v {
-			return nil, errors.New("authentication requires one-time-password, but a TTY prompt is not allowed, can't continue")
+			return nil, ErrCantPromptOTP
 		}
 		otp, err := authenticator.InitializeOTP(ctx, password, authToken)
 		if err != nil {
