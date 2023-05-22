@@ -161,11 +161,12 @@ func Reverse[S ~[]T, T any](items S) S {
 
 func ApplianceVersionString(v *version.Version) string {
 	segments := v.Segments()
+	res := fmt.Sprintf("%d.%d.%d-%s", segments[0], segments[1], segments[2], v.Metadata())
 	preString := v.Prerelease()
-	if len(preString) <= 0 {
-		preString = "release"
+	if len(preString) > 0 {
+		res = res + "-" + preString
 	}
-	return fmt.Sprintf("%d.%d.%d-%s-%s", segments[0], segments[1], segments[2], v.Metadata(), preString)
+	return res
 }
 
 func DockerTagVersion(v *version.Version) (string, error) {
