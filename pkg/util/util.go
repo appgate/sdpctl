@@ -188,22 +188,13 @@ func AddSocketLogHook(path string) error {
 		return err
 	}
 	if stat.Mode().Type() != os.ModeSocket {
-		return fmt.Errorf("upgrade prepare failed: %s is not a unix domain socket", path)
+		return fmt.Errorf("%s is not a unix domain socket", path)
 	}
 	formatter := &log.JSONFormatter{
 		FieldMap:        fieldMap,
 		TimestampFormat: time.RFC3339,
 	}
 	hook := NewHook("unix", path, log.AllLevels, formatter)
-	log.AddHook(hook)
-	return nil
-}
-
-func AddFileHook(path string) error {
-	if _, err := os.Stat(path); err != nil {
-		return err
-	}
-	hook := NewHook("file", path, log.AllLevels, nil)
 	log.AddHook(hook)
 	return nil
 }
