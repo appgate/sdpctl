@@ -194,7 +194,10 @@ func AddSocketLogHook(path string) error {
 		FieldMap:        fieldMap,
 		TimestampFormat: time.RFC3339,
 	}
-	hook := NewHook("unix", path, log.AllLevels, formatter)
+	hook, err := NewHook("unix", path, log.AllLevels, formatter)
+	if err != nil {
+		return err
+	}
 	log.AddHook(hook)
 	return nil
 }

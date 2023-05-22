@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+	"io"
 	"net"
 
 	"github.com/google/uuid"
@@ -11,8 +13,7 @@ type Hook struct {
 	formatter logrus.Formatter
 	levels    []logrus.Level
 	fields    logrus.Fields
-	protocol  string
-	address   string
+	writer    io.Writer
 }
 
 var (
@@ -26,18 +27,25 @@ var (
 	}
 )
 
-func NewHook(protocol, address string, levels []logrus.Level, formatter logrus.Formatter) *Hook {
-	logrus.New()
+func NewHook(protocol, address string, levels []logrus.Level, formatter logrus.Formatter) (*Hook, error) {
+	w, err := net.Dial(protocol, address)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Hook{
+		writer:    w,
 		formatter: formatter,
 		fields:    fields,
-		protocol:  protocol,
-		address:   address,
 		levels:    levels,
-	}
+	}, nil
 }
 
 func (h *Hook) Fire(entry *logrus.Entry) error {
+	if h.writer == nil {
+		return fmt.Errorf("no socket connection present")
+	}
+
 	for k, v := range h.fields {
 		if _, ok := h.fields[k]; !ok {
 			h.fields[k] = v
@@ -51,13 +59,7 @@ func (h *Hook) Fire(entry *logrus.Entry) error {
 		return err
 	}
 
-	w, err := net.Dial(h.protocol, h.address)
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-
-	_, err = w.Write(bytes)
+	_, err = h.writer.Write(bytes)
 	if err != nil {
 		return err
 	}
