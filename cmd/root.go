@@ -119,7 +119,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "Don't verify TLS on for the given command, overriding settings from config file")
 	pFlags.Bool("no-interactive", false, "Suppress interactive prompt with auto accept")
 	pFlags.Bool("ci-mode", false, "Log to stderr instead of file and disable progress-bars")
-	pFlags.String("events-path", "", "")
+	pFlags.String("events-path", "", "send logs to unix domain socket path")
 
 	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
 	// in Execute() because we need to parse it first before the others to be able
