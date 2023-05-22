@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"net"
 	"net/http"
@@ -41,6 +42,7 @@ type Registry struct {
 	Requests []*http.Request
 	stubs    []*Stub
 	mu       sync.Mutex
+	notFound []string
 }
 
 func NewRegistry(t *testing.T) *Registry {
@@ -57,11 +59,14 @@ func NewRegistry(t *testing.T) *Registry {
 	}
 	os.Setenv("SDPCTL_BEARER", "header-token-value")
 	t.Cleanup(func() {
+		t.Helper()
 		for _, s := range r.stubs {
 			if !s.matched {
-				t.Helper()
 				t.Errorf("URL %s was registered but never used", s.URL)
 			}
+		}
+		for _, notFound := range r.notFound {
+			t.Logf("%s was not registered, but requested", notFound)
 		}
 	})
 	return r
@@ -73,6 +78,9 @@ type Stub struct {
 	Responder http.HandlerFunc
 }
 
+func (r *Registry) RegisterStub(stub Stub) {
+	r.stubs = append(r.stubs, &stub)
+}
 func (r *Registry) Register(url string, resp http.HandlerFunc) {
 	r.stubs = append(r.stubs, &Stub{
 		URL:       url,
@@ -96,6 +104,13 @@ func (r *Registry) Serve() {
 	for _, stub := range r.stubs {
 		r.Mux.Handle(stub.URL, r.middlewareOne(stub.Responder))
 	}
+	r.Mux.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/" {
+			rw.WriteHeader(http.StatusNotFound)
+			r.notFound = append(r.notFound, req.Method+" "+html.EscapeString(req.URL.Path))
+			return
+		}
+	})
 }
 
 func setup() (*openapi.APIClient, *openapi.Configuration, *http.ServeMux, *httptest.Server, int, func()) {

@@ -86,6 +86,10 @@ var KeyringWarningMessage = "[warning] Could not integrate with system keyring. 
 
 var ErrSignInNotSupported = errors.New("No TTY present, and missing required environment variables to authenticate")
 
+type authContext string
+
+var contextKeyCanPrompt = authContext("canPrompt")
+
 // Signin support interactive signin if a valid TTY is present, otherwise it requires environment variables to authenticate,
 // this is only supported by 'local' auth provider
 // If OTP is required, a prompt will appear and await user input
@@ -114,7 +118,9 @@ func Signin(f *factory.Factory) error {
 	}
 
 	authenticator := NewAuth(client)
-	ctx := context.Background()
+
+	ctx := context.WithValue(context.Background(), contextKeyCanPrompt, f.CanPrompt())
+
 	acceptHeaderFormatString := "application/vnd.appgate.peer-v%d+json"
 
 	bearer, err := cfg.GetBearTokenHeaderValue()
@@ -128,11 +134,7 @@ func Signin(f *factory.Factory) error {
 			return nil
 		}
 	}
-	if !f.CanPrompt() {
-		if !hasRequiredEnv() {
-			return ErrSignInNotSupported
-		}
-	}
+
 	minMax, err := GetMinMaxAPIVersion(f)
 	if err != nil {
 		return err
@@ -157,7 +159,18 @@ func Signin(f *factory.Factory) error {
 		providerNames = append(providerNames, p.GetName())
 	}
 
-	if len(providers) > 1 && len(loginOpts.ProviderName) == 0 {
+	promptProvider := len(providers) > 1 && len(loginOpts.ProviderName) == 0
+
+	if !f.CanPrompt() {
+		if !hasRequiredEnv() {
+			return ErrSignInNotSupported
+		}
+		if promptProvider {
+			return fmt.Errorf("multiple providers available, but no TTY is present, set environment variable SDPCTL_PROVIDER")
+		}
+	}
+
+	if promptProvider {
 		qs := &survey.Select{
 			Message: "Choose a provider:",
 			Options: providerNames,
@@ -190,6 +203,7 @@ func Signin(f *factory.Factory) error {
 	if err != nil {
 		return err
 	}
+
 	newToken, err := authAndOTP(ctxWithAccept, authenticator, response.LoginOpts.Password, response.Token)
 	if err != nil {
 		return err
@@ -247,11 +261,16 @@ func Signin(f *factory.Factory) error {
 	return nil
 }
 
+var ErrCantPromptOTP = errors.New("authentication requires one-time-password, but a TTY prompt is not allowed, can't continue")
+
 // authAndOTP returns the authorized bearer header value and prompt user for OTP if its required
 func authAndOTP(ctx context.Context, authenticator *Auth, password *string, token string) (*string, error) {
 	authToken := fmt.Sprintf("Bearer %s", token)
 	_, err := authenticator.Authorization(ctx, authToken)
 	if errors.Is(err, ErrPreConditionFailed) {
+		if v, ok := ctx.Value(contextKeyCanPrompt).(bool); ok && !v {
+			return nil, ErrCantPromptOTP
+		}
 		otp, err := authenticator.InitializeOTP(ctx, password, authToken)
 		if err != nil {
 			return nil, err
