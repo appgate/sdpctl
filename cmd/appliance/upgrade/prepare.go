@@ -511,6 +511,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return err
 			}
 			os.Remove(zipPath)
+			defer func() {
+				if err := a.DeleteFile(ctx, logServerZipName); err != nil {
+					log.WithField("file", logServerZipName).WithError(err).Warning("failed to delete file from repository")
+				}
+			}()
 		} else {
 			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
 		}
