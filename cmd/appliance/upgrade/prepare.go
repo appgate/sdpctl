@@ -385,11 +385,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}).Debug("upgrade version information")
 
 	// Check if we need to bundle docker image and upload as well
-	constraint62, err := version.NewConstraint(">=6.2-alpha")
+	v62, err := version.NewVersion("6.2.0-alpha")
 	if err != nil {
 		return err
 	}
-	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0 && !opts.skipBundle
+	logserverbundleupload := opts.targetVersion.GreaterThanOrEqual(v62) && len(groups[appliancepkg.FunctionLogServer]) > 0 && !opts.skipBundle
 
 	upgradeNames := []string{}
 	skipNames := []string{}
