@@ -30,9 +30,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "appgate.com",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",
@@ -234,9 +234,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "secondcontroller.devops",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",

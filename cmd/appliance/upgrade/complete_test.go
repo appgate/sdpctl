@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"

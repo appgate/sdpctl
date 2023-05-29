@@ -30,9 +30,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "appgate.com",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",
@@ -234,9 +234,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "cryptzone.com",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",
@@ -438,9 +438,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "ctrl3.cryptzone.com",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",
@@ -642,9 +642,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "ctrl4.cryptzone.com",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",
@@ -846,9 +846,9 @@
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "gateway.devops",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",

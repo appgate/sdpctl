@@ -18,7 +18,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -317,18 +317,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
-	targetPeers := append(groups[appliancepkg.FunctionController], groups[appliancepkg.FunctionLogServer]...)
-	peerAppliances := appliancepkg.WithAdminOnPeerInterface(targetPeers)
-	if len(peerAppliances) > 0 && !opts.NoInteractive {
-		msg, err := appliancepkg.ShowPeerInterfaceWarningMessage(peerAppliances)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintf(opts.Out, "\n%s\n", msg)
-		if err := prompt.AskConfirmation(); err != nil {
-			return err
-		}
-	}
 
 	upgradeStatuses, err := a.UpgradeStatusMap(ctx, appliances)
 	if err != nil {
@@ -648,14 +636,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		return errors.New("failed to fetch configured hostname for primary controller")
 	}
 	remoteFilePath := fmt.Sprintf("controller://%s/%s", *primaryControllerHostname, opts.filename)
-	// NOTE: Backwards compatibility with appliances older than API version 13.
-	// Appliances before API version require that the peer port be passed explicitly as part of the download URL.
-	// Insert the peer port into the URL if necessary.
-	if opts.Config.Version < 13 {
-		if v, ok := primaryController.GetPeerInterfaceOk(); ok {
-			remoteFilePath = fmt.Sprintf("controller://%s:%d/%s", *primaryControllerHostname, int(v.GetHttpsPort()), opts.filename)
-		}
-	}
 
 	if opts.remoteImage && !opts.hostOnController {
 		remoteFilePath = opts.image
