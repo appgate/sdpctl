@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2/core"
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -72,7 +72,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "with existing file",
 			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -155,7 +154,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "with gateway filter",
 			cli:  `upgrade prepare --filter function=gateway --image './testdata/appgate-5.5.1-9876.img.zip'`,
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -240,7 +238,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			upgradeStatusWorker: &errorUpgradeStatus{},
 			wantErrOut:          regexp.MustCompile(`gateway never reached verifying, ready, got failed`),
 			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(true) // peer_warning message
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -326,27 +323,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`--image is mandatory`),
 		},
 		{
-			name: "disagree with peer warning",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
-			askStubs: func(s *prompt.AskStubber) {
-				s.StubOne(false) // peer_warning message
-			},
-			httpStubs: []httpmock.Stub{
-				{
-					URL:       "/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
-				},
-				{
-					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
-				},
-			},
-			wantErr:    true,
-			wantErrOut: regexp.MustCompile(`Cancelled by user`),
-		},
-		{
 			name: "no prepare confirmation",
-			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
+			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip' --force",
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(false) // upgrade_confirm
 			},
@@ -358,6 +336,22 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				{
 					URL:       "/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+					},
+				},
+				{
+					URL: "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-5.5.1-9876.img.zip"}`))
+					},
 				},
 			},
 			wantErr: true,
@@ -383,9 +377,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "prepare same version",
 			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-12345.img.zip'",
-			askStubs: func(as *prompt.AskStubber) {
-				as.StubOne(true)
-			},
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/appliances",
@@ -419,7 +410,6 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			name: "force prepare same version",
 			cli:  "upgrade prepare --force --image './testdata/appgate-5.5.1-12345.img.zip'",
 			askStubs: func(as *prompt.AskStubber) {
-				as.StubOne(true) // peer_warning message
 				as.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{

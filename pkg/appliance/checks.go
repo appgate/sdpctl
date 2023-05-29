@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -61,55 +61,6 @@ func applianceGroupDescription(appliances []openapi.Appliance) string {
 	}
 	sort.Strings(funcs)
 	return strings.Join(funcs, ", ")
-}
-
-func appliancePeerPorts(appliances []openapi.Appliance) string {
-	ports := make([]int, 0)
-	for _, a := range appliances {
-		if v, ok := a.GetPeerInterfaceOk(); ok {
-			if v, ok := v.GetHttpsPortOk(); ok && *v > 0 {
-				ports = util.AppendIfMissing(ports, int(*v))
-			}
-		}
-	}
-	return strings.Trim(strings.Replace(fmt.Sprint(ports), " ", ",", -1), "[]")
-}
-
-const applianceUsingPeerWarning = `
-Version 5.4 and later are designed to operate with the admin port (default 8443)
-separate from the deprecated peer port (set to {{.CurrentPort}}).
-It is recommended to switch to port 8443 before continuing
-The following {{.Functions}} {{.Noun}} still configured without the Admin/API TLS Connection:
-{{range .Appliances}}
-  - {{.Name -}}
-{{end}}
-`
-
-func ShowPeerInterfaceWarningMessage(peerAppliances []openapi.Appliance) (string, error) {
-	type stub struct {
-		CurrentPort string
-		Functions   string
-		Noun        string
-		Appliances  []openapi.Appliance
-	}
-	noun := "are"
-	if len(peerAppliances) == 1 {
-		noun = "is"
-	}
-	u := unique(peerAppliances)
-	data := stub{
-		CurrentPort: appliancePeerPorts(u),
-		Functions:   applianceGroupDescription(u),
-		Noun:        noun,
-		Appliances:  u,
-	}
-	t := template.Must(template.New("peer").Parse(applianceUsingPeerWarning))
-	var tpl bytes.Buffer
-	if err := t.Execute(&tpl, data); err != nil {
-		return "", err
-	}
-
-	return tpl.String(), nil
 }
 
 func unique(slice []openapi.Appliance) []openapi.Appliance {

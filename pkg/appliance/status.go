@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"

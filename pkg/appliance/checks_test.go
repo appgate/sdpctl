@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
@@ -200,55 +200,6 @@ func TestApplianceGroupDescription(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := applianceGroupDescription(tt.args.appliances); got != tt.want {
 				t.Errorf("applianceGroupDescription() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestShowPeerInterfaceWarningMessage(t *testing.T) {
-	type args struct {
-		peerAppliances []openapi.Appliance
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "prepare example",
-			args: args{
-				peerAppliances: []openapi.Appliance{
-					{
-						Name: "controller",
-						Controller: &openapi.ApplianceAllOfController{
-							Enabled: openapi.PtrBool(true),
-						},
-						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
-							HttpsPort: openapi.PtrInt32(443),
-						},
-					},
-				},
-			},
-			want: `
-Version 5.4 and later are designed to operate with the admin port (default 8443)
-separate from the deprecated peer port (set to 443).
-It is recommended to switch to port 8443 before continuing
-The following Controller is still configured without the Admin/API TLS Connection:
-
-  - controller
-`,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ShowPeerInterfaceWarningMessage(tt.args.peerAppliances)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ShowPeerInterfaceWarningMessage() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !cmp.Equal(got, tt.want) {
-				t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", got, tt.want)
 			}
 		})
 	}

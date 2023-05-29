@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/Netflix/go-expect"
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -53,9 +53,9 @@ var inactiveApplianceListResponse = `{
                     }
                 ]
             },
-            "peerInterface": {
+            "adminInterface": {
                 "hostname": "beta.devops",
-                "httpsPort": 444,
+                "httpsPort": 8443,
                 "allowSources": [
                     {
                         "address": "0.0.0.0",

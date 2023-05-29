@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -260,9 +260,6 @@ func TestFindPrimaryController(t *testing.T) {
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "localhost",
 						},
-						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
-							Hostname: "localhost",
-						},
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -321,9 +318,6 @@ func TestGroupByFunctions(t *testing.T) {
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "foo.devops",
 						},
-						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
-							Hostname: "foo.devops",
-						},
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -358,9 +352,6 @@ func TestGroupByFunctions(t *testing.T) {
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 							Hostname: "foo.devops",
 						},
-						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
-							Hostname: "foo.devops",
-						},
 						Controller: &openapi.ApplianceAllOfController{
 							Enabled: openapi.PtrBool(true),
 						},
@@ -383,9 +374,6 @@ func TestGroupByFunctions(t *testing.T) {
 						Name: "secondary controller with log server",
 						Id:   openapi.PtrString("two"),
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "foo.devops",
-						},
-						PeerInterface: &openapi.ApplianceAllOfPeerInterface{
 							Hostname: "foo.devops",
 						},
 						Controller: &openapi.ApplianceAllOfController{
@@ -2783,10 +2771,6 @@ func TestValidateHostname(t *testing.T) {
 			Name:      "controller",
 			Activated: openapi.PtrBool(true),
 			Hostname:  tt.hostname,
-			PeerInterface: &openapi.ApplianceAllOfPeerInterface{
-				Hostname:  tt.adminHostName,
-				HttpsPort: openapi.PtrInt32(444),
-			},
 			AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 				Hostname:  tt.adminHostName,
 				HttpsPort: openapi.PtrInt32(8443),
@@ -3114,22 +3098,20 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, versio
 	}
 
 	app := openapi.Appliance{
-		Id:                                   openapi.PtrString(id),
-		Name:                                 name,
-		Notes:                                nil,
-		Created:                              openapi.PtrTime(now),
-		Updated:                              openapi.PtrTime(now),
-		Tags:                                 []string{},
-		ConnectToPeersUsingClientPortWithSpa: nil,
-		PeerInterface:                        &openapi.ApplianceAllOfPeerInterface{},
-		Activated:                            openapi.PtrBool(true),
-		PendingCertificateRenewal:            openapi.PtrBool(false),
-		Version:                              openapi.PtrInt32(18),
-		Hostname:                             hostname,
-		Site:                                 openapi.PtrString("Default Site"),
-		SiteName:                             new(string),
-		Customization:                        new(string),
-		ClientInterface:                      openapi.ApplianceAllOfClientInterface{},
+		Id:                        openapi.PtrString(id),
+		Name:                      name,
+		Notes:                     nil,
+		Created:                   openapi.PtrTime(now),
+		Updated:                   openapi.PtrTime(now),
+		Tags:                      []string{},
+		Activated:                 openapi.PtrBool(true),
+		PendingCertificateRenewal: openapi.PtrBool(false),
+		Version:                   openapi.PtrInt32(18),
+		Hostname:                  hostname,
+		Site:                      openapi.PtrString("Default Site"),
+		SiteName:                  new(string),
+		Customization:             new(string),
+		ClientInterface:           openapi.ApplianceAllOfClientInterface{},
 		AdminInterface: &openapi.ApplianceAllOfAdminInterface{
 			Hostname:  hostname,
 			HttpsPort: openapi.PtrInt32(8443),
@@ -3139,7 +3121,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, versio
 		SshServer:           &openapi.ApplianceAllOfSshServer{},
 		SnmpServer:          &openapi.ApplianceAllOfSnmpServer{},
 		HealthcheckServer:   &openapi.ApplianceAllOfHealthcheckServer{},
-		PrometheusExporter:  &openapi.ApplianceAllOfPrometheusExporter{},
+		PrometheusExporter:  &openapi.PrometheusExporter{},
 		Ping:                &openapi.ApplianceAllOfPing{},
 		LogServer:           ls,
 		Controller:          ctrl,

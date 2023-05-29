@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/sirupsen/logrus"

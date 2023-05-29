@@ -19,7 +19,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/tui"
@@ -117,17 +117,6 @@ func GetActiveFunctions(appliance openapi.Appliance) []string {
 	}
 
 	return functions
-}
-
-// WithAdminOnPeerInterface List all appliances still using the peer interface for the admin API, this is now deprecated.
-func WithAdminOnPeerInterface(appliances []openapi.Appliance) []openapi.Appliance {
-	peer := make([]openapi.Appliance, 0)
-	for _, a := range appliances {
-		if _, ok := a.GetAdminInterfaceOk(); !ok {
-			peer = append(peer, a)
-		}
-	}
-	return peer
 }
 
 // FilterAvailable return lists of online, offline, errors that will be used during upgrade
@@ -319,11 +308,7 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 	}
 	for _, controller := range controllers {
 		var hostnames []string
-		hostnames = append(hostnames, strings.ToLower(controller.GetPeerInterface().Hostname))
 		if v, ok := controller.GetAdminInterfaceOk(); ok {
-			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
-		}
-		if v, ok := controller.GetPeerInterfaceOk(); ok {
 			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
 		}
 		data[controller.GetId()] = details{
@@ -368,9 +353,6 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 	if ai, ok := controller.GetAdminInterfaceOk(); ok {
 		h = ai.GetHostname()
 	}
-	if pi, ok := controller.GetPeerInterfaceOk(); ok && len(h) <= 0 {
-		h = pi.GetHostname()
-	}
 	if len(h) <= 0 {
 		return fmt.Errorf("Failed to determine hostname for the Controller admin interface")
 	}
@@ -398,9 +380,6 @@ func FindCurrentController(appliances []openapi.Appliance, hostname string) (*op
 		hostnames := []string{}
 		hostnames = append(hostnames, strings.ToLower(a.GetHostname()))
 		if v, ok := a.GetAdminInterfaceOk(); ok {
-			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
-		}
-		if v, ok := a.GetPeerInterfaceOk(); ok {
 			hostnames = append(hostnames, strings.ToLower(v.GetHostname()))
 		}
 		if util.InSlice(l, hostnames) {
