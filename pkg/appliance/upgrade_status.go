@@ -76,7 +76,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 
 				tracker.Update(msg)
 			}
-			logEntry.WithError(err).Debug("no response, appliance offline")
+			logEntry.WithError(err).Debug("No response, appliance offline")
 			return err
 		}
 		var s string
@@ -96,7 +96,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 				if calledAs, ok := ctx.Value(Caller).(string); ok {
 					err = fmt.Errorf("%s failed on %s %s %s", calledAs, name, s, details)
 				}
-				logEntry.WithError(err).WithFields(log.Fields{"status": s, "details": details}).Error("Got unwanted status")
+				logEntry.WithError(err).WithFields(log.Fields{"status": s, "details": details}).Error("Unwanted status on appliance")
 				return backoff.Permanent(err)
 			}
 			if util.InSlice(s, desiredStatuses) {

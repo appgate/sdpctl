@@ -197,11 +197,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	f := log.Fields{
-		"appliance": primaryController.GetName(),
-	}
-	log.WithFields(f).Info("Found primary Controller")
-
 	bOpts := appliancepkg.BackupOpts{
 		Config:        opts.Config,
 		Appliance:     opts.Appliance,
@@ -227,7 +222,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("Could not complete the upgrade operation %w", err)
 	}
 	for _, o := range offline {
-		log.Warnf("%q is offline and will be excluded from upgrade", o.GetName())
+		log.WithField("appliance", o.GetName()).Info(appliancepkg.SkipReasonOffline)
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: o,
 			Reason:    appliancepkg.SkipReasonOffline,
@@ -238,6 +233,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 	for _, f := range filtered {
+		log.WithField("appliance", f.GetName()).Info(appliancepkg.SkipReasonFiltered)
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: f,
 			Reason:    appliancepkg.SkipReasonFiltered,
@@ -269,6 +265,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
 	if primaryControllerUpgradeStatus.Status != appliancepkg.UpgradeStatusReady {
+		log.WithField("appliance", primaryController.GetName()).Info(appliancepkg.SkipReasonNotPrepared)
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: *primaryController,
 			Reason:    appliancepkg.SkipReasonNotPrepared,
@@ -447,13 +444,16 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		fmt.Fprintf(opts.Out, "\n[%s] Backing up:\n", time.Now().Format(time.RFC3339))
 		if err := appliancepkg.PrepareBackup(&bOpts); err != nil {
+			log.WithError(err).Error("backup failed")
 			return err
 		}
 		backupMap, err := appliancepkg.PerformBackup(cmd, args, &bOpts)
 		if err != nil {
+			log.WithError(err).Error("backup failed")
 			return err
 		}
 		if err := appliancepkg.CleanupBackup(&bOpts, backupMap); err != nil {
+			log.WithError(err).Error("backup cleanup failed")
 			return err
 		}
 	}
@@ -725,13 +725,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return err
 			}
 			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.PrimaryUpgrade, "applying upgrade"), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
-				log.WithFields(f).WithError(err).Error("The Controller never reached desired upgrade status")
+				log.WithField("appliance", controller.GetName()).WithError(err).Error("The Controller never reached desired upgrade status")
 				return err
 			}
 			if disable {
 				log.WithField("appliance", controller.GetName()).Info("Re-enabling the Controller function")
 				if err := backoffEnableController(controller); err != nil {
-					log.WithFields(f).WithError(err).Error("Failed to enable the Controller function")
+					log.WithField("appliance", controller.GetName()).WithError(err).Error("Failed to enable the Controller function")
 					if merr, ok := err.(*multierror.Error); ok {
 						var mutliErr error
 						for _, e := range merr.Errors {
@@ -754,13 +754,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if _, err = ac.RetryUntilCompleted(ctx, changeID, controller.GetId()); err != nil {
 					return err
 				}
-				log.WithFields(f).Info("Disabled the maintenance mode")
+				log.WithField("appliance", controller.GetName()).Info("Disabled the maintenance mode")
 				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, controller, appliancepkg.StatusNotBusy, t); err != nil {
 					return err
 				}
 			} else {
 				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
-					log.WithFields(f).WithError(err).Error("The Controller never reached desired state")
+					log.WithField("appliance", controller.GetName()).WithError(err).Error("The Controller never reached desired state")
 					return err
 				}
 			}
@@ -822,6 +822,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 	fmt.Fprintf(opts.Out, "\n[%s] %s\n", time.Now().Format(time.RFC3339), postSummary)
+	log.Info("upgrade complete")
 
 	return nil
 }

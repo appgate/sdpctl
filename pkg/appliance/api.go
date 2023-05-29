@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 
 	"github.com/appgate/sdp-api-client-go/api/v18/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -156,7 +158,10 @@ var ErrFileNotFound = errors.New("File not found")
 
 // FileStatus Get the status of a File uploaded to the current Controller.
 func (a *Appliance) FileStatus(ctx context.Context, filename string) (*openapi.File, error) {
+	log := logrus.WithField("file", filename)
+	log.Info("checking file status")
 	f, r, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameGet(ctx, filename).Authorization(a.Token).Execute()
+	defer log.WithField("status", f.GetStatus()).Info("got file status")
 	if err != nil {
 		if r.StatusCode == http.StatusNotFound {
 			return f, fmt.Errorf("%q: %w", filename, ErrFileNotFound)
@@ -179,9 +184,16 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 		return err
 	}
 
+	var filename string
 	for k, v := range headers {
 		req.Header.Set(k, v)
+		rx := regexp.MustCompile(`[\w-_\.]+\.\w+`)
+		if match := rx.FindString(v); k == "Content-Disposition" && len(match) > 0 {
+			filename = rx.FindString(v)
+		}
 	}
+	log := logrus.WithField("file", filename)
+	log.Info("uploading file")
 
 	response, err := httpClient.Do(req)
 	if err != nil {
@@ -197,6 +209,7 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 	if response.StatusCode != http.StatusNoContent {
 		return api.HTTPErrorResponse(response, err)
 	}
+	log.Info("file upload finished")
 	return nil
 }
 
@@ -228,10 +241,15 @@ func (a *Appliance) ListFiles(ctx context.Context, orderBy []string, descending 
 
 // DeleteFile Delete a File from the current Controller.
 func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
+	log := logrus.WithField("file", filename)
+	log.Info("Deleting file from repository")
 	response, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(a.Token).Execute()
 	if err != nil {
+		log.WithError(err).Error("failed to delete file")
+		log.WithField("response", response).Debug("got response from server")
 		return api.HTTPErrorResponse(response, err)
 	}
+	log.Info("file deleted")
 	return nil
 }
 

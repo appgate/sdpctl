@@ -245,14 +245,6 @@ func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Applia
 		}
 	}
 
-	for i, c := range r {
-		batchAppliances := []string{}
-		for _, bapp := range c {
-			batchAppliances = append(batchAppliances, bapp.GetName())
-		}
-		log.Infof("[%d] Appliance upgrade chunk includes %v", i, strings.Join(batchAppliances, ", "))
-	}
-
 	return r
 }
 
@@ -362,6 +354,7 @@ func FindPrimaryController(appliances []openapi.Appliance, hostname string, vali
 				return nil, err
 			}
 		}
+		log.WithField("appliance", candidate.GetName()).Info("primary controller")
 		return candidate, nil
 	}
 	return nil, fmt.Errorf(
@@ -1032,7 +1025,8 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	for _, l := range JSONManifest.Layers {
 		digest := l.Digest
 		g.Go(func() error {
-			f := strings.Replace(digest, "sha256:", "", 1) + ".tar.gz"
+			layerHash := strings.Replace(digest, "sha256:", "", 1)
+			f := layerHash + ".tar.gz"
 			layerURL := fmt.Sprintf("%s://%s%s/%s/blobs/%s", args.registry.Scheme, args.registry.Host, prependString(args.registry.Path, "/v2"), args.image, digest)
 			layerReq, err := http.NewRequestWithContext(ctx, http.MethodGet, layerURL, nil)
 			if err != nil {
@@ -1041,6 +1035,8 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 			for k, v := range headers {
 				layerReq.Header.Set(k, v)
 			}
+			layerLog := log.WithField("layer", layerHash)
+			layerLog.Info("downloading image layer")
 			layerRes, err := args.client.Do(layerReq)
 			if err != nil || layerRes == nil {
 				return fmt.Errorf("failed to fetch image layer: %w", err)
@@ -1065,6 +1061,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 				path: layerName,
 				r:    buf,
 			}
+			layerLog.Info("download finished")
 			return nil
 		})
 	}
