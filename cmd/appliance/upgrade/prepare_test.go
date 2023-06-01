@@ -531,6 +531,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 
 				return a, nil
 			}
+			f.DockerRegistry = f.GetDockerRegistry
 			// add parent command to allow us to include test with parent flags
 			cmd := NewApplianceCmd(f)
 			upgradeCmd := NewUpgradeCmd(f)
