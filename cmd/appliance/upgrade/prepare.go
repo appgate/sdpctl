@@ -111,7 +111,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			if opts.skipBundle, err = cmd.Flags().GetBool("skip-bundle"); err != nil {
+			if opts.skipBundle, err = cmd.Flags().GetBool("skip-container-bundle"); err != nil {
 				return err
 			}
 
