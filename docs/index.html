@@ -328,7 +328,7 @@
           <pre class="code-editor"><code>
 # you can manage multiple Collectives by adding more admin profiles
 
-# configure your production SDP Collectice
+# configure your production SDP Collective
 &gt; <span data-varid="command">sdpctl.exe</span> configure
   ? Enter the url for the Controller API (example https://controller.company.com:8443) https://production.company.com:8443
   Configuration updated successfully
@@ -385,6 +385,27 @@ no profiles added
 # set the default profile as current
 &gt; <span data-varid="command">sdpctl.exe</span> profile set default
   staging (/Users/ann.gills/Library/Application Support/sdpctl/profiles/default) is selected as current sdp profile
+          </code></pre>
+        </details>
+
+        <details class="text-left margin-bottom-small">
+          <summary class="example-summary">Configure for unattended use <span class="tag">advanced</span></summary>
+          <pre class="code-editor"><code>
+# you can run sdpctl unattended using the environment variables.
+
+# list available environment variables
+&gt; <span data-varid="command">sdpctl.exe</span> help environment
+  ...
+  SDPCTL_USERNAME=admin
+  SDPCTL_PASSWORD=password
+  SDPCTL_URL=https://controller.company.com:8443
+  ...
+
+
+# once environment variables set, backup the controller sdpctl is pointing at
+&gt; <span data-varid="command">sdpctl.exe</span> appliance backup --current --quiet
+  ✓ Controller  Singapore Controller: download complete
+  Backup complete!
           </code></pre>
         </details>
 
