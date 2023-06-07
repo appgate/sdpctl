@@ -63,6 +63,7 @@ type prepareUpgradeOptions struct {
 	actualHostname   string
 	targetVersion    *version.Version
 	dockerRegistry   *url.URL
+	skipBundle       bool
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -107,6 +108,10 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			var errs *multierr.Error
 			opts.filename = filepath.Base(opts.image)
 			if err := checkImageFilename(opts.filename); err != nil {
+				return err
+			}
+
+			if opts.skipBundle, err = cmd.Flags().GetBool("skip-container-bundle"); err != nil {
 				return err
 			}
 
@@ -199,6 +204,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.hostOnController, "host-on-controller", false, "Use the primary Controller as image host when uploading from remote source")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
+	flags.BoolVar(&opts.skipBundle, "skip-container-bundle", false, "skip the bundling of the docker images for functions that need them, e.g. the LogServer")
 	flags.String("docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
 
 	return prepareCmd
@@ -383,7 +389,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if err != nil {
 		return err
 	}
-	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0
+	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0 && !opts.skipBundle
 
 	upgradeNames := []string{}
 	skipNames := []string{}
