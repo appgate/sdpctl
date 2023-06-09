@@ -49,8 +49,8 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "download [function...]",
 		Aliases: []string{"dl", "bundle"},
-		Short: docs.ApplianceFunctionsDownloadDocs.Short,
-		Long: docs.ApplianceFunctionsDownloadDocs.Long,
+		Short:   docs.ApplianceFunctionsDownloadDocs.Short,
+		Long:    docs.ApplianceFunctionsDownloadDocs.Long,
 		Example: docs.ApplianceFunctionsDownloadDocs.ExampleString(),
 		Args: cobra.MatchAll(cobra.MinimumNArgs(1), func(cmd *cobra.Command, args []string) error {
 			registry, err := cmd.Flags().GetString("docker-registry")
