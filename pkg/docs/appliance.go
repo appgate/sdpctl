@@ -351,4 +351,22 @@ The command will accept one or more hostnames or ID:s of Controllers that will b
 			},
 		},
 	}
+	ApplianceFunctionsDownloadDocs = CommandDoc{
+		Short: "Download functions as container bundles",
+		Long:  "Download appliance functions as container bundles. The container bundles can then be uploaded to the SDP Collective to enable the function contained in the bunde. Note that currently only the LogServer function is available for container bundle download.",
+		Examples: []ExampleDoc{
+			{
+				Command:     "sdpctl appliance functions download LogServer",
+				Description: "download the LogServer function as a bundle",
+			},
+			{
+				Command: "sdpctl appliance functions download LogServer --save-path=<download-path>",
+				Description: "Save the container bundles in a custom path. This is expected to be a directory. If the directory does not exist, sdpctl will try to create it.",
+			},
+			{
+				Command: "sdpctl appliance functions download LogServer --docker-registry=<path-to-custom-docker-registry>",
+				Description: "Download the functions from a custom docker registry.",
+			},
+		},
+	}
 )

@@ -31,18 +31,22 @@ type Factory struct {
 	// HTTPTransport is used by all HTTP Clients to import custom TLS certificate and set timeout values
 	HTTPTransport func() (*http.Transport, error)
 	// APIClient is the generated api client based on the openapi-generator https://github.com/appgate/sdp-api-client-go
-	APIClient    func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance    func(c *configuration.Config) (*appliance.Appliance, error)
-	Token        func(c *configuration.Config) (*token.Token, error)
-	ServiceUsers func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
-	userAgent    string
-	Config       *configuration.Config
-	IOOutWriter  io.Writer
-	Stdin        io.ReadCloser
-	StdErr       io.Writer
-	SpinnerOut   io.Writer
-	neverPrompt  bool
+	APIClient      func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance      func(c *configuration.Config) (*appliance.Appliance, error)
+	Token          func(c *configuration.Config) (*token.Token, error)
+	ServiceUsers   func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
+	DockerRegistry func(s string) (*url.URL, error)
+	userAgent      string
+	Config         *configuration.Config
+	IOOutWriter    io.Writer
+	Stdin          io.ReadCloser
+	StdErr         io.Writer
+	SpinnerOut     io.Writer
+	neverPrompt    bool
 }
+
+// Set on build time
+var dockerRegistry string
 
 func New(appVersion string, config *configuration.Config) *Factory {
 	f := &Factory{}
@@ -59,6 +63,7 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.Stdin = os.Stdin
 	f.StdErr = os.Stderr
 	f.SpinnerOut = os.Stdout
+	f.DockerRegistry = f.GetDockerRegistry
 
 	return f
 }
@@ -82,6 +87,22 @@ func (f *Factory) GetSpinnerOutput() func() io.Writer {
 	return func() io.Writer {
 		return f.SpinnerOut
 	}
+}
+
+// GetDockerRegistry parses and returns a normalized URL for the docker registry to be used
+// The URL needs to be valid and the following priority will be evaluated
+// 1. Argument 's'
+// 2. If the 'SDPCTL_DOCKER_REGISTRY' environment variable is set
+// 3. The default registry which is set during build time
+func (f *Factory) GetDockerRegistry(s string) (*url.URL, error) {
+	reg := util.Getenv("SDPCTL_DOCKER_REGISTRY", dockerRegistry)
+	if len(s) > 0 {
+		reg = s
+	}
+	if !util.IsValidURL(reg) {
+		return nil, fmt.Errorf("Invalid registry URL: '%s'", reg)
+	}
+	return util.NormalizeURL(reg)
 }
 
 var proxyFunc func(*url.URL) (*url.URL, error)

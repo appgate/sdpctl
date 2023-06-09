@@ -1,0 +1,212 @@
+package functions
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+
+	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
+	apipkg "github.com/appgate/sdpctl/pkg/api"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/docs"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/tui"
+	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v7"
+)
+
+var (
+	logServerImages map[string]string = map[string]string{
+		"cz-opensearch":           "latest",
+		"cz-opensearchdashboards": "latest",
+	}
+	funcImages map[string]map[string]string = map[string]map[string]string{
+		appliancepkg.FunctionLogServer: logServerImages,
+	}
+)
+
+type BundleOptions struct {
+	registry *url.URL
+	savePath string
+	version  string
+	ciMode   bool
+	out      io.Writer
+}
+
+func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
+	opts := BundleOptions{
+		out: f.IOOutWriter,
+	}
+	cmd := &cobra.Command{
+		Use:     "download [function...]",
+		Aliases: []string{"dl", "bundle"},
+		Short: docs.ApplianceFunctionsDownloadDocs.Short,
+		Long: docs.ApplianceFunctionsDownloadDocs.Long,
+		Example: docs.ApplianceFunctionsDownloadDocs.ExampleString(),
+		Args: cobra.MatchAll(cobra.MinimumNArgs(1), func(cmd *cobra.Command, args []string) error {
+			registry, err := cmd.Flags().GetString("docker-registry")
+			if err != nil {
+				return err
+			}
+			if opts.registry, err = f.DockerRegistry(registry); err != nil {
+				return err
+			}
+			if err := os.MkdirAll(opts.savePath, os.ModeDir); err != nil {
+				return err
+			}
+			if tag, err := cmd.Flags().GetString("version"); err == nil {
+				v, err := appliancepkg.ParseVersionString(tag)
+				if err != nil {
+					return err
+				}
+				opts.version, err = util.DockerTagVersion(v)
+				if err != nil {
+					return err
+				}
+			}
+			if opts.ciMode, err = cmd.Flags().GetBool("ci-mode"); err != nil {
+				return err
+			}
+
+			var errs *multierror.Error
+			for _, a := range args {
+				if util.InSlice(a, UnavailableFuncs) {
+					errs = multierror.Append(errs, fmt.Errorf("Function not yet supported: '%s'", a))
+					continue
+				}
+				if !util.InSlice(a, ValidFuncs) {
+					errs = multierror.Append(errs, fmt.Errorf("Invalid function provided: '%s'", a))
+				}
+			}
+			return errs.ErrorOrNil()
+		}),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if len(opts.version) <= 0 {
+				api, err := f.Appliance(f.Config)
+				if err != nil {
+					return err
+				}
+				ctx := context.Background()
+				appliances, err := api.List(ctx, appliancepkg.DefaultCommandFilter, []string{"name"}, false)
+				if err != nil {
+					return err
+				}
+				configHostURL, err := url.ParseRequestURI(f.Config.URL)
+				if err != nil {
+					return err
+				}
+				primary, err := appliancepkg.FindPrimaryController(appliances, configHostURL.Hostname(), true)
+				if err != nil {
+					return err
+				}
+				logrus.WithField("primary-controller", primary.GetName()).Debug("found primary controller")
+				stats, response, err := api.Stats(ctx, []string{"name"}, false)
+				if err != nil {
+					return apipkg.HTTPErrorResponse(response, err)
+				}
+				primStats, err := util.Find(stats.GetData(), func(s openapi.StatsAppliancesListAllOfData) bool { return s.GetId() == primary.GetId() })
+				if err != nil {
+					return err
+				}
+				logrus.WithField("stats", primStats).Debug("found primary controller stats")
+				primVersion, err := appliancepkg.ParseVersionString(primStats.GetVersion())
+				if err != nil {
+					return err
+				}
+				tag, err := util.DockerTagVersion(primVersion)
+				if err != nil {
+					return err
+				}
+				opts.version = tag
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := f.HTTPClient()
+			if err != nil {
+				return err
+			}
+
+			var wg sync.WaitGroup
+			errChan := make(chan error)
+			ctx := context.Background()
+			var p *tui.Progress
+			if !opts.ciMode {
+				p = tui.New(ctx, f.SpinnerOut)
+			}
+			for _, arg := range args {
+				wg.Add(1)
+				go func(ctx context.Context, wg *sync.WaitGroup, function string, opts BundleOptions, errs chan<- error, p *tui.Progress) {
+					defer wg.Done()
+					zipName := fmt.Sprintf("%s-%s.zip", strings.ToLower(function), opts.version)
+					file, err := os.Create(filepath.Join(opts.savePath, zipName))
+					if err != nil {
+						errs <- err
+						return
+					}
+					defer file.Close()
+
+					var t *tui.Tracker
+					if p != nil {
+						t = p.AddTracker(zipName, "downloading", "complete", mpb.BarRemoveOnComplete())
+						go t.Watch([]string{"complete"}, []string{"failed"})
+						defer t.Update("complete")
+					}
+
+					tmpPath, err := appliancepkg.DownloadDockerBundles(ctx, p, client, zipName, opts.registry, funcImages[function], false)
+					if err != nil {
+						errs <- err
+						return
+					}
+					tmpFile, err := os.Open(tmpPath)
+					if err != nil {
+						errs <- err
+						return
+					}
+					defer func() {
+						// close and remove temporary file when done
+						tmpFile.Close()
+						os.Remove(tmpFile.Name())
+					}()
+
+					if _, err := io.Copy(file, tmpFile); err != nil {
+						errs <- err
+						return
+					}
+					logrus.WithField("file", file.Name()).Info("bundle ready")
+				}(ctx, &wg, arg, opts, errChan, p)
+			}
+
+			var errs *multierror.Error
+			go func(errChan <-chan error) {
+				for e := range errChan {
+					errs = multierror.Append(errs, e)
+				}
+			}(errChan)
+
+			wg.Wait()
+			if p != nil {
+				p.Wait()
+			}
+			fmt.Fprintf(opts.out, "Download complete. Files saved to %s\n", opts.savePath)
+			return errs.ErrorOrNil()
+		},
+	}
+
+	flags := cmd.Flags()
+	flags.String("docker-registry", "", "docker registry for downloading image bundles")
+	flags.StringVar(&opts.savePath, "save-path", filepath.Join(filesystem.DownloadDir(), "appgate"), "")
+	flags.StringVar(&opts.version, "version", "", "")
+
+	return cmd
+}

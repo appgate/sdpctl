@@ -785,7 +785,6 @@ type fileEntry struct {
 
 type imageBundleArgs struct {
 	ctx           context.Context
-	out           io.Writer
 	client        *http.Client
 	fileEntryChan chan<- fileEntry
 	wg            *sync.WaitGroup
@@ -793,10 +792,10 @@ type imageBundleArgs struct {
 	registry      *url.URL
 	image         string
 	tag           string
-	p             *tui.Progress
+	progress      *tui.Progress
 }
 
-func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Client, zipName string, registry *url.URL, images map[string]string, ciMode bool) (string, error) {
+func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Client, zipName string, registry *url.URL, images map[string]string, ciMode bool) (string, error) {
 	// Create zip-archive
 	archive, err := os.CreateTemp("", zipName)
 	if err != nil {
@@ -807,11 +806,6 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 	defer zipWriter.Close()
 
 	log.Info("downloading image layers for ", zipName)
-	var p *tui.Progress
-	if !ciMode {
-		p = tui.New(ctx, out)
-		defer p.Wait()
-	}
 	fileEntryChan := make(chan fileEntry)
 	var wg sync.WaitGroup
 	wg.Add(len(images))
@@ -819,13 +813,12 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 		go func(image, tag string) {
 			args := imageBundleArgs{
 				ctx:           ctx,
-				out:           out,
 				client:        client,
 				ciMode:        ciMode,
 				registry:      registry,
 				image:         image,
 				tag:           tag,
-				p:             p,
+				progress:      p,
 				fileEntryChan: fileEntryChan,
 				wg:            &wg,
 			}
@@ -849,7 +842,6 @@ func DownloadDockerBundles(ctx context.Context, out io.Writer, client *http.Clie
 			errs = multierror.Append(errs, err)
 			continue
 		}
-
 		size, err := io.Copy(fb, v.r)
 		if err != nil {
 			errs = multierror.Append(errs, err)
@@ -1026,9 +1018,9 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 			defer layerRes.Body.Close()
 
 			bodyReader := layerRes.Body
-			if args.p != nil {
+			if args.progress != nil {
 				size := layerRes.ContentLength
-				bodyReader = args.p.FileDownloadProgress("downloading "+f[0:11], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
+				bodyReader = args.progress.FileDownloadProgress("downloading layer "+f[0:11], "downloaded", size, 25, bodyReader, mpb.BarRemoveOnComplete())
 			}
 
 			layerName := fmt.Sprintf("%s/%s", args.image, f)

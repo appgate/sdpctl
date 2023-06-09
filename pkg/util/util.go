@@ -201,3 +201,13 @@ func AddSocketLogHook(path string) error {
 	log.AddHook(hook)
 	return nil
 }
+
+func Find[T any](s []T, f func(T) bool) (T, error) {
+	var r T
+	for _, v := range s {
+		if f(v) {
+			return v, nil
+		}
+	}
+	return r, errors.New("no match in slice")
+}
