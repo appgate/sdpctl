@@ -209,7 +209,9 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if p != nil {
 				p.Wait()
 			}
-			fmt.Fprintf(opts.out, "Download complete. Files saved to %s\n", opts.savePath)
+			if errs == nil {
+				fmt.Fprintf(opts.out, "Download complete. Files saved to %s\n", opts.savePath)
+			}
 			return errs.ErrorOrNil()
 		},
 	}
