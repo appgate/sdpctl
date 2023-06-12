@@ -19,6 +19,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vbauerster/mpb/v7"
@@ -127,6 +128,12 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				opts.version = tag
+			}
+
+			v, _ := version.NewVersion(opts.version)
+			x, _ := version.NewVersion("6.2.0")
+			if x.GreaterThan(v) {
+				return fmt.Errorf("unsupported version: %s, only available for version 6.2 or higher", opts.version)
 			}
 
 			return nil
