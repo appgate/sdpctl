@@ -16,6 +16,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/adrg/xdg"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
@@ -196,6 +197,7 @@ func generateHTML(cmd *cobra.Command) error {
 
 		// Hack because markdown mishandles code blocks in the renderHook
 		processedString := strings.ReplaceAll(processed.String(), `<pre>`, `<pre class="code-editor margin-bottom">`)
+		processedString = strings.ReplaceAll(processedString, xdg.Home, "$HOME") // unpersonlize file path
 		processed = *bytes.NewBufferString(processedString)
 
 		htmlName := strings.Replace(path, ".md", ".html", 1)
