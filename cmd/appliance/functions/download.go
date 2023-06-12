@@ -63,7 +63,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if err := os.MkdirAll(opts.savePath, os.ModeDir); err != nil {
 				return err
 			}
-			if tag, err := cmd.Flags().GetString("version"); err == nil {
+			if tag, err := cmd.Flags().GetString("version"); err == nil && len(tag) > 0 {
 				v, err := appliancepkg.ParseVersionString(tag)
 				if err != nil {
 					return err
@@ -127,15 +127,6 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				opts.version = tag
-			} else {
-				v, err := appliancepkg.ParseVersionString(opts.version)
-				if err != nil {
-					return err
-				}
-				opts.version, err = util.DockerTagVersion(v)
-				if err != nil {
-					return err
-				}
 			}
 
 			return nil
