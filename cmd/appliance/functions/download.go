@@ -130,10 +130,11 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				opts.version = tag
 			}
 
-			v, _ := version.NewVersion(opts.version)
-			x, _ := version.NewVersion("6.2.0")
-			if x.GreaterThan(v) {
-				return fmt.Errorf("unsupported version: %s, only available for version 6.2 or higher", opts.version)
+			if v, err := version.NewVersion(opts.version); err == nil {
+				x, _ := version.NewVersion("6.2.0")
+				if x.GreaterThan(v) {
+					return fmt.Errorf("unsupported version: %s, only available for version 6.2 or higher", opts.version)
+				}
 			}
 
 			return nil
