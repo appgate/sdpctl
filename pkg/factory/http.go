@@ -99,9 +99,6 @@ func (f *Factory) GetDockerRegistry(s string) (*url.URL, error) {
 	if len(s) > 0 {
 		reg = s
 	}
-	if !util.IsValidURL(reg) {
-		return nil, fmt.Errorf("Invalid registry URL: '%s'", reg)
-	}
 	return util.NormalizeURL(reg)
 }
 
