@@ -25,16 +25,16 @@ import (
 )
 
 var (
-	logServerImages map[string]string = map[string]string{
-		"cz-opensearch":           "latest",
-		"cz-opensearchdashboards": "latest",
+	logServerImages []string = []string{
+		"cz-opensearch",
+		"cz-opensearchdashboards",
 	}
-	funcImages map[string]map[string]string = map[string]map[string]string{
+	funcImages map[string][]string = map[string][]string{
 		appliancepkg.FunctionLogServer: logServerImages,
 	}
 )
 
-type BundleOptions struct {
+type bundleOptions struct {
 	registry *url.URL
 	savePath string
 	version  string
@@ -43,7 +43,7 @@ type BundleOptions struct {
 }
 
 func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
-	opts := BundleOptions{
+	opts := bundleOptions{
 		out: f.IOOutWriter,
 	}
 	cmd := &cobra.Command{
@@ -127,6 +127,15 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				opts.version = tag
+			} else {
+				v, err := appliancepkg.ParseVersionString(opts.version)
+				if err != nil {
+					return err
+				}
+				opts.version, err = util.DockerTagVersion(v)
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
@@ -146,7 +155,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			}
 			for _, arg := range args {
 				wg.Add(1)
-				go func(ctx context.Context, wg *sync.WaitGroup, function string, opts BundleOptions, errs chan<- error, p *tui.Progress) {
+				go func(ctx context.Context, wg *sync.WaitGroup, function string, opts bundleOptions, errs chan<- error, p *tui.Progress) {
 					defer wg.Done()
 					zipName := fmt.Sprintf("%s-%s.zip", strings.ToLower(function), opts.version)
 					file, err := os.Create(filepath.Join(opts.savePath, zipName))
@@ -163,7 +172,11 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 						defer t.Update("complete")
 					}
 
-					tmpPath, err := appliancepkg.DownloadDockerBundles(ctx, p, client, zipName, opts.registry, funcImages[function], false)
+					images := make(map[string]string, len(funcImages[function]))
+					for _, f := range funcImages[function] {
+						images[f] = opts.version
+					}
+					tmpPath, err := appliancepkg.DownloadDockerBundles(ctx, p, client, zipName, opts.registry, images, false)
 					if err != nil {
 						errs <- err
 						return
@@ -205,8 +218,8 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.String("docker-registry", "", "docker registry for downloading image bundles")
-	flags.StringVar(&opts.savePath, "save-path", filepath.Join(filesystem.DownloadDir(), "appgate"), "")
-	flags.StringVar(&opts.version, "version", "", "")
+	flags.StringVar(&opts.savePath, "save-path", filepath.Join(filesystem.DownloadDir(), "appgate"), "path to where the container bundle should be saved")
+	flags.StringVar(&opts.version, "version", "", "Override the LogServer version that will be downloaded. Defaults to the same version as the primary controller.")
 
 	return cmd
 }
