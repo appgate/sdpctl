@@ -169,11 +169,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					errs = multierr.Append(errs, fmt.Errorf("Image file not found %q", opts.image))
 				}
 				if ok {
-					// guess version from filename first, then from the extracted zip if filename fails
+					// get version from metadata first. guess from filename if that fails
 					// fatal if both fail
-					if opts.targetVersion, err = appliancepkg.ParseVersionString(opts.filename); err != nil {
-						if opts.targetVersion, err = appliancepkg.ParseVersionFromZip(opts.image); err != nil {
-							errs = multierr.Append(errs, err)
+					if opts.targetVersion, err = appliancepkg.ParseVersionFromZip(opts.image); err != nil {
+						var e error
+						if opts.targetVersion, e = appliancepkg.ParseVersionString(opts.filename); e != nil {
+							errs = multierr.Append(errs, err, e)
 						}
 					}
 				}
