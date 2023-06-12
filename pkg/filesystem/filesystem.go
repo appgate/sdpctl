@@ -37,7 +37,11 @@ func ConfigDir() string {
 	if path := os.Getenv(XdgConfigHome); len(path) > 0 {
 		return filepath.Join(path, "sdpctl")
 	}
-	return filepath.Join(xdg.ConfigHome, "sdpctl")
+	ud, _ := parseUsersDirs()
+	if configDir, ok := ud["CONFIG"]; ok {
+		return configDir
+	}
+	return filepath.Join(xdg.Home, ".config", "sdpctl")
 }
 
 func DataDir() string {

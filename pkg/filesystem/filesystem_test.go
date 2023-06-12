@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/adrg/xdg"
 )
 
 func TestConfigDir(t *testing.T) {
@@ -14,6 +16,7 @@ func TestConfigDir(t *testing.T) {
 		name        string
 		onlyWindows bool
 		env         map[string]string
+		unsetEnv    []string
 		output      string
 	}{
 		{
@@ -40,6 +43,14 @@ func TestConfigDir(t *testing.T) {
 			},
 			output: filepath.Join(tempDir, "sdpctl"),
 		},
+		{
+			name:     "no XDG_CONFIG_HOME specified",
+			unsetEnv: []string{"HOME", "XDG_CONFIG_HOME"},
+			env: map[string]string{
+				"HOME": tempDir,
+			},
+			output: filepath.Join(tempDir, ".config", "sdpctl"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -47,6 +58,11 @@ func TestConfigDir(t *testing.T) {
 			continue
 		}
 		t.Run(tt.name, func(t *testing.T) {
+			for _, v := range tt.unsetEnv {
+				old := os.Getenv(v)
+				os.Unsetenv(v)
+				defer os.Setenv(v, old)
+			}
 			if tt.env != nil {
 				for k, v := range tt.env {
 					old := os.Getenv(k)
@@ -54,6 +70,7 @@ func TestConfigDir(t *testing.T) {
 					defer os.Setenv(k, old)
 				}
 			}
+			xdg.Reload() // reload env after setting testing variables
 
 			if dir := ConfigDir(); dir != tt.output {
 				t.Errorf("Got %s, expected %s", dir, tt.output)
