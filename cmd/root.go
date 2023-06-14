@@ -139,6 +139,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewHelpCmd(f))
 	rootCmd.AddCommand(NewOpenCmd(f))
+	rootCmd.AddCommand(NewPrivilegesCmd(f))
 	rootCmd.AddCommand(cmdprofile.NewProfileCmd(f))
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(serviceusers.NewServiceUsersCMD(f))
