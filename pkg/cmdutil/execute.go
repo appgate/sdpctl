@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/appgate/sdpctl/pkg/api"
@@ -23,6 +24,22 @@ const (
 	ExitAuth   ExitCode = 4
 )
 
+func privligeError(cmd *cobra.Command, err *api.Error) error {
+	caller := "sdpctl"
+	if cmd != nil {
+		caller = cmd.Root().Name()
+	}
+	if err.StatusCode == http.StatusForbidden {
+		var result *multierror.Error
+		result = multierror.Append(result, fmt.Errorf("Run '%s privileges' to see your current user privileges", caller))
+		if err.RequestURL != nil {
+			result = multierror.Append(result, errors.New(*err.RequestURL))
+		}
+		return result
+	}
+	return nil
+}
+
 func ExecuteCommand(cmd *cobra.Command) ExitCode {
 	cmd, err := cmd.ExecuteC()
 	if err != nil {
@@ -32,6 +49,7 @@ func ExecuteCommand(cmd *cobra.Command) ExitCode {
 			// if the command return a api error, (api.HTTPErrorResponse) for example HTTP 400-599, we will
 			// resolve each nested error and convert them to multierror to prettify it for the user in a list view.
 			if ae, ok := we.(*api.Error); ok {
+				result = multierror.Append(result, privligeError(cmd, ae))
 				for _, e := range ae.Errors {
 					result = multierror.Append(result, e)
 				}
@@ -48,6 +66,7 @@ func ExecuteCommand(cmd *cobra.Command) ExitCode {
 			}
 		} else {
 			if ae, ok := err.(*api.Error); ok {
+				result = multierror.Append(result, privligeError(cmd, ae))
 				for _, e := range ae.Errors {
 					result = multierror.Append(result, e)
 				}
