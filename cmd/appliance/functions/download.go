@@ -16,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
@@ -50,6 +51,12 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "download [function...]",
 		Aliases: []string{"dl", "bundle"},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) > 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return ValidFuncs, cobra.ShellCompDirectiveNoFileComp
+		},
 		Short:   docs.ApplianceFunctionsDownloadDocs.Short,
 		Long:    docs.ApplianceFunctionsDownloadDocs.Long,
 		Example: docs.ApplianceFunctionsDownloadDocs.ExampleString(),
@@ -65,13 +72,11 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			if tag, err := cmd.Flags().GetString("version"); err == nil && len(tag) > 0 {
-				v, err := appliancepkg.ParseVersionString(tag)
-				if err != nil {
-					return err
-				}
-				opts.version, err = util.DockerTagVersion(v)
-				if err != nil {
-					return err
+				if v, err := appliancepkg.ParseVersionString(tag); err == nil {
+					opts.version, err = util.DockerTagVersion(v)
+					if err != nil {
+						return err
+					}
 				}
 			}
 			if opts.ciMode, err = cmd.Flags().GetBool("ci-mode"); err != nil {
@@ -140,6 +145,8 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			terminal.Lock()
+			defer terminal.Unlock()
 			client, err := f.HTTPClient()
 			if err != nil {
 				return err
@@ -178,11 +185,13 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					tmpPath, err := appliancepkg.DownloadDockerBundles(ctx, p, client, zipName, opts.registry, images, false)
 					if err != nil {
 						errs <- err
+						os.Remove(file.Name())
 						return
 					}
 					tmpFile, err := os.Open(tmpPath)
 					if err != nil {
 						errs <- err
+						os.Remove(file.Name())
 						return
 					}
 					defer func() {
@@ -193,6 +202,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 
 					if _, err := io.Copy(file, tmpFile); err != nil {
 						errs <- err
+						os.Remove(file.Name())
 						return
 					}
 					logrus.WithField("file", file.Name()).Info("bundle ready")
