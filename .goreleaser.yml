@@ -4,8 +4,8 @@ env:
   - SNAPSHOT_VERSION={{ .Now.Format "2006.01.02" }}
 before:
   hooks:
-  - make clean
-  - make deps
+    - make clean
+    - make deps
 snapshot:
   name_template: "{{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}{{ else }}{{ .Tag }}{{ end }}"
 changelog:
@@ -14,7 +14,6 @@ github_urls:
   download: https://github.com/appgate/sdpctl/releases
 
 builds:
-
   - <<: &build_defaults
       binary: "{{ .ProjectName }}"
       main: ./main.go
@@ -22,7 +21,7 @@ builds:
         - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}-dev{{ else }}{{ .Version }}{{ end }}"
         - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
         - -X "github.com/appgate/sdpctl/cmd.buildDate={{ .Date }}"
-        - -X "github.com/appgate/sdpctl/cmd/appliance/upgrade.dockerRegistry={{ .Env.DOCKER_REGISTRY_URL }}"
+        - -X "github.com/appgate/sdpctl/pkg/factory.dockerRegistry={{ .Env.DOCKER_REGISTRY_URL }}"
     id: linux
     goos: [linux]
     goarch: [amd64, arm64]
@@ -48,7 +47,6 @@ builds:
     hooks:
       post:
         - "{{ .Env.HOOK_PATH }}/sign-windows.sh '{{ .Path }}'"
-
 
 universal_binaries:
   - replace: false

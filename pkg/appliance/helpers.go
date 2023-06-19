@@ -45,7 +45,11 @@ func ParseVersionString(input string) (*version.Version, error) {
 			input = fmt.Sprintf("%s+%s", input, meta)
 		}
 	}
-	return version.NewVersion(input)
+	v, err := version.NewVersion(input)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version string '%s': %w", input, err)
+	}
+	return v, nil
 }
 
 func ParseVersionFromZip(filename string) (*version.Version, error) {

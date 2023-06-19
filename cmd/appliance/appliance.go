@@ -3,6 +3,7 @@ package appliance
 import (
 	"github.com/appgate/sdpctl/cmd/appliance/backup"
 	"github.com/appgate/sdpctl/cmd/appliance/files"
+	"github.com/appgate/sdpctl/cmd/appliance/functions"
 	"github.com/appgate/sdpctl/cmd/appliance/maintenance"
 	"github.com/appgate/sdpctl/cmd/appliance/upgrade"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -43,6 +44,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	cmd.AddCommand(maintenance.NewMaintenanceCmd(f))
 	cmd.AddCommand(NewSeedCmd(f))
 	cmd.AddCommand(NewForceDisableControllerCmd(f))
+	cmd.AddCommand(functions.NewApplianceFunctionsCmd(f))
 
 	return cmd
 }

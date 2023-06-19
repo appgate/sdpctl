@@ -37,7 +37,11 @@ func ConfigDir() string {
 	if path := os.Getenv(XdgConfigHome); len(path) > 0 {
 		return filepath.Join(path, "sdpctl")
 	}
-	return filepath.Join(xdg.ConfigHome, "sdpctl")
+	ud, _ := parseUsersDirs()
+	if configDir, ok := ud["CONFIG"]; ok {
+		return configDir
+	}
+	return filepath.Join(xdg.Home, ".config", "sdpctl")
 }
 
 func DataDir() string {
@@ -61,7 +65,11 @@ func DownloadDir() string {
 
 func parseUsersDirs() (map[string]string, error) {
 	res := map[string]string{}
-	file, err := os.Open(filepath.Join(xdg.ConfigHome, "user-dirs.dirs"))
+	configHome := xdg.ConfigHome
+	if len(configHome) <= 0 {
+		configHome = xdg.Home + "/.config"
+	}
+	file, err := os.Open(filepath.Join(configHome, "user-dirs.dirs"))
 	if err != nil {
 		return nil, err
 	}

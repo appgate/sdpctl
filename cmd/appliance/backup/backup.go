@@ -48,7 +48,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 
 	log.SetOutput(opts.Out)
 	flags := cmd.Flags()
-	flags.StringVarP(&opts.Destination, "destination", "d", "$HOME/Downloads/appgate/backup", "backup destination directory")
+	flags.StringVarP(&opts.Destination, "destination", "d", appliance.DefaultBackupDestination, "backup destination directory")
 	flags.BoolVar(&opts.AllFlag, "all", false, "backup all appliances in the Collective")
 	flags.BoolVar(&opts.PrimaryFlag, "primary", false, "backup the primary Controller")
 	flags.BoolVar(&opts.CurrentFlag, "current", false, "backup the current peer Controller")

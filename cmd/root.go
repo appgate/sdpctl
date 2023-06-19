@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -33,13 +34,22 @@ import (
 )
 
 var (
-	version         string = "0.0.0-dev"
-	commit          string
-	buildDate       string
-	longDescription string = `The official CLI tool for managing your Collective.`
-	versionOutput   string = fmt.Sprintf(`%s
+	minSupportedVersion int    = 17 // e.g. appliance version 6.0.0
+	version             string = "0.0.0-dev"
+	commit              string
+	buildDate           string
+	longDescription     string = `The official CLI tool for managing your Collective.`
+	versionOutput       string = fmt.Sprintf(`%s
 commit: %s
 build date: %s`, version, commit, buildDate)
+	minAPIversionWarning string = `WARNING: You are running an unsupported API version on the appliance.
+It is strongly adviced that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforseen consequenses.
+Minimum supported API version: %d
+Currently using API version: %d
+
+Consider upgrading to a supported version of the appliance using the upgrade script provided in the 'Utilities' section in the admin UI: %s
+
+`
 )
 
 func initConfig(currentProfile *string) {
@@ -263,6 +273,17 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 		if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
 			f.SetSpinnerOutput(io.Discard)
+		}
+
+		// Check minimum supported version and print warning if the client is running an unsupported version
+		// We check length of configured URL to not show warning when profile is unconfigured
+		if cfg.Version < minSupportedVersion && len(cfg.URL) > 0 {
+			utilitesURL, err := url.ParseRequestURI(cfg.URL)
+			if err != nil {
+				return err
+			}
+			utilitesURL.Path = `/ui/system/utilities`
+			fmt.Fprintf(f.StdErr, minAPIversionWarning, minSupportedVersion, cfg.Version, utilitesURL)
 		}
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain

@@ -38,11 +38,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// Set at build time or in environment variables
-	dockerRegistry string
-)
-
 type prepareUpgradeOptions struct {
 	Config           *configuration.Config
 	Out              io.Writer
@@ -116,24 +111,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			// Get the docker registry address
-			var reg string
-			if len(dockerRegistry) > 0 {
-				reg = dockerRegistry
-			}
-			if flagRegistry, err := cmd.Flags().GetString("docker-registry"); err == nil && len(flagRegistry) > 0 {
-				reg = flagRegistry
-			}
-			if envRegistry := os.Getenv("SDPCTL_DOCKER_REGISTRY"); len(envRegistry) > 0 {
-				reg = envRegistry
-			}
-			if len(reg) <= 0 {
-				return errors.New("no docker registry URL found. Please set the 'SDPCTL_DOCKER_REGISTRY' environment variable.")
-			}
-			if opts.dockerRegistry, err = util.NormalizeURL(reg); err != nil {
+			flagRegistry, err := cmd.Flags().GetString("docker-registry")
+			if err != nil {
 				return err
 			}
-			if !util.IsValidURL(opts.dockerRegistry.String()) {
-				return fmt.Errorf("%s is not a valid URL", opts.dockerRegistry)
+			if opts.dockerRegistry, err = f.DockerRegistry(flagRegistry); err != nil {
+				return err
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 
@@ -386,11 +369,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}).Debug("upgrade version information")
 
 	// Check if we need to bundle docker image and upload as well
-	constraint62, err := version.NewConstraint(">=6.2-alpha")
+	v62, err := version.NewVersion("6.2.0-alpha")
 	if err != nil {
 		return err
 	}
-	logserverbundleupload := constraint62.Check(opts.targetVersion) && len(groups[appliancepkg.FunctionLogServer]) > 0 && !opts.skipBundle
+	logserverbundleupload := opts.targetVersion.GreaterThanOrEqual(v62) && len(groups[appliancepkg.FunctionLogServer]) > 0 && !opts.skipBundle
 
 	upgradeNames := []string{}
 	skipNames := []string{}
@@ -463,7 +446,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 
 			fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
-			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, spinnerOut, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
+			var bundleProgress *tui.Progress
+			if !opts.ciMode {
+				bundleProgress = tui.New(ctx, opts.SpinnerOut())
+			}
+			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
 			if err != nil {
 				return err
 			}
@@ -512,6 +499,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				return err
 			}
 			os.Remove(zipPath)
+			defer func() {
+				if err := a.DeleteFile(ctx, logServerZipName); err != nil {
+					log.WithField("file", logServerZipName).WithError(err).Warning("failed to delete file from repository")
+				}
+			}()
 		} else {
 			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
 		}
