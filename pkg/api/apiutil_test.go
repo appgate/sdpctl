@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -17,6 +18,7 @@ func TestHTTPErrorResponse(t *testing.T) {
 		name        string
 		args        args
 		errorString string
+		hasRequst   bool
 	}{
 		{
 			name: "no response",
@@ -106,10 +108,20 @@ func TestHTTPErrorResponse(t *testing.T) {
                         "id": "forbidden",
                         "message": "You don't have permission to access this resource."
                     }`)),
+					Request: &http.Request{
+						Method: http.MethodGet,
+						URL: &url.URL{
+							Scheme: "https",
+							Host:   "controller.appgate.com",
+							Path:   "admin/global-settings",
+						},
+						Close: true,
+					},
 				},
 				err: nil,
 			},
 			errorString: "You don't have permission to access this resource.",
+			hasRequst:   true,
 		},
 		{
 			name: "error code no body",
@@ -131,6 +143,11 @@ func TestHTTPErrorResponse(t *testing.T) {
 			}
 			if err.Error() != tt.errorString {
 				t.Errorf("expected %q got %q", tt.errorString, err.Error())
+			}
+			if ae, ok := err.(*Error); ok {
+				if (ae.RequestURL == nil) == (tt.hasRequst) {
+					t.Errorf("expected Request from api error, not nil")
+				}
 			}
 		})
 	}

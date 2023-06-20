@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -93,7 +94,18 @@ func TestCommandErrorHandling(t *testing.T) {
 			name: "test wrapped api error",
 			args: args{
 				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error {
-					response := &http.Response{StatusCode: 500}
+					response := &http.Response{
+						StatusCode: http.StatusForbidden,
+						Request: &http.Request{
+							Method: http.MethodGet,
+							URL: &url.URL{
+								Scheme: "https",
+								Host:   "controller.appgate.com",
+								Path:   "admin/global-settings",
+							},
+							Close: true,
+						},
+					}
 					response.Body = io.NopCloser(strings.NewReader(`{
                         "id": "abc",
                         "message": "internal error message"
@@ -103,9 +115,11 @@ func TestCommandErrorHandling(t *testing.T) {
 				}},
 			},
 			want: ExitError,
-			wantedOutput: `2 errors occurred:
+			wantedOutput: `4 errors occurred:
+	* Run 'sdpctl privileges' to see your current user privileges
+	* HTTP GET https://controller.appgate.com/admin/global-settings
 	* internal error message
-	* hello world HTTP 500 - foobar
+	* hello world HTTP 403 - foobar
 
 
 `,

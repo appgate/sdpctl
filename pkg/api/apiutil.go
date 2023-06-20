@@ -22,6 +22,7 @@ type Errors struct {
 type Error struct {
 	StatusCode int
 	Err        error
+	RequestURL *string
 	Errors     []error
 }
 
@@ -40,6 +41,12 @@ func HTTPErrorResponse(response *http.Response, err error) error {
 		return fmt.Errorf("No response %w", err)
 	}
 	ae := &Error{StatusCode: response.StatusCode, Err: err}
+
+	if response.Request != nil {
+		var ptr = new(string)
+		*ptr = fmt.Sprintf("HTTP %s %s", response.Request.Method, response.Request.URL)
+		ae.RequestURL = ptr
+	}
 
 	responseBody, errRead := io.ReadAll(response.Body)
 	if errRead != nil {

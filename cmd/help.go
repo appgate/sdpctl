@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"os"
-	"path/filepath"
-	"regexp"
-
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/spf13/cobra"
 )
 
 func HelpTemplate() string {
-	cobra.AddTemplateFunc("caller", getCaller)
+	cobra.AddTemplateFunc("caller", cmdutil.GetCaller)
 	return `© 2022-2023 Appgate Cybersecurity, Inc.
 All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
 https://www.appgate.com
@@ -142,14 +139,4 @@ func NewHelpCmd(f *factory.Factory) *cobra.Command {
 		command.Println(command.Long)
 	})
 	return cmd
-}
-
-func getCaller() string {
-	binary := "sdpctl"
-	raw := os.Args[0]
-	regex := regexp.MustCompile(`sdpctl`)
-	if bin := filepath.Base(raw); regex.MatchString(bin) {
-		binary = bin
-	}
-	return binary
 }
