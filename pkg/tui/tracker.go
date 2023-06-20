@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/vbauerster/mpb/v7"
-	"github.com/vbauerster/mpb/v7/decor"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 type Tracker struct {
@@ -94,18 +94,18 @@ func (t *Tracker) decoratorFunc(name string) decor.Decorator {
 
 func (t *Tracker) barFillerFunc() func(mpb.BarFiller) mpb.BarFiller {
 	return func(bf mpb.BarFiller) mpb.BarFiller {
-		return mpb.BarFillerFunc(func(w io.Writer, reqWidth int, st decor.Statistics) {
+		return mpb.BarFillerFunc(func(w io.Writer, st decor.Statistics) error {
 			t.mu.Lock()
 			defer t.mu.Unlock()
 			if t.done {
 				if t.success {
 					io.WriteString(w, Check)
-					return
+					return nil
 				}
 				io.WriteString(w, Cross)
-				return
+				return nil
 			}
-			bf.Fill(w, reqWidth, st)
+			return bf.Fill(w, st)
 		})
 	}
 }
