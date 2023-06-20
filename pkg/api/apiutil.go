@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	stderrors "errors"
 	"fmt"
 	"io"
@@ -27,14 +26,14 @@ type Error struct {
 }
 
 var (
-	ErrFileNotFound       = errors.New("File not found")
+	ErrFileNotFound       = stderrors.New("File not found")
 	ForbiddenErr    error = &Error{
 		StatusCode: 403,
-		Err:        errors.New("403 Forbidden"),
+		Err:        stderrors.New("403 Forbidden"),
 	}
 	UnavailableErr error = &Error{
 		StatusCode: 503,
-		Err:        errors.New("503 Service Unavailable"),
+		Err:        stderrors.New("503 Service Unavailable"),
 	}
 )
 
