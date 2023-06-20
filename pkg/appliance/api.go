@@ -154,8 +154,6 @@ func (a *Appliance) Stats(ctx context.Context, orderBy []string, descending bool
 	return status, response, nil
 }
 
-var ErrFileNotFound = errors.New("File not found")
-
 // FileStatus Get the status of a File uploaded to the current Controller.
 func (a *Appliance) FileStatus(ctx context.Context, filename string) (*openapi.File, error) {
 	log := logrus.WithField("file", filename)
@@ -164,7 +162,7 @@ func (a *Appliance) FileStatus(ctx context.Context, filename string) (*openapi.F
 	defer log.WithField("status", f.GetStatus()).Info("got file status")
 	if err != nil {
 		if r.StatusCode == http.StatusNotFound {
-			return f, fmt.Errorf("%q: %w", filename, ErrFileNotFound)
+			return f, fmt.Errorf("%q: %w", filename, api.ErrFileNotFound)
 		}
 		return f, api.HTTPErrorResponse(r, err)
 	}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -92,6 +93,10 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	}
 	backupEnabled, err := backupEnabled(ctx, app.APIClient, token, opts.NoInteractive)
 	if err != nil {
+		// This most likely means that the user does not have permission to read global settings, which is fine, so we skip the entire enable/disable prompt
+		if errors.Is(err, api.ForbiddenErr) {
+			goto NO_ENABLE_CHECK
+		}
 		if opts.NoInteractive {
 			return backupIDs, errors.New("Backup failed due to error while --no-interactive flag is set")
 		}
@@ -104,6 +109,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		return backupIDs, errors.New("Backup API is disabled in the collective. Use the 'sdpctl appliance backup api' command to enable it")
 	}
 
+NO_ENABLE_CHECK:
 	appliances, err := app.List(ctx, nil, []string{"name"}, false)
 	if err != nil {
 		return backupIDs, err
@@ -261,6 +267,9 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		}
 		b.backupID, err = backupAPI.Initiate(ctx, b.applianceID, logs, audit)
 		if err != nil {
+			if errors.Is(err, api.UnavailableErr) {
+				return b, errors.New("The backup API is disabled")
+			}
 			return b, err
 		}
 		log.WithFields(f).Info("Initiated backup")
@@ -299,7 +308,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 			defer wg.Done()
 			backedUp, err := b(appliance, t)
 			if err != nil {
-				errorChannel <- fmt.Errorf("Could not backup %s %s", appliance.GetName(), err)
+				errorChannel <- fmt.Errorf("Could not backup %s: %s", appliance.GetName(), err)
 				return
 			}
 			backups <- backedUp
@@ -316,13 +325,13 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 		backupIDs[b.applianceID] = b.backupID
 		log.WithField("file", b.destination).Info("Wrote backup file")
 	}
-	var result error
+	var result *multierror.Error
 	for err := range errorChannel {
 		log.Error(err)
 		result = multierror.Append(err)
 	}
 
-	return backupIDs, result
+	return backupIDs, result.ErrorOrNil()
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
@@ -420,6 +429,9 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteraction bool) (bool, error) {
 	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
 	if err != nil {
+		if response.StatusCode == http.StatusForbidden {
+			return false, api.ForbiddenErr
+		}
 		return false, api.HTTPErrorResponse(response, err)
 	}
 	enabled := settings.GetBackupApiEnabled()

@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -429,7 +430,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		exists := true
 		if _, err := a.FileStatus(ctx, logServerZipName); err != nil {
 			// if we dont get 404, return err
-			if errors.Is(err, appliancepkg.ErrFileNotFound) {
+			if errors.Is(err, api.ErrFileNotFound) {
 				exists = false
 			} else {
 				return err
@@ -514,7 +515,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	existingFile, err := a.FileStatus(ctx, opts.filename)
 	if err != nil {
 		// if we dont get 404, return err
-		if errors.Is(err, appliancepkg.ErrFileNotFound) {
+		if errors.Is(err, api.ErrFileNotFound) {
 			shouldUpload = true
 		} else {
 			return err

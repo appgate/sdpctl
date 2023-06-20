@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	stderrors "errors"
 	"fmt"
 	"io"
@@ -24,6 +25,18 @@ type Error struct {
 	Err        error
 	Errors     []error
 }
+
+var (
+	ErrFileNotFound       = errors.New("File not found")
+	ForbiddenErr    error = &Error{
+		StatusCode: 403,
+		Err:        errors.New("403 Forbidden"),
+	}
+	UnavailableErr error = &Error{
+		StatusCode: 503,
+		Err:        errors.New("503 Service Unavailable"),
+	}
+)
 
 func (e *Error) Error() string {
 	if e.Err != nil {

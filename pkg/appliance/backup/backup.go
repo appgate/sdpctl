@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -33,6 +34,9 @@ func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit b
 	}
 	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, applianceID).Authorization(b.Token).AppliancesIdBackupPostRequest(o).Execute()
 	if err != nil {
+		if response.StatusCode == http.StatusServiceUnavailable {
+			return "", api.UnavailableErr
+		}
 		return "", api.HTTPErrorResponse(response, err)
 	}
 
