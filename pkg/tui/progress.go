@@ -5,8 +5,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/vbauerster/mpb/v7"
-	"github.com/vbauerster/mpb/v7/decor"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 type Progress struct {
@@ -69,7 +69,7 @@ func (p *Progress) FileUploadProgress(name, endMsg string, size int64, reader io
 		mpb.AppendDecorators(
 			decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
 			decor.OnComplete(decor.Name(" | "), ""),
-			decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+			decor.OnComplete(decor.AverageSpeed(decor.SizeB1024(0), "% .2f"), ""),
 		),
 	)
 
@@ -84,7 +84,7 @@ func (p *Progress) FileUploadProgress(name, endMsg string, size int64, reader io
 	}
 	p.trackers = append(p.trackers, &t)
 
-	qt := p.AddTracker(name, "waiting for server ok", endMsg, mpb.BarQueueAfter(bar, true))
+	qt := p.AddTracker(name, "waiting for server ok", endMsg, mpb.BarQueueAfter(bar))
 
 	return bar.ProxyReader(reader), qt
 }
@@ -100,7 +100,7 @@ func (p *Progress) FileDownloadProgress(name, endMsg string, size int64, width i
 		mpb.AppendDecorators(
 			decor.OnComplete(decor.CountersKibiByte("% .2f / % .2f"), ""),
 			decor.OnComplete(decor.Name(" | "), ""),
-			decor.OnComplete(decor.AverageSpeed(decor.UnitKiB, "% .2f"), ""),
+			decor.OnComplete(decor.AverageSpeed(decor.SizeB1024(0), "% .2f"), ""),
 		),
 	}
 	if len(opts) > 0 {
