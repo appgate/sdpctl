@@ -26,6 +26,18 @@ type Error struct {
 	Errors     []error
 }
 
+var (
+	ErrFileNotFound       = stderrors.New("File not found")
+	ForbiddenErr    error = &Error{
+		StatusCode: 403,
+		Err:        stderrors.New("403 Forbidden"),
+	}
+	UnavailableErr error = &Error{
+		StatusCode: 503,
+		Err:        stderrors.New("503 Service Unavailable"),
+	}
+)
+
 func (e *Error) Error() string {
 	if e.Err != nil {
 		return fmt.Sprintf("HTTP %d - %s", e.StatusCode, e.Err.Error())
