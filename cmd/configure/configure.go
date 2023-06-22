@@ -38,7 +38,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "configure",
 		Annotations: map[string]string{
-			"skipAuthCheck": "true",
+			configuration.SkipAuthCheck: "true",
 		},
 		Short:   docs.ConfigureDocs.Short,
 		Long:    docs.ConfigureDocs.Long,

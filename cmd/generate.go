@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"io"
 	"io/fs"
 	"os"
@@ -32,7 +33,7 @@ var generateCmd = &cobra.Command{
 	Aliases: []string{"gen"},
 	Hidden:  true,
 	Annotations: map[string]string{
-		"skipAuthCheck": "true",
+		configuration.SkipAuthCheck: "true",
 	},
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"man", "html", "all"},

@@ -36,7 +36,7 @@ func NewProfileCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "profile",
 		Annotations: map[string]string{
-			"skipAuthCheck": "true",
+			configuration.SkipAuthCheck: "true",
 		},
 		TraverseChildren: true,
 		Short:            docs.ProfileRootDoc.Short,

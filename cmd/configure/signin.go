@@ -2,6 +2,7 @@ package configure
 
 import (
 	"fmt"
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"io"
 	"os"
 
@@ -27,7 +28,7 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 	var signinCmd = &cobra.Command{
 		Use: "signin",
 		Annotations: map[string]string{
-			"skipAuthCheck": "true",
+			configuration.SkipAuthCheck: "true",
 		},
 		Aliases: []string{"login"},
 		Short:   docs.ConfigureSigninDocs.Short,

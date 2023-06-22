@@ -85,13 +85,15 @@ func DefaultDeviceID() string {
 	return v
 }
 
+const SkipAuthCheck = "skipAuthCheck"
+
 func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 	switch cmd.Name() {
 	case "help", cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd:
 		return false
 	}
 	for c := cmd; c.Parent() != nil; c = c.Parent() {
-		if c.Annotations != nil && c.Annotations["skipAuthCheck"] == "true" {
+		if c.Annotations != nil && c.Annotations[SkipAuthCheck] == "true" {
 			return false
 		}
 	}
