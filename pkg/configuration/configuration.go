@@ -116,9 +116,11 @@ func CheckMinAPIVersionRestriction(cmd *cobra.Command, currentVersion int) error
 	return nil
 }
 
+const NeedUpdateAPIConfig = "updateAPIConfig"
+
 func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {
 	for c := cmd; c.Parent() != nil; c = c.Parent() {
-		if c.Annotations != nil && c.Annotations["updateAPIConfig"] == "true" {
+		if c.Annotations != nil && c.Annotations[NeedUpdateAPIConfig] == "true" {
 			return true
 		}
 	}

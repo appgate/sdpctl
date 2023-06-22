@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"os"
 
 	"github.com/appgate/sdpctl/pkg/docs"
