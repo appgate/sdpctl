@@ -85,7 +85,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceUpgradePrepareDoc.Long,
 		Example: docs.ApplianceUpgradePrepareDoc.ExampleString(),
 		Annotations: map[string]string{
-			"updateAPIConfig": "true",
+			configuration.NeedUpdateAPIConfig: "true",
 		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {

@@ -17,7 +17,7 @@ func NewOpenCmd(f *factory.Factory) *cobra.Command {
 	return &cobra.Command{
 		Use: "open",
 		Annotations: map[string]string{
-			"skipAuthCheck": "true",
+			configuration.SkipAuthCheck: "true",
 		},
 		Short: "Open the Admin UI in your browser",
 		RunE: func(c *cobra.Command, args []string) error {

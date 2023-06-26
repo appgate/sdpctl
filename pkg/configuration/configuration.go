@@ -85,13 +85,15 @@ func DefaultDeviceID() string {
 	return v
 }
 
+const SkipAuthCheck = "skipAuthCheck"
+
 func IsAuthCheckEnabled(cmd *cobra.Command) bool {
 	switch cmd.Name() {
 	case "help", cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd:
 		return false
 	}
 	for c := cmd; c.Parent() != nil; c = c.Parent() {
-		if c.Annotations != nil && c.Annotations["skipAuthCheck"] == "true" {
+		if c.Annotations != nil && c.Annotations[SkipAuthCheck] == "true" {
 			return false
 		}
 	}
@@ -116,9 +118,11 @@ func CheckMinAPIVersionRestriction(cmd *cobra.Command, currentVersion int) error
 	return nil
 }
 
+const NeedUpdateAPIConfig = "updateAPIConfig"
+
 func NeedUpdatedAPIVersionConfig(cmd *cobra.Command) bool {
 	for c := cmd; c.Parent() != nil; c = c.Parent() {
-		if c.Annotations != nil && c.Annotations["updateAPIConfig"] == "true" {
+		if c.Annotations != nil && c.Annotations[NeedUpdateAPIConfig] == "true" {
 			return true
 		}
 	}

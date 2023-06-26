@@ -276,6 +276,20 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			f.SetSpinnerOutput(io.Discard)
 		}
 
+		var result error
+		// For certain sub-commands we want to make sure that we are using the
+		// latest api version available (appliance upgrade prepare and complete)
+		// we wont use this check for all commands, and fallback to the config value
+		// so we can reduce number oh http requests to the Controller.
+		if configuration.NeedUpdatedAPIVersionConfig(cmd) {
+			// Attempt signin to fill the configuration
+			// 'api_version' config is set inside auth.Signin()
+			if err := auth.Signin(f); err != nil {
+				result = multierror.Append(result, err)
+				return result
+			}
+		}
+
 		// Check minimum supported version and print warning if the client is running an unsupported version
 		// We check length of configured URL to not show warning when profile is unconfigured
 		if cfg.Version < minSupportedVersion && len(cfg.URL) > 0 {
@@ -289,19 +303,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) {
-			var result error
-			// For certain sub-commands we want to make sure that we are using the
-			// latest api version available (appliance upgrade prepare and complete)
-			// we wont use this check for all commands, and fallback to the config value
-			// so we can reduce number oh http requests to the Controller.
-			if configuration.NeedUpdatedAPIVersionConfig(cmd) {
-				minMax, err := auth.GetMinMaxAPIVersion(f)
-				if err == nil && minMax != nil {
-					viper.Set("api_version", minMax.Max)
-					f.Config.Version = int(minMax.Max)
-				}
-			}
-
 			if err := auth.Signin(f); err != nil {
 				result = multierror.Append(result, err)
 				return result

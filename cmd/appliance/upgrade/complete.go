@@ -73,7 +73,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceUpgradeCompleteDoc.Long,
 		Example: docs.ApplianceUpgradeCompleteDoc.ExampleString(),
 		Annotations: map[string]string{
-			"updateAPIConfig": "true",
+			configuration.NeedUpdateAPIConfig: "true",
 		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			minTimeout := 5 * time.Minute

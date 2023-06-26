@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"os"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -12,7 +13,7 @@ func NewCmdCompletion() *cobra.Command {
 	var completionCmd = &cobra.Command{
 		Use: "completion [bash|zsh|fish|powershell]",
 		Annotations: map[string]string{
-			"skipAuthCheck": "true",
+			configuration.SkipAuthCheck: "true",
 		},
 		Short:     docs.CompletionDocs.Short,
 		Long:      docs.CompletionDocs.Long,
