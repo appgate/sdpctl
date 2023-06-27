@@ -41,7 +41,7 @@ func TestConfigCheckAuth(t *testing.T) {
 				URL:       "https://controller.appgate.com",
 				Provider:  "local",
 			},
-			want: true,
+			want: false,
 		},
 		{
 			name: "invalid expire date",
@@ -50,14 +50,14 @@ func TestConfigCheckAuth(t *testing.T) {
 				URL:       "https://controller.appgate.com",
 				Provider:  "local",
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "no token",
 			fields: fields{
 				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "no url",
@@ -65,7 +65,7 @@ func TestConfigCheckAuth(t *testing.T) {
 				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
 				Provider:  "local",
 			},
-			want: false,
+			want: true,
 		},
 		{
 			name: "no provider",
@@ -73,7 +73,7 @@ func TestConfigCheckAuth(t *testing.T) {
 				ExpiresAt: "2001-01-01 08:15:39.137584 +0000 UTC",
 				URL:       "https://controller.appgate.com",
 			},
-			want: false,
+			want: true,
 		},
 	}
 	for _, tt := range tests {
@@ -89,8 +89,8 @@ func TestConfigCheckAuth(t *testing.T) {
 				DeviceID:    tt.fields.DeviceID,
 				PemFilePath: tt.fields.PemFilePath,
 			}
-			if got := c.CheckAuth(); got != tt.want {
-				t.Errorf("Config.CheckAuth() = %v, want %v", got, tt.want)
+			if got := c.IsRequireAuthentication(); got != tt.want {
+				t.Errorf("Config.IsRequireAuthentication() = %v, want %v", got, tt.want)
 			}
 		})
 	}
