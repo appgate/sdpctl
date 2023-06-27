@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -290,31 +289,25 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			}
 		}
 
-		// Check minimum supported version and print warning if the client is running an unsupported version
-		// We check length of configured URL to not show warning when profile is unconfigured
-		if cfg.Version < minSupportedVersion && len(cfg.URL) > 0 {
-			utilitesURL, err := url.ParseRequestURI(cfg.URL)
-			if err != nil {
-				return err
-			}
-			utilitesURL.Path = `/ui/system/utilities`
-			fmt.Fprintf(f.StdErr, minAPIversionWarning, minSupportedVersion, cfg.Version, utilitesURL)
-		}
-
 		// If the token has expired, prompt the user for credentials if they are saved in the keychain
 		if configuration.IsAuthCheckEnabled(cmd) {
-			if err := auth.Signin(f); err != nil {
-				result = multierror.Append(result, err)
-				return result
+			if cfg.IsRequireAuthentication() {
+				if err := auth.Signin(f); err != nil {
+					result = multierror.Append(result, err)
+					return result
+				}
 			}
-		}
 
-		// require that the user is authenticated before running most commands
-		if configuration.IsAuthCheckEnabled(cmd) && !cfg.CheckAuth() {
-			var result error
-			result = multierror.Append(result, errors.New("To authenticate, please run `sdpctl configure signin`"))
-			result = multierror.Append(result, cmdutil.ErrExitAuth)
-			return result
+			// Check minimum supported version and print warning if the client is running an unsupported version
+			// We check length of configured URL to not show warning when profile is unconfigured
+			if cfg.Version < minSupportedVersion && len(cfg.URL) > 0 {
+				utilitesURL, err := url.ParseRequestURI(cfg.URL)
+				if err != nil {
+					return err
+				}
+				utilitesURL.Path = `/ui/system/utilities`
+				fmt.Fprintf(f.StdErr, minAPIversionWarning, minSupportedVersion, cfg.Version, utilitesURL)
+			}
 		}
 
 		// Check minimum API version requirement for command
