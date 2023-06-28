@@ -148,21 +148,21 @@ func NormalizeConfigurationURL(u string) (string, error) {
 	return url.String(), nil
 }
 
-func (c *Config) CheckAuth() bool {
+func (c *Config) IsRequireAuthentication() bool {
 	if len(c.URL) < 1 {
-		return false
+		return true
 	}
 	if c.Provider == nil {
-		return false
+		return true
 	}
 	t, err := c.GetBearTokenHeaderValue()
 	if err != nil {
-		return false
+		return true
 	}
 	if len(t) < 10 {
-		return false
+		return true
 	}
-	return c.ExpiredAtValid()
+	return !c.ExpiredAtValid()
 }
 
 func (c *Config) ExpiredAtValid() bool {
