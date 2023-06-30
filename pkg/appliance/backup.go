@@ -128,7 +128,7 @@ NO_ENABLE_CHECK:
 			opts.FilterFlag, opts.OrderBy, opts.Descending = util.ParseFilteringFlags(cmd.Flags(), DefaultCommandFilter)
 		}
 
-		if opts.PrimaryFlag || opts.NoInteractive {
+		if opts.PrimaryFlag {
 			pc, err := FindPrimaryController(appliances, hostname, false)
 			if err != nil {
 				log.Warn("Failed to determine the primary Controller")
@@ -175,6 +175,9 @@ NO_ENABLE_CHECK:
 	}
 
 	if len(toBackup) <= 0 {
+		if opts.NoInteractive {
+			return nil, errors.New("No appliances to backup and prompt not available due to '--no-interactive' flag is set")
+		}
 		toBackup, err = BackupPrompt(appliances, []openapi.Appliance{})
 		if err != nil {
 			return nil, err
