@@ -68,7 +68,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if opts.registry, err = f.DockerRegistry(registry); err != nil {
 				return err
 			}
-			if err := os.MkdirAll(opts.savePath, os.ModeDir); err != nil {
+			if err := os.MkdirAll(opts.savePath, 0o700); err != nil {
 				return err
 			}
 			if tag, err := cmd.Flags().GetString("version"); err == nil && len(tag) > 0 {
