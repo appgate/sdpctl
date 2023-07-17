@@ -24,12 +24,12 @@ func NewLicenseCmd(f *factory.Factory) *cobra.Command {
 		Long:             docs.LicenseRootDoc.Long,
 	}
 
-	cfg := f.Config
 	opts := &licenseOpts{
 		Out:        f.IOOutWriter,
-		BaseURL:    cfg.URL,
 		HTTPClient: f.CustomHTTPClient,
+		BaseURL:    f.BaseURL(),
 	}
+
 	cmd.AddCommand(NewPruneCmd(opts))
 
 	return cmd
