@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -163,8 +164,8 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		}
 		fmt.Fprintln(opts.Out, "Added PEM as trusted source for sdpctl")
 		fmt.Fprintln(opts.Out, certificateDetails(cert))
-
-		viper.Set("pem_filepath", opts.PEM)
+		viper.Set("pem_base64", base64.StdEncoding.EncodeToString(cert.Raw))
+		viper.Set("pem_filepath", opts.PEM) // deprecated: TODO remove in future version
 	}
 	u, err := configuration.NormalizeConfigurationURL(opts.URL)
 	if err != nil {

@@ -3,6 +3,7 @@ package factory
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -130,7 +131,18 @@ func httpTransport(f *Factory) func() (*http.Transport, error) {
 		if rootCAs == nil {
 			rootCAs = x509.NewCertPool()
 		}
-		if ok, err := util.FileExists(cfg.PemFilePath); err == nil && ok {
+		if cfg.PemBase64 != nil {
+			data, err := base64.StdEncoding.DecodeString(*cfg.PemBase64)
+			if err != nil {
+				return nil, fmt.Errorf("could not decode stored certificate %w", err)
+			}
+			cert, err := x509.ParseCertificate(data)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse certificate %w", err)
+			}
+			rootCAs.AddCert(cert)
+		} else if ok, err := util.FileExists(cfg.PemFilePath); err == nil && ok {
+			// deprecated: TODO remove in future version
 			certs, err := os.ReadFile(cfg.PemFilePath)
 			if err != nil {
 				return nil, err

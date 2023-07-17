@@ -30,7 +30,8 @@ type Config struct {
 	BearerToken         *string `mapstructure:"bearer:squash"` // current logged in user token
 	ExpiresAt           *string `mapstructure:"expires_at"`
 	DeviceID            string  `mapstructure:"device_id"`
-	PemFilePath         string  `mapstructure:"pem_filepath"`
+	PemFilePath         string  `mapstructure:"pem_filepath"` // deprecated in favor of pem_base64, kept for backwards compatibility
+	PemBase64           *string `mapstructure:"pem_base64"`
 	DisableVersionCheck bool    `mapstructure:"disable_version_check"`
 	LastVersionCheck    string  `mapstructure:"last_version_check"`
 }
