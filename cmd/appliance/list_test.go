@@ -137,10 +137,11 @@ func TestApplianceFiltering(t *testing.T) {
 	stdin := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	in := io.NopCloser(stdin)
+	url := fmt.Sprintf("http://localhost:%d", registry.Port)
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://appgate.com:%d", registry.Port),
+			URL:   url,
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
@@ -148,6 +149,9 @@ func TestApplianceFiltering(t *testing.T) {
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
+	}
+	f.BaseURL = func() string {
+		return url + "/admin"
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)

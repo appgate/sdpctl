@@ -17,7 +17,7 @@ func TestNewLogsCmd(t *testing.T) {
 	dir := t.TempDir()
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/logs",
+		"/admin/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/logs",
 		func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/vnd.appgate.peer-v18+zip")
@@ -32,16 +32,20 @@ func TestNewLogsCmd(t *testing.T) {
 	stdout := &bytes.Buffer{}
 
 	stderr := &bytes.Buffer{}
+	url := fmt.Sprintf("http://localhost:%d", registry.Port)
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			URL:   url,
 		},
 		IOOutWriter: stdout,
 		StdErr:      stderr,
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
+	}
+	f.BaseURL = func() string {
+		return url + "/admin"
 	}
 	f.CustomHTTPClient = func() (*http.Client, error) {
 		return &http.Client{}, nil
