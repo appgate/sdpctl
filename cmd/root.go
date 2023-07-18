@@ -153,6 +153,7 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 	rootCmd.AddCommand(generateCmd)
 	rootCmd.AddCommand(serviceusers.NewServiceUsersCMD(f))
 	rootCmd.AddCommand(license.NewLicenseCmd(f))
+	rootCmd.AddCommand(NewAdminMessageCmd(f))
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
