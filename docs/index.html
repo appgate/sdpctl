@@ -201,9 +201,9 @@
           <pre class="code-editor"><code>
 # Step 1: Extract the executable
 
-# Step 2: Required if you are using self-signed cert on Admin UI. Otherwise skip
+# Step 2: Required if you are using self-signed cert on Admin UI, otherwise skip
   Download the CA cert from the Admin UI, System, Certificate Authority
-  Place the file downloaded certificate to the same folder with the sdpctl binary
+  Place the downloaded cert file in the same folder as the sdpctl binary
 
 
 # Step 3: Provide the Admin UI url
@@ -214,7 +214,7 @@
   Configuration updated successfully
 
 
-# Step 4: Signin to your Collective
+# Step 4: Sign in to your Collective
 &gt; <span data-varid="command">sdpctl.exe</span> configure signin
   ? Choose a provider:  [Use arrows to move, type to filter]
   ❯ Azure AD SAML Admin
