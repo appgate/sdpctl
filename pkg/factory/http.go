@@ -36,6 +36,7 @@ type Factory struct {
 	Token          func(c *configuration.Config) (*token.Token, error)
 	ServiceUsers   func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
 	DockerRegistry func(s string) (*url.URL, error)
+	BaseURL        func() string
 	userAgent      string
 	Config         *configuration.Config
 	IOOutWriter    io.Writer
@@ -59,6 +60,7 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.Appliance = applianceFunc(f)           // depends on config
 	f.Token = tokenFunc(f)                   // depends on config
 	f.ServiceUsers = serviceUsersFunc(f)     // depends on config
+	f.BaseURL = BaseURL(f)
 	f.IOOutWriter = os.Stdout
 	f.Stdin = os.Stdin
 	f.StdErr = os.Stderr
@@ -86,6 +88,16 @@ func (f *Factory) SetSpinnerOutput(o io.Writer) {
 func (f *Factory) GetSpinnerOutput() func() io.Writer {
 	return func() io.Writer {
 		return f.SpinnerOut
+	}
+}
+
+func BaseURL(f *Factory) func() string {
+	return func() string {
+		url, err := configuration.NormalizeConfigurationURL(f.Config.URL)
+		if err != nil {
+			return f.Config.URL
+		}
+		return url
 	}
 }
 

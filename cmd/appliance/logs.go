@@ -40,10 +40,11 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		Config:    f.Config,
 		CanPrompt: f.CanPrompt(),
 	}
+
 	opts := logOpts{
 		aopts,
 		f.IOOutWriter,
-		f.Config.URL,
+		f.BaseURL(),
 		f.CustomHTTPClient,
 		f.GetSpinnerOutput(),
 		f.Config.Version,
