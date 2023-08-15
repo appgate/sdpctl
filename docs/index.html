@@ -201,13 +201,20 @@
           <pre class="code-editor"><code>
 # Step 1: Extract the executable
 
-# Step 2: Provide the Admin UI url. If you use self-signed cert on Admin UI, use the flag : --pem &lt;path-to-pem&gt;
+# Step 2: Required if you are using self-signed cert on Admin UI, otherwise skip
+  Download the CA cert from the Admin UI, System, Certificate Authority
+  Place the downloaded cert file in the same folder as the sdpctl binary
+
+
+# Step 3: Provide the Admin UI url
 &gt; <span data-varid="command">sdpctl.exe</span> configure
+# or
+&gt; <span data-varid="command">sdpctl.exe</span> configure --pem &lt;ca-cert-file-name&gt;
   ? Enter the url for the Controller API (example https://controller.company.com:8443) https://ag-ctrl.company.com:8443
   Configuration updated successfully
 
 
-# Step 3: Signin to your Collective
+# Step 4: Sign in to your Collective
 &gt; <span data-varid="command">sdpctl.exe</span> configure signin
   ? Choose a provider:  [Use arrows to move, type to filter]
   ❯ Azure AD SAML Admin
@@ -218,7 +225,7 @@
   Successfully signed in
 
 
-# Step 4: Verify the configuration
+# Step 5: Verify the configuration
 &gt; <span data-varid="command">sdpctl.exe</span> appliance status
   Name                    Status     Function      CPU     Memory    Network out/in           Disk    Version
   ----                    ------     --------      ---     ------    --------------           ----    -------

@@ -638,7 +638,7 @@ func TestSignin(t *testing.T) {
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug:       false,
-					URL:         fmt.Sprintf("http://appgate.com:%d", registry.Port),
+					URL:         fmt.Sprintf("http://appgate.test:%d", registry.Port),
 					ExpiresAt:   tt.testConfig.ExpiresAt,
 					BearerToken: tt.testConfig.BearerToken,
 					Version:     tt.testConfig.Version,
