@@ -41,7 +41,7 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceMetricsDoc.Long,
 		Example: docs.ApplianceMetricsDoc.ExampleString(),
 		Aliases: []string{"metrics"},
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			a, err := opts.Appliance(opts.Config)
 			if err != nil {
