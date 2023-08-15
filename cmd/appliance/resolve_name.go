@@ -40,7 +40,7 @@ func NewResolveNameCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.ApplianceResolveNameDoc.Short,
 		Long:    docs.ApplianceResolveNameDoc.Long,
 		Example: docs.ApplianceResolveNameDoc.ExampleString(),
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			a, err := opts.Appliance(opts.Config)
 			if err != nil {
 				return err

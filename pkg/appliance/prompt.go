@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -36,6 +37,9 @@ func PromptSelectAll(ctx context.Context, a *Appliance, filter map[string]map[st
 }
 
 func promptAppliance(appliances []openapi.Appliance) (string, error) {
+	if len(appliances) == 0 {
+		return "", errors.New("no available options")
+	}
 	names := []string{}
 	for _, a := range appliances {
 		names = append(names, fmt.Sprintf("%s - %s - %s", a.GetName(), a.GetSiteName(), a.GetTags()))

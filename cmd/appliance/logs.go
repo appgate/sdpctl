@@ -40,10 +40,11 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		Config:    f.Config,
 		CanPrompt: f.CanPrompt(),
 	}
+
 	opts := logOpts{
 		aopts,
 		f.IOOutWriter,
-		f.Config.URL,
+		f.BaseURL(),
 		f.CustomHTTPClient,
 		f.GetSpinnerOutput(),
 		f.Config.Version,
@@ -55,7 +56,7 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.ApplianceLogsDoc.Short,
 		Long:    docs.ApplianceLogsDoc.Short,
 		Example: docs.ApplianceLogsDoc.ExampleString(),
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return cmdappliance.ArgsSelectAppliance(cmd, args, &opts.AppliancCmdOpts)
 		},
 		RunE: func(c *cobra.Command, args []string) error {
