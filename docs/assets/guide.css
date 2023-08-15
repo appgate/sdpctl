@@ -1,14 +1,13 @@
 /* common */
 :root {
-  --color-ag-rust: #d64527;
   --color-ag-dark: #0f0f0f;
   --color-ag-light: #f0f0f0;
   --color-bg-page: #f0f0f0;
   --color-bg-box: #ffffff;
-  --color-gh-link: #0969da;
-  --color-gh-editor: #f6f8fa;
-  --color-gh-comment: #6e7781;
-  --color-gh-command: #0550ae;
+  --color-bg-editor: #f6f8fa;
+  --color-link: #074D9C;
+  --color-comment: #005C00;
+  --color-command: #0550ae;
   --spacing-default: 1.25rem;
   --spacing-page-hor: calc(var(--spacing-default) * 8);
   --spacing-page-ver: calc(var(--spacing-default) * 2);
@@ -110,7 +109,7 @@ li p {
 
 a {
   cursor: pointer;
-  color: var(--color-gh-link);
+  color: var(--color-link);
   font-weight: normal;
   font-family: var(--font-body);
   text-decoration: none;
@@ -120,9 +119,9 @@ a {
 }
 
 a:hover {
-  color: var(--color-gh-link);
+  color: var(--color-link);
   text-decoration: none;
-  border-bottom: 1px solid var(--color-gh-link);
+  border-bottom: 1px solid var(--color-link);
   transition: color 0.4s, border-color 0.4s !important;
 }
 
@@ -230,18 +229,18 @@ code {
   text-align: left;
   padding: var(--spacing-default);
   overflow-x: scroll;
-  background-color: var(--color-gh-editor);
+  background-color: var(--color-bg-editor);
   border: 1px solid var(--color-bg-page);
   border-radius: var(--border-radius);
 }
 
 .code-command {
   font-weight: bold;
-  color: var(--color-gh-command);
+  color: var(--color-command);
 }
 
 .code-comment {
-  font-style: italic;
+  color: var(--color-comment);
 }
 
 .tag {
@@ -310,19 +309,27 @@ code {
 
 .example-summary {
   padding: 1rem 0.5rem;
-  margin-bottom: 1px;
   cursor: pointer;
-  background-color: var(--color-gh-editor);
+  background-color: var(--color-bg-editor);
   border: 1px solid var(--color-bg-page);
   border-radius: var(--border-radius);
   user-select: none;
+}
+
+details .code-editor {
+  border-top: 0;
+  border-top-right-radius: 0;
+  border-top-left-radius: 0;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --color-bg-page: #000000;
     --color-bg-box: #181818;
-    --color-gh-editor: var(--color-ag-dark);
+    --color-bg-editor: #0f0f0f;
+    --color-link: #5EA6F8;
+    --color-comment: #00B800;
+    --color-command: #58A0F9;
     --drop-shadow: 0 0 0.5rem #232323;
     --button-shadow: 0 0 0.5rem #232323;
   }

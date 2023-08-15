@@ -20,7 +20,7 @@ func NewEnableCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.MaintenanceEnable.Short,
 		Long:    docs.MaintenanceEnable.Long,
 		Example: docs.MaintenanceEnable.ExampleString(),
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return toggleArgs(cmd, &opts, args)
 		},
 		RunE: func(c *cobra.Command, args []string) error {
