@@ -11,9 +11,11 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/dns"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/foxcpp/go-mockdns"
 	"github.com/google/shlex"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -254,6 +256,8 @@ func TestForceDisableControllerCMD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{})
+			defer teardown()
 			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
 				registry.Register(v.URL, v.Responder)
@@ -267,7 +271,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug: false,
-					URL:   fmt.Sprintf("https://appgate.com:%d", registry.Port),
+					URL:   fmt.Sprintf("https://appgate.test:%d", registry.Port),
 				},
 				IOOutWriter: stdout,
 				Stdin:       in,

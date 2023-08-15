@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
+	"github.com/appgate/sdpctl/pkg/dns"
 	"github.com/appgate/sdpctl/pkg/hashcode"
+	"github.com/foxcpp/go-mockdns"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -175,7 +177,7 @@ func TestFindPrimaryController(t *testing.T) {
 							Enabled: openapi.PtrBool(true),
 						},
 						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-							Hostname: "appgate.com",
+							Hostname: "appgate.test",
 						},
 					},
 					{
@@ -192,7 +194,7 @@ func TestFindPrimaryController(t *testing.T) {
 						},
 					},
 				},
-				hostname: "appgate.com",
+				hostname: "appgate.test",
 				validate: true,
 			},
 			want: &openapi.Appliance{
@@ -202,7 +204,7 @@ func TestFindPrimaryController(t *testing.T) {
 					Enabled: openapi.PtrBool(true),
 				},
 				AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-					Hostname: "appgate.com",
+					Hostname: "appgate.test",
 				},
 			},
 			wantErr: false,
@@ -235,7 +237,7 @@ func TestFindPrimaryController(t *testing.T) {
 						},
 					},
 				},
-				hostname: "appgate.com",
+				hostname: "appgate.test",
 				validate: true,
 			},
 			wantErr: true,
@@ -268,7 +270,7 @@ func TestFindPrimaryController(t *testing.T) {
 						},
 					},
 				},
-				hostname: "appgate.com",
+				hostname: "appgate.test",
 				validate: true,
 			},
 			want:    nil,
@@ -277,6 +279,8 @@ func TestFindPrimaryController(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{})
+			defer teardown()
 			got, err := FindPrimaryController(tt.args.appliances, tt.args.hostname, tt.args.validate)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindPrimaryController() error = %v, wantErr %v", err, tt.wantErr)
@@ -2745,8 +2749,8 @@ func TestValidateHostname(t *testing.T) {
 	}{
 		{
 			name:          "valid hostname",
-			hostname:      "appgate.com",
-			adminHostName: "appgate.com",
+			hostname:      "appgate.test",
+			adminHostName: "appgate.test",
 			wantErr:       false,
 		},
 		{
@@ -2759,13 +2763,20 @@ func TestValidateHostname(t *testing.T) {
 		{
 			name:          "admin interface not hostname",
 			hostname:      "controller.devops",
-			adminHostName: "appgate.com",
+			adminHostName: "appgate.test",
 			wantErr:       true,
 			want:          *regexp.MustCompile(`Hostname validation failed. Pass the --actual-hostname flag to use the real controller hostname`),
 		},
 	}
 
 	for _, tt := range tests {
+		_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{
+			"play.google.com.": {
+				A: []string{"9.8.3.2", "9.2.1.5"},
+			},
+		})
+		defer teardown()
+
 		ctrl := openapi.Appliance{
 			Id:        openapi.PtrString(uuid.New().String()),
 			Name:      "controller",

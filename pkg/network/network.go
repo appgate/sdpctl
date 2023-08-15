@@ -29,18 +29,19 @@ The hostname resolves to the following ips:
 `, r.hostname, strings.Join(ips, "\n"))
 }
 
+var Resolver = net.DefaultResolver
+
 // ValidateHostnameUniqueness Validate that the given hostname resolves to at most 1 ip per ip version.
 func ValidateHostnameUniqueness(addr string) error {
 	var errs error
 	errCount := 0
 	ctx := context.Background()
-	resolver := net.DefaultResolver
-	ipv4, err := resolver.LookupIP(ctx, "ip4", addr)
+	ipv4, err := Resolver.LookupIP(ctx, "ip4", addr)
 	if err != nil {
 		errCount++
 		errs = multierror.Append(errs, fmt.Errorf("ipv4: %w", err))
 	}
-	ipv6, err := resolver.LookupIP(ctx, "ip6", addr)
+	ipv6, err := Resolver.LookupIP(ctx, "ip6", addr)
 	if err != nil {
 		errCount++
 		errs = multierror.Append(errs, fmt.Errorf("ipv6: %w", err))
