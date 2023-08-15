@@ -70,7 +70,7 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.ApplianceSeedDocs.Short,
 		Long:    docs.ApplianceSeedDocs.Long,
 		Example: docs.ApplianceSeedDocs.ExampleString(),
-		Args: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			noInteractive, err := cmd.Flags().GetBool("no-interactive")
 			if err != nil {
 				return err
