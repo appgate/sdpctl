@@ -13,6 +13,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -94,7 +95,7 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 		fmt.Fprintf(opts.Out, "Added certificate as trusted source for sdpctl from %s\n", opts.CertPath)
 		fmt.Fprintln(opts.Out, configuration.CertificateDetails(cert))
 
-		viper.Set("pem_base64", append(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
+		viper.Set("pem_base64", util.AppendIfMissing(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
 	}
 	u, err := configuration.NormalizeConfigurationURL(opts.URL)
 	if err != nil {

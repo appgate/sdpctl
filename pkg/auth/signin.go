@@ -16,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
@@ -132,16 +133,6 @@ func Signin(f *factory.Factory) error {
 		if err == nil {
 			// if we don't get any errors here, we can be sure that the locally stored bearer token
 			// is still valid.
-
-			// If cert is entered, but not hashed in config, we'll do that here before returning as part deprecating the pem_filepath config key
-			if cfg.PemBase64 == nil && len(cfg.PemFilePath) > 0 {
-				cert, err := configuration.ReadPemFile(cfg.PemFilePath)
-				if err != nil {
-					return err
-				}
-				viper.Set("pem_base64", append(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
-			}
-
 			return nil
 		}
 	}
@@ -264,6 +255,15 @@ func Signin(f *factory.Factory) error {
 	viper.Set("provider", selectedProvider.GetName())
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
+
+	// If cert is entered, but not hashed in config, we'll do that here before returning as part deprecating the pem_filepath config key
+	if cfg.PemBase64 == nil && len(cfg.PemFilePath) > 0 {
+		cert, err := configuration.ReadPemFile(cfg.PemFilePath)
+		if err != nil {
+			return err
+		}
+		viper.Set("pem_base64", util.AppendIfMissing(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
+	}
 
 	// saving the config file is not a fatal error, we will only show a error message
 	if err := viper.WriteConfig(); err != nil {
