@@ -25,7 +25,7 @@ const (
 )
 
 func privligeError(err *api.Error) error {
-	if err.StatusCode == http.StatusForbidden || err.StatusCode == http.StatusUnauthorized {
+	if err.StatusCode == http.StatusForbidden {
 		var result *multierror.Error
 		result = multierror.Append(result, fmt.Errorf("Run '%s privileges' to see your current user privileges", GetCaller()))
 		if err.RequestURL != nil {

@@ -1,15 +1,10 @@
 package configure
 
 import (
-	"crypto/sha1"
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/pem"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -18,6 +13,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,7 +21,7 @@ import (
 
 type configureOptions struct {
 	Config    *configuration.Config
-	PEM       string
+	CertPath  string
 	Out       io.Writer
 	StdErr    io.Writer
 	CanPrompt bool
@@ -79,92 +75,27 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&opts.PEM, "pem", "", "Path to PEM file to use for request certificate validation")
+	cmd.Flags().StringVar(&opts.CertPath, "pem", "", "Path to PEM file to use for request certificate validation")
 
 	cmd.AddCommand(NewSigninCmd(f))
 
 	return cmd
 }
 
-func readPemFile(path string) (*x509.Certificate, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("Path %s does not exist", path)
-		}
-		return nil, fmt.Errorf("%s - %s", path, err)
-	}
-	if info.IsDir() {
-		return nil, fmt.Errorf("path %s is a directory, not a file", path)
-	}
-	pemData, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("not a file %s %s", path, err)
-	}
-	block, _ := pem.Decode(pemData)
-	if block == nil {
-		return nil, fmt.Errorf("expected a pem file, could not decode %s", path)
-	}
-
-	// See if we can parse the certificate
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	return cert, nil
-}
-
-func certificateDetails(cert *x509.Certificate) string {
-	var sb strings.Builder
-
-	if len(cert.Subject.CommonName) > 0 {
-		sb.WriteString(fmt.Sprintf("[Subject]\n\t%s\n", cert.Subject.CommonName))
-	}
-	if len(cert.Issuer.CommonName) > 0 {
-		sb.WriteString(fmt.Sprintf("[Issuer]\n\t%s\n", cert.Issuer.CommonName))
-	}
-	if cert.SerialNumber != nil {
-		sb.WriteString(fmt.Sprintf("[Serial Number]\n\t%s\n", cert.SerialNumber))
-	}
-
-	sb.WriteString(fmt.Sprintf("[Not Before]\n\t%s\n", cert.NotBefore))
-	sb.WriteString(fmt.Sprintf("[Not After]\n\t%s\n", cert.NotAfter))
-
-	var sha1buf strings.Builder
-	for i, f := range sha1.Sum(cert.Raw) {
-		if i > 0 {
-			sha1buf.Write([]byte(":"))
-		}
-		sha1buf.Write([]byte(fmt.Sprintf("%02X", f)))
-	}
-	sb.WriteString(fmt.Sprintf("[Thumbprint SHA-1]\n\t%s\n", sha1buf.String()))
-
-	var sha256buf strings.Builder
-	for i, f := range sha256.Sum256(cert.Raw) {
-		if i > 0 {
-			sha256buf.Write([]byte(":"))
-		}
-		sha256buf.Write([]byte(fmt.Sprintf("%02X", f)))
-	}
-	sb.WriteString(fmt.Sprintf("[Thumbprint SHA-256]\n\t%s\n", sha256buf.String()))
-
-	return sb.String()
-}
-
 func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
 	if len(opts.URL) < 1 {
 		return errors.New("Missing URL for the Controller")
 	}
-	if len(opts.PEM) > 0 {
-		opts.PEM = filesystem.AbsolutePath(opts.PEM)
-		cert, err := readPemFile(opts.PEM)
+	if len(opts.CertPath) > 0 {
+		opts.CertPath = filesystem.AbsolutePath(opts.CertPath)
+		cert, err := configuration.ReadPemFile(opts.CertPath)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(opts.Out, "Added PEM as trusted source for sdpctl")
-		fmt.Fprintln(opts.Out, certificateDetails(cert))
+		fmt.Fprintf(opts.Out, "Added certificate as trusted source for sdpctl from %s\n", opts.CertPath)
+		fmt.Fprintln(opts.Out, configuration.CertificateDetails(cert))
 
-		viper.Set("pem_filepath", opts.PEM)
+		viper.Set("pem_base64", util.AppendIfMissing(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
 	}
 	u, err := configuration.NormalizeConfigurationURL(opts.URL)
 	if err != nil {

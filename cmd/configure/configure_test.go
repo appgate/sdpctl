@@ -1,22 +1,17 @@
 package configure
 
 import (
-	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
-	"time"
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	pseudotty "github.com/creack/pty"
-	"github.com/google/go-cmp/cmp"
 	"github.com/hinshun/vt10x"
 	"github.com/spf13/viper"
 )
@@ -163,12 +158,12 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 		t.Fatalf("wrong addr stored in config, expected %q got %q", want, v)
 	}
 	t.Logf("Computed config %+v\n", result)
-	pem, ok := result["pem_filepath"].(string)
+	certs, ok := result["pem_base64"].([]interface{})
 	if !ok {
-		t.Fatal("could not read pem_filepath key from config")
+		t.Fatal("could not read certificates from config")
 	}
-	if !strings.HasSuffix(pem, "testdata/cert.pem") {
-		t.Fatalf("pem suffix value wrong, got %s, expected %s", pem, "testdata/cert.pem")
+	if len(certs) < 1 {
+		t.Fatal("no certificates in config")
 	}
 }
 
@@ -258,66 +253,5 @@ func TestConfigCmdWithExistingAddr(t *testing.T) {
 	want := "https://new.appgate.com:8443/admin"
 	if v != want {
 		t.Fatalf("wrong addr stored in config, expected %q got %q", want, v)
-	}
-}
-
-var demoCert = `-----BEGIN CERTIFICATE-----
-MIIB4TCCAYugAwIBAgIUblfrUTadV6hHYGW8B/T0kVve6GAwDQYJKoZIhvcNAQEL
-BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
-GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yMTEyMDYxMDI2NTVaFw0zMTEy
-MDQxMDI2NTVaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
-HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwXDANBgkqhkiG9w0BAQEF
-AANLADBIAkEAyu++YjSfKQW7DfYmKQbEIG3TyD91Cce1VBVg+KwLP/iBNLQO1ZFR
-gYoiQRHqOH9iHOZRfJBhZiAB7MSxDuIdrwIDAQABo1MwUTAdBgNVHQ4EFgQU/iVT
-noAPQ09G4sC26jHKu0xnsXQwHwYDVR0jBBgwFoAU/iVTnoAPQ09G4sC26jHKu0xn
-sXQwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAANBADwEHw0k7sUuIetl
-YdaOvNqyH5SnPUDncp4Gkpr61rpVQzwadnCTtiAisYor+gD1lehtj/AjZMxvJdOm
-K0mfdZQ=
------END CERTIFICATE-----`
-
-func Test_certificateDetails(t *testing.T) {
-	before, _ := time.Parse("2006-01-02 15:04", "2018-01-20 04:35")
-	after, _ := time.Parse("2006-01-02 15:04", "2024-01-20 04:35")
-
-	tests := []struct {
-		name string
-		cert *x509.Certificate
-		want string
-	}{
-		{
-			name: "bla",
-			cert: &x509.Certificate{
-				Raw:       []byte(demoCert),
-				NotBefore: before,
-				NotAfter:  after,
-				Subject: pkix.Name{
-					CommonName: "controller.appgate.com",
-				},
-				Issuer: pkix.Name{
-					CommonName: "Appgate SDP CA",
-				},
-			},
-			want: `[Subject]
-	controller.appgate.com
-[Issuer]
-	Appgate SDP CA
-[Not Before]
-	2018-01-20 04:35:00 +0000 UTC
-[Not After]
-	2024-01-20 04:35:00 +0000 UTC
-[Thumbprint SHA-1]
-	00:2E:E6:59:93:63:70:E9:50:7B:90:70:9F:4B:58:D3:30:E5:B5:F5
-[Thumbprint SHA-256]
-	8E:31:BA:3F:9E:06:9F:A1:86:5A:2E:14:58:84:C9:7E:23:51:93:8D:92:F3:A8:9E:EE:BC:FC:11:AD:DF:12:1C
-`,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := certificateDetails(tt.cert)
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("output mismatch (-want +got):\n%s", diff)
-			}
-		})
 	}
 }

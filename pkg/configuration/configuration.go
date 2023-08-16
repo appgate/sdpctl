@@ -1,13 +1,19 @@
 package configuration
 
 import (
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/keyring"
@@ -30,7 +36,8 @@ type Config struct {
 	BearerToken         *string `mapstructure:"bearer:squash"` // current logged in user token
 	ExpiresAt           *string `mapstructure:"expires_at"`
 	DeviceID            string  `mapstructure:"device_id"`
-	PemFilePath         string  `mapstructure:"pem_filepath"`
+	PemFilePath         string  `mapstructure:"pem_filepath"` // deprecated in favor of pem_base64, kept for backwards compatibility
+	PemBase64           *string `mapstructure:"pem_base64"`
 	DisableVersionCheck bool    `mapstructure:"disable_version_check"`
 	LastVersionCheck    string  `mapstructure:"last_version_check"`
 }
@@ -358,4 +365,69 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	}
 	fmt.Fprintf(out, "NOTICE: A new version of sdpctl is available for download: %s\nDownload it here: https://github.com/appgate/sdpctl/releases/tag/%s\n\n", latest.Original(), latest.Original())
 	return c, nil
+}
+
+func ReadPemFile(path string) (*x509.Certificate, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("Path %s does not exist", path)
+		}
+		return nil, fmt.Errorf("%s - %s", path, err)
+	}
+	if info.IsDir() {
+		return nil, fmt.Errorf("path %s is a directory, not a file", path)
+	}
+	pemData, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("not a file %s %s", path, err)
+	}
+	block, _ := pem.Decode(pemData)
+	if block == nil {
+		return nil, fmt.Errorf("expected a pem file, could not decode %s", path)
+	}
+
+	// See if we can parse the certificate
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+	return cert, nil
+}
+
+func CertificateDetails(cert *x509.Certificate) string {
+	var sb strings.Builder
+
+	if len(cert.Subject.CommonName) > 0 {
+		sb.WriteString(fmt.Sprintf("[Subject]\n\t%s\n", cert.Subject.CommonName))
+	}
+	if len(cert.Issuer.CommonName) > 0 {
+		sb.WriteString(fmt.Sprintf("[Issuer]\n\t%s\n", cert.Issuer.CommonName))
+	}
+	if cert.SerialNumber != nil {
+		sb.WriteString(fmt.Sprintf("[Serial Number]\n\t%s\n", cert.SerialNumber))
+	}
+
+	sb.WriteString(fmt.Sprintf("[Not Before]\n\t%s\n", cert.NotBefore))
+	sb.WriteString(fmt.Sprintf("[Not After]\n\t%s\n", cert.NotAfter))
+
+	var sha1buf strings.Builder
+	for i, f := range sha1.Sum(cert.Raw) {
+		if i > 0 {
+			sha1buf.Write([]byte(":"))
+		}
+		sha1buf.Write([]byte(fmt.Sprintf("%02X", f)))
+	}
+	sb.WriteString(fmt.Sprintf("[Thumbprint SHA-1]\n\t%s\n", sha1buf.String()))
+
+	var sha256buf strings.Builder
+	for i, f := range sha256.Sum256(cert.Raw) {
+		if i > 0 {
+			sha256buf.Write([]byte(":"))
+		}
+		sha256buf.Write([]byte(fmt.Sprintf("%02X", f)))
+	}
+	sb.WriteString(fmt.Sprintf("[Thumbprint SHA-256]\n\t%s\n", sha256buf.String()))
+
+	return sb.String()
 }

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
@@ -253,6 +255,17 @@ func Signin(f *factory.Factory) error {
 	viper.Set("provider", selectedProvider.GetName())
 	viper.Set("expires_at", cfg.ExpiresAt)
 	viper.Set("url", cfg.URL)
+
+	// If cert is entered, but not hashed in config, we'll do that here before returning as part deprecating the pem_filepath config key
+	if cfg.PemBase64 == nil && len(cfg.PemFilePath) > 0 {
+		cert, err := configuration.ReadPemFile(cfg.PemFilePath)
+		if err != nil {
+			return err
+		}
+		viper.Set("pem_base64", util.AppendIfMissing(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
+		// If migration is done, remove pem_filepath value in config as to not confuse if the path leads to an old certificate
+		viper.Set("pem_filepath", "")
+	}
 
 	// saving the config file is not a fatal error, we will only show a error message
 	if err := viper.WriteConfig(); err != nil {
