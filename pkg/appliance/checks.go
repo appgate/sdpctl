@@ -128,10 +128,11 @@ type SkipUpgrade struct {
 }
 
 const (
-	SkipReasonNotPrepared     = "appliance is not prepared for upgrade"
-	SkipReasonOffline         = "appliance is offline"
-	SkipReasonFiltered        = "filtered using the '--include' and/or '--exclude' flag"
-	SkipReasonAlreadyPrepared = "appliance is already prepared for upgrade with a higher or equal version"
+	SkipReasonNotPrepared            = "appliance is not prepared for upgrade"
+	SkipReasonOffline                = "appliance is offline"
+	SkipReasonFiltered               = "filtered using the '--include' and/or '--exclude' flag"
+	SkipReasonAlreadyPrepared        = "appliance is already prepared for upgrade with a higher or equal version"
+	SkipReasonUnsupportedUpgradePath = "Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required."
 )
 
 func (su SkipUpgrade) Error() string {
@@ -170,9 +171,21 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 						Appliance: appliance,
 						Reason:    "appliance version is already greater or equal to prepare version",
 					})
-				} else {
-					keep = append(keep, appliance)
+					continue
 				}
+
+				// Check version 6.0.0 -> 6.2.x upgrade, since it will fail
+				v600, _ := version.NewVersion("6.0.0")
+				v62, _ := version.NewVersion("6.2.0")
+				if statV.Equal(v600) && v.GreaterThanOrEqual(v62) {
+					skip = append(skip, SkipUpgrade{
+						Appliance: appliance,
+						Reason:    SkipReasonUnsupportedUpgradePath,
+					})
+					continue
+				}
+
+				keep = append(keep, appliance)
 			}
 		}
 	}
@@ -335,4 +348,8 @@ func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult,
 		}
 	}
 	return (controllerCount != controllerPrepareCount+alreadySameVersion) && majorOrMinor, nil
+}
+
+func SpecificVersionChecks(current, future *version.Version) error {
+	return nil
 }
