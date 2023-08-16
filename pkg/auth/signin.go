@@ -263,6 +263,8 @@ func Signin(f *factory.Factory) error {
 			return err
 		}
 		viper.Set("pem_base64", util.AppendIfMissing(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
+		// If migration is done, remove pem_filepath value in config as to not confuse if the path leads to an old certificate
+		viper.Set("pem_filepath", "")
 	}
 
 	// saving the config file is not a fatal error, we will only show a error message
