@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os"
@@ -131,6 +132,16 @@ func Signin(f *factory.Factory) error {
 		if err == nil {
 			// if we don't get any errors here, we can be sure that the locally stored bearer token
 			// is still valid.
+
+			// If cert is entered, but not hashed in config, we'll do that here before returning as part deprecating the pem_filepath config key
+			if cfg.PemBase64 == nil && len(cfg.PemFilePath) > 0 {
+				cert, err := configuration.ReadPemFile(cfg.PemFilePath)
+				if err != nil {
+					return err
+				}
+				viper.Set("pem_base64", append(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
+			}
+
 			return nil
 		}
 	}
