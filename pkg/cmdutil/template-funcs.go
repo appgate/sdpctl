@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/appgate/sdpctl/pkg/profiles"
 )
 
 func GetCaller() string {
@@ -14,4 +16,8 @@ func GetCaller() string {
 		binary = bin
 	}
 	return binary
+}
+
+func GetPath() string {
+	return profiles.GetStorageDirectory()
 }

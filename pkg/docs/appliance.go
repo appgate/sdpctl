@@ -2,7 +2,7 @@ package docs
 
 var (
 	ApplianceRootDoc = CommandDoc{
-		Short: "Manage the appliances and perform tasks such as backups, ugprades, metrics etc",
+		Short: "Manage the appliances and perform tasks such as backups, upgrades, metrics etc",
 		Long: `The base command to manage the appliances. This command does not do anything by itself, it is
 used together with one of the available sub-commands listed below.`,
 	}
