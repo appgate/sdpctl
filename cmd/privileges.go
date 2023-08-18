@@ -7,6 +7,7 @@ import (
 
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -28,7 +29,7 @@ func NewPrivilegesCmd(f *factory.Factory) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:   "privileges",
-		Short: "show your current user privileges",
+		Short: docs.PrivilegesDocs.Short,
 		RunE: func(c *cobra.Command, args []string) error {
 			return privilegeRun(c, args, &opts)
 		},

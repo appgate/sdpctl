@@ -8,6 +8,7 @@ import (
 
 func HelpTemplate() string {
 	cobra.AddTemplateFunc("caller", cmdutil.GetCaller)
+	cobra.AddTemplateFunc("storage", cmdutil.GetPath)
 	return `© 2022-2023 Appgate Cybersecurity, Inc.
 All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
 https://www.appgate.com
@@ -16,6 +17,12 @@ https://www.appgate.com
 
 Environment Variables:
   See '{{caller}} help environment' for the list of supported environment variables.
+
+Configuration Path:
+  {{storage}}/config.json
+
+Log Path:
+  {{storage}}/sdpctl.log
 
 {{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
 }
