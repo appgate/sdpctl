@@ -16,7 +16,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/prompt"
-	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
@@ -262,7 +261,7 @@ func Signin(f *factory.Factory) error {
 		if err != nil {
 			return err
 		}
-		viper.Set("pem_base64", util.AppendIfMissing(viper.GetStringSlice("pem_base64"), base64.StdEncoding.EncodeToString(cert.Raw)))
+		viper.Set("pem_base64", base64.StdEncoding.EncodeToString(cert.Raw))
 		// If migration is done, remove pem_filepath value in config as to not confuse if the path leads to an old certificate
 		viper.Set("pem_filepath", "")
 	}
