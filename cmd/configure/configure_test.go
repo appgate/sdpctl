@@ -158,7 +158,7 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 		t.Fatalf("wrong addr stored in config, expected %q got %q", want, v)
 	}
 	t.Logf("Computed config %+v\n", result)
-	certs, ok := result["pem_base64"].([]interface{})
+	certs, ok := result["pem_base64"].(string)
 	if !ok {
 		t.Fatal("could not read certificates from config")
 	}
