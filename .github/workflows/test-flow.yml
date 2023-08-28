@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - "*"
+  workflow_dispatch:
+    inputs: {}
+    sender: "SDP Devops Team"
 
 jobs:
   test:
