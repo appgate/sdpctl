@@ -44,9 +44,9 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 				if !util.InSlice(current, want) {
 					return fmt.Errorf("Want status %s, got %s", want, current)
 				}
+				logEntry.Info("Reached the wanted appliance status")
 			}
 		}
-		logEntry.Info("Reached the wanted appliance status")
 		return nil
 
 	}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))

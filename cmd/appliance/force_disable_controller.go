@@ -28,12 +28,13 @@ import (
 )
 
 type cmdOpts struct {
-	Config        *configuration.Config
-	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	Out           io.Writer
-	SpinnerOut    func() io.Writer
-	NoInteractive bool
-	CiMode        bool
+	Config         *configuration.Config
+	Appliance      func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	Out            io.Writer
+	SpinnerOut     func() io.Writer
+	NoInteractive  bool
+	CiMode         bool
+	ActualHostname string
 }
 
 func NewForceDisableControllerCmd(f *factory.Factory) *cobra.Command {
@@ -69,12 +70,17 @@ func NewForceDisableControllerCmd(f *factory.Factory) *cobra.Command {
 				errs = multierror.Append(errs, err)
 			}
 
+			if opts.ActualHostname, err = cmd.Flags().GetString("actual-hostname"); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+
 			return errs.ErrorOrNil()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return forceDisableControllerRunE(opts, args)
 		},
 	}
+	cmd.Flags().StringVar(&opts.ActualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
 	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 
 	return cmd
@@ -107,6 +113,9 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	primaryHost, err := cfg.GetHost()
 	if err != nil {
 		return err
+	}
+	if len(opts.ActualHostname) > 0 {
+		primaryHost = opts.ActualHostname
 	}
 	primaryController, err := appliancepkg.FindPrimaryController(appliances, primaryHost, true)
 	if err != nil {
