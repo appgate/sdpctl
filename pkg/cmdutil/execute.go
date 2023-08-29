@@ -78,7 +78,7 @@ func ExecuteCommand(cmd *cobra.Command) ExitCode {
 
 		// if error is ErrNothingToUpgrade, exit with zero code
 		if errors.Is(err, ErrNothingToPrepare) {
-			fmt.Println(err.Error())
+			fmt.Fprintln(cmd.ErrOrStderr(), err.Error())
 			return ExitOK
 		}
 
