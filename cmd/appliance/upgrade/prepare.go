@@ -343,7 +343,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		if len(appliances) <= 0 {
 			var errs *multierr.Error
-			errs = multierr.Append(errs, errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details"))
+			errs = multierr.Append(errs, cmdutil.ErrNothingToPrepare)
 			if len(skipAppliances) > 0 {
 				for _, skip := range skipAppliances {
 					errs = multierr.Append(errs, skip)

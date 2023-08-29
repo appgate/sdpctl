@@ -220,6 +220,14 @@ func TestCommandErrorHandling(t *testing.T) {
 
 `,
 		},
+		{
+			name: "zero exit on no prepare",
+			args: args{
+				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error { return ErrNothingToPrepare }},
+			},
+			want:         ExitOK,
+			wantedOutput: fmt.Sprintf("%s\n", ErrNothingToPrepare.Error()),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
