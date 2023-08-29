@@ -13,4 +13,6 @@ var (
 	ErrMissingTTY = errors.New("No TTY present")
 	// ErrNetworkError is used when a command encounters multiple timeouts on a request, which we will presume is a network error
 	ErrNetworkError = errors.New("Failed to communicate with SDP Collective. Bad connection")
+	// ErrNothingToPrepare is used when there are no appliances to prepare for upgrade
+	ErrNothingToPrepare = errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details")
 )

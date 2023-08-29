@@ -76,6 +76,12 @@ func ExecuteCommand(cmd *cobra.Command) ExitCode {
 			result = multierror.Append(result, ErrCommandTimeout)
 		}
 
+		// if error is ErrNothingToUpgrade, exit with zero code
+		if errors.Is(err, ErrNothingToPrepare) {
+			fmt.Println(err.Error())
+			return ExitOK
+		}
+
 		// if we during any request get a SSL error, (un-trusted certificate) error, prompt the user to import the pem file.
 		var sslErr x509.UnknownAuthorityError
 		if errors.As(err, &sslErr) {
