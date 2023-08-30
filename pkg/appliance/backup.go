@@ -242,16 +242,15 @@ NO_ENABLE_CHECK:
 				return err
 			}
 			networkErrors = 0
-			log.WithFields(log.Fields{
-				"appliance": applianceID,
-				"backup_id": backupID,
-				"status":    status.GetStatus(),
-				"message":   status.GetMessage(),
-			}).Info("backup status")
 			message := status.GetStatus()
 			if len(status.GetMessage()) > 0 {
-				message = message + " - " + status.GetMessage()
+				message = status.GetMessage()
 			}
+			log.WithFields(log.Fields{
+				"appliance_id": applianceID,
+				"backup_id":    backupID,
+				"status":       status.GetStatus(),
+			}).Info(message)
 			tracker.Update(message)
 			if status.GetStatus() != backup.Done {
 				return fmt.Errorf("Backup not done for appliance %s, got %s", applianceID, status.GetStatus())
@@ -266,8 +265,9 @@ NO_ENABLE_CHECK:
 	b := func(appliance openapi.Appliance, tracker *tui.Tracker) (backedUp, error) {
 		b := backedUp{applianceID: appliance.GetId()}
 		f := log.Fields{
-			"appliance": b.applianceID,
+			"appliance_id": b.applianceID,
 		}
+		logger := log.WithFields(f)
 		b.backupID, err = backupAPI.Initiate(ctx, b.applianceID, logs, audit)
 		if err != nil {
 			if errors.Is(err, api.UnavailableErr) {
@@ -275,31 +275,40 @@ NO_ENABLE_CHECK:
 			}
 			return b, err
 		}
-		log.WithFields(f).Info("Initiated backup")
+		logger = logger.WithField("backup_id", b.backupID)
+		logger.Info("Initiated backup")
 		tracker.Update("Initiated backup")
 		if err := retryStatus(ctx, b.applianceID, b.backupID, tracker); err != nil {
+			logger.WithError(err).Error("backup failed")
 			return b, err
 		}
-		log.WithFields(f).Infof("Starting download for backup id %s", b.backupID)
-		tracker.Update("downloading")
+		msg := "downloading"
+		logger.Info(msg)
+		tracker.Update(msg)
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		if err != nil {
+			logger.WithError(err).Error("backup failed")
 			return b, err
 		}
 
 		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
+		logger = logger.WithField("download_path", b.destination)
 		out, err := os.Create(b.destination)
 		if err != nil {
+			logger.WithError(err).Error("backup failed")
 			return b, err
 		}
 		if _, err := io.Copy(out, file); err != nil {
+			logger.WithError(err).Error("backup failed")
 			return b, err
 		}
 		file.Close()
 		out.Close()
 		if err := os.Remove(file.Name()); err != nil {
+			logger.WithError(err).Error("backup failed")
 			return b, err
 		}
+		logger.Info("download complete")
 		tracker.Update("download complete")
 		return b, nil
 	}
@@ -311,7 +320,7 @@ NO_ENABLE_CHECK:
 			defer wg.Done()
 			backedUp, err := b(appliance, t)
 			if err != nil {
-				errorChannel <- fmt.Errorf("Could not backup %s: %s", appliance.GetName(), err)
+				errorChannel <- fmt.Errorf("Backup failed for %s: %s", appliance.GetName(), err)
 				return
 			}
 			backups <- backedUp
@@ -351,20 +360,23 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	}
 	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
-	log.WithField("backup_ids", IDs).Info("Cleaning up...")
 	for appID, bckID := range IDs {
 		ID := appID
 		backupID := bckID
+		logger := log.WithFields(log.Fields{"appliance_id": appID, "backup_id": bckID})
+		logger.Info("cleaning up")
 		g.Go(func() error {
 			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(token).Execute()
 			if err != nil {
+				logger.WithError(err).Error("cleanup failed")
 				return api.HTTPErrorResponse(res, err)
 			}
+			logger.Info("cleanup complete")
 			return nil
 		})
 	}
 	g.Wait()
-	log.Info("Finished cleanup")
+	log.Info("cleanup done")
 	fmt.Fprint(opts.Out, "Backup complete!\n\n")
 
 	return nil
