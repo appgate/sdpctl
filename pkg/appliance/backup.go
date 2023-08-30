@@ -339,7 +339,6 @@ NO_ENABLE_CHECK:
 	}
 	var result *multierror.Error
 	for err := range errorChannel {
-		log.Error(err)
 		result = multierror.Append(err)
 	}
 
