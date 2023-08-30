@@ -17,4 +17,6 @@ var (
 	ErrSSL = errors.New("Trust the certificate or import a PEM file using 'sdpctl configure --pem=<path/to/pem>'")
 	// ErrNothingToPrepare is used when there are no appliances to prepare for upgrade
 	ErrNothingToPrepare = errors.New("No appliances to prepare for upgrade. All appliances may have been filtered or are already prepared. See the log for more details")
+
+	ErrDailyVersionCheck = errors.New("version check already done today")
 )
