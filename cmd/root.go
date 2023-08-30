@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -323,7 +324,11 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 		cfg, err = cfg.CheckForUpdate(f.StdErr, client, version)
 		if err != nil {
-			log.WithError(err).Info("version check result")
+			if errors.Is(err, cmdutil.ErrDailyVersionCheck) {
+				log.Info(err.Error())
+			} else {
+				log.WithError(err).Error("version check error")
+			}
 		}
 		if err := viper.WriteConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

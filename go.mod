@@ -30,7 +30,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vbauerster/mpb/v8 v8.5.2
+	github.com/vbauerster/mpb/v8 v8.6.1
 	github.com/zalando/go-keyring v0.2.3
 	golang.org/x/net v0.14.0
 	golang.org/x/sync v0.3.0
@@ -53,7 +53,7 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/miekg/dns v1.1.55 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect

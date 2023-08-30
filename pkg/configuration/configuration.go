@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -302,7 +303,7 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	if err == nil {
 		yesterday := time.Now().AddDate(0, 0, -1)
 		if !lastCheck.Before(yesterday) {
-			return c, errors.New("version check already done today")
+			return c, cmdutil.ErrDailyVersionCheck
 		}
 	}
 
