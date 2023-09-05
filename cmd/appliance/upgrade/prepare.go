@@ -426,21 +426,26 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", util.ApplianceVersionString(opts.targetVersion))
+		tagVersion, err := util.DockerTagVersion(opts.targetVersion)
+		if err != nil {
+			return err
+		}
 		// check if already exists
-		exists := true
-		if _, err := a.FileStatus(ctx, logServerZipName); err != nil {
-			// if we dont get 404, return err
-			if errors.Is(err, api.ErrFileNotFound) {
-				exists = false
-			} else {
-				return err
+		// we don't know the exact name, so we match with all existing files in the repository
+		// will match if major and minor versions are the same in the filename
+		exists := false
+		files, err := a.ListFiles(ctx, nil, false)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			lfFileName := fmt.Sprintf("logserver-%s", tagVersion)
+			regex := regexp.MustCompile(strings.Replace(lfFileName, `.`, `\.`, -1))
+			if regex.MatchString(*f.Name) {
+				exists = true
 			}
 		}
 		if !exists {
-			tagVersion, err := util.DockerTagVersion(opts.targetVersion)
-			if err != nil {
-				return err
-			}
 			logServerImages := map[string]string{
 				"cz-opensearch":           tagVersion,
 				"cz-opensearchdashboards": tagVersion,
