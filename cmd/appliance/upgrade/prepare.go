@@ -40,26 +40,27 @@ import (
 )
 
 type prepareUpgradeOptions struct {
-	Config           *configuration.Config
-	Out              io.Writer
-	Appliance        func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	HTTPClient       func() (*http.Client, error)
-	SpinnerOut       func() io.Writer
-	debug            bool
-	NoInteractive    bool
-	image            string
-	DevKeyring       bool
-	remoteImage      bool
-	filename         string
-	timeout          time.Duration
-	defaultFilter    map[string]map[string]string
-	hostOnController bool
-	forcePrepare     bool
-	ciMode           bool
-	actualHostname   string
-	targetVersion    *version.Version
-	dockerRegistry   *url.URL
-	skipBundle       bool
+	Config              *configuration.Config
+	Out                 io.Writer
+	Appliance           func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	HTTPClient          func() (*http.Client, error)
+	SpinnerOut          func() io.Writer
+	debug               bool
+	NoInteractive       bool
+	image               string
+	DevKeyring          bool
+	remoteImage         bool
+	filename            string
+	timeout             time.Duration
+	defaultFilter       map[string]map[string]string
+	hostOnController    bool
+	forcePrepare        bool
+	ciMode              bool
+	actualHostname      string
+	targetVersion       *version.Version
+	dockerRegistry      *url.URL
+	skipBundle          bool
+	logServerBundlePath string
 }
 
 // NewPrepareUpgradeCmd return a new prepare upgrade command
@@ -164,6 +165,24 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			if len(opts.logServerBundlePath) > 0 {
+				opts.logServerBundlePath = filesystem.AbsolutePath(opts.logServerBundlePath)
+				ok, err := util.FileExists(opts.logServerBundlePath)
+				if err != nil {
+					return err
+				}
+				if !ok {
+					errs = multierr.Append(errs, fmt.Errorf("Image bundle not found: %q", opts.logServerBundlePath))
+				}
+				if ok {
+					// validate bundle filename
+					regex := regexp.MustCompile(`logserver-\d{1,2}\.\d{1,2}(.+)?\.zip$`)
+					if !regex.MatchString(opts.logServerBundlePath) {
+						return fmt.Errorf("invalid bundle filename: %s. Expecting name matching pattern 'logserver-<MAJOR>.<MINOR>.zip'", opts.logServerBundlePath)
+					}
+				}
+			}
+
 			if opts.ciMode, err = cmd.Flags().GetBool("ci-mode"); err != nil {
 				return err
 			}
@@ -191,6 +210,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
 	flags.BoolVar(&opts.skipBundle, "skip-container-bundle", false, "skip the bundling of the docker images for functions that need them, e.g. the LogServer")
 	flags.String("docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
+	flags.StringVar(&opts.logServerBundlePath, "logserver-bundle", "", "Path to a local LogServer bundle file to upload and use when upgrading a LogServer appliance.")
 
 	return prepareCmd
 }
@@ -430,6 +450,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", tagVersion)
+		if len(opts.logServerBundlePath) > 0 {
+			logServerZipName = filepath.Base(opts.logServerBundlePath)
+		}
+
 		// check if already exists
 		// we don't know the exact name, so we match with all existing files in the repository
 		// will match if major and minor versions are the same in the filename
@@ -445,20 +469,48 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 		}
 		if !exists {
-			logServerImages := map[string]string{
-				"cz-opensearch":           tagVersion,
-				"cz-opensearchdashboards": tagVersion,
+			fmt.Fprintf(opts.Out, "[%s] Preparing image bundle for LogServer:\n", time.Now().Format(time.RFC3339))
+			var zipPath string
+			if len(opts.logServerBundlePath) <= 0 {
+				tagVersion, err := util.DockerTagVersion(opts.targetVersion)
+				if err != nil {
+					return err
+				}
+				logServerImages := map[string]string{
+					"cz-opensearch":           tagVersion,
+					"cz-opensearchdashboards": tagVersion,
+				}
+
+				var bundleProgress *tui.Progress
+				if !opts.ciMode {
+					bundleProgress = tui.New(ctx, opts.SpinnerOut())
+				}
+				zipPath, err = appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
+				if err != nil {
+					return err
+				}
+			} else {
+				tempZip, err := os.CreateTemp("", logServerZipName)
+				if err != nil {
+					return err
+				}
+				defer tempZip.Close()
+				pathZip, err := os.Open(opts.logServerBundlePath)
+				if err != nil {
+					return err
+				}
+				defer pathZip.Close()
+
+				if _, err := io.Copy(tempZip, pathZip); err != nil {
+					return err
+				}
+				zipPath = tempZip.Name()
 			}
 
-			fmt.Fprintf(opts.Out, "[%s] Preparing image layers for LogServer:\n", time.Now().Format(time.RFC3339))
-			var bundleProgress *tui.Progress
-			if !opts.ciMode {
-				bundleProgress = tui.New(ctx, opts.SpinnerOut())
+			if len(zipPath) <= 0 {
+				return errors.New("Something went wrong")
 			}
-			zipPath, err := appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
-			if err != nil {
-				return err
-			}
+
 			zipFile, err := os.Open(zipPath)
 			if err != nil {
 				return err
