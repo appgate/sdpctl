@@ -440,7 +440,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		for _, f := range files {
 			lfFileName := fmt.Sprintf("logserver-%s", tagVersion)
-			if strings.HasPrefix(lfFileName, *f.Name) {
+			if strings.HasPrefix(*f.Name, lfFileName) {
 				exists = true
 			}
 		}
