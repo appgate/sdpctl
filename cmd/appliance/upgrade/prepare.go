@@ -174,13 +174,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				if !ok {
 					errs = multierr.Append(errs, fmt.Errorf("Image bundle not found: %q", opts.logServerBundlePath))
 				}
-				if ok {
-					// validate bundle filename
-					regex := regexp.MustCompile(`logserver-\d{1,2}\.\d{1,2}(.+)?\.zip$`)
-					if !regex.MatchString(opts.logServerBundlePath) {
-						return fmt.Errorf("invalid bundle filename: %s. Expecting name matching pattern 'logserver-<MAJOR>.<MINOR>.zip'", opts.logServerBundlePath)
-					}
-				}
 			}
 
 			if opts.ciMode, err = cmd.Flags().GetBool("ci-mode"); err != nil {
