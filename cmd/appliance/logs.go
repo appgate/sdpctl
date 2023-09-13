@@ -88,8 +88,9 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	if err != nil {
 		return err
 	}
-	request = request.WithContext(context.WithValue(context.Background(), factory.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+zip", opts.Version)))
-	log.Infof("Starting downloading log zip bundle or %s", opts.ApplianceID)
+	request = request.WithContext(context.WithValue(context.Background(), api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+zip", opts.Version)))
+	request.Close = true
+	log.Infof("Starting downloading log zip bundle for %s", opts.ApplianceID)
 	response, err := client.Do(request)
 	if response == nil || err != nil {
 		return api.HTTPErrorResponse(response, err)
