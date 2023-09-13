@@ -58,4 +58,13 @@ deleted2.img.zip: deleted`,
 			},
 		},
 	}
+	FilesUploadDocs = CommandDoc{
+		Short: "upload a file to the primary controllers file repository",
+		Examples: []ExampleDoc{
+			{
+				Description: "general usage",
+				Command:     "sdpctl appliance files upload <path-to-file>",
+			},
+		},
+	}
 )

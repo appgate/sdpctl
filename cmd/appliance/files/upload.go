@@ -12,6 +12,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/filesystem"
@@ -37,8 +38,9 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 	uploadCMD := &cobra.Command{
 		Use:     "upload",
 		Aliases: []string{"up"},
-		Short:   "",
-		Long:    "",
+		Short:   docs.FilesUploadDocs.Short,
+		Long:    docs.FilesUploadDocs.Long,
+		Example: docs.FilesUploadDocs.ExampleString(),
 		Args:    cobra.MinimumNArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var errs *multierror.Error
