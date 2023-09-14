@@ -57,7 +57,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 				path := filesystem.AbsolutePath(pathSlice[0])
 				var rename string
 				if len(pathSlice) > 1 {
-					rename = pathSlice[1]
+					rename = filepath.Base(pathSlice[1])
 				}
 				ok, err := util.FileExists(path)
 				if err != nil {
@@ -154,7 +154,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 
 			for result := range errChan {
 				if result != nil {
-					multierror.Append(errs, result)
+					errs = multierror.Append(errs, result)
 				}
 			}
 
