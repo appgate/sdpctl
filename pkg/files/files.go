@@ -18,13 +18,17 @@ type FilesAPI struct {
 	Progress *tui.Progress
 }
 
-func (f *FilesAPI) Upload(ctx context.Context, file *os.File) error {
+func (f *FilesAPI) Upload(ctx context.Context, file *os.File, rename string) error {
 	fileInfo, err := file.Stat()
 	if err != nil {
 		return err
 	}
 	size := fileInfo.Size()
 	name := fileInfo.Name()
+	uploadName := name
+	if len(rename) > 0 {
+		uploadName = rename
+	}
 
 	pr, pw := io.Pipe()
 	writer := multipart.NewWriter(pw)
@@ -32,7 +36,7 @@ func (f *FilesAPI) Upload(ctx context.Context, file *os.File) error {
 		defer pw.Close()
 		defer writer.Close()
 
-		part, err := writer.CreateFormFile("file", name)
+		part, err := writer.CreateFormFile("file", uploadName)
 		if err != nil {
 			log.Warnf("multipart form err %s", err)
 			return
@@ -46,7 +50,7 @@ func (f *FilesAPI) Upload(ctx context.Context, file *os.File) error {
 
 	headers := map[string]string{
 		"Content-Type":        writer.FormDataContentType(),
-		"Content-Disposition": fmt.Sprintf("attachment; filename=%s", name),
+		"Content-Disposition": fmt.Sprintf("attachment; filename=%s", uploadName),
 	}
 
 	var reader io.ReadCloser
@@ -55,7 +59,11 @@ func (f *FilesAPI) Upload(ctx context.Context, file *os.File) error {
 	var t *tui.Tracker
 	endMsg := "uploaded"
 	if f.Progress != nil {
-		reader, t = f.Progress.FileUploadProgress(name, endMsg, size, pr)
+		progressString := name
+		if len(rename) > 0 {
+			progressString = fmt.Sprintf("%s -> %s", progressString, rename)
+		}
+		reader, t = f.Progress.FileUploadProgress(progressString, endMsg, size, pr)
 		go t.Watch([]string{endMsg}, []string{appliancepkg.FileFailed})
 	}
 	if err := f.API.UploadFile(ctx, reader, headers); err != nil {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -27,13 +28,14 @@ type uploadOptions struct {
 	config    *configuration.Config
 	out       io.Writer
 	ciMode    bool
-	filePaths []string
+	filePaths map[string]string
 }
 
 func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 	opts := uploadOptions{
-		config: f.Config,
-		out:    f.IOOutWriter,
+		config:    f.Config,
+		out:       f.IOOutWriter,
+		filePaths: map[string]string{},
 	}
 	uploadCMD := &cobra.Command{
 		Use:     "upload",
@@ -51,7 +53,12 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			for _, arg := range args {
-				path := filesystem.AbsolutePath(arg)
+				pathSlice := strings.Split(arg, "=")
+				path := filesystem.AbsolutePath(pathSlice[0])
+				var rename string
+				if len(pathSlice) > 1 {
+					rename = pathSlice[1]
+				}
 				ok, err := util.FileExists(path)
 				if err != nil {
 					errs = multierror.Append(errs, err)
@@ -61,7 +68,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 					errs = multierror.Append(errs, fmt.Errorf("file does not exist: %s", path))
 					continue
 				}
-				opts.filePaths = append(opts.filePaths, path)
+				opts.filePaths[path] = rename
 			}
 
 			return errs.ErrorOrNil()
@@ -79,13 +86,16 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 				filesAPI.Progress = tui.New(ctx, f.SpinnerOut)
 			}
 
-			tempPaths := []string{}
-			for _, path := range opts.filePaths {
+			tempPaths := map[string]string{}
+			for path, rename := range opts.filePaths {
 				name := filepath.Base(path)
+				if len(rename) > 0 {
+					name = rename
+				}
 				_, err := api.FileStatus(ctx, name)
 				if err != nil {
 					if errors.Is(err, apipkg.ErrFileNotFound) {
-						tempPaths = append(tempPaths, path)
+						tempPaths[path] = rename
 						continue
 					}
 					return err
@@ -103,7 +113,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 						continue
 					}
 				}
-				tempPaths = append(tempPaths, path)
+				tempPaths[path] = rename
 			}
 
 			if len(tempPaths) <= 0 {
@@ -112,7 +122,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			// Delete all files that are being uploaded first
-			for _, path := range tempPaths {
+			for path := range tempPaths {
 				name := filepath.Base(path)
 				api.DeleteFile(ctx, name)
 			}
@@ -121,20 +131,20 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 			var wg sync.WaitGroup
 			var errs *multierror.Error
 			fmt.Fprintf(f.IOOutWriter, "Uploading %d file(s):\n\n", len(tempPaths))
-			for _, f := range tempPaths {
+			for f, rename := range tempPaths {
 				file, err := os.Open(f)
 				if err != nil {
 					errs = multierror.Append(errs, err)
 					continue
 				}
 				wg.Add(1)
-				go func(ctx context.Context, wg *sync.WaitGroup, err chan<- error, f *os.File, filesAPI *files.FilesAPI) {
+				go func(ctx context.Context, wg *sync.WaitGroup, err chan<- error, f *os.File, filesAPI *files.FilesAPI, rename string) {
 					defer func() {
 						wg.Done()
 						f.Close()
 					}()
-					err <- filesAPI.Upload(ctx, f)
-				}(ctx, &wg, errChan, file, &filesAPI)
+					err <- filesAPI.Upload(ctx, f, rename)
+				}(ctx, &wg, errChan, file, &filesAPI, rename)
 			}
 
 			go func(wg *sync.WaitGroup, errChan chan<- error) {

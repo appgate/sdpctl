@@ -20,11 +20,17 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl appliance files upload</h2><p>upload a file to the primary controllers file repository</p><pre class="code-editor margin-bottom"><code>sdpctl appliance files upload [flags]
+      <h2 class="text-left margin-bottom">sdpctl appliance files upload</h2><p>upload a file to the primary controllers file repository</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>upload one or multiple files to the primary controller file repository. Optionally you can give the file a new name on the server using the &lsquo;=&rsquo; with the filepath (see examples for more details)</p><pre class="code-editor margin-bottom"><code>sdpctl appliance files upload [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-<pre class="code-editor margin-bottom"><code>  # general usage
+<pre class="code-editor margin-bottom"><code>  # upload one file
   &gt; sdpctl appliance files upload &lt;path-to-file&gt;
+
+  # upload multiple files
+  &gt; sdpctl appliance files upload &lt;path1&gt; &lt;path2&gt;
+
+  # rename a file when uploading
+  &gt; sdpctl appliance files upload &lt;path-to-file&gt;=&lt;new-file-name&gt;
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
 <pre class="code-editor margin-bottom"><code>  -h, --help   help for upload
