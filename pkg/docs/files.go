@@ -58,4 +58,22 @@ deleted2.img.zip: deleted`,
 			},
 		},
 	}
+	FilesUploadDocs = CommandDoc{
+		Short: "upload a file to the primary controllers file repository",
+		Long:  `upload one or multiple files to the primary controller file repository. Optionally you can give the file a new name on the server using the '=' with the filepath (see examples for more details)`,
+		Examples: []ExampleDoc{
+			{
+				Description: "upload one file",
+				Command:     "sdpctl appliance files upload <path-to-file>",
+			},
+			{
+				Description: "upload multiple files",
+				Command:     "sdpctl appliance files upload <path1> <path2>",
+			},
+			{
+				Description: "rename a file when uploading",
+				Command:     "sdpctl appliance files upload <path-to-file>=<new-file-name>",
+			},
+		},
+	}
 )
