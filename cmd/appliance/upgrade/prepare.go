@@ -203,7 +203,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
 	flags.BoolVar(&opts.skipBundle, "skip-container-bundle", false, "skip the bundling of the docker images for functions that need them, e.g. the LogServer")
 	flags.String("docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
-	flags.StringVar(&opts.logServerBundlePath, "logserver-bundle", "", "Path to a local LogServer bundle file to upload and use when upgrading a LogServer appliance.")
+	flags.StringVar(&opts.logServerBundlePath, "logserver-bundle", "", "Path to a local LogServer image bundle file to upload and use when upgrading a LogServer appliance.")
 
 	return prepareCmd
 }
