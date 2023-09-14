@@ -217,7 +217,7 @@ NO_ENABLE_CHECK:
 		count        = len(toBackup)
 		backups      = make(chan backedUp, count)
 		errorChannel = make(chan error, count)
-		backupAPI    = backup.New(app.APIClient, app.Token, opts.Config.Version)
+		backupAPI    = backup.New(app.HTTPClient, app.APIClient, opts.Config, app.Token)
 		progressBars *tui.Progress
 	)
 
@@ -285,29 +285,14 @@ NO_ENABLE_CHECK:
 		msg := "downloading"
 		logger.Info(msg)
 		tracker.Update(msg)
-		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
-		if err != nil {
-			logger.WithError(err).Error("backup failed")
-			return b, err
-		}
-
+		// file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
-		logger = logger.WithField("download_path", b.destination)
-		out, err := os.Create(b.destination)
+		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID, b.destination)
 		if err != nil {
 			logger.WithError(err).Error("backup failed")
 			return b, err
 		}
-		if _, err := io.Copy(out, file); err != nil {
-			logger.WithError(err).Error("backup failed")
-			return b, err
-		}
-		file.Close()
-		out.Close()
-		if err := os.Remove(file.Name()); err != nil {
-			logger.WithError(err).Error("backup failed")
-			return b, err
-		}
+		logger = logger.WithField("download_path", file.Name())
 		logger.Info("download complete")
 		tracker.Update("download complete")
 		return b, nil

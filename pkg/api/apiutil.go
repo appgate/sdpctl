@@ -26,6 +26,10 @@ type Error struct {
 	Errors     []error
 }
 
+type ContextKey string
+
+const ContextAcceptValue ContextKey = "Accept"
+
 var (
 	ErrFileNotFound       = stderrors.New("File not found")
 	ForbiddenErr    error = &Error{
