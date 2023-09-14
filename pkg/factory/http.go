@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/serviceusers"
 	"github.com/appgate/sdpctl/pkg/token"
@@ -168,17 +169,13 @@ type customTransport struct {
 	underlyingTransport      http.RoundTripper
 }
 
-type ContextKey string
-
-const ContextAcceptValue ContextKey = "Accept"
-
 func (ct *customTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("Authorization", ct.token)
 	req.Header.Add("User-Agent", ct.useragent)
 	req.Header.Add("Accept", ct.accept)
 
 	// overwrite Accept header if we have anything in the context
-	if accept, ok := req.Context().Value(ContextAcceptValue).(string); ok {
+	if accept, ok := req.Context().Value(api.ContextAcceptValue).(string); ok {
 		req.Header.Set("Accept", accept)
 	}
 

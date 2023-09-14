@@ -10,19 +10,24 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/configuration"
 )
 
 type Backup struct {
-	APIClient *openapi.APIClient
-	Token     string
-	Version   int
+	configuration *configuration.Config
+	HTTPClient    *http.Client
+	APIClient     *openapi.APIClient
+	Token         string
+	Version       int
 }
 
-func New(c *openapi.APIClient, t string, v int) *Backup {
+func New(h *http.Client, c *openapi.APIClient, config *configuration.Config, token string) *Backup {
 	return &Backup{
-		APIClient: c,
-		Token:     t,
-		Version:   v,
+		APIClient:     c,
+		HTTPClient:    h,
+		configuration: config,
+		Token:         token,
+		Version:       config.Version,
 	}
 }
 
@@ -44,16 +49,41 @@ func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit b
 }
 
 // Download a completed appliance backup with the given ID of an Appliance
-func (b *Backup) Download(ctx context.Context, applianceID, backupID string) (*os.File, error) {
-	ctxWithGPGAccept := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
-	file, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdGet(ctxWithGPGAccept, applianceID, backupID).Authorization(b.Token).Execute()
+func (b *Backup) Download(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
+	client := b.HTTPClient
+	cfg := b.APIClient.GetConfig()
+	url, err := cfg.ServerURLWithContext(ctx, "ApplianceBackupApiService.AppliancesIdBackupBackupIdGet")
 	if err != nil {
-		return nil, api.HTTPErrorResponse(response, err)
+		return nil, err
 	}
-	if file != nil {
-		return *file, nil
+	url = fmt.Sprintf("%s/appliances/%s/backup/%s", url, applianceID, backupID)
+	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("cz-backup interrupted")
+	req.Close = true
+
+	out, err := os.Create(destination)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, api.HTTPErrorResponse(res, err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode > 299 {
+		return nil, api.HTTPErrorResponse(res, errors.New("unexpected response code"))
+	}
+
+	_, err = out.ReadFrom(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 const (
