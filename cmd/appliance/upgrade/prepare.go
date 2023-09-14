@@ -172,7 +172,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				if !ok {
-					errs = multierr.Append(errs, fmt.Errorf("Image bundle not found: %q", opts.logServerBundlePath))
+					errs = multierr.Append(errs, fmt.Errorf("LogServer image bundle not found: %q", opts.logServerBundlePath))
 				}
 			}
 
