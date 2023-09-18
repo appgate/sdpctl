@@ -790,6 +790,7 @@ type imageBundleArgs struct {
 	wg            *sync.WaitGroup
 	ciMode        bool
 	registry      *url.URL
+	token         *string
 	image         string
 	tag           string
 	progress      *tui.Progress
@@ -809,6 +810,13 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 	fileEntryChan := make(chan fileEntry)
 	var wg sync.WaitGroup
 	wg.Add(len(images))
+	var token *string
+	if registry.Host == "public.ecr.aws" {
+		token, err = getPublicECRToken(client, images)
+		if err != nil {
+			return "", err
+		}
+	}
 	for image, tag := range images {
 		go func(image, tag string) {
 			args := imageBundleArgs{
@@ -816,6 +824,7 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 				client:        client,
 				ciMode:        ciMode,
 				registry:      registry,
+				token:         token,
 				image:         image,
 				tag:           tag,
 				progress:      p,
@@ -853,6 +862,29 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 	return archive.Name(), errs.ErrorOrNil()
 }
 
+func getPublicECRToken(client *http.Client, images map[string]string) (*string, error) {
+	type ecrToken struct {
+		Token string
+	}
+	params := []string{"service=public.ecr.aws"}
+	for image := range images {
+		params = append(params, fmt.Sprintf("scope=repsoitory:appgate-sdp/%s:pull", image))
+	}
+	res, err := client.Get(fmt.Sprintf("https://public.ecr.aws/token/?%s", strings.Join(params, "&")))
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, err
+	}
+	var token ecrToken
+	if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
+		return nil, err
+	}
+	return &token.Token, nil
+}
+
 // Image bundle should contain the following artifacts:
 // - Manifest (<tag>.json)
 // - Config (<digest>.json)
@@ -864,28 +896,8 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		"Accept":       "application/vnd.docker.distribution.manifest.v2+json",
 		"Content-Type": "application/json",
 	}
-
-	// Get the public token if public ECR registry is used
-	if args.registry.Host == "public.ecr.aws" {
-		type ecrToken struct {
-			Token string
-		}
-		res, err := args.client.Get(fmt.Sprintf("https://public.ecr.aws/token/?scope=repository:appgate-sdp/%s:pull&service=public.ecr.aws", args.image))
-		if err != nil {
-			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %w", err)}
-			return
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %s", res.Request.URL)}
-			return
-		}
-		var token ecrToken
-		if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
-			args.fileEntryChan <- fileEntry{err: err}
-			return
-		}
-		headers["Authorization"] = fmt.Sprintf("Bearer %s", token.Token)
+	if args.token != nil {
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", *args.token)
 	}
 
 	var username, password string
