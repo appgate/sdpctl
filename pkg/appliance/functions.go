@@ -24,6 +24,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -790,6 +791,7 @@ type imageBundleArgs struct {
 	wg            *sync.WaitGroup
 	ciMode        bool
 	registry      *url.URL
+	token         *string
 	image         string
 	tag           string
 	progress      *tui.Progress
@@ -809,6 +811,13 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 	fileEntryChan := make(chan fileEntry)
 	var wg sync.WaitGroup
 	wg.Add(len(images))
+	var token *string
+	if registry.Host == "public.ecr.aws" {
+		token, err = getPublicECRToken(client, images)
+		if err != nil {
+			return "", err
+		}
+	}
 	for image, tag := range images {
 		go func(image, tag string) {
 			args := imageBundleArgs{
@@ -816,6 +825,7 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 				client:        client,
 				ciMode:        ciMode,
 				registry:      registry,
+				token:         token,
 				image:         image,
 				tag:           tag,
 				progress:      p,
@@ -853,6 +863,29 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 	return archive.Name(), errs.ErrorOrNil()
 }
 
+func getPublicECRToken(client *http.Client, images map[string]string) (*string, error) {
+	type ecrToken struct {
+		Token string
+	}
+	params := []string{"service=public.ecr.aws"}
+	for image := range images {
+		params = append(params, fmt.Sprintf("scope=repsoitory:appgate-sdp/%s:pull", image))
+	}
+	res, err := client.Get(fmt.Sprintf("https://public.ecr.aws/token/?%s", strings.Join(params, "&")))
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, err
+	}
+	var token ecrToken
+	if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
+		return nil, err
+	}
+	return &token.Token, nil
+}
+
 // Image bundle should contain the following artifacts:
 // - Manifest (<tag>.json)
 // - Config (<digest>.json)
@@ -864,28 +897,8 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		"Accept":       "application/vnd.docker.distribution.manifest.v2+json",
 		"Content-Type": "application/json",
 	}
-
-	// Get the public token if public ECR registry is used
-	if args.registry.Host == "public.ecr.aws" {
-		type ecrToken struct {
-			Token string
-		}
-		res, err := args.client.Get(fmt.Sprintf("https://public.ecr.aws/token/?scope=repository:appgate-sdp/%s:pull&service=public.ecr.aws", args.image))
-		if err != nil {
-			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %w", err)}
-			return
-		}
-		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
-			args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch public ECR token: %s", res.Request.URL)}
-			return
-		}
-		var token ecrToken
-		if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
-			args.fileEntryChan <- fileEntry{err: err}
-			return
-		}
-		headers["Authorization"] = fmt.Sprintf("Bearer %s", token.Token)
+	if args.token != nil {
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", *args.token)
 	}
 
 	var username, password string
@@ -901,6 +914,19 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 	}
 
+	requestRetry := func(client *http.Client, req *http.Request) (*http.Response, error) {
+		return backoff.RetryWithData(func() (*http.Response, error) {
+			res, err := client.Do(req)
+			if err != nil {
+				return nil, backoff.Permanent(err)
+			}
+			if res.StatusCode != http.StatusOK {
+				return nil, fmt.Errorf("Recieved %s status", res.Status)
+			}
+			return res, nil
+		}, backoff.NewExponentialBackOff())
+	}
+
 	// Download the image manifest
 	// See https://github.com/distribution/distribution/blob/main/docs/spec/manifest-v2-2.md#image-manifest-field-descriptions
 	manifestURL := fmt.Sprintf("%s://%s%s/%s/manifests/%s", args.registry.Scheme, args.registry.Host, prependString(args.registry.Path, "/v2"), args.image, args.tag)
@@ -912,13 +938,9 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	for k, v := range headers {
 		manifestReq.Header.Set(k, v)
 	}
-	manifestRes, err := args.client.Do(manifestReq)
-	if err != nil || manifestRes == nil {
+	manifestRes, err := requestRetry(args.client, manifestReq)
+	if err != nil {
 		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image manifest: %w", err)}
-		return
-	}
-	if manifestRes.StatusCode != http.StatusOK {
-		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image manifest: %s - %s", manifestURL, manifestRes.Status)}
 		return
 	}
 	defer manifestRes.Body.Close()
@@ -951,13 +973,9 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	for k, v := range headers {
 		configReq.Header.Set(k, v)
 	}
-	configRes, err := args.client.Do(configReq)
-	if err != nil || configRes == nil {
+	configRes, err := requestRetry(args.client, configReq)
+	if err != nil {
 		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image config: %w", err)}
-		return
-	}
-	if configRes.StatusCode != http.StatusOK {
-		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image config: %s - %s", configURL, configRes.Status)}
 		return
 	}
 	defer configRes.Body.Close()
@@ -1008,12 +1026,9 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 			}
 			layerLog := log.WithField("layer", layerHash)
 			layerLog.Info("downloading image layer")
-			layerRes, err := args.client.Do(layerReq)
-			if err != nil || layerRes == nil {
+			layerRes, err := requestRetry(args.client, layerReq)
+			if err != nil {
 				return fmt.Errorf("failed to fetch image layer: %w", err)
-			}
-			if layerRes.StatusCode != http.StatusOK {
-				return fmt.Errorf("failed to fetch image layer: %s - %s", layerRes.Request.URL, layerRes.Status)
 			}
 			defer layerRes.Body.Close()
 
