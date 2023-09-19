@@ -915,22 +915,16 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	}
 
 	requestRetry := func(client *http.Client, req *http.Request) (*http.Response, error) {
-		var err error
-		var res *http.Response
-		err = backoff.Retry(func() error {
-			res, err = client.Do(req)
+		return backoff.RetryWithData(func() (*http.Response, error) {
+			res, err := client.Do(req)
 			if err != nil {
-				return backoff.Permanent(err)
+				return nil, backoff.Permanent(err)
 			}
 			if res.StatusCode != http.StatusOK {
-				return fmt.Errorf("Recieved %s status", res.Status)
+				return nil, fmt.Errorf("Recieved %s status", res.Status)
 			}
-			return nil
+			return res, nil
 		}, backoff.NewExponentialBackOff())
-		if err != nil {
-			return nil, err
-		}
-		return res, nil
 	}
 
 	// Download the image manifest
