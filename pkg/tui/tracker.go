@@ -128,3 +128,7 @@ func (t *Tracker) Fail(s string) {
 	default:
 	}
 }
+
+func (t *Tracker) Current() string {
+	return t.current
+}
