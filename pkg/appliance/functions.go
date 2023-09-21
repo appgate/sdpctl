@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -797,17 +798,16 @@ type imageBundleArgs struct {
 	progress      *tui.Progress
 }
 
-func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Client, zipName string, registry *url.URL, images map[string]string, ciMode bool) (string, error) {
+func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Client, path string, registry *url.URL, images map[string]string, ciMode bool) (*os.File, error) {
 	// Create zip-archive
-	archive, err := os.CreateTemp("", zipName)
+	archive, err := os.Create(path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	defer archive.Close()
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
 
-	log.Info("downloading image layers for ", zipName)
+	log.Info("downloading image layers for ", filepath.Base(path))
 	fileEntryChan := make(chan fileEntry)
 	var wg sync.WaitGroup
 	wg.Add(len(images))
@@ -815,7 +815,7 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 	if registry.Host == "public.ecr.aws" {
 		token, err = getPublicECRToken(client, images)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	for image, tag := range images {
@@ -860,7 +860,13 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 		log.WithField("path", v.path).WithField("size", size).Debug("wrote layer")
 	}
 
-	return archive.Name(), errs.ErrorOrNil()
+	archive.Close()
+	archive, err = os.Open(archive.Name())
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return archive, errs.ErrorOrNil()
 }
 
 func getPublicECRToken(client *http.Client, images map[string]string) (*string, error) {
