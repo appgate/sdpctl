@@ -295,7 +295,7 @@ func (c *Config) KeyringPrefix() (string, error) {
 func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current string) (*Config, error) {
 	// Check if version check is disabled in configuration
 	if c.DisableVersionCheck {
-		return c, errors.New("version check disabled")
+		return c, cmdutil.ErrVersionCheckDisabled
 	}
 
 	// Check if version check has already been done today
