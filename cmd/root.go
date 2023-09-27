@@ -85,8 +85,8 @@ func initConfig(currentProfile *string) {
 				fmt.Printf("Invalid profile name, got %s, available %s\n", selectedProfile, p.Available())
 				os.Exit(1)
 			}
-		} else if p.CurrentExists() {
-			viper.AddConfigPath(*p.Current)
+		} else if profile, err := p.GetProfile(*p.Current); err == nil && profile != nil {
+			viper.AddConfigPath(profile.Directory)
 		}
 	} else {
 		// if we don't have any profiles
@@ -211,7 +211,7 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 		return f.StdErr
 	}
 
-	name := filepath.Join(profiles.GetStorageDirectory(), "sdpctl.log")
+	name := filepath.Join(profiles.GetDataDirectory(), "sdpctl.log")
 	file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return f.IOOutWriter

@@ -100,6 +100,8 @@ func TestNewAddCmdMigrateExistingRootConfig(t *testing.T) {
 	if _, err := profileFile.WriteString(data); err != nil {
 		t.Fatal(err)
 	}
+	logs := t.TempDir()
+	t.Setenv("SDPCTL_DATA_DIR", logs)
 	stdout := &bytes.Buffer{}
 	opts := &commandOpts{
 		Out: stdout,

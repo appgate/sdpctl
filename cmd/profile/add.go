@@ -46,7 +46,7 @@ func NewAddCmd(opts *commandOpts) *cobra.Command {
 
 // defaultProfileName is the profile name if already have a config populated
 // before we run the command
-const defaultProfileName string = "default"
+var defaultProfileName string = "default"
 
 func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 	if !profiles.FileExists() {
@@ -59,9 +59,14 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			return err
 		}
 	}
-	if !profiles.DirectoryExists() {
-		if err := profiles.CreateDirectories(); err != nil {
-			return fmt.Errorf("could not create profile directory %w", err)
+	if !profiles.ConfigDirectoryExists() {
+		if err := profiles.CreateConfigDirectory(); err != nil {
+			return fmt.Errorf("failed to create profile directory %w", err)
+		}
+	}
+	if !profiles.LogDirectoryExists() {
+		if err := profiles.CreateLogDirectory(); err != nil {
+			return fmt.Errorf("failed to create profile log directory %w", err)
 		}
 	}
 
@@ -81,7 +86,8 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 				return err
 			}
 			if h, err := config.GetHost(); len(h) > 0 && err == nil {
-				directory := filepath.Join(profiles.Directories(), defaultProfileName)
+				cfg, _ := profiles.Directories()
+				directory := filepath.Join(cfg, defaultProfileName)
 				if err := os.Mkdir(directory, os.ModePerm); err != nil {
 					return fmt.Errorf("could not create new default config profile directory %w", err)
 				}
@@ -96,19 +102,26 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 					Name:      defaultProfileName,
 					Directory: directory,
 				})
-				p.Current = &directory
+				p.Current = &defaultProfileName
 			}
 		}
 	}
 	name := args[0]
-	directory := filepath.Join(profiles.Directories(), name)
+	cfg, logs := profiles.Directories()
+	directory := filepath.Join(cfg, name)
 	if err := os.Mkdir(directory, os.ModePerm); err != nil {
 		return fmt.Errorf("profile already exists with the name %s", name)
+	}
+	if ok, err := util.FileExists(logs); err == nil && !ok {
+		if err := os.Mkdir(logs, os.ModePerm); err != nil {
+			return fmt.Errorf("failed creating log directory for %s", name)
+		}
 	}
 
 	p.List = append(p.List, profiles.Profile{
 		Name:      name,
 		Directory: directory,
+		LogPath:   filepath.Join(logs, name+".log"),
 	})
 
 	if err := profiles.Write(p); err != nil {

@@ -68,8 +68,8 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			return err
 		}
 	}
-	p.Current = &p.List[index].Directory
-	fmt.Fprintf(opts.Out, "%s (%s) is selected as current sdp profile\n", p.List[index].Name, p.List[index].Directory)
+	p.Current = &p.List[index].Name
+	fmt.Fprintf(opts.Out, "%s is selected as current sdp profile\n", p.List[index].Name)
 
 	if err := profiles.Write(p); err != nil {
 		return err

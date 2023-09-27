@@ -60,9 +60,9 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts, json bool) er
 	}
 	fmt.Fprintf(opts.Out, "\nAvailable profiles\n")
 	printer := util.NewPrinter(opts.Out, 4)
-	printer.AddHeader("Name", "Config directory")
+	printer.AddHeader("Name", "Config directory", "Log file path")
 	for _, profile := range p.List {
-		printer.AddLine(profile.Name, profile.Directory)
+		printer.AddLine(profile.Name, profile.Directory, profile.GetLogPath())
 	}
 	printer.Print()
 	return nil

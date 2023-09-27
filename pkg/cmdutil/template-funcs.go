@@ -19,5 +19,5 @@ func GetCaller() string {
 }
 
 func GetPath() string {
-	return profiles.GetStorageDirectory()
+	return profiles.GetConfigDirectory()
 }

@@ -12,6 +12,7 @@ import (
 
 const (
 	AgConfigDir   = "SDPCTL_CONFIG_DIR"
+	AgDataDir     = "SDPCTL_DATA_DIR"
 	XdgConfigHome = "XDG_CONFIG_HOME"
 	AppData       = "AppData"
 )
@@ -45,6 +46,9 @@ func ConfigDir() string {
 }
 
 func DataDir() string {
+	if path := os.Getenv(AgDataDir); len(path) > 0 {
+		return path
+	}
 	path := filepath.Join(xdg.DataHome, "sdpctl")
 	// Create the directory if not exist
 	if _, err := os.Stat(path); os.IsNotExist(err) {
