@@ -88,7 +88,8 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Annotations: map[string]string{
 			configuration.NeedUpdateAPIConfig: "true",
 		},
-		Args: func(cmd *cobra.Command, args []string) error {
+		Args: cobra.ExactArgs(0),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
 			}

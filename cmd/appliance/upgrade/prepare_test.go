@@ -71,6 +71,12 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		wantErrOut          *regexp.Regexp
 	}{
 		{
+			name:       "with args",
+			cli:        "upgrade prepare some.invalid.arg.com",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`accepts 0 arg\(s\), received 1`),
+		},
+		{
 			name: "with existing file",
 			cli:  "upgrade prepare --image './testdata/appgate-5.5.1-9876.img.zip'",
 			askStubs: func(s *prompt.AskStubber) {

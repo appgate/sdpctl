@@ -75,7 +75,8 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 		Annotations: map[string]string{
 			configuration.NeedUpdateAPIConfig: "true",
 		},
-		Args: func(cmd *cobra.Command, args []string) error {
+		Args: cobra.ExactArgs(0),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			minTimeout := 5 * time.Minute
 			flagTimeout, err := cmd.Flags().GetDuration("timeout")
 			if err != nil {
