@@ -57,8 +57,11 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 		status, err := u.Appliance.UpgradeStatus(ctx, appliance.GetId())
 		if err != nil {
 			if tracker != nil {
-				msg := "switching partition"
-				if _, ok := ctx.Value(PrimaryUpgrade).(bool); ok {
+				msg := tracker.Current()
+
+				// Check if upgrading primary controller and apply logic for offline check
+				if primaryUpgrade, ok := ctx.Value(PrimaryUpgrade).(bool); ok && primaryUpgrade {
+					msg = "switching partition"
 					if offlineRegex.MatchString(err.Error()) {
 						hasRebooted = true
 					} else if onlineRegex.MatchString(err.Error()) {

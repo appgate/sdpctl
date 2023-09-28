@@ -164,13 +164,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				go func(ctx context.Context, wg *sync.WaitGroup, function string, opts bundleOptions, errs chan<- error, p *tui.Progress) {
 					defer wg.Done()
 					zipName := fmt.Sprintf("%s-%s.zip", strings.ToLower(function), opts.version)
-					file, err := os.Create(filepath.Join(opts.savePath, zipName))
-					if err != nil {
-						errs <- err
-						return
-					}
-					defer file.Close()
-
+					path := filepath.Join(opts.savePath, zipName)
 					var t *tui.Tracker
 					if p != nil {
 						t = p.AddTracker(zipName, "downloading", "complete", mpb.BarRemoveOnComplete())
@@ -182,25 +176,8 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					for _, f := range funcImages[function] {
 						images[f] = opts.version
 					}
-					tmpPath, err := appliancepkg.DownloadDockerBundles(ctx, p, client, zipName, opts.registry, images, false)
+					file, err := appliancepkg.DownloadDockerBundles(ctx, p, client, path, opts.registry, images, false)
 					if err != nil {
-						errs <- err
-						os.Remove(file.Name())
-						return
-					}
-					tmpFile, err := os.Open(tmpPath)
-					if err != nil {
-						errs <- err
-						os.Remove(file.Name())
-						return
-					}
-					defer func() {
-						// close and remove temporary file when done
-						tmpFile.Close()
-						os.Remove(tmpFile.Name())
-					}()
-
-					if _, err := io.Copy(file, tmpFile); err != nil {
 						errs <- err
 						os.Remove(file.Name())
 						return

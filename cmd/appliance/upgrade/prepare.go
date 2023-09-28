@@ -88,7 +88,8 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 		Annotations: map[string]string{
 			configuration.NeedUpdateAPIConfig: "true",
 		},
-		Args: func(cmd *cobra.Command, args []string) error {
+		Args: cobra.ExactArgs(0),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if len(opts.image) < 1 {
 				return errors.New("--image is mandatory")
 			}
@@ -173,6 +174,13 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				}
 				if !ok {
 					errs = multierr.Append(errs, fmt.Errorf("LogServer image bundle not found: %q", opts.logServerBundlePath))
+				}
+				info, err := os.Stat(opts.logServerBundlePath)
+				if err != nil {
+					return err
+				}
+				if info.IsDir() {
+					errs = multierr.Append(errs, fmt.Errorf("invalid LogServer bundle: bundle is a directory"))
 				}
 			}
 
@@ -463,7 +471,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 		if !exists {
 			fmt.Fprintf(opts.Out, "[%s] Preparing image bundle for LogServer:\n", time.Now().Format(time.RFC3339))
-			var zipPath string
+			var zip *os.File
 			if len(opts.logServerBundlePath) <= 0 {
 				tagVersion, err := util.DockerTagVersion(opts.targetVersion)
 				if err != nil {
@@ -478,37 +486,20 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				if !opts.ciMode {
 					bundleProgress = tui.New(ctx, opts.SpinnerOut())
 				}
-				zipPath, err = appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, logServerZipName, opts.dockerRegistry, logServerImages, opts.ciMode)
+				path := filepath.Join(filesystem.DownloadDir(), "appgate", logServerZipName)
+				zip, err = appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, path, opts.dockerRegistry, logServerImages, opts.ciMode)
 				if err != nil {
 					return err
 				}
+				defer os.Remove(zip.Name())
+				opts.logServerBundlePath = zip.Name()
 			} else {
-				tempZip, err := os.CreateTemp("", logServerZipName)
+				zip, err = os.Open(opts.logServerBundlePath)
 				if err != nil {
 					return err
 				}
-				defer tempZip.Close()
-				pathZip, err := os.Open(opts.logServerBundlePath)
-				if err != nil {
-					return err
-				}
-				defer pathZip.Close()
-
-				if _, err := io.Copy(tempZip, pathZip); err != nil {
-					return err
-				}
-				zipPath = tempZip.Name()
 			}
-
-			if len(zipPath) <= 0 {
-				return errors.New("Something went wrong")
-			}
-
-			zipFile, err := os.Open(zipPath)
-			if err != nil {
-				return err
-			}
-			defer zipFile.Close()
+			defer zip.Close()
 
 			pr, pw := io.Pipe()
 			writer := multipart.NewWriter(pw)
@@ -522,7 +513,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 					return
 				}
 
-				size, err := io.Copy(part, zipFile)
+				size, err := io.Copy(part, zip)
 				if err != nil {
 					log.Warnf("copy err %s", err)
 					return
@@ -530,7 +521,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				log.WithField("size", size).WithField("zip", logServerZipName).Debug("wrote zip part")
 			}()
 
-			zipInfo, err := zipFile.Stat()
+			zipInfo, err := zip.Stat()
 			if err != nil {
 				return err
 			}
@@ -548,7 +539,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			if err != nil {
 				return err
 			}
-			os.Remove(zipPath)
 			defer func() {
 				if err := a.DeleteFile(ctx, logServerZipName); err != nil {
 					log.WithField("file", logServerZipName).WithError(err).Warning("failed to delete file from repository")
@@ -796,7 +786,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 						"details":   c.GetDetails(),
 						"appliance": qs.appliance.GetName(),
 					}).Info("prepare image change")
-					unwantedStatus = append(unwantedStatus, appliancepkg.UpgradeStatusIdle)
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, qs.appliance, wantedStatus, unwantedStatus, qs.tracker); err != nil {
 					queueContinue <- queueStruct{err: err}

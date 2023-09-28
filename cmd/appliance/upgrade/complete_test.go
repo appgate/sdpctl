@@ -73,6 +73,12 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		wantErrOut                  *regexp.Regexp
 	}{
 		{
+			name:       "with invalid arg",
+			cli:        "upgrade complete some.invalid.arg",
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`accepts 0 arg\(s\), received 1`),
+		},
+		{
 			name: "test complete multiple appliances backup false",
 			cli:  "upgrade complete --backup=false",
 			askStubs: func(as *prompt.AskStubber) {

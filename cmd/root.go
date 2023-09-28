@@ -324,7 +324,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 		cfg, err = cfg.CheckForUpdate(f.StdErr, client, version)
 		if err != nil {
-			if errors.Is(err, cmdutil.ErrDailyVersionCheck) {
+			if errors.Is(err, cmdutil.ErrDailyVersionCheck) || errors.Is(err, cmdutil.ErrVersionCheckDisabled) {
 				log.Info(err.Error())
 			} else {
 				log.WithError(err).Error("version check error")
