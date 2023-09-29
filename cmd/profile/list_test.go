@@ -118,7 +118,7 @@ func TestNewListCmdTwoProfilesOneCurrent(t *testing.T) {
 		"logs": logs,
 	}
 
-	want := Nprintf(`Current profile production is not configure, run 'sdpctl configure'
+	want := Nprintf(`Current profile production is not configured, run 'sdpctl configure'
 
 Available profiles
 Name          Config directory                                                              Log file path

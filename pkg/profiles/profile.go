@@ -34,6 +34,10 @@ func GetDataDirectory() string {
 	return filesystem.DataDir()
 }
 
+func GetLogDirectory() string {
+	return filepath.Join(filesystem.DataDir(), "logs")
+}
+
 func FilePath() string {
 	return filepath.Join(filesystem.ConfigDir(), "profiles.json")
 }
@@ -78,6 +82,41 @@ func (p *Profiles) CurrentExists() bool {
 	return false
 }
 
+func (p *Profiles) CreateDefaultProfile() (*Profile, error) {
+	conf, logs := Directories()
+	confDir := filepath.Join(conf, "default")
+	logPath := filepath.Join(logs, "default.log")
+	if ok, err := util.FileExists(confDir); err == nil && !ok {
+		if err := os.MkdirAll(confDir, os.ModePerm); err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	}
+	if ok, err := util.FileExists(logs); err == nil && !ok {
+		if err := os.MkdirAll(logs, os.ModePerm); err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	}
+	if ok, err := util.FileExists(logPath); err == nil && !ok {
+		f, err := os.Create(logPath)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+	} else if err != nil {
+		return nil, err
+	}
+	profile := Profile{
+		Name:      "default",
+		Directory: confDir,
+		LogPath:   logPath,
+	}
+	return &profile, nil
+}
+
 func (p *Profiles) CurrentConfigExists() bool {
 	if p.Current != nil {
 		var profile *Profile
@@ -104,6 +143,7 @@ func (p *Profiles) GetProfile(name string) (*Profile, error) {
 }
 
 var ErrNoCurrentProfile = errors.New("No current profile is set, run 'sdpctl profile set'")
+var ErrNoProfileAvailable = errors.New("No profiles are available. run 'sdpctl profile set'")
 
 func (p *Profiles) CurrentProfile() (*Profile, error) {
 	if v := os.Getenv("SDPCTL_PROFILE"); len(v) > 0 {
@@ -115,6 +155,9 @@ func (p *Profiles) CurrentProfile() (*Profile, error) {
 	}
 	if p.Current == nil {
 		return nil, ErrNoCurrentProfile
+	}
+	if len(p.List) <= 0 {
+		return nil, ErrNoProfileAvailable
 	}
 	for _, profile := range p.List {
 		if *p.Current == profile.Name {
@@ -197,6 +240,10 @@ func Read() (*Profiles, error) {
 	var profiles Profiles
 	if err := json.Unmarshal(content, &profiles); err != nil {
 		return nil, fmt.Errorf("%s file is corrupt: %s \n", FilePath(), err)
+	}
+	if profiles.Current != nil {
+		c := filepath.Base(*profiles.Current)
+		profiles.Current = &c
 	}
 	ReadProfiles = &profiles
 	return ReadProfiles, nil

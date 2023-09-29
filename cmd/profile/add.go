@@ -86,7 +86,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 				return err
 			}
 			if h, err := config.GetHost(); len(h) > 0 && err == nil {
-				cfg, _ := profiles.Directories()
+				cfg, logDir := profiles.Directories()
 				directory := filepath.Join(cfg, defaultProfileName)
 				if err := os.Mkdir(directory, os.ModePerm); err != nil {
 					return fmt.Errorf("could not create new default config profile directory %w", err)
@@ -95,11 +95,25 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 				if err != nil {
 					return err
 				}
+				oldDefaultLogPath := filepath.Join(filesystem.DataDir(), "sdpctl.log")
+				defaultLogPath := filepath.Join(logDir, "sdpctl.log")
+				newLogPath := filepath.Join(logDir, "default.log")
+				if ok, err := util.FileExists(oldDefaultLogPath); err == nil && ok {
+					if err := os.Rename(oldDefaultLogPath, newLogPath); err != nil {
+						return err
+					}
+				}
+				if ok, err := util.FileExists(defaultLogPath); err == nil && ok {
+					if err := os.Rename(defaultLogPath, newLogPath); err != nil {
+						return err
+					}
+				}
 				if err := updatePemPath(directory, files); err != nil {
 					fmt.Fprintf(opts.Out, "could not update PEM file path for default config %s\n", err)
 				}
 				p.List = append(p.List, profiles.Profile{
 					Name:      defaultProfileName,
+					LogPath:   newLogPath,
 					Directory: directory,
 				})
 				p.Current = &defaultProfileName
@@ -134,6 +148,7 @@ func addRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 
 // updatePemPath if we have a existing pem file in the default config, update the pem_filepath
 // to respect the new directory tree
+// TODO: Deprecated. remove when suited
 func updatePemPath(targetDir string, files []string) error {
 	var (
 		pemFilePath    string

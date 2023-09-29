@@ -46,13 +46,13 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts, json bool) er
 	if currentProfile != nil {
 		currentConfig, err := readConfig(filepath.Join(currentProfile.Directory, "config.json"))
 		if err != nil {
-			fmt.Fprintf(opts.Out, "Current profile %s is not configure, run 'sdpctl configure'\n", currentProfile.Name)
+			fmt.Fprintf(opts.Out, "Current profile %s is not configured, run 'sdpctl configure'\n", currentProfile.Name)
 		}
 
 		if currentConfig != nil {
 			h, err := currentConfig.GetHost()
 			if err != nil {
-				fmt.Fprintf(opts.Out, "Current profile %s is not configure, run 'sdpctl configure'\n", currentProfile.Name)
+				fmt.Fprintf(opts.Out, "Current profile %s is not configured, run 'sdpctl configure'\n", currentProfile.Name)
 			} else {
 				fmt.Fprintf(opts.Out, "Current profile is %s (%s) the primary Controller %s\n", currentProfile.Name, currentProfile.Directory, h)
 			}

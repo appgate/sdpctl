@@ -85,14 +85,63 @@ func initConfig(currentProfile *string) {
 				fmt.Printf("Invalid profile name, got %s, available %s\n", selectedProfile, p.Available())
 				os.Exit(1)
 			}
-		} else if profile, err := p.GetProfile(*p.Current); err == nil && profile != nil {
-			viper.AddConfigPath(profile.Directory)
+		} else if p.Current != nil {
+			if profile, err := p.GetProfile(*p.Current); err == nil && profile != nil {
+				// Move old logs if exists in profile dir
+				matches, _ := filepath.Glob(profile.Directory + "/*.log")
+				if len(matches) > 0 {
+					if !profiles.LogDirectoryExists() {
+						if err := profiles.CreateLogDirectory(); err != nil {
+							log.WithError(err).Warn("failed to create log directory")
+						}
+					}
+					for _, m := range matches {
+						newPath := filepath.Join(filesystem.DataDir(), "logs", profile.Name+".log")
+						if err := os.Rename(m, newPath); err != nil {
+							log.WithError(err).Warn("failed to migrate old log file")
+							profile.LogPath = m
+						}
+						profile.LogPath = newPath
+					}
+				}
+				viper.AddConfigPath(profile.Directory)
+			}
+		} else if len(p.List) <= 0 {
+			// There's a profile file, but there are no profiles configured or selected.
+			// This probably only happens when config files are manually created, or some
+			// configuration change has happened.
+			// At this point, we fallback to creating the default profile and select that.
+			pn := "default"
+			p.Current = &pn
+			defaultProfile, err := p.CreateDefaultProfile()
+			if err != nil {
+				os.Exit(1)
+			}
+			viper.AddConfigPath(defaultProfile.Directory)
 		}
 	} else {
 		// if we don't have any profiles
 		// we will assume there is only one Collective to respect
 		// and we will default to base dir.
 		viper.AddConfigPath(dir)
+
+		// Migration code to move old root log file to proper place
+		matches, _ := filepath.Glob(filesystem.ConfigDir() + "/*.log")
+		matchOldLogs, _ := filepath.Glob(filesystem.DataDir() + "/*.log")
+		matches = append(matches, matchOldLogs...)
+		if len(matches) > 0 {
+			logDir := filepath.Join(filesystem.DataDir(), "logs")
+			if ok, err := util.FileExists(logDir); err == nil && !ok {
+				os.MkdirAll(logDir, os.ModePerm)
+			}
+			logPath := filepath.Join(logDir, "sdpctl.log")
+			for _, m := range matches {
+				if err := os.Rename(m, logPath); err != nil {
+					log.WithError(err).Warn("failed to migrate old log file")
+				}
+			}
+		}
+
 	}
 
 	viper.SetConfigName("config")
@@ -211,7 +260,7 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 		return f.StdErr
 	}
 
-	name := filepath.Join(profiles.GetDataDirectory(), "sdpctl.log")
+	name := filepath.Join(profiles.GetLogDirectory(), "sdpctl.log")
 	file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return f.IOOutWriter
