@@ -13,6 +13,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
@@ -51,6 +52,9 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "download [function...]",
 		Aliases: []string{"dl", "bundle"},
+		Annotations: map[string]string{
+			configuration.SkipAuthCheck: "true",
+		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) > 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
