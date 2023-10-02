@@ -12,15 +12,37 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
+func GetCurrentProfile() string {
+	p, err := Read()
+	if err != nil {
+		return "<no profile configured>"
+	}
+	if p.CurrentExists() {
+		return *p.Current
+	}
+	return "default"
+}
+
 func GetConfigDirectory() string {
 	p, err := Read()
 	if err != nil {
 		return filesystem.ConfigDir()
 	}
 	if p.CurrentExists() {
-		return *p.Current
+		return filepath.Join(filesystem.ConfigDir(), *p.Current)
 	}
 	return filesystem.ConfigDir()
+}
+
+func GetConfigPath() string {
+	p, err := Read()
+	if err != nil {
+		return filepath.Join(filesystem.ConfigDir(), "sdpctl.log")
+	}
+	if p.CurrentExists() {
+		return filepath.Join(filesystem.ConfigDir(), *p.Current, *p.Current+".log")
+	}
+	return filepath.Join(filesystem.ConfigDir(), "sdpctl.log")
 }
 
 func GetDataDirectory() string {
@@ -29,13 +51,20 @@ func GetDataDirectory() string {
 		return filesystem.DataDir()
 	}
 	if p.CurrentExists() {
-		return *p.Current
+		return filepath.Join(filesystem.DataDir(), *p.Current)
 	}
 	return filesystem.DataDir()
 }
 
-func GetLogDirectory() string {
-	return filepath.Join(filesystem.DataDir(), "logs")
+func GetLogPath() string {
+	p, err := Read()
+	if err != nil {
+		return filepath.Join(filesystem.DataDir(), "logs", "sdpctl.log")
+	}
+	if p.CurrentExists() {
+		return filepath.Join(filesystem.DataDir(), "logs", *p.Current, *p.Current+".log")
+	}
+	return filepath.Join(filesystem.DataDir(), "logs", "sdpctl.log")
 }
 
 func FilePath() string {

@@ -260,7 +260,7 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 		return f.StdErr
 	}
 
-	logDir := profiles.GetLogDirectory()
+	logDir := profiles.GetLogPath()
 	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
 		return f.IOOutWriter
 	}
