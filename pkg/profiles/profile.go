@@ -29,20 +29,21 @@ func GetConfigDirectory() string {
 		return filesystem.ConfigDir()
 	}
 	if p.CurrentExists() {
-		return filepath.Join(filesystem.ConfigDir(), *p.Current)
+		return filepath.Join(filesystem.ConfigDir(), "profiles", *p.Current)
 	}
 	return filesystem.ConfigDir()
 }
 
 func GetConfigPath() string {
+	defaultConfigPath := filepath.Join(filesystem.ConfigDir(), "config.json")
 	p, err := Read()
 	if err != nil {
-		return filepath.Join(filesystem.ConfigDir(), "sdpctl.log")
+		return defaultConfigPath
 	}
 	if p.CurrentExists() {
-		return filepath.Join(filesystem.ConfigDir(), *p.Current, *p.Current+".log")
+		return filepath.Join(filesystem.ConfigDir(), "profiles", *p.Current, "config.json")
 	}
-	return filepath.Join(filesystem.ConfigDir(), "sdpctl.log")
+	return defaultConfigPath
 }
 
 func GetDataDirectory() string {
@@ -57,14 +58,15 @@ func GetDataDirectory() string {
 }
 
 func GetLogPath() string {
+	defaultLogPath := filepath.Join(filesystem.DataDir(), "logs", "sdpctl.log")
 	p, err := Read()
 	if err != nil {
-		return filepath.Join(filesystem.DataDir(), "logs", "sdpctl.log")
+		return defaultLogPath
 	}
 	if p.CurrentExists() {
-		return filepath.Join(filesystem.DataDir(), "logs", *p.Current, *p.Current+".log")
+		return filepath.Join(filesystem.DataDir(), "logs", *p.Current+".log")
 	}
-	return filepath.Join(filesystem.DataDir(), "logs", "sdpctl.log")
+	return defaultLogPath
 }
 
 func FilePath() string {
