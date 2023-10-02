@@ -365,3 +365,19 @@ func (a *Appliance) RepartitionIPAllocations(ctx context.Context) (string, error
 
 	return changeID, nil
 }
+
+func (a *Appliance) ZTPStatus(ctx context.Context) (*openapi.ZtpStatus, error) {
+	result, response, err := a.APIClient.ZTPApi.ZtpGet(ctx).Authorization(a.Token).Execute()
+	if err != nil {
+		return nil, api.HTTPErrorResponse(response, err)
+	}
+	return result, nil
+}
+
+func (a *Appliance) ZTPUpdateNotify(ctx context.Context) (*openapi.ZtpVersionStatus, error) {
+	result, response, err := a.APIClient.ZTPApi.ZtpServicesVersionPost(ctx).Authorization(a.Token).Execute()
+	if err != nil {
+		return nil, api.HTTPErrorResponse(response, err)
+	}
+	return result, nil
+}
