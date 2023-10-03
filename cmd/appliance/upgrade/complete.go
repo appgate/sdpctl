@@ -814,12 +814,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	// From v18 and up
 	// This step is not fatal, so we only log errors here
 	if opts.Config.Version >= 18 {
-		ZTPStatus, err := a.ZTPStatus(ctx)
+		ztpStatus, err := a.ZTPStatus(ctx)
 		if err != nil {
 			log.WithError(err).Warn("failed to get ZTP registered status")
 		}
-		if ZTPRegistered, ok := ZTPStatus.GetRegisteredOk(); err == nil && ok {
-			if isRegistered := *ZTPRegistered; isRegistered {
+		if ztpRegistered, ok := ztpStatus.GetRegisteredOk(); err == nil && ok {
+			if isRegistered := *ztpRegistered; isRegistered {
 				if _, err := a.ZTPUpdateNotify(ctx); err != nil {
 					log.WithError(err).Warn("failed to trigger ZTP update")
 				}

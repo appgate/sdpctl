@@ -371,6 +371,9 @@ func (a *Appliance) ZTPStatus(ctx context.Context) (*openapi.ZtpStatus, error) {
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
+	if result == nil {
+		return nil, api.HTTPErrorResponse(response, errors.New("ZtpStatus is nil"))
+	}
 	return result, nil
 }
 
@@ -378,6 +381,9 @@ func (a *Appliance) ZTPUpdateNotify(ctx context.Context) (*openapi.ZtpVersionSta
 	result, response, err := a.APIClient.ZTPApi.ZtpServicesVersionPost(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
+	}
+	if result == nil {
+		return nil, api.HTTPErrorResponse(response, errors.New("ZtpVersionStatus is nil"))
 	}
 	return result, nil
 }
