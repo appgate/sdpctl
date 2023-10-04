@@ -64,7 +64,7 @@ func saveEncryptedFile(name, prefix, secret string) error {
 	if err != nil {
 		return fmt.Errorf("Could not encrypt token to Windows DPAPI %w", err)
 	}
-	dir := profiles.GetStorageDirectory()
+	dir := profiles.GetConfigDirectory()
 	p, err := filepath.Abs(fmt.Sprintf("%s/%s", dir, format(prefix, name)))
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func saveEncryptedFile(name, prefix, secret string) error {
 }
 
 func getSecretFile(name, prefix string) (string, error) {
-	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, name)))
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetConfigDirectory(), format(prefix, name)))
 	if err != nil {
 		return "", err
 	}
@@ -99,7 +99,7 @@ func getSecretFile(name, prefix string) (string, error) {
 }
 
 func deleteSecretFile(name, prefix string) error {
-	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetStorageDirectory(), format(prefix, name)))
+	p, err := filepath.Abs(fmt.Sprintf("%s/%s", profiles.GetConfigDirectory(), format(prefix, name)))
 	if err != nil {
 		return err
 	}
