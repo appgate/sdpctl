@@ -46,13 +46,13 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts, json bool) er
 	if currentProfile != nil {
 		currentConfig, err := readConfig(filepath.Join(currentProfile.Directory, "config.json"))
 		if err != nil {
-			fmt.Fprintf(opts.Out, "Current profile %s is not configure, run 'sdpctl configure'\n", currentProfile.Name)
+			fmt.Fprintf(opts.Out, "Current profile %s is not configured, run 'sdpctl configure'\n", currentProfile.Name)
 		}
 
 		if currentConfig != nil {
 			h, err := currentConfig.GetHost()
 			if err != nil {
-				fmt.Fprintf(opts.Out, "Current profile %s is not configure, run 'sdpctl configure'\n", currentProfile.Name)
+				fmt.Fprintf(opts.Out, "Current profile %s is not configured, run 'sdpctl configure'\n", currentProfile.Name)
 			} else {
 				fmt.Fprintf(opts.Out, "Current profile is %s (%s) the primary Controller %s\n", currentProfile.Name, currentProfile.Directory, h)
 			}
@@ -60,9 +60,9 @@ func listRun(cmd *cobra.Command, args []string, opts *commandOpts, json bool) er
 	}
 	fmt.Fprintf(opts.Out, "\nAvailable profiles\n")
 	printer := util.NewPrinter(opts.Out, 4)
-	printer.AddHeader("Name", "Config directory")
+	printer.AddHeader("Name", "Config directory", "Log file path")
 	for _, profile := range p.List {
-		printer.AddLine(profile.Name, profile.Directory)
+		printer.AddLine(profile.Name, profile.Directory, profile.GetLogPath())
 	}
 	printer.Print()
 	return nil

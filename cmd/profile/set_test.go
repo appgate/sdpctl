@@ -38,7 +38,7 @@ run 'sdpctl profile add' first
 }
 
 func TestNewSetCmdSetValid(t *testing.T) {
-	dir := setupExistingProfiles(t)
+	dir, _ := setupExistingProfiles(t)
 
 	stdout := &bytes.Buffer{}
 	opts := &commandOpts{
@@ -57,7 +57,7 @@ func TestNewSetCmdSetValid(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := Nprintf(`staging (%{dir}/profiles/staging) is selected as current sdp profile
+	want := Nprintf(`staging is selected as current sdp profile
 staging is not configured yet, run 'sdpctl configure'
 `, map[string]interface{}{"dir": dir})
 

@@ -18,6 +18,14 @@ func GetCaller() string {
 	return binary
 }
 
-func GetPath() string {
-	return profiles.GetStorageDirectory()
+func GetConfigPath() string {
+	return profiles.GetConfigPath()
+}
+
+func GetLogPath() string {
+	return profiles.GetLogPath()
+}
+
+func CurrentProfile() string {
+	return profiles.GetCurrentProfile()
 }
