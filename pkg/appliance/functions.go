@@ -800,6 +800,12 @@ type imageBundleArgs struct {
 
 func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Client, path string, registry *url.URL, images map[string]string, ciMode bool) (*os.File, error) {
 	// Create zip-archive
+	dir := filepath.Dir(path)
+	if ok, err := util.FileExists(dir); err == nil && !ok {
+		os.MkdirAll(dir, os.ModePerm)
+	} else if err != nil {
+		return nil, err
+	}
 	archive, err := os.Create(path)
 	if err != nil {
 		return nil, err
