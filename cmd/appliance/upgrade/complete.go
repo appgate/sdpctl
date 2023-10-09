@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"sort"
 	"strings"
 	"text/template"
@@ -825,6 +826,22 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				}
 			}
 		}
+	}
+
+	// Clean out logserver bundle if it exists in file-repository
+	if files, err := a.ListFiles(ctx, []string{}, false); err == nil {
+		regex := regexp.MustCompile(`^logserver-\d+\.\d+\.zip$`)
+		for _, f := range files {
+			match := regex.MatchString(f.GetName())
+			if !match {
+				continue
+			}
+			if err := a.DeleteFile(ctx, f.GetName()); err != nil {
+				log.WithError(err).Warn("failed to remove logserver bundle file from controller file repository")
+			}
+		}
+	} else {
+		log.WithError(err).Warn("failed to list files in file repository")
 	}
 
 	// Check if all appliances are running the same version after upgrade complete
