@@ -260,12 +260,12 @@ func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config
 		return f.StdErr
 	}
 
-	logDir := profiles.GetLogPath()
+	logPath := profiles.GetLogPath()
+	logDir := filepath.Dir(logPath)
 	if err := os.MkdirAll(logDir, os.ModePerm); err != nil {
 		return f.IOOutWriter
 	}
-	name := filepath.Join(logDir, "sdpctl.log")
-	file, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return f.IOOutWriter
 	}
