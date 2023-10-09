@@ -486,7 +486,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				if !opts.ciMode {
 					bundleProgress = tui.New(ctx, opts.SpinnerOut())
 				}
-				path := filepath.Join(filesystem.DownloadDir(), "appgate", logServerZipName)
+				path := filepath.Join(filesystem.DownloadDir(), logServerZipName)
 				zip, err = appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, path, opts.dockerRegistry, logServerImages, opts.ciMode)
 				if err != nil {
 					return err

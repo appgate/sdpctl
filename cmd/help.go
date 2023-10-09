@@ -99,6 +99,12 @@ Available Variables:
   SDPCTL_CONFIG_DIR:
     Description: the directory where sdpctl will store configuration files.
     Default: "$XDG_CONFIG_HOME/sdpctl" or "$HOME/.config/sdpctl on UNIX and %APPDATA%\Local\sdpctl on Windows".
+  SDPCTL_DATA_DIR:
+    Description: the directory where sdpctl will log to.
+    Default: "$XDG_DATA_DIR/sdpctl" or "$HOME/.local/share/sdpctl on UNIX and %APPDATA%\Local\sdpctl on Windows".
+  SDPCTL_DOWNLOAD_DIR:
+    Description: the directory where sdpctl will download to by default.
+    Default: "$XDG_DOWNLOAD_DIR/appgate" or "$HOME/Downloads/appgate on UNIX and %APPDATA%\Local\sdpctl on Windows".
   SDPCTL_LOG_LEVEL:
     Description: application log level
     Default: INFO
