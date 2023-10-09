@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	DefaultBackupDestination = filepath.Join(filesystem.DownloadDir(), "appgate", "backup")
+	DefaultBackupDestination = filepath.Join(filesystem.DownloadDir(), "backup")
 )
 
 type BackupOpts struct {

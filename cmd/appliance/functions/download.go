@@ -210,7 +210,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.String("docker-registry", "", "docker registry for downloading image bundles")
-	flags.StringVar(&opts.savePath, "save-path", filepath.Join(filesystem.DownloadDir(), "appgate"), "path to where the container bundle should be saved")
+	flags.StringVar(&opts.savePath, "save-path", filesystem.DownloadDir(), "path to where the container bundle should be saved")
 	flags.StringVar(&opts.version, "version", "", "Override the LogServer version that will be downloaded. Defaults to the same version as the primary controller.")
 
 	return cmd

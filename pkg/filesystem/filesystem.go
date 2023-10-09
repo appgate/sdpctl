@@ -13,6 +13,7 @@ import (
 const (
 	AgConfigDir   = "SDPCTL_CONFIG_DIR"
 	AgDataDir     = "SDPCTL_DATA_DIR"
+	AgDownloadDir = "SDPCTL_DOWNLOAD_DIR"
 	XdgConfigHome = "XDG_CONFIG_HOME"
 	AppData       = "AppData"
 )
@@ -58,20 +59,26 @@ func DataDir() string {
 }
 
 func DownloadDir() string {
+	if path := os.Getenv(AgDownloadDir); len(path) > 0 {
+		return path
+	}
 	// xdg library does not currently parse the user-dirs.dirs file (see https://github.com/adrg/xdg/issues/29)
 	// we'll do it manually for now
 	ud, _ := parseUsersDirs()
 	if dlDir, ok := ud["DOWNLOAD"]; ok {
 		return dlDir
 	}
-	return xdg.UserDirs.Download
+	if len(xdg.UserDirs.Download) > 0 {
+		return xdg.UserDirs.Download
+	}
+	return filepath.Join(xdg.Home, "Downloads", "appgate")
 }
 
 func parseUsersDirs() (map[string]string, error) {
 	res := map[string]string{}
-	configHome := xdg.ConfigHome
-	if len(configHome) <= 0 {
-		configHome = xdg.Home + "/.config"
+	configHome := filepath.Join(xdg.Home, ".config")
+	if len(xdg.ConfigHome) > 0 {
+		configHome = xdg.ConfigHome
 	}
 	file, err := os.Open(filepath.Join(configHome, "user-dirs.dirs"))
 	if err != nil {
