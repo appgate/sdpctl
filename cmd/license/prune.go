@@ -1,11 +1,11 @@
 package license
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/spf13/cobra"
 )
@@ -30,12 +30,12 @@ func NewPruneCmd(opts *licenseOpts) *cobra.Command {
 func pruneRun(cmd *cobra.Command, args []string, opts *licenseOpts) error {
 	client, err := opts.HTTPClient()
 	if err != nil {
-		return fmt.Errorf("Could not resolve a HTTP client based on your current config %s", err)
+		return cmdutil.GenericErrorWrap("failed to resolve HTTP client based on your configuration", err)
 	}
 	requestURL := fmt.Sprintf("%s/license/users/prune", opts.BaseURL)
 	request, err := http.NewRequest(http.MethodDelete, requestURL, nil)
 	if err != nil {
-		return err
+		return cmdutil.GenericErrorWrap("failed to prune license", err)
 	}
 
 	response, err := client.Do(request)
@@ -43,10 +43,10 @@ func pruneRun(cmd *cobra.Command, args []string, opts *licenseOpts) error {
 		return api.HTTPErrorResponse(response, err)
 	}
 	if response.StatusCode == http.StatusNotFound {
-		return errors.New("Could not prune the user licenses, not supported on your appliance version")
+		return cmdutil.GenericErrorWrap("failed to prune license", cmdutil.ErrUnsupportedOperation)
 	}
 	if response.StatusCode != http.StatusNoContent {
-		return fmt.Errorf("Could not prune the user licenses got HTTP %d\n", response.StatusCode)
+		return cmdutil.GenericErrorWrap("failed to prune license", cmdutil.ErrUnexpectedResponseStatus(http.StatusNoContent, response.StatusCode))
 	}
 	fmt.Fprintln(opts.Out, "User licenses pruned")
 	return nil

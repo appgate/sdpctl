@@ -1,8 +1,20 @@
 package cmdutil
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
+	// GenericErrorWrap wraps an error along with a message
+	// The message is intended to be specific to a certain operation the user is trying to perform while the error is more generic
+	GenericErrorWrap = func(msg string, err error) error {
+		return fmt.Errorf("%s: %w", msg, err)
+	}
+	// ErrUnexpectedResponseStatus is used for generic response statuses that are unexpected, but not considered errors
+	ErrUnexpectedResponseStatus = func(want, got int) error {
+		return fmt.Errorf("unexpected response status - want %d, got %d", want, got)
+	}
 	// ErrExecutedOnAppliance signals when the program is executed within a appliance
 	ErrExecutedOnAppliance = errors.New("This should not be executed on an appliance")
 	// ErrExecutionCanceledByUser signals user-initiated cancellation
@@ -21,4 +33,6 @@ var (
 	ErrDailyVersionCheck = errors.New("version check already done today")
 	// ErrVersionCheckDisabled is used when version check has been disabled
 	ErrVersionCheckDisabled = errors.New("version check disabled")
+	// ErrUnsupportedOperation is used when the user tries to do an operation that is unsupported by the Appliance, likely due to version
+	ErrUnsupportedOperation = errors.New("Operation not supported on your appliance version")
 )
