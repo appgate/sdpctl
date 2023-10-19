@@ -287,7 +287,7 @@ NO_ENABLE_CHECK:
 		tracker.Update(msg)
 		// file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
-		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID, b.destination)
+		file, err := backupAPI.ChunkedDownload(ctx, b.applianceID, b.backupID, b.destination)
 		if err != nil {
 			logger.WithError(err).Error("backup failed")
 			return b, err
