@@ -2,9 +2,10 @@ package configure
 
 import (
 	"fmt"
-	"github.com/appgate/sdpctl/pkg/configuration"
 	"io"
 	"os"
+
+	"github.com/appgate/sdpctl/pkg/configuration"
 
 	"github.com/appgate/sdpctl/pkg/auth"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -26,11 +27,13 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 		StdErr: f.StdErr,
 	}
 	var signinCmd = &cobra.Command{
-		Use: "signin",
+		Use:        "signin",
+		SuggestFor: []string{"sigin", "singin"},
 		Annotations: map[string]string{
 			configuration.SkipAuthCheck: "true",
 		},
 		Aliases: []string{"login"},
+		Args:    cobra.NoArgs,
 		Short:   docs.ConfigureSigninDocs.Short,
 		Long:    docs.ConfigureSigninDocs.Long,
 		Example: docs.ConfigureSigninDocs.ExampleString(),
