@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -13,6 +14,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,7 +45,8 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 		Short:   docs.ConfigureDocs.Short,
 		Long:    docs.ConfigureDocs.Long,
 		Example: docs.ConfigureDocs.ExampleString(),
-		Args: func(cmd *cobra.Command, args []string) error {
+		Args:    cobra.MatchAll(cobra.MaximumNArgs(1), argValidation),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			noInteractive, err := cmd.Flags().GetBool("no-interactive")
 			if err != nil {
 				return err
@@ -127,5 +130,19 @@ func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error 
 	}
 	log.WithField("file", viper.ConfigFileUsed()).Info("Config updated")
 	fmt.Fprintln(opts.Out, "Configuration updated successfully")
+	return nil
+}
+
+func argValidation(cmd *cobra.Command, args []string) error {
+	if len(args) == 1 {
+		arg := args[0]
+		regex := regexp.MustCompile(`[signin]{3,}`)
+		if regex.MatchString(arg) {
+			return fmt.Errorf("'%s' is not a valid argument. Did you mean 'signin'?", arg)
+		}
+		if !util.IsValidURL(arg) {
+			return fmt.Errorf("'%s' is not a valid URL", arg)
+		}
+	}
 	return nil
 }
