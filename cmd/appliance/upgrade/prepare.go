@@ -493,11 +493,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 				defer os.Remove(zip.Name())
 				opts.logServerBundlePath = zip.Name()
-			} else {
-				zip, err = os.Open(opts.logServerBundlePath)
-				if err != nil {
-					return err
-				}
+			}
+			zip, err = os.Open(opts.logServerBundlePath)
+			if err != nil {
+				return err
 			}
 			defer zip.Close()
 
@@ -534,11 +533,11 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				err = uploadWithProgress(ctx, pr, "uploading "+logServerZipName, zipInfo.Size(), headers)
 			} else {
 				err = a.UploadFile(ctx, pr, headers)
-				fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
 			}
 			if err != nil {
 				return err
 			}
+			fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
 		} else {
 			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
 		}
