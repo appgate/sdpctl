@@ -810,6 +810,7 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 	if err != nil {
 		return nil, err
 	}
+	defer archive.Close()
 	zipWriter := zip.NewWriter(archive)
 	defer zipWriter.Close()
 
@@ -864,12 +865,6 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 			continue
 		}
 		log.WithField("path", v.path).WithField("size", size).Debug("wrote layer")
-	}
-
-	archive.Close()
-	archive, err = os.Open(archive.Name())
-	if err != nil {
-		errs = multierror.Append(errs, err)
 	}
 
 	return archive, errs.ErrorOrNil()
