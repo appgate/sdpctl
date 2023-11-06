@@ -15,7 +15,7 @@ require (
 	github.com/enriquebris/goconcurrentqueue v0.7.0
 	github.com/foxcpp/go-mockdns v1.0.0
 	github.com/gomarkdown/markdown v0.0.0-20230322041520-c84983bdbf2a
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-multierror v1.1.1
