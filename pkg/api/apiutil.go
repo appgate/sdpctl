@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/cenkalti/backoff/v4"
 )
 
 type GenericErrorResponse struct {
@@ -81,4 +83,20 @@ func HTTPErrorResponse(response *http.Response, err error) error {
 
 	}
 	return ae
+}
+
+func RequestRetry(c *http.Client, req *http.Request) (*http.Response, error) {
+	return backoff.RetryWithData(func() (*http.Response, error) {
+		res, err := c.Do(req)
+		if err != nil {
+			return nil, backoff.Permanent(err)
+		}
+		if res.StatusCode >= 300 {
+			if res.StatusCode == http.StatusNotFound {
+				return nil, backoff.Permanent(fmt.Errorf("%s not found", req.URL))
+			}
+			return nil, fmt.Errorf("recieved %s status", res.Status)
+		}
+		return res, nil
+	}, backoff.NewExponentialBackOff())
 }

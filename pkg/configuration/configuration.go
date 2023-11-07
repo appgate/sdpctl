@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/profiles"
@@ -312,6 +313,10 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cliReleasesURL, nil)
+	if err != nil {
+		return c, err
+	}
+
 	// Write new check time to config after request is made
 	c.LastVersionCheck = time.Now().Format(time.RFC3339Nano)
 	viper.Set("last_version_check", c.LastVersionCheck)
@@ -319,7 +324,7 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 		return c, err
 	}
 	req.Header.Add("Accept", "application/vnd.github+json")
-	res, err := client.Do(req)
+	res, err := api.RequestRetry(client, req)
 	if err != nil {
 		return c, err
 	}
