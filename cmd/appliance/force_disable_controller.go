@@ -141,7 +141,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		return fmt.Errorf("No controllers to disable")
 	}
 
-	stats, _, err := a.Stats(ctx, nil, false)
+	stats, _, err := a.Stats(ctx, nil, nil, false)
 	if err != nil {
 		return err
 	}

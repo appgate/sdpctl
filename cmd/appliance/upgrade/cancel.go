@@ -96,7 +96,7 @@ func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOpti
 
 	ctx := context.WithValue(context.Background(), appliancepkg.Caller, cmd.CalledAs())
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
-	stats, _, err := a.Stats(ctx, orderBy, descending)
+	stats, _, err := a.Stats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}

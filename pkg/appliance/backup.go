@@ -185,7 +185,7 @@ NO_ENABLE_CHECK:
 	}
 
 	// Filter offline appliances
-	initialStats, _, err := app.Stats(ctx, opts.OrderBy, opts.Descending)
+	initialStats, _, err := app.Stats(ctx, nil, opts.OrderBy, opts.Descending)
 	if err != nil {
 		return backupIDs, err
 	}

@@ -27,10 +27,11 @@ func TestApplianceStatsCommandJSON(t *testing.T) {
 	stdin := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	in := io.NopCloser(stdin)
+	url := fmt.Sprintf("http://localhost:%d", registry.Port)
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			URL:   url,
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
@@ -38,6 +39,9 @@ func TestApplianceStatsCommandJSON(t *testing.T) {
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
+	}
+	f.BaseURL = func() string {
+		return url + "/admin"
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
@@ -49,8 +53,8 @@ func TestApplianceStatsCommandJSON(t *testing.T) {
 		}
 		return a, nil
 	}
-	cmd := NewStatsCmd(f)
-	cmd.SetArgs([]string{"--json"})
+	cmd := NewApplianceCmd(f)
+	cmd.SetArgs([]string{"stats", "--json"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -79,10 +83,11 @@ func TestApplianceStatsCommandTable(t *testing.T) {
 	stdin := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	in := io.NopCloser(stdin)
+	url := fmt.Sprintf("http://localhost:%d", registry.Port)
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			URL:   url,
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
@@ -90,6 +95,9 @@ func TestApplianceStatsCommandTable(t *testing.T) {
 	}
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
+	}
+	f.BaseURL = func() string {
+		return url + "/admin"
 	}
 	f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
 		api, _ := f.APIClient(c)
@@ -101,12 +109,12 @@ func TestApplianceStatsCommandTable(t *testing.T) {
 		}
 		return a, nil
 	}
-	cmd := NewStatsCmd(f)
+	applianceCMD := NewApplianceCmd(f)
+	applianceCMD.SetArgs([]string{"stats", "--include=name=controller&gateway"})
+	applianceCMD.SetOut(io.Discard)
+	applianceCMD.SetErr(io.Discard)
 
-	cmd.SetOut(io.Discard)
-	cmd.SetErr(io.Discard)
-
-	_, err := cmd.ExecuteC()
+	_, err := applianceCMD.ExecuteC()
 	if err != nil {
 		t.Fatalf("executeC %s", err)
 	}
@@ -122,6 +130,9 @@ controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1    healthy    LogServer, C
 gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1       healthy    Gateway                  0.7%    7.8%      76.8 bps / 96.0 bps      4.9%    5.3.4+24950    5
 `
 	if !cmp.Equal(want, gotStr) {
+		i, _ := applianceCMD.Flags().GetStringToString("include")
+		e, _ := applianceCMD.Flags().GetStringToString("exclude")
+		t.Log(applianceCMD.CommandPath(), applianceCMD.CalledAs(), i, e)
 		t.Fatalf("\n Diff \n %s", cmp.Diff(want, gotStr))
 	}
 }

@@ -215,7 +215,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	skipping := []appliancepkg.SkipUpgrade{}
-	initialStats, _, err := a.Stats(ctx, orderBy, descending)
+	initialStats, _, err := a.Stats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -560,7 +560,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
 				return err
 			}
-			s, _, err := a.Stats(ctx, orderBy, descending)
+			s, _, err := a.Stats(ctx, nil, orderBy, descending)
 			if err != nil {
 				return err
 			}
@@ -642,7 +642,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
-				s, _, err := a.Stats(ctx, orderBy, descending)
+				s, _, err := a.Stats(ctx, nil, orderBy, descending)
 				if err != nil {
 					return err
 				}
@@ -766,7 +766,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 			}
-			s, _, err := a.Stats(ctx, orderBy, descending)
+			s, _, err := a.Stats(ctx, nil, orderBy, descending)
 			if err != nil {
 				return err
 			}
@@ -845,7 +845,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// Check if all appliances are running the same version after upgrade complete
-	newStats, _, err := a.Stats(ctx, orderBy, descending)
+	newStats, _, err := a.Stats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}

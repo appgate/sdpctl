@@ -50,6 +50,10 @@ func TestApplianceListCommandJSON(t *testing.T) {
 		return a, nil
 	}
 	cmd := NewListCmd(f)
+	cmd.PersistentFlags().StringToStringP("include", "i", map[string]string{}, "")
+	cmd.PersistentFlags().StringToStringP("exclude", "e", map[string]string{}, "")
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
 	cmd.SetArgs([]string{"--json"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
@@ -101,7 +105,11 @@ func TestApplianceListCommandTable(t *testing.T) {
 		return a, nil
 	}
 	cmd := NewListCmd(f)
-
+	cmd.PersistentFlags().StringToStringP("include", "i", map[string]string{}, "")
+	cmd.PersistentFlags().StringToStringP("exclude", "e", map[string]string{}, "")
+	cmd.PersistentFlags().StringSlice("order-by", []string{"name"}, "")
+	cmd.PersistentFlags().Bool("descending", false, "")
+	cmd.SetArgs([]string{})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 

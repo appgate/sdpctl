@@ -119,7 +119,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				logrus.WithField("primary-controller", primary.GetName()).Debug("found primary controller")
-				stats, response, err := api.Stats(ctx, []string{"name"}, false)
+				stats, response, err := api.Stats(ctx, nil, []string{"name"}, false)
 				if err != nil {
 					return apipkg.HTTPErrorResponse(response, err)
 				}

@@ -65,7 +65,7 @@ func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOpti
 	if err != nil {
 		return err
 	}
-	initialStats, _, err := a.Stats(ctx, orderBy, descending)
+	initialStats, _, err := a.Stats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
