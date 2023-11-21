@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -23,6 +22,11 @@ type statsOptions struct {
 	debug     bool
 	json      bool
 }
+
+var (
+	filterStatsHelp string = `Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=<site-id> etc.'.
+Available keywords to filter on are: name, id, status, state and function`
+)
 
 // NewStatsCmd return a new appliance stats list command
 func NewStatsCmd(f *factory.Factory) *cobra.Command {
@@ -43,6 +47,8 @@ func NewStatsCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	listCmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	listCmd.PersistentFlags().StringToStringP("include", "i", map[string]string{}, "Include appliance stats. Adheres to the same syntax and key-value pairs as '--exclude'")
+	listCmd.PersistentFlags().StringToStringP("exclude", "e", map[string]string{}, filterStatsHelp)
 	return listCmd
 }
 
@@ -52,9 +58,9 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	if err != nil {
 		return err
 	}
-	_, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
+	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 	ctx := context.Background()
-	stats, _, err := a.Stats(ctx, orderBy, descending)
+	stats, _, err := a.Stats(ctx, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -80,7 +86,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 		w.AddLine(
 			s.GetName(),
 			s.GetStatus(),
-			statsActiveFunction(s),
+			appliancepkg.StatsActiveFunctions(s),
 			fmt.Sprintf("%g%%", s.GetCpu()),
 			fmt.Sprintf("%g%%", s.GetMemory()),
 			statsNetworkPrettyPrint(s.GetNetwork()),
@@ -105,41 +111,4 @@ func statsDiskUsage(stats openapi.StatsAppliancesListAllOfData) string {
 		return fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, appliancepkg.PrettyBytes(float64(used)), appliancepkg.PrettyBytes(float64(total)))
 	}
 	return fmt.Sprintf("%g%%", stats.GetDisk())
-}
-
-const na = "n/a"
-
-func statsActiveFunction(s openapi.StatsAppliancesListAllOfData) string {
-	functions := make([]string, 0)
-	if v, ok := s.GetLogServerOk(); ok {
-		if v.GetStatus() != na {
-			functions = append(functions, appliancepkg.FunctionLogServer)
-		}
-	}
-	if v, ok := s.GetLogForwarderOk(); ok {
-		if v.GetStatus() != na {
-			functions = append(functions, appliancepkg.FunctionLogForwarder)
-		}
-	}
-	if v, ok := s.GetControllerOk(); ok {
-		if v.GetStatus() != na {
-			functions = append(functions, appliancepkg.FunctionController)
-		}
-	}
-	if v, ok := s.GetConnectorOk(); ok {
-		if v.GetStatus() != na {
-			functions = append(functions, appliancepkg.FunctionConnector)
-		}
-	}
-	if v, ok := s.GetGatewayOk(); ok {
-		if v.GetStatus() != na {
-			functions = append(functions, appliancepkg.FunctionGateway)
-		}
-	}
-	if v, ok := s.GetPortalOk(); ok {
-		if v.GetStatus() != na {
-			functions = append(functions, appliancepkg.FunctionPortal)
-		}
-	}
-	return strings.Join(functions, ", ")
 }

@@ -126,6 +126,8 @@ func ParseFilteringFlags(flags *pflag.FlagSet, defaultFilter map[string]map[stri
 					result[v][f] = value
 				}
 			}
+		} else if err != nil {
+			log.WithError(err).Error("failed to parse filter")
 		}
 	}
 

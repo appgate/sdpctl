@@ -482,6 +482,22 @@ func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.App
 	return filteredAppliances
 }
 
+func AppendUniqueApplianceStats(stats []openapi.StatsAppliancesListAllOfData, stat openapi.StatsAppliancesListAllOfData) []openapi.StatsAppliancesListAllOfData {
+	filtered := make([]openapi.StatsAppliancesListAllOfData, len(stats))
+	copy(filtered, stats)
+
+	appID := stat.GetId()
+	inFiltered := []string{}
+	for _, a := range filtered {
+		inFiltered = append(inFiltered, a.GetId())
+	}
+	if !util.InSlice(appID, inFiltered) {
+		filtered = append(filtered, stat)
+	}
+
+	return filtered
+}
+
 func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]string) ([]openapi.Appliance, error) {
 	var filteredAppliances []openapi.Appliance
 	var warnings []string
@@ -617,6 +633,137 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 	return appliances, errs.ErrorOrNil()
 }
 
+func FilterApplianceStats(stats []openapi.StatsAppliancesListAllOfData, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, []openapi.StatsAppliancesListAllOfData, error) {
+	include := make([]openapi.StatsAppliancesListAllOfData, len(stats))
+	copy(include, stats)
+	var errs *multierror.Error
+	var err error
+
+	// Keep track of which appliances are filtered at the different steps
+	notInclude := make(map[string]openapi.StatsAppliancesListAllOfData, len(stats))
+	for _, a := range stats {
+		notInclude[a.GetId()] = a
+	}
+
+	// apply normal filter
+	if len(filter["include"]) > 0 {
+		include, err = applyApplianceStatsFilter(include, filter["include"])
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+	}
+	for _, i := range include {
+		delete(notInclude, i.GetId())
+	}
+
+	// apply exclusion filter
+	exclude, err := applyApplianceStatsFilter(include, filter["exclude"])
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	for _, exa := range exclude {
+		eID := exa.GetId()
+		for i, a := range include {
+			if eID == a.GetId() {
+				include = append(include[:i], include[i+1:]...)
+			}
+		}
+	}
+
+	for _, a := range notInclude {
+		exclude = AppendUniqueApplianceStats(exclude, a)
+	}
+
+	// Sort appliances
+	include, err = orderApplianceStats(include, orderBy, descending)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+	exclude, err = orderApplianceStats(exclude, orderBy, descending)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+	}
+
+	return include, exclude, errs.ErrorOrNil()
+}
+
+func applyApplianceStatsFilter(stats []openapi.StatsAppliancesListAllOfData, filter map[string]string) ([]openapi.StatsAppliancesListAllOfData, error) {
+	var filtered []openapi.StatsAppliancesListAllOfData
+	var warnings []string
+
+	for _, s := range stats {
+		for k, v := range filter {
+			switch k {
+			case "name":
+				nameList := strings.Split(v, FilterDelimiter)
+				for _, name := range nameList {
+					regex, err := regexp.Compile(name)
+					if err != nil {
+						return nil, err
+					}
+					if regex.MatchString(s.GetName()) {
+						filtered = AppendUniqueApplianceStats(filtered, s)
+					}
+				}
+			case "id":
+				idList := strings.Split(v, FilterDelimiter)
+				for _, id := range idList {
+					regex, err := regexp.Compile(id)
+					if err != nil {
+						return nil, err
+					}
+					if regex.MatchString(s.GetId()) {
+						filtered = append(filtered, s)
+					}
+				}
+			case "status":
+				statusList := strings.Split(v, FilterDelimiter)
+				for _, status := range statusList {
+					regex, err := regexp.Compile(status)
+					if err != nil {
+						return nil, err
+					}
+					if regex.MatchString(s.GetStatus()) {
+						filtered = append(filtered, s)
+					}
+				}
+			case "state":
+				stateList := strings.Split(v, FilterDelimiter)
+				for _, state := range stateList {
+					regex, err := regexp.Compile(state)
+					if err != nil {
+						return nil, err
+					}
+					if regex.MatchString(s.GetState()) {
+						filtered = append(filtered, s)
+					}
+				}
+			case "function":
+				functionList := strings.Split(v, FilterDelimiter)
+				for _, function := range functionList {
+					active := strings.Split(StatsActiveFunctions(s), ",")
+					if util.InSlice(function, active) {
+						filtered = append(filtered, s)
+					}
+				}
+			default:
+				msg := fmt.Sprintf("'%s' is not a filterable keyword. Ignoring", k)
+				if !util.InSlice(msg, warnings) {
+					warnings = append(warnings, msg)
+				}
+			}
+		}
+	}
+
+	if len(warnings) > 0 {
+		for _, w := range warnings {
+			log.Warnln(w)
+		}
+	}
+
+	return filtered, nil
+}
+
 func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
 	var errs *multierror.Error
 	for i := len(orderBy) - 1; i >= 0; i-- {
@@ -661,6 +808,43 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 		return util.Reverse(stats), errs.ErrorOrNil()
 	}
 	return stats, errs.ErrorOrNil()
+}
+
+const na = "n/a"
+
+func StatsActiveFunctions(s openapi.StatsAppliancesListAllOfData) string {
+	functions := make([]string, 0)
+	if v, ok := s.GetLogServerOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, FunctionLogServer)
+		}
+	}
+	if v, ok := s.GetLogForwarderOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, FunctionLogForwarder)
+		}
+	}
+	if v, ok := s.GetControllerOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, FunctionController)
+		}
+	}
+	if v, ok := s.GetConnectorOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, FunctionConnector)
+		}
+	}
+	if v, ok := s.GetGatewayOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, FunctionGateway)
+		}
+	}
+	if v, ok := s.GetPortalOk(); ok {
+		if v.GetStatus() != na {
+			functions = append(functions, FunctionPortal)
+		}
+	}
+	return strings.Join(functions, ", ")
 }
 
 func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool) ([]openapi.File, error) {

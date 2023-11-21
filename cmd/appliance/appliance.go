@@ -30,7 +30,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	pFlags.StringToStringP("include", "i", map[string]string{}, "Include appliances. Adheres to the same syntax and key-value pairs as '--exclude'")
 	pFlags.StringToStringP("exclude", "e", map[string]string{}, filterHelp)
 	pFlags.StringSlice("order-by", []string{"name"}, orderByHelp)
-	pFlags.Bool("descending", false, "Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the ''--order-by' flag.")
+	pFlags.Bool("descending", false, "Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.")
 
 	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
 	cmd.AddCommand(backup.NewCmdBackup(f))
