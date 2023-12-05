@@ -285,7 +285,6 @@ NO_ENABLE_CHECK:
 		msg := "downloading"
 		logger.Info(msg)
 		tracker.Update(msg)
-		// file, err := backupAPI.Download(ctx, b.applianceID, b.backupID)
 		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
 		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID, b.destination)
 		if err != nil {
@@ -320,7 +319,11 @@ NO_ENABLE_CHECK:
 
 	for b := range backups {
 		backupIDs[b.applianceID] = b.backupID
-		log.WithField("file", b.destination).Info("Wrote backup file")
+		log.WithFields(log.Fields{
+			"file":         b.destination,
+			"appliance_id": b.applianceID,
+			"backup_id":    b.backupID,
+		}).Info("Wrote backup file")
 	}
 	var result *multierror.Error
 	for err := range errorChannel {
@@ -360,7 +363,6 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		})
 	}
 	g.Wait()
-	log.Info("cleanup done")
 	fmt.Fprint(opts.Out, "Backup complete!\n\n")
 
 	return nil
