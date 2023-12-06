@@ -49,7 +49,7 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
   -h, --help                      help for prepare
       --host-on-controller        Use the primary Controller as image host when uploading from remote source
       --image string              Upgrade image file or URL
-      --logserver-bundle string   Path to a local LogServer bundle file to upload and use when upgrading a LogServer appliance.
+      --logserver-bundle string   Path to a local LogServer image bundle file to upload and use when upgrading a LogServer appliance.
       --no-interactive            Suppress interactive prompt with auto accept
       --skip-container-bundle     skip the bundling of the docker images for functions that need them, e.g. the LogServer
       --throttle int              Upgrade is done in batches using a throttle value. You can control the throttle using this flag (default 5)
@@ -58,7 +58,7 @@ the upgrade image using the provided URL. It will fail if the Appliances cannot 
 <pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
       --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
-      --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the ''--order-by' flag.
+      --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.
       --events-path string       send logs to unix domain socket path
   -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
                                  Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])

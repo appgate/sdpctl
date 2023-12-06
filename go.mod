@@ -7,7 +7,7 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/adrg/xdg v0.4.0
 	github.com/appgate/sdp-api-client-go v1.2.1
-	github.com/billgraziano/dpapi v0.4.0
+	github.com/billgraziano/dpapi v0.5.0
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cheynewallace/tabby v1.1.1
 	github.com/creack/pty v1.1.18
@@ -15,14 +15,14 @@ require (
 	github.com/enriquebris/goconcurrentqueue v0.7.0
 	github.com/foxcpp/go-mockdns v1.0.0
 	github.com/gomarkdown/markdown v0.0.0-20230322041520-c84983bdbf2a
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02
 	github.com/keybase/go-keychain v0.0.0-20230523030712-b5615109f100
-	github.com/mattn/go-isatty v0.0.19
+	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/sirupsen/logrus v1.9.3
@@ -33,8 +33,8 @@ require (
 	github.com/vbauerster/mpb/v8 v8.6.2
 	github.com/zalando/go-keyring v0.2.3
 	golang.org/x/net v0.17.0
-	golang.org/x/sync v0.4.0
-	golang.org/x/sys v0.13.0
+	golang.org/x/sync v0.5.0
+	golang.org/x/sys v0.14.0
 )
 
 require (

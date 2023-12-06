@@ -51,7 +51,7 @@ will be created there if it doesn&rsquo;t already exist and the backups will be 
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
 <pre class="code-editor margin-bottom"><code>      --all                  backup all appliances in the Collective
       --current              backup the current peer Controller
-  -d, --destination string   backup destination directory (default &quot;$HOME/Downloads/appgate/backup&quot;)
+  -d, --destination string   backup destination directory (default &quot;$HOME/Downloads/backup&quot;)
   -h, --help                 help for backup
       --primary              backup the primary Controller
       --quiet                backup summary will not be printed if setting this flag
@@ -61,7 +61,7 @@ will be created there if it doesn&rsquo;t already exist and the backups will be 
 <pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
       --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
-      --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the ''--order-by' flag.
+      --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.
       --events-path string       send logs to unix domain socket path
   -e, --exclude stringToString   Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=&lt;site-id&gt; etc.'.
                                  Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function (default [])
