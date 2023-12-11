@@ -272,6 +272,16 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 	return func(cmd *cobra.Command, args []string) error {
 		logLevel := strings.ToLower(util.Getenv("SDPCTL_LOG_LEVEL", "info"))
 
+		if !cmdutil.IsTTY(os.Stdout) {
+			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
+				return err
+			}
+			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
+				return err
+			}
+			log.Debug("Output is not TTY. Using no-interactive and ci-mode")
+		}
+
 		switch logLevel {
 		case "panic":
 			log.SetLevel(log.PanicLevel)
@@ -309,16 +319,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			logFields["ARGS"] = strings.Join(args, ",")
 		}
 		log.WithFields(logFields).Info()
-
-		if !cmdutil.IsTTY(os.Stdout) {
-			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
-				return err
-			}
-			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
-				return err
-			}
-			log.Debug("Output is not TTY. Using no-interactive and ci-mode")
-		}
 
 		if value, err := cmd.Flags().GetBool("no-interactive"); err == nil {
 			f.DisablePrompt(value)
