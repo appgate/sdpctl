@@ -30,7 +30,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.17.0
 	github.com/stretchr/testify v1.8.4
-	github.com/vbauerster/mpb/v8 v8.6.2
+	github.com/vbauerster/mpb/v8 v8.7.0
 	github.com/zalando/go-keyring v0.2.3
 	golang.org/x/net v0.17.0
 	golang.org/x/sync v0.5.0
