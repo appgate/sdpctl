@@ -75,7 +75,7 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 	want := []byte(`[
 	    {
 	      "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-	      "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
+	      "name": "controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1",
 	      "status": "online",
 	      "upgrade_status": "idle",
 	      "details": "a reboot is required for the Upgrade to go into effect"
@@ -157,7 +157,7 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 	gotStr := string(got)
 	want := `ID                                      Name                                                     Status    Upgrade Status    Details
 --                                      ----                                                     ------    --------------    -------
-4c07bc67-57ea-42dd-b702-c2d6c45419fc    controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1    online    idle              a reboot is required for the Upgrade to go into effect
+4c07bc67-57ea-42dd-b702-c2d6c45419fc    controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1    online    idle              a reboot is required for the Upgrade to go into effect
 ee639d70-e075-4f01-596b-930d5f24f569    gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1       online    idle              a reboot is required for the Upgrade to go into effect
 `
 	if !cmp.Equal(want, gotStr) {

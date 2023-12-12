@@ -66,7 +66,7 @@ func TestMaintenanceStatusCommandTable(t *testing.T) {
 
 	want := `Name                                                     Maintenance mode    Details
 ----                                                     ----------------    -------
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1    false               Database size is 12 MB
+controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1    false               Database size is 12 MB
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)

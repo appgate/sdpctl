@@ -125,7 +125,7 @@ func TestApplianceListCommandTable(t *testing.T) {
 	gotStr := string(got)
 	want := `Name                                                     ID                                      Hostname          Site            Activated
 ----                                                     --                                      --------          ----            ---------
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1    4c07bc67-57ea-42dd-b702-c2d6c45419fc    appgate.test      Default Site    true
+controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1    4c07bc67-57ea-42dd-b702-c2d6c45419fc    appgate.test      Default Site    true
 gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1       ee639d70-e075-4f01-596b-930d5f24f569    gateway.devops    Default Site    true
 `
 	if !cmp.Equal(want, gotStr) {
@@ -174,7 +174,7 @@ func TestApplianceFiltering(t *testing.T) {
 
 	// Need to call parent command since list command inherits the filter flag from it
 	cmd := NewApplianceCmd(f)
-	cmd.SetArgs([]string{"list", "--include=name=controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1"})
+	cmd.SetArgs([]string{"list", "--include=name=controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1"})
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -190,7 +190,7 @@ func TestApplianceFiltering(t *testing.T) {
 	gotStr := string(got)
 	want := `Name                                                     ID                                      Hostname        Site            Activated
 ----                                                     --                                      --------        ----            ---------
-controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1    4c07bc67-57ea-42dd-b702-c2d6c45419fc    appgate.test    Default Site    true
+controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1    4c07bc67-57ea-42dd-b702-c2d6c45419fc    appgate.test    Default Site    true
 `
 	if !cmp.Equal(want, gotStr) {
 		t.Fatalf("\nGot: \n %q \n\n Want: \n %q \n", gotStr, want)
