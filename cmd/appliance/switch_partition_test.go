@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,22 @@ import (
 )
 
 func TestSwitchPartition(t *testing.T) {
+	mutatingFunc := func(count int, b []byte) ([]byte, error) {
+		stats := &openapi.StatsAppliancesList{}
+		if err := json.Unmarshal(b, stats); err != nil {
+			return nil, err
+		}
+		data := stats.GetData()
+		for i := 0; i < len(data); i++ {
+			data[i].VolumeNumber = openapi.PtrFloat32(float32(count))
+		}
+		bytes, err := json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+		return bytes, nil
+	}
+
 	testCases := []struct {
 		desc     string
 		args     []string
@@ -42,7 +59,7 @@ func TestSwitchPartition(t *testing.T) {
 				},
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
@@ -64,7 +81,7 @@ func TestSwitchPartition(t *testing.T) {
 			apiStubs: []httpmock.Stub{
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
@@ -116,7 +133,7 @@ func TestSwitchPartition(t *testing.T) {
 			apiStubs: []httpmock.Stub{
 				{
 					URL:       "/stats/appliances",
-					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance.json", mutatingFunc),
 				},
 				{
 					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",

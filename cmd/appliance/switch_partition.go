@@ -8,6 +8,7 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -35,9 +36,10 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 		canPrompt:  f.CanPrompt(),
 	}
 	cmd := &cobra.Command{
-		Use:   "switch-partition",
-		Short: "",
-		Long:  "",
+		Use:     "switch-partition",
+		Short:   docs.ApplianceSwitchPartitionDocs.Short,
+		Long:    docs.ApplianceSwitchPartitionDocs.Long,
+		Example: docs.ApplianceSwitchPartitionDocs.ExampleString(),
 		Args: cobra.MatchAll(cobra.MaximumNArgs(1), func(cmd *cobra.Command, args []string) error {
 			if len(args) <= 0 {
 				if !opts.canPrompt {
@@ -152,6 +154,23 @@ func switchPartitionRunE(opts *options) error {
 	if p != nil {
 		p.Wait()
 	}
+
+	// verify partition switch
+	stats, _, err = api.Stats(ctx, nil, nil, false)
+	if err != nil {
+		return fmt.Errorf("switch partition failed: %w", err)
+	}
+	var newVolume float32
+	for _, a := range stats.GetData() {
+		if a.GetId() == appliance.GetId() {
+			newVolume = a.GetVolumeNumber()
+		}
+	}
+
+	if newVolume == volume {
+		return fmt.Errorf("partition switch failed: volume number is the same as before executing the command")
+	}
+
 	fmt.Fprintf(opts.out, "switched partition on %s", appliance.GetName())
 
 	return nil
