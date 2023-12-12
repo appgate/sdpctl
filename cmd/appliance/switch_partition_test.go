@@ -148,6 +148,28 @@ func TestSwitchPartition(t *testing.T) {
 			},
 			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
 		},
+		{
+			desc: "failed partition switch",
+			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			wantErr: true,
+			expect:  regexp.MustCompile(`partition switch failed: volume number is the same as before executing the command`),
+		},
 	}
 	for _, tt := range testCases {
 		t.Run(tt.desc, func(t *testing.T) {
