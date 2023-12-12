@@ -32,19 +32,22 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	pFlags.StringSlice("order-by", []string{"name"}, orderByHelp)
 	pFlags.Bool("descending", false, "Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.")
 
-	cmd.AddCommand(upgrade.NewUpgradeCmd(f))
-	cmd.AddCommand(backup.NewCmdBackup(f))
-	cmd.AddCommand(NewListCmd(f))
-	cmd.AddCommand(NewStatsCmd(f))
-	cmd.AddCommand(NewMetricCmd(f))
-	cmd.AddCommand(NewResolveNameCmd(f))
-	cmd.AddCommand(NewResolveNameStatusCmd(f))
-	cmd.AddCommand(NewLogsCmd(f))
-	cmd.AddCommand(files.NewFilesCmd(f))
-	cmd.AddCommand(maintenance.NewMaintenanceCmd(f))
-	cmd.AddCommand(NewSeedCmd(f))
-	cmd.AddCommand(NewForceDisableControllerCmd(f))
-	cmd.AddCommand(functions.NewApplianceFunctionsCmd(f))
+	cmd.AddCommand(
+		upgrade.NewUpgradeCmd(f),
+		backup.NewCmdBackup(f),
+		NewListCmd(f),
+		NewStatsCmd(f),
+		NewMetricCmd(f),
+		NewResolveNameCmd(f),
+		NewResolveNameStatusCmd(f),
+		NewLogsCmd(f),
+		files.NewFilesCmd(f),
+		maintenance.NewMaintenanceCmd(f),
+		NewSeedCmd(f),
+		NewForceDisableControllerCmd(f),
+		functions.NewApplianceFunctionsCmd(f),
+		NewSwitchPartitionCmd(f),
+	)
 
 	return cmd
 }
