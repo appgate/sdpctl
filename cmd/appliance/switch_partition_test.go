@@ -23,6 +23,7 @@ func TestSwitchPartition(t *testing.T) {
 	testCases := []struct {
 		desc     string
 		args     []string
+		tty      bool
 		apiStubs []httpmock.Stub
 		askStubs func(*prompt.AskStubber)
 		wantErr  bool
@@ -30,6 +31,7 @@ func TestSwitchPartition(t *testing.T) {
 	}{
 		{
 			desc: "no arg",
+			tty:  true,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
 			},
@@ -57,6 +59,7 @@ func TestSwitchPartition(t *testing.T) {
 		},
 		{
 			desc: "with id arg",
+			tty:  true,
 			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
 			apiStubs: []httpmock.Stub{
 				{
@@ -79,11 +82,13 @@ func TestSwitchPartition(t *testing.T) {
 		{
 			desc:    "with invalid arg",
 			args:    []string{"dslkjflkjdsaf"},
+			tty:     true,
 			wantErr: true,
 			expect:  regexp.MustCompile(`'dslkjflkjdsaf' is not a valid appliance ID`),
 		},
 		{
 			desc: "no selection",
+			tty:  true,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubPrompt("select appliance:").AnswerWith("")
 			},
@@ -99,6 +104,32 @@ func TestSwitchPartition(t *testing.T) {
 			},
 			wantErr: true,
 			expect:  regexp.MustCompile(`Answer "" not found in options`),
+		},
+		{
+			desc:    "no TTY, no argument",
+			wantErr: true,
+			expect:  regexp.MustCompile(`no TTY present and no appliance ID provided`),
+		},
+		{
+			desc: "no TTY, with argument",
+			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+				{
+					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
 		},
 	}
 	for _, tt := range testCases {
@@ -120,6 +151,10 @@ func TestSwitchPartition(t *testing.T) {
 				t.Fatalf("failed to create console: %v", err)
 			}
 			defer c.Close()
+
+			stdin := &bytes.Buffer{}
+			in := io.NopCloser(stdin)
+			stderr := &bytes.Buffer{}
 			stdout := &bytes.Buffer{}
 
 			url := fmt.Sprintf("http://localhost:%d", registry.Port)
@@ -131,6 +166,10 @@ func TestSwitchPartition(t *testing.T) {
 				IOOutWriter: stdout,
 				Stdin:       pty,
 				StdErr:      pty,
+			}
+			if !tt.tty {
+				f.Stdin = in
+				f.StdErr = stderr
 			}
 			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 				return registry.Client, nil
