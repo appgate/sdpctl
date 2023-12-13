@@ -1,15 +1,18 @@
 package appliance
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"text/template"
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
@@ -129,6 +132,17 @@ func switchPartitionRunE(opts *options) error {
 	})
 	log.Info("initial appliance stats")
 
+	summary, err := switchPartitionSummary(appliance.GetName())
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(opts.out, summary)
+	if opts.canPrompt {
+		if err := prompt.AskConfirmation(); err != nil {
+			return err
+		}
+	}
+
 	var p *tui.Progress
 	var t *tui.Tracker
 	if !opts.ciMode {
@@ -141,14 +155,14 @@ func switchPartitionRunE(opts *options) error {
 		return api.ApplianceSwitchPartition(ctx, opts.id.String())
 	}, backoff.NewExponentialBackOff())
 	if err != nil {
-		return fmt.Errorf("failed to switch partition on appliance %s: %v", opts.id, err)
+		return fmt.Errorf("partition switch failed on appliance %s: %v", opts.id, err)
 	}
 
 	if err := api.ApplianceStats.WaitForApplianceState(ctx, *appliance, appliancepkg.StatReady, t); err != nil {
 		if t != nil {
 			t.Fail(err.Error())
 		}
-		return fmt.Errorf("switch partition failed: %w", err)
+		return fmt.Errorf("partition switch failed: %w", err)
 	}
 
 	if p != nil {
@@ -158,7 +172,7 @@ func switchPartitionRunE(opts *options) error {
 	// verify partition switch
 	stats, _, err = api.Stats(ctx, nil, nil, false)
 	if err != nil {
-		return fmt.Errorf("switch partition failed: %w", err)
+		return fmt.Errorf("partition switch failed: %w", err)
 	}
 	var newVolume float32
 	for _, a := range stats.GetData() {
@@ -174,4 +188,23 @@ func switchPartitionRunE(opts *options) error {
 	fmt.Fprintf(opts.out, "switched partition on %s", appliance.GetName())
 
 	return nil
+}
+
+func switchPartitionSummary(applianceName string) (string, error) {
+	type tplStub struct {
+		Name string
+	}
+	tplString := `Confirm partition switch on appliance {{ .Name }}`
+
+	tpl, err := template.New("").Parse(tplString)
+	if err != nil {
+		return "", err
+	}
+
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, tplStub{Name: applianceName}); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }

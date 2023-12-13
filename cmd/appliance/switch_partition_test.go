@@ -12,6 +12,7 @@ import (
 	"github.com/Netflix/go-expect"
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
@@ -51,6 +52,7 @@ func TestSwitchPartition(t *testing.T) {
 			tty:  true,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
+				s.StubOne(true) // Confirmation prompt
 			},
 			apiStubs: []httpmock.Stub{
 				{
@@ -93,6 +95,9 @@ func TestSwitchPartition(t *testing.T) {
 						w.WriteHeader(http.StatusAccepted)
 					},
 				},
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(true) // Confirmation prompt
 			},
 			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
 		},
@@ -147,6 +152,26 @@ func TestSwitchPartition(t *testing.T) {
 				},
 			},
 			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
+		},
+		{
+			desc: "no user confirmation",
+			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
+			tty:  true,
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(false) // User confirmation
+			},
+			wantErr: true,
+			expect:  regexp.MustCompile(cmdutil.ErrExecutionCanceledByUser.Error()),
 		},
 		{
 			desc: "failed partition switch",
