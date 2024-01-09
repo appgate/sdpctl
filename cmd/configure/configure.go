@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -139,6 +140,10 @@ func argValidation(cmd *cobra.Command, args []string) error {
 		regex := regexp.MustCompile(`[signin]{3,}`)
 		if regex.MatchString(arg) {
 			return fmt.Errorf("'%s' is not a valid argument. Did you mean 'signin'?", arg)
+		}
+		// If arg is missing protocol prefix, temporarily add one to validate the url
+		if !strings.HasPrefix(arg, "http") {
+			arg = "https://" + arg
 		}
 		if !util.IsValidURL(arg) {
 			return fmt.Errorf("'%s' is not a valid URL", arg)
