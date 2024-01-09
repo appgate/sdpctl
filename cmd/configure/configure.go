@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -54,7 +55,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 			switch len(args) {
 			case 0:
 				if noInteractive || !opts.CanPrompt {
-					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure appgate.controller.com'")
+					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure company.controller.com'")
 				}
 				q := &survey.Input{
 					Message: "Enter the url for the Controller API (example https://controller.company.com:8443)",
@@ -139,6 +140,10 @@ func argValidation(cmd *cobra.Command, args []string) error {
 		regex := regexp.MustCompile(`[signin]{3,}`)
 		if regex.MatchString(arg) {
 			return fmt.Errorf("'%s' is not a valid argument. Did you mean 'signin'?", arg)
+		}
+		// If arg is missing protocol prefix, temporarily add one to validate the url
+		if !strings.HasPrefix(arg, "https://") || !strings.HasPrefix(arg, "http://") {
+			arg = "https://" + arg
 		}
 		if !util.IsValidURL(arg) {
 			return fmt.Errorf("'%s' is not a valid URL", arg)
