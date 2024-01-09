@@ -142,7 +142,7 @@ func argValidation(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("'%s' is not a valid argument. Did you mean 'signin'?", arg)
 		}
 		// If arg is missing protocol prefix, temporarily add one to validate the url
-		if !strings.HasPrefix(arg, "http") {
+		if !strings.HasPrefix(arg, "https://") || !strings.HasPrefix(arg, "http://") {
 			arg = "https://" + arg
 		}
 		if !util.IsValidURL(arg) {
