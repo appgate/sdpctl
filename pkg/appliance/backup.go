@@ -430,7 +430,7 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteraction bool) (bool, error) {
 	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
 	if err != nil {
-		if response.StatusCode == http.StatusForbidden {
+		if response != nil && response.StatusCode == http.StatusForbidden {
 			return false, api.ForbiddenErr
 		}
 		return false, api.HTTPErrorResponse(response, err)
