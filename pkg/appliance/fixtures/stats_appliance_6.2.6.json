@@ -1,0 +1,120 @@
+{
+    "name": "appliances",
+    "creationDate": "2021-11-26T14:27:45.474641Z",
+    "refreshInterval": 1,
+    "data": [
+        {
+            "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
+            "online": true,
+            "version": "6.2.6-12345",
+            "state": "single_controller_ready",
+            "volumeNumber": 2,
+            "status": "healthy",
+            "controller": {
+                "status": "healthy",
+                "details": "Database size is 12 MB"
+            },
+            "logServer": {
+                "status": "healthy",
+                "details": "100% of shards are active."
+            },
+            "logForwarder": {
+                "status": "n/a"
+            },
+            "gateway": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "connector": {
+                "status": "n/a"
+            },
+            "portal": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "appliance": {
+                "status": "healthy"
+            },
+            "cpu": 0.8,
+            "memory": 48.8,
+            "disk": 1.2,
+            "network": {
+                "busiestNic": "eth0",
+                "dropin": 0,
+                "dropout": 0,
+                "rxSpeed": "0.26 Kbps",
+                "txSpeed": "0.26 Kbps",
+                "ips": {
+                    "eth0": [
+                        "10.97.144.2"
+                    ]
+                }
+            },
+            "upgrade": {
+                "status": "idle"
+            }
+        },
+        {
+            "id": "ee639d70-e075-4f01-596b-930d5f24f569",
+            "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
+            "online": true,
+            "version": "6.2.6-12345",
+            "state": "appliance_ready",
+            "volumeNumber": 1,
+            "status": "healthy",
+            "controller": {
+                "status": "n/a"
+            },
+            "logServer": {
+                "status": "n/a"
+            },
+            "logForwarder": {
+                "status": "n/a"
+            },
+            "gateway": {
+                "status": "healthy",
+                "numberOfSessions": 0
+            },
+            "connector": {
+                "status": "n/a"
+            },
+            "portal": {
+                "status": "n/a",
+                "numberOfSessions": 0
+            },
+            "appliance": {
+                "status": "healthy",
+                "details": "cz-ffwd: forwarding logs to envy-10-97-144-2.devops:443"
+            },
+            "cpu": 0.7,
+            "memory": 7.8,
+            "disk": 4.9,
+            "network": {
+                "busiestNic": "eth0",
+                "dropin": 27,
+                "dropout": 0,
+                "rxSpeed": "96.0 bps",
+                "txSpeed": "76.8 bps",
+                "ips": {
+                    "eth0": [
+                        "10.97.144.3"
+                    ],
+                    "eth1": [
+                        "10.97.205.66"
+                    ]
+                }
+            },
+            "upgrade": {
+                "status": "idle"
+            }
+        }
+    ],
+    "controllerCount": 1,
+    "gatewayCount": 1,
+    "applianceCount": 2,
+    "logServerCount": 1,
+    "logForwarderCount": 0,
+    "connectorCount": 0,
+    "portalCount": 0
+}

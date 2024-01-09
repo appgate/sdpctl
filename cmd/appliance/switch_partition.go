@@ -17,18 +17,20 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 type options struct {
-	cfg        *configuration.Config
-	api        *appliancepkg.Appliance
-	id         *uuid.UUID
-	out        io.Writer
-	spinnerOut func() io.Writer
-	canPrompt  bool
-	ciMode     bool
+	cfg            *configuration.Config
+	api            *appliancepkg.Appliance
+	id             *uuid.UUID
+	out            io.Writer
+	spinnerOut     func() io.Writer
+	canPrompt      bool
+	ciMode         bool
+	applianceStats *openapi.StatsAppliancesListAllOfData
 }
 
 func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
@@ -43,6 +45,9 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 		Short:   docs.ApplianceSwitchPartitionDocs.Short,
 		Long:    docs.ApplianceSwitchPartitionDocs.Long,
 		Example: docs.ApplianceSwitchPartitionDocs.ExampleString(),
+		Annotations: map[string]string{
+			"MinAPIVersion": "19",
+		},
 		Args: cobra.MatchAll(cobra.MaximumNArgs(1), func(cmd *cobra.Command, args []string) error {
 			if len(args) <= 0 {
 				if !opts.canPrompt {
@@ -70,8 +75,9 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 			}
 			opts.api = api
 
+			ctx := context.Background()
 			if opts.id == nil {
-				id, err := appliancepkg.PromptSelect(context.Background(), api, nil, nil, false)
+				id, err := appliancepkg.PromptSelect(ctx, api, nil, nil, false)
 				if err != nil {
 					return err
 				}
@@ -84,6 +90,30 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 
 			if opts.id == nil {
 				return fmt.Errorf("failed to switch partition: no appliance identifier provided")
+			}
+
+			stats, _, err := api.Stats(ctx, nil, nil, false)
+			if err != nil {
+				return err
+			}
+			for _, s := range stats.GetData() {
+				if opts.id.String() != s.GetId() {
+					continue
+				}
+				opts.applianceStats = &s
+			}
+
+			minVersion, _ := version.NewVersion("6.2.6-0")
+			currentVersion, err := version.NewVersion(opts.applianceStats.GetVersion())
+			if err != nil {
+				return err
+			}
+			i, err := appliancepkg.CompareVersionsAndBuildNumber(minVersion, currentVersion)
+			if err != nil {
+				return err
+			}
+			if i < 0 {
+				return fmt.Errorf("minimum supported version for the 'switch-partition' command is 6.2.6. current version is %s", currentVersion.String())
 			}
 
 			return nil
@@ -109,23 +139,8 @@ func switchPartitionRunE(opts *options) error {
 	if err != nil {
 		return fmt.Errorf("failed to get appliance: %w", err)
 	}
-	stats, _, err := api.Stats(ctx, nil, nil, false)
-	if err != nil {
-		return fmt.Errorf("failed to get appliance stats: %w", err)
-	}
 
-	var applianceStats openapi.StatsAppliancesListAllOfData
-	var volume float32
-	for _, a := range stats.GetData() {
-		if a.GetId() == opts.id.String() {
-			applianceStats = a
-			v, ok := a.GetVolumeNumberOk()
-			if !ok {
-				return fmt.Errorf("failed to get current volume number")
-			}
-			volume = *v
-		}
-	}
+	volume := opts.applianceStats.GetVolumeNumber()
 	log := logrus.WithFields(logrus.Fields{
 		"id":     opts.id.String(),
 		"volume": volume,
@@ -147,7 +162,7 @@ func switchPartitionRunE(opts *options) error {
 	var t *tui.Tracker
 	if !opts.ciMode {
 		p = tui.New(ctx, opts.spinnerOut())
-		t = p.AddTracker(appliance.GetName(), applianceStats.GetState(), "finished")
+		t = p.AddTracker(appliance.GetName(), opts.applianceStats.GetState(), "finished")
 		go t.Watch(appliancepkg.StatusNotBusy, []string{"error"})
 	}
 
@@ -170,7 +185,7 @@ func switchPartitionRunE(opts *options) error {
 	}
 
 	// verify partition switch
-	stats, _, err = api.Stats(ctx, nil, nil, false)
+	stats, _, err := api.Stats(ctx, nil, nil, false)
 	if err != nil {
 		return fmt.Errorf("partition switch failed: %w", err)
 	}
