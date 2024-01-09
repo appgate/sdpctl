@@ -54,7 +54,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 			switch len(args) {
 			case 0:
 				if noInteractive || !opts.CanPrompt {
-					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure appgate.controller.com'")
+					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure company.controller.com'")
 				}
 				q := &survey.Input{
 					Message: "Enter the url for the Controller API (example https://controller.company.com:8443)",

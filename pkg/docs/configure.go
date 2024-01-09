@@ -13,7 +13,7 @@ See 'sdpctl help environment' for more information on using environment variable
 			},
 			{
 				Description: "configuration, no interactive",
-				Command:     "sdpctl configure appgate.controller.com",
+				Command:     "sdpctl configure company.controller.com",
 			},
 			{
 				Description: "configure sdpctl using a custom certificate file",
