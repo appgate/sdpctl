@@ -11,7 +11,7 @@ func AddDefaultSpinner(p *mpb.Progress, name string, stage string, cmsg string, 
 		mpb.BarWidth(1),
 		mpb.AppendDecorators(
 			decor.Name(name, decor.WCSyncWidthR),
-			decor.Name(":", decor.WC{W: 2, C: decor.DidentRight}),
+			decor.Name(":", decor.WC{W: 2, C: decor.WCSyncSpaceR.W}),
 			decor.OnComplete(decor.OnAbort(decor.Name(stage), ""), cmsg),
 		),
 	}
