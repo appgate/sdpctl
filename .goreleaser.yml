@@ -17,6 +17,9 @@ builds:
   - <<: &build_defaults
       binary: "{{ .ProjectName }}"
       main: ./main.go
+      buildmode: pie
+      flags:
+        - -trimpath
       ldflags:
         - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}-dev{{ else }}{{ .Version }}{{ end }}"
         - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
