@@ -35,7 +35,13 @@ gpg --output - --verify checksums.txt.asc | sha256sum --check --ignore-missing
 ```
 
 ## macOS
-Download the latest [macOS build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using the command line:
+Download our latest macOS release from [Appgate Homebrew Tap](https://github.com/appgate/homebrew-tap)
+```bash
+$ brew tap appgate/tap
+$ brew install sdpctl
+```
+
+You can can manually download the latest [macOS build](https://github.com/appgate/sdpctl/releases/latest) from the releases page. Then install using the command line:
 ```bash
 # Unpack the downloaded package in the current directory
 $ gunzip -c <path-to-downloaded-tar> | tar xopf -
