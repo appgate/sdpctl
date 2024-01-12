@@ -177,7 +177,7 @@ func switchPartitionRunE(opts *options) error {
 		if t != nil {
 			t.Fail(err.Error())
 		}
-		return fmt.Errorf("partition switch failed: %w", err)
+		return fmt.Errorf("failed to get appliance stats: %w", err)
 	}
 
 	if p != nil {
@@ -195,6 +195,7 @@ func switchPartitionRunE(opts *options) error {
 			newVolume = a.GetVolumeNumber()
 		}
 	}
+	log.WithField("new_volume", newVolume).Info("new stats after partition switch")
 
 	if newVolume == volume {
 		return fmt.Errorf("partition switch failed: volume number is the same as before executing the command")
