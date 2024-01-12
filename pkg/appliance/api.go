@@ -336,6 +336,18 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 	return nil
 }
 
+func (a *Appliance) ApplianceSwitchPartition(ctx context.Context, id string) error {
+	req := a.APIClient.ApplianceApi.AppliancesIdSwitchPartitionPost(ctx, id).Authorization(a.Token)
+	response, err := req.Execute()
+	if err != nil {
+		return err
+	}
+	if response.StatusCode != http.StatusAccepted {
+		return api.HTTPErrorResponse(response, fmt.Errorf("unexpected response: %s", response.Status))
+	}
+	return nil
+}
+
 func (a *Appliance) ForceDisableControllers(ctx context.Context, disable []openapi.Appliance) (*openapi.AppliancesForceDisableControllersPost200Response, string, error) {
 	ids := []string{}
 	for _, a := range disable {

@@ -369,4 +369,22 @@ The command will accept one or more hostnames or ID:s of Controllers that will b
 			},
 		},
 	}
+	ApplianceSwitchPartitionDocs = CommandDoc{
+		Short: "Initiate a partition switch on an appliance regardless of upgrade status",
+		Long:  "",
+		Examples: []ExampleDoc{
+			{
+				Command:     "sdpctl appliance switch-partition <appliance-id>",
+				Description: "executing the command with a valid appliance id will initiate the partition switch on the appliance with the matching id",
+				Output:      ``,
+			},
+			{
+				Command:     "sdpctl appliance switch-partition",
+				Description: "executing the command with no argument will prompt for the appliance to make the partition switch on",
+				Output: `? select appliance:  [Use arrows to move, space to select, <right> to all, <left> to none, type to filter]
+[ ] controller
+[ ] gateway`,
+			},
+		},
+	}
 )
