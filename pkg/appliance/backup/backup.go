@@ -119,6 +119,7 @@ RETRY:
 	if err != nil {
 		if retryCount <= maxRetries {
 			retryCount++
+			time.Sleep(time.Second)
 			goto RETRY
 		}
 		return nil, err
