@@ -17,6 +17,9 @@ builds:
   - <<: &build_defaults
       binary: "{{ .ProjectName }}"
       main: ./main.go
+      buildmode: pie
+      flags:
+        - -trimpath
       ldflags:
         - -s -w -X "github.com/appgate/sdpctl/cmd.version={{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}-dev{{ else }}{{ .Version }}{{ end }}"
         - -X "github.com/appgate/sdpctl/cmd.commit={{ .FullCommit }}"
@@ -94,3 +97,44 @@ nfpms:
         - no-manual-page
     rpm:
       compression: gzip
+brews:
+  - name: sdpctl
+    commit_author:
+      name: aitorbot
+      email: aitorbot@appgate.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    homepage: "https://github.com/appgate/sdpctl/releases"
+    description: "Official CLI tool for managing Appgate SDP Collectives"
+    license: "MIT"
+    install: |
+      bin.install "sdpctl"
+      generate_completions_from_executable("#{bin}/sdpctl", "completion", shells: [:bash, :zsh, :fish])
+    test: |
+      version_output = shell_output("#{bin}/sdpctl --version")
+      assert_match "sdpctl version #{version}", version_output.split("\n")[0]
+
+      profile_add = shell_output("#{bin}/sdpctl profile add test")
+      expected = "Created profile test, run 'sdpctl profile list' to see all available profiles\n" \
+                 "run 'sdpctl profile set test' to select the new profile"
+      assert_match expected, profile_add
+
+      profile_set = shell_output("#{bin}/sdpctl profile set test")
+      expected = "test is selected as current sdp profile\n" \
+                 "test is not configured yet, run 'sdpctl configure'"
+      assert_match expected, profile_set
+
+      configure = shell_output("#{bin}/sdpctl configure https://example.com:8443")
+      expected = "Configuration updated successfully"
+      assert_match expected, configure
+    repository:
+      owner: appgate
+      name: homebrew-tap
+      branch: main
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: appgate
+          name: homebrew-tap
+          branch: main
