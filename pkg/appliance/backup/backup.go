@@ -148,8 +148,9 @@ RETRY:
 	cr := res.Header.Get("Content-Range")
 	totalSize, _ := strconv.ParseInt(strings.Split(cr, "/")[1], 10, 64)
 
-	body := []byte{}
-	n, err := io.ReadAtLeast(res.Body, body, int(totalSize))
+	left := totalSize - int64(written)
+	body := make([]byte, left)
+	n, err := io.ReadAtLeast(res.Body, body, int(left))
 	written = written + n
 	if err != nil {
 		if retryCount <= maxRetries {
@@ -159,8 +160,7 @@ RETRY:
 		}
 		return nil, err
 	}
-	n, err = w.WriteAt(body, offset)
-	written = written + n
+	_, err = w.WriteAt(body, offset)
 	if err != nil {
 		if retryCount <= maxRetries {
 			retryCount++
