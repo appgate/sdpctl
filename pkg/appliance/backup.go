@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	DefaultBackupDestination = filepath.Join(filesystem.DownloadDir(), "backup")
+	DefaultBackupDestination = filesystem.BackupDir()
 )
 
 type BackupOpts struct {
@@ -286,7 +286,12 @@ NO_ENABLE_CHECK:
 		logger.Info(msg)
 		tracker.Update(msg)
 		b.destination = filepath.Join(opts.Destination, fmt.Sprintf("appgate_backup_%s_%s.bkp", strings.ReplaceAll(appliance.GetName(), " ", "_"), time.Now().Format("20060102_150405")))
-		file, err := backupAPI.Download(ctx, b.applianceID, b.backupID, b.destination)
+		var file *os.File
+		if opts.Config.Version >= 20 {
+			file, err = backupAPI.Download(ctx, b.applianceID, b.backupID, b.destination)
+		} else {
+			file, err = backupAPI.DownloadLegacy(ctx, b.applianceID, b.backupID, b.destination)
+		}
 		if err != nil {
 			logger.WithError(err).Error("backup failed")
 			return b, err

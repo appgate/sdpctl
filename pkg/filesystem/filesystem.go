@@ -66,12 +66,16 @@ func DownloadDir() string {
 	// we'll do it manually for now
 	ud, _ := parseUsersDirs()
 	if dlDir, ok := ud["DOWNLOAD"]; ok {
-		return dlDir
+		return filepath.Join(dlDir, "appgate")
 	}
 	if len(xdg.UserDirs.Download) > 0 {
-		return xdg.UserDirs.Download
+		return filepath.Join(xdg.UserDirs.Download, "appgate")
 	}
 	return filepath.Join(xdg.Home, "Downloads", "appgate")
+}
+
+func BackupDir() string {
+	return filepath.Join(DownloadDir(), "backup")
 }
 
 func parseUsersDirs() (map[string]string, error) {
