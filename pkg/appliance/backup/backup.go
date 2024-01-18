@@ -110,6 +110,7 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 	if err != nil {
 		return nil, err
 	}
+	req.Close = true
 	written := 0
 	maxRetries := 10
 	retryCount := 0
@@ -123,16 +124,26 @@ RETRY:
 
 	res, err := client.Do(req)
 	if err != nil {
+		if retryCount <= maxRetries {
+			retryCount++
+			goto RETRY
+		}
 		return nil, api.HTTPErrorResponse(res, err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode >= 400 {
+		if retryCount <= maxRetries {
+			retryCount++
+			goto RETRY
+		}
 		return nil, api.HTTPErrorResponse(res, errors.New("unexpected response code"))
 	}
 	cr := res.Header.Get("Content-Range")
 	totalSize, _ := strconv.ParseInt(strings.Split(cr, "/")[1], 10, 64)
 
-	body, err := io.ReadAll(res.Body)
+	body := []byte{}
+	n, err := io.ReadAtLeast(res.Body, body, int(totalSize))
+	written = written + n
 	if err != nil {
 		if retryCount <= maxRetries {
 			retryCount++
@@ -140,7 +151,7 @@ RETRY:
 		}
 		return nil, err
 	}
-	n, err := w.WriteAt(body, offset)
+	n, err = w.WriteAt(body, offset)
 	written = written + n
 	if err != nil {
 		if retryCount <= maxRetries {
