@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
@@ -48,8 +51,8 @@ func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit b
 	return status.GetId(), nil
 }
 
-// Download a completed appliance backup with the given ID of an Appliance
-func (b *Backup) Download(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
+// DownloadLegacy a completed appliance backup with the given ID of an Appliance
+func (b *Backup) DownloadLegacy(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
 	client := b.HTTPClient
 	cfg := b.APIClient.GetConfig()
 	url, err := cfg.ServerURLWithContext(ctx, "ApplianceBackupApiService.AppliancesIdBackupBackupIdGet")
@@ -82,6 +85,67 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 	_, err = out.ReadFrom(res.Body)
 	if err != nil {
 		return nil, err
+	}
+	return out, nil
+}
+
+// Download a completed appliance backup with the given ID of an Appliance
+func (b *Backup) Download(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
+	out, err := os.Create(destination)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+	w := io.NewOffsetWriter(out, 0)
+
+	client := b.HTTPClient
+	cfg := b.APIClient.GetConfig()
+	url, err := cfg.ServerURLWithContext(ctx, "ApplianceBackupApiService.AppliancesIdBackupBackupIdGet")
+	if err != nil {
+		return nil, err
+	}
+	url = fmt.Sprintf("%s/appliances/%s/backup/%s", url, applianceID, backupID)
+	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	written := 0
+	retryCount := 0
+
+RETRY:
+	offset := int64(written)
+	if written > 0 {
+		offset++
+	}
+	req.Header.Add("Range", fmt.Sprintf("bytes=%d-", offset))
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, api.HTTPErrorResponse(res, err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode >= 400 {
+		return nil, api.HTTPErrorResponse(res, errors.New("unexpected response code"))
+	}
+	cr := res.Header.Get("Content-Range")
+	totalSize, _ := strconv.ParseInt(strings.Split(cr, "/")[1], 10, 64)
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	n, err := w.WriteAt(body, offset)
+	written = written + n
+	if err != nil {
+		if retryCount <= 10 {
+			retryCount++
+			goto RETRY
+		}
+		return nil, err
+	}
+	if int64(written) != totalSize {
+		return nil, fmt.Errorf("incomplete download - total size: %d, downloaded: %d", totalSize, written)
 	}
 	return out, nil
 }
