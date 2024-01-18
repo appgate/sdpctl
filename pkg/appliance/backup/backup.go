@@ -130,6 +130,7 @@ RETRY:
 	if err != nil {
 		if retryCount <= maxRetries {
 			retryCount++
+			time.Sleep(time.Second)
 			goto RETRY
 		}
 		return nil, api.HTTPErrorResponse(res, err)
@@ -138,6 +139,7 @@ RETRY:
 	if res.StatusCode >= 400 {
 		if retryCount <= maxRetries {
 			retryCount++
+			time.Sleep(time.Second)
 			goto RETRY
 		}
 		return nil, api.HTTPErrorResponse(res, errors.New("unexpected response code"))
@@ -151,6 +153,7 @@ RETRY:
 	if err != nil {
 		if retryCount <= maxRetries {
 			retryCount++
+			time.Sleep(time.Second)
 			goto RETRY
 		}
 		return nil, err
@@ -160,6 +163,7 @@ RETRY:
 	if err != nil {
 		if retryCount <= maxRetries {
 			retryCount++
+			time.Sleep(time.Second)
 			goto RETRY
 		}
 		return nil, err
