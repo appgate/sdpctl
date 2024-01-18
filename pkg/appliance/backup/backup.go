@@ -106,11 +106,6 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 	}
 	url = fmt.Sprintf("%s/appliances/%s/backup/%s", url, applianceID, backupID)
 	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
-	if err != nil {
-		return nil, err
-	}
-	req.Close = true
 	written := 0
 	maxRetries := 10
 	retryCount := 0
@@ -120,6 +115,15 @@ RETRY:
 	if written > 0 {
 		offset++
 	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		if retryCount <= maxRetries {
+			retryCount++
+			goto RETRY
+		}
+		return nil, err
+	}
+	req.Close = true
 	req.Header.Add("Range", fmt.Sprintf("bytes=%d-", offset))
 
 	res, err := client.Do(req)
