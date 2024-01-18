@@ -111,6 +111,7 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 		return nil, err
 	}
 	written := 0
+	maxRetries := 10
 	retryCount := 0
 
 RETRY:
@@ -133,12 +134,16 @@ RETRY:
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
+		if retryCount <= maxRetries {
+			retryCount++
+			goto RETRY
+		}
 		return nil, err
 	}
 	n, err := w.WriteAt(body, offset)
 	written = written + n
 	if err != nil {
-		if retryCount <= 10 {
+		if retryCount <= maxRetries {
 			retryCount++
 			goto RETRY
 		}
