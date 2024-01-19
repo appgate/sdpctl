@@ -126,14 +126,6 @@ func retryDownload(ctx context.Context, client *http.Client, f *os.File, url str
 	start := int64(0)
 	buf := make([]byte, size)
 	return backoff.Retry(func() error {
-		for {
-			if _, err := f.Read(buf); err != nil {
-				if errors.Is(err, io.EOF) {
-					break
-				}
-				return backoff.Permanent(err)
-			}
-		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 		if err != nil {
 			return backoff.Permanent(err)
