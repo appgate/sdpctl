@@ -13,7 +13,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp/go-multierror"
 )
 
 type Backup struct {
@@ -125,8 +124,16 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 
 func retryDownload(ctx context.Context, client *http.Client, f *os.File, url string, size int64) error {
 	start := int64(0)
+	buf := make([]byte, size)
 	return backoff.Retry(func() error {
-		buf := make([]byte, size-start)
+		for {
+			if _, err := f.Read(buf); err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return backoff.Permanent(err)
+			}
+		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 		if err != nil {
 			return backoff.Permanent(err)
@@ -141,16 +148,15 @@ func retryDownload(ctx context.Context, client *http.Client, f *os.File, url str
 		if res.StatusCode >= 400 {
 			return fmt.Errorf("response does not indicate success: %v", res.Status)
 		}
-		var errs *multierror.Error
-		n, err := io.ReadAtLeast(res.Body, buf, len(buf))
+		dn, err := io.ReadAtLeast(res.Body, buf[start:], len(buf)-int(start))
 		if err != nil {
-			start = start + int64(n)
-			errs = multierror.Append(errs, err)
+			start = start + int64(dn)
+			return err
 		}
-		if _, err := f.WriteAt(buf, start); err != nil {
-			errs = multierror.Append(errs, err)
+		if _, err := f.Write(buf); err != nil {
+			return backoff.Permanent(err)
 		}
-		return errs.ErrorOrNil()
+		return nil
 	}, backoff.NewExponentialBackOff())
 }
 
