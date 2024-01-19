@@ -7,13 +7,13 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/hashicorp/go-multierror"
 )
 
 type Backup struct {
@@ -96,7 +96,6 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 		return nil, err
 	}
 	defer out.Close()
-	w := io.NewOffsetWriter(out, 0)
 
 	client := b.HTTPClient
 	cfg := b.APIClient.GetConfig()
@@ -106,73 +105,53 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 	}
 	url = fmt.Sprintf("%s/appliances/%s/backup/%s", url, applianceID, backupID)
 	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
-	written := 0
-	maxRetries := 10
-	retryCount := 0
 
-RETRY:
-	offset := int64(written)
-	if written > 0 {
-		offset++
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	headReq, err := http.NewRequestWithContext(ctx, http.MethodHead, url, http.NoBody)
 	if err != nil {
-		if retryCount <= maxRetries {
-			retryCount++
-			time.Sleep(time.Second)
-			goto RETRY
-		}
 		return nil, err
 	}
-	req.Close = true
-	req.Header.Add("Range", fmt.Sprintf("bytes=%d-", offset))
-
-	res, err := client.Do(req)
+	head, err := client.Do(headReq)
 	if err != nil {
-		if retryCount <= maxRetries {
-			retryCount++
-			time.Sleep(time.Second)
-			goto RETRY
-		}
-		return nil, api.HTTPErrorResponse(res, err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode >= 400 {
-		if retryCount <= maxRetries {
-			retryCount++
-			time.Sleep(time.Second)
-			goto RETRY
-		}
-		return nil, api.HTTPErrorResponse(res, errors.New("unexpected response code"))
-	}
-	cr := res.Header.Get("Content-Range")
-	totalSize, _ := strconv.ParseInt(strings.Split(cr, "/")[1], 10, 64)
-
-	left := totalSize - int64(written)
-	body := make([]byte, left)
-	n, err := io.ReadAtLeast(res.Body, body, int(left))
-	written = written + n
-	if err != nil {
-		if retryCount <= maxRetries {
-			retryCount++
-			time.Sleep(time.Second)
-			goto RETRY
-		}
 		return nil, err
 	}
-	_, err = w.WriteAt(body, offset)
-	if err != nil {
-		if retryCount <= maxRetries {
-			retryCount++
-			time.Sleep(time.Second)
-			goto RETRY
-		}
+
+	size := head.ContentLength
+	if err := retryDownload(ctx, client, out, url, size); err != nil {
 		return nil, err
 	}
-	if int64(written) != totalSize {
-		return nil, fmt.Errorf("incomplete download - total size: %d, downloaded: %d", totalSize, written)
-	}
+
 	return out, nil
+}
+
+func retryDownload(ctx context.Context, client *http.Client, f *os.File, url string, size int64) error {
+	start := int64(0)
+	return backoff.Retry(func() error {
+		buf := make([]byte, size-start)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", start))
+
+		res, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+		if res.StatusCode >= 400 {
+			return fmt.Errorf("response does not indicate success: %v", res.Status)
+		}
+		var errs *multierror.Error
+		n, err := io.ReadAtLeast(res.Body, buf, len(buf))
+		if err != nil {
+			start = start + int64(n)
+			errs = multierror.Append(errs, err)
+		}
+		if _, err := f.WriteAt(buf, start); err != nil {
+			errs = multierror.Append(errs, err)
+		}
+		return errs.ErrorOrNil()
+	}, backoff.NewExponentialBackOff())
 }
 
 const (
