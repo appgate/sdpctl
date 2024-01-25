@@ -14,6 +14,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/cenkalti/backoff/v4"
+	"github.com/sirupsen/logrus"
 )
 
 type Backup struct {
@@ -132,10 +133,12 @@ func retryDownload(ctx context.Context, client *http.Client, f *os.File, url str
 		}
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", start))
 
+		log := logrus.WithField("request", req)
 		res, err := client.Do(req)
 		if err != nil {
 			return err
 		}
+		log.WithField("response", res).Debug("download request and response")
 		defer res.Body.Close()
 		if res.StatusCode >= 400 {
 			return fmt.Errorf("response does not indicate success: %v", res.Status)
