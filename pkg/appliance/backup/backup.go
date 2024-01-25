@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -124,7 +125,6 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 
 func retryDownload(ctx context.Context, client *http.Client, f *os.File, url string, size int64) error {
 	start := int64(0)
-	buf := make([]byte, size)
 	return backoff.Retry(func() error {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 		if err != nil {
@@ -140,13 +140,15 @@ func retryDownload(ctx context.Context, client *http.Client, f *os.File, url str
 		if res.StatusCode >= 400 {
 			return fmt.Errorf("response does not indicate success: %v", res.Status)
 		}
-		dn, err := io.ReadAtLeast(res.Body, buf[start:], len(buf)-int(start))
+		buf := &bytes.Buffer{}
+		n, nerr := io.Copy(buf, res.Body)
+		_, err = f.WriteAt(buf.Bytes(), start)
 		if err != nil {
-			start = start + int64(dn)
-			return err
-		}
-		if _, err := f.Write(buf); err != nil {
 			return backoff.Permanent(err)
+		}
+		if nerr != nil {
+			start = start + int64(n)
+			return nerr
 		}
 		return nil
 	}, backoff.NewExponentialBackOff())
