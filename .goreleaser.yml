@@ -130,10 +130,4 @@ brews:
     repository:
       owner: appgate
       name: homebrew-tap
-      pull_request:
-        enabled: true
-        draft: false
-        base:
-          owner: appgate
-          name: homebrew-tap
-          branch: main
+      branch: "{{.ProjectName}}-{{.Version}}"
