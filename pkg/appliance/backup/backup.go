@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -11,6 +12,8 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/sirupsen/logrus"
 )
 
 type Backup struct {
@@ -48,8 +51,8 @@ func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit b
 	return status.GetId(), nil
 }
 
-// Download a completed appliance backup with the given ID of an Appliance
-func (b *Backup) Download(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
+// DownloadLegacy a completed appliance backup with the given ID of an Appliance
+func (b *Backup) DownloadLegacy(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
 	client := b.HTTPClient
 	cfg := b.APIClient.GetConfig()
 	url, err := cfg.ServerURLWithContext(ctx, "ApplianceBackupApiService.AppliancesIdBackupBackupIdGet")
@@ -84,6 +87,69 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 		return nil, err
 	}
 	return out, nil
+}
+
+// Download a completed appliance backup with the given ID of an Appliance
+func (b *Backup) Download(ctx context.Context, applianceID, backupID, destination string) (*os.File, error) {
+	out, err := os.Create(destination)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+
+	client := b.HTTPClient
+	cfg := b.APIClient.GetConfig()
+	url, err := cfg.ServerURLWithContext(ctx, "ApplianceBackupApiService.AppliancesIdBackupBackupIdGet")
+	if err != nil {
+		return nil, err
+	}
+	url = fmt.Sprintf("%s/appliances/%s/backup/%s", url, applianceID, backupID)
+	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
+
+	headReq, err := http.NewRequestWithContext(ctx, http.MethodHead, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	head, err := client.Do(headReq)
+	if err != nil {
+		return nil, err
+	}
+
+	size := head.ContentLength
+	if err := retryDownload(ctx, client, out, url, size); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+func retryDownload(ctx context.Context, client *http.Client, f *os.File, url string, size int64) error {
+	start := int64(0)
+	return backoff.Retry(func() error {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+		if err != nil {
+			return backoff.Permanent(err)
+		}
+		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", start))
+
+		log := logrus.WithField("request", req)
+		res, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		log.WithField("response", res).Debug("download request and response")
+		defer res.Body.Close()
+		if res.StatusCode >= 400 {
+			return fmt.Errorf("response does not indicate success: %v", res.Status)
+		}
+		f.Seek(start, 0)
+		n, err := io.Copy(f, res.Body)
+		if err != nil {
+			start = start + int64(n)
+			return err
+		}
+		return nil
+	}, backoff.NewExponentialBackOff())
 }
 
 const (
