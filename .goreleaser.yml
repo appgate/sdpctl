@@ -130,4 +130,4 @@ brews:
     repository:
       owner: appgate
       name: homebrew-tap
-      branch: "{{.ProjectName}}-{{.Version}}"
+      branch: main
