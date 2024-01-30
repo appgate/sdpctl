@@ -131,10 +131,3 @@ brews:
       owner: appgate
       name: homebrew-tap
       branch: main
-      pull_request:
-        enabled: true
-        draft: false
-        base:
-          owner: appgate
-          name: homebrew-tap
-          branch: main
