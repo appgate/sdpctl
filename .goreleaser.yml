@@ -10,15 +10,23 @@ snapshot:
   name_template: "{{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}{{ else }}{{ .Tag }}{{ end }}"
 changelog:
   use: github
+  sort: desc
   groups:
   - title: Features
     regexp: '^.*feat(\([[:word:]]+\))??!?:.+$'
     order: 0
+  - title: Bug Fixes
+    regexp: '^.*bug(\([[:word:]]+\))??!?:.+$'
+    order: 1
   - title: Dependencies
-    regexp: '^Bump.*'
-    order: 10
-  - title: Other
+    regexp: '^.*dependabot(\([[:word:]]+\))??!?:.+$'
+    order: 3
+  - title: Others
     order: 999
+  filters:
+    exclude:
+      - "^docs:"
+      - typo
 github_urls:
   download: https://github.com/appgate/sdpctl/releases
 
@@ -146,4 +154,10 @@ brews:
     repository:
       owner: appgate
       name: homebrew-tap
-      branch: main
+      branch: "{{.ProjectName}}-{{.Tag}}"
+      pull_request:
+        enabled: true
+        base:
+          owner: appgate
+          name: homebrew-tap
+          branch: main
