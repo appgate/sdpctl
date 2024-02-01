@@ -9,7 +9,16 @@ before:
 snapshot:
   name_template: "{{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}{{ else }}{{ .Tag }}{{ end }}"
 changelog:
-  skip: true
+  use: github
+  groups:
+  - title: Features
+    regexp: '^.*feat(\([[:word:]]+\))??!?:.+$'
+    order: 0
+  - title: Dependencies
+    regexp: '^Bump.*'
+    order: 10
+  - title: Other
+    order: 999
 github_urls:
   download: https://github.com/appgate/sdpctl/releases
 
@@ -97,6 +106,13 @@ nfpms:
         - no-manual-page
     rpm:
       compression: gzip
+
+release:
+  github:
+    owner: appgate
+    name: sdpctl
+  draft: true
+
 brews:
   - name: sdpctl
     commit_author:
