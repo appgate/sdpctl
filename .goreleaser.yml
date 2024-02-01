@@ -131,6 +131,7 @@ brews:
     homepage: "https://github.com/appgate/sdpctl/releases"
     description: "Official CLI tool for managing Appgate SDP Collectives"
     license: "MIT"
+    url_template: "https://github.com/appgate/sdpctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     install: |
       bin.install "sdpctl"
       generate_completions_from_executable("#{bin}/sdpctl", "completion", shells: [:bash, :zsh, :fish])
