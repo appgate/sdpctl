@@ -154,4 +154,10 @@ brews:
     repository:
       owner: appgate
       name: homebrew-tap
-      branch: main
+      branch: "{{.ProjectName}}-{{.Tag}}"
+      pull_request:
+        enabled: true
+        base:
+          owner: appgate
+          name: homebrew-tap
+          branch: main
