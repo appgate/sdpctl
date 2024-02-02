@@ -1,7 +1,11 @@
+name: Test Flow
+
 on:
-  workflow_call:
+  push:
+    branches:
+      - "*"
+  workflow_dispatch:
     inputs: {}
-    secrets: {}
 
 jobs:
   test:
@@ -29,3 +33,22 @@ jobs:
 
       - name: Test compiling
         run: make build
+  lint:
+    name: "Static analysis"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.20.x"
+      - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@2023.1"
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/staticcheck
+          key: staticcheck-${{ github.sha }}
+          restore-keys: |
+            staticcheck-
+      - run: "go vet ./..."
+      - run: "$(go env GOPATH)/bin/staticcheck -go 1.20 ./..."
