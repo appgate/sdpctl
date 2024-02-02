@@ -15,7 +15,7 @@ jobs:
           repo_owner="appgate"
           repo_name="homebrew-tap"
           event_type="sdpctl_release"
-          version="$GITHUB_REF"
+          version="${{ github.event.release.name }}"
 
           # Trigger event
           curl -L \
