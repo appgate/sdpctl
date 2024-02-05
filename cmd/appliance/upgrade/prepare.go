@@ -530,6 +530,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				"Content-Type":        writer.FormDataContentType(),
 				"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
 			}
+			log.WithFields(log.Fields{
+				"local-name":  localLogServerBundleName,
+				"remote-name": logServerZipName,
+			}).Info("uploading local logserver bundle")
 			if !opts.ciMode {
 				err = uploadWithProgress(ctx, pr, "uploading "+localLogServerBundleName, zipInfo.Size(), headers)
 			} else {
