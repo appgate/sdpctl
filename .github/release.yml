@@ -15,3 +15,7 @@ changelog:
       exclude:
         labels:
           - dependencies
+  exclude:
+    labels:
+      - documentation
+      - internal
