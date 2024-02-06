@@ -3,6 +3,7 @@ changelog:
     - title: New Features
       labels:
         - feature
+        - enhancement
     - title: Bugfixes
       labels:
         - bug
