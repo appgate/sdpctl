@@ -9,25 +9,7 @@ before:
 snapshot:
   name_template: "{{ if .IsSnapshot }}{{ .Env.SNAPSHOT_VERSION }}{{ else }}{{ .Tag }}{{ end }}"
 changelog:
-  use: github
-  sort: desc
-  groups:
-  - title: Features
-    regexp: '^.*feat(\([[:word:]]+\))??!?:.+$'
-    order: 0
-  - title: Bug Fixes
-    regexp: '^.*bug(\([[:word:]]+\))??!?:.+$'
-    order: 1
-  - title: Dependencies
-    regexp: '^.*dependabot(\([[:word:]]+\))??!?:.+$'
-    order: 3
-  - title: Others
-    order: 999
-  filters:
-    exclude:
-      - "^docs:"
-      - "^CI:"
-      - typo
+  use: github-native
 github_urls:
   download: https://github.com/appgate/sdpctl/releases
 

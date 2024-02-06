@@ -6,6 +6,7 @@ prefix  := /usr/local
 bindir  := ${prefix}/bin
 commit=$$(git rev-parse HEAD)
 commitPath=github.com/appgate/sdpctl/cmd.commit=${commit}
+date=$$(date --iso-8601)
 
 CGO := 0
 ifeq ($(shell uname),Darwin)
@@ -14,7 +15,7 @@ endif
 
 .PHONY: build
 build:
-	CGO_ENABLED=$(CGO) go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}'"
+	CGO_ENABLED=$(CGO) go build -o build/$(BIN_NAME) -ldflags="-X '${commitPath}' -X 'github.com/appgate/sdpctl/pkg/factory.dockerRegistry=$(DOCKER_REGISTRY_URL)' -X 'github.com/appgate/sdpctl/cmd.buildDate=$(date)'"
 
 .PHONY: deps
 deps:
