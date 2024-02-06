@@ -451,8 +451,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", tagVersion)
+		var localLogServerBundleName string
 		if len(opts.logServerBundlePath) > 0 {
-			logServerZipName = filepath.Base(opts.logServerBundlePath)
+			localLogServerBundleName = filepath.Base(opts.logServerBundlePath)
 		}
 
 		// check if already exists
@@ -529,8 +530,12 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				"Content-Type":        writer.FormDataContentType(),
 				"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
 			}
+			log.WithFields(log.Fields{
+				"local-name":  localLogServerBundleName,
+				"remote-name": logServerZipName,
+			}).Info("uploading local logserver bundle")
 			if !opts.ciMode {
-				err = uploadWithProgress(ctx, pr, "uploading "+logServerZipName, zipInfo.Size(), headers)
+				err = uploadWithProgress(ctx, pr, "uploading "+localLogServerBundleName, zipInfo.Size(), headers)
 			} else {
 				err = a.UploadFile(ctx, pr, headers)
 			}
