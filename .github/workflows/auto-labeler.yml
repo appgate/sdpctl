@@ -1,0 +1,14 @@
+name: Auto Label
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  auto-label:
+    name: Auto Label Pull Requests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Labeler
+        uses: actions/labeler@v5.0.0
+
