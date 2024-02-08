@@ -1,0 +1,16 @@
+feature:
+  - head-branch: ['feat', 'feature']
+
+bug:
+  - head-branch: ['bug', 'fix']
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: ['go.mod', 'go.sum']
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: 'docs/**/*'
+
+internal:
+  - head-branch: ['internal', 'CI']

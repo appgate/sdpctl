@@ -366,10 +366,9 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	if !r.Draft && !r.PreRelease && n.GreaterThan(v) {
 		latest = n
 	}
-	if latest == nil {
-		return c, errors.New("already at latest version")
+	if latest != nil {
+		fmt.Fprintf(out, "NOTICE: A new version of sdpctl is available for download: %s\nDownload it here: https://github.com/appgate/sdpctl/releases/tag/%s\n\n", latest.Original(), latest.Original())
 	}
-	fmt.Fprintf(out, "NOTICE: A new version of sdpctl is available for download: %s\nDownload it here: https://github.com/appgate/sdpctl/releases/tag/%s\n\n", latest.Original(), latest.Original())
 	return c, nil
 }
 
