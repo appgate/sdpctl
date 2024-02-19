@@ -39,11 +39,11 @@ var (
 )
 
 type bundleOptions struct {
-	registry *url.URL
-	savePath string
-	version  string
-	ciMode   bool
-	out      io.Writer
+	registry    *url.URL
+	destination string
+	version     string
+	ciMode      bool
+	out         io.Writer
 }
 
 func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
@@ -70,10 +70,13 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if v, err := cmd.Flags().GetString("save-path"); err == nil && len(v) > 0 {
+				fmt.Fprintln(opts.out, "WARNING: the 'save-path' flag is deprecated. Please use the 'destination' flag instead.")
+				opts.destination = v
+			}
 			if opts.registry, err = f.DockerRegistry(registry); err != nil {
 				return err
 			}
-			opts.savePath = filesystem.AbsolutePath(opts.savePath)
 			if tag, err := cmd.Flags().GetString("version"); err == nil && len(tag) > 0 {
 				if v, err := appliancepkg.ParseVersionString(tag); err == nil {
 					opts.version, err = util.DockerTagVersion(v)
@@ -138,20 +141,21 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				opts.version = tag
 			}
 
-			if _, err := os.Stat(opts.savePath); err != nil {
+			opts.destination = filesystem.AbsolutePath(opts.destination)
+			if _, err := os.Stat(opts.destination); err != nil {
 				createDir := true
 				if f.CanPrompt() {
 					if err := prompt.SurveyAskOne(&survey.Confirm{
-						Message: fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.savePath),
+						Message: fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination),
 					}, &createDir); err != nil {
 						return err
 					}
 				} else {
-					fmt.Fprintf(opts.out, "Directory '%s' does not exist\n", opts.savePath)
+					fmt.Fprintf(opts.out, "Directory '%s' does not exist\n", opts.destination)
 				}
 				if createDir {
-					fmt.Fprintf(opts.out, "creating directory '%s'\n", opts.savePath)
-					if err := os.MkdirAll(opts.savePath, 0o700); err != nil {
+					fmt.Fprintf(opts.out, "creating directory '%s'\n", opts.destination)
+					if err := os.MkdirAll(opts.destination, 0o700); err != nil {
 						return err
 					}
 				}
@@ -186,7 +190,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				go func(ctx context.Context, wg *sync.WaitGroup, function string, opts bundleOptions, errs chan<- error, p *tui.Progress) {
 					defer wg.Done()
 					zipName := fmt.Sprintf("%s-%s.zip", strings.ToLower(function), opts.version)
-					path := filepath.Join(opts.savePath, zipName)
+					path := filepath.Join(opts.destination, zipName)
 					endMsg := fmt.Sprintf("bundle ready. saved as '%s'", path)
 					var t *tui.Tracker
 					if p != nil {
@@ -226,7 +230,8 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 
 	flags := cmd.Flags()
 	flags.String("docker-registry", "", "docker registry for downloading image bundles")
-	flags.StringVar(&opts.savePath, "save-path", filesystem.DownloadDir(), "path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
+	flags.StringVar(&opts.destination, "destination", filesystem.DownloadDir(), "path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
+	flags.String("save-path", "", "[DEPRECATED, use '--destination' instead] path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
 	flags.StringVar(&opts.version, "version", "", "Override the LogServer version that will be downloaded. Defaults to the same version as the primary controller.")
 
 	return cmd
