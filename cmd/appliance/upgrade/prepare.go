@@ -451,7 +451,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", tagVersion)
-		var localLogServerBundleName string
+		localLogServerBundleName := logServerZipName
 		if len(opts.logServerBundlePath) > 0 {
 			localLogServerBundleName = filepath.Base(opts.logServerBundlePath)
 		}
@@ -471,13 +471,9 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 		}
 		if !exists {
-			fmt.Fprintf(opts.Out, "[%s] Preparing image bundle for LogServer:\n", time.Now().Format(time.RFC3339))
+			fmt.Fprintf(opts.Out, "[%s] Preparing image bundle for LogServer %s:\n", time.Now().Format(time.RFC3339), tagVersion)
 			var zip *os.File
 			if len(opts.logServerBundlePath) <= 0 {
-				tagVersion, err := util.DockerTagVersion(opts.targetVersion)
-				if err != nil {
-					return err
-				}
 				logServerImages := map[string]string{
 					"cz-opensearch":           tagVersion,
 					"cz-opensearchdashboards": tagVersion,
