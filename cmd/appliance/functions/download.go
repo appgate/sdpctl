@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -17,6 +18,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -24,7 +26,6 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v8"
 )
 
 var (
@@ -38,11 +39,11 @@ var (
 )
 
 type bundleOptions struct {
-	registry *url.URL
-	savePath string
-	version  string
-	ciMode   bool
-	out      io.Writer
+	registry    *url.URL
+	destination string
+	version     string
+	ciMode      bool
+	out         io.Writer
 }
 
 func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
@@ -69,10 +70,11 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if opts.registry, err = f.DockerRegistry(registry); err != nil {
-				return err
+			if v, err := cmd.Flags().GetString("save-path"); err == nil && len(v) > 0 {
+				fmt.Fprintln(opts.out, "WARNING: the 'save-path' flag is deprecated. Please use the 'destination' flag instead.")
+				opts.destination = v
 			}
-			if err := os.MkdirAll(opts.savePath, 0o700); err != nil {
+			if opts.registry, err = f.DockerRegistry(registry); err != nil {
 				return err
 			}
 			if tag, err := cmd.Flags().GetString("version"); err == nil && len(tag) > 0 {
@@ -139,6 +141,26 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				opts.version = tag
 			}
 
+			opts.destination = filesystem.AbsolutePath(opts.destination)
+			if _, err := os.Stat(opts.destination); err != nil {
+				createDir := true
+				if f.CanPrompt() {
+					if err := prompt.SurveyAskOne(&survey.Confirm{
+						Message: fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination),
+					}, &createDir); err != nil {
+						return err
+					}
+				} else {
+					fmt.Fprintf(opts.out, "Directory '%s' does not exist\n", opts.destination)
+				}
+				if createDir {
+					fmt.Fprintf(opts.out, "creating directory '%s'\n", opts.destination)
+					if err := os.MkdirAll(opts.destination, 0o700); err != nil {
+						return err
+					}
+				}
+			}
+
 			if v, err := version.NewVersion(opts.version); err == nil {
 				x, _ := version.NewVersion("6.2.0")
 				if x.GreaterThan(v) {
@@ -168,12 +190,13 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				go func(ctx context.Context, wg *sync.WaitGroup, function string, opts bundleOptions, errs chan<- error, p *tui.Progress) {
 					defer wg.Done()
 					zipName := fmt.Sprintf("%s-%s.zip", strings.ToLower(function), opts.version)
-					path := filepath.Join(opts.savePath, zipName)
+					path := filepath.Join(opts.destination, zipName)
+					endMsg := fmt.Sprintf("bundle ready. saved as '%s'", path)
 					var t *tui.Tracker
 					if p != nil {
-						t = p.AddTracker(zipName, "downloading", "complete", mpb.BarRemoveOnComplete())
-						go t.Watch([]string{"complete"}, []string{"failed"})
-						defer t.Update("complete")
+						t = p.AddTracker(fmt.Sprintf("%s %s", function, opts.version), "preparing", endMsg)
+						go t.Watch([]string{endMsg}, []string{"failed"})
+						defer t.Update(endMsg)
 					}
 
 					images := make(map[string]string, len(funcImages[function]))
@@ -201,16 +224,14 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if p != nil {
 				p.Wait()
 			}
-			if errs == nil {
-				fmt.Fprintf(opts.out, "Download complete. Files saved to %s\n", opts.savePath)
-			}
 			return errs.ErrorOrNil()
 		},
 	}
 
 	flags := cmd.Flags()
 	flags.String("docker-registry", "", "docker registry for downloading image bundles")
-	flags.StringVar(&opts.savePath, "save-path", filesystem.DownloadDir(), "path to where the container bundle should be saved")
+	flags.StringVar(&opts.destination, "destination", filesystem.DownloadDir(), "path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
+	flags.String("save-path", "", "[DEPRECATED, use '--destination' instead] path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
 	flags.StringVar(&opts.version, "version", "", "Override the LogServer version that will be downloaded. Defaults to the same version as the primary controller.")
 
 	return cmd

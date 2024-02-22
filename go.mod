@@ -13,7 +13,7 @@ require (
 	github.com/creack/pty v1.1.21
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/enriquebris/goconcurrentqueue v0.7.0
-	github.com/foxcpp/go-mockdns v1.0.0
+	github.com/foxcpp/go-mockdns v1.1.0
 	github.com/gomarkdown/markdown v0.0.0-20231222211730-1d6d20845b47
 	github.com/google/go-cmp v0.6.0
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
@@ -32,9 +32,9 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/vbauerster/mpb/v8 v8.7.2
 	github.com/zalando/go-keyring v0.2.3
-	golang.org/x/net v0.20.0
+	golang.org/x/net v0.21.0
 	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.16.0
+	golang.org/x/sys v0.17.0
 )
 
 require (
@@ -71,7 +71,7 @@ require (
 	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
-	golang.org/x/term v0.16.0 // indirect
+	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
