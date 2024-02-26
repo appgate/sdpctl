@@ -16,7 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/token"
 	"golang.org/x/net/http/httpproxy"
 
-	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/util"

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
