@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v19/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/dns"
 	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/foxcpp/go-mockdns"
