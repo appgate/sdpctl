@@ -383,19 +383,19 @@ func ReadPemFile(path string) (*x509.Certificate, error) {
 	if info.IsDir() {
 		return nil, fmt.Errorf("path %s is a directory, not a file", path)
 	}
-	pemData, err := os.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("not a file %s %s", path, err)
 	}
-	block, _ := pem.Decode(pemData)
-	if block == nil {
-		return nil, fmt.Errorf("expected a pem file, could not decode %s", path)
+	pemData, certBytes := pem.Decode(b)
+	if pemData != nil {
+		certBytes = pemData.Bytes
 	}
 
 	// See if we can parse the certificate
-	cert, err := x509.ParseCertificate(block.Bytes)
+	cert, err := x509.ParseCertificate(certBytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 	return cert, nil
 }
