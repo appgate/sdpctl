@@ -43,7 +43,14 @@ func ConfigDir() string {
 	if configDir, ok := ud["CONFIG"]; ok {
 		return configDir
 	}
-	return filepath.Join(xdg.Home, ".config", "sdpctl")
+	path := filepath.Join(xdg.ConfigHome, "sdpctl")
+	if len(xdg.ConfigHome) <= 0 {
+		path = filepath.Join(xdg.Home, ".config", "sdpctl")
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.MkdirAll(path, 0700)
+	}
+	return path
 }
 
 func DataDir() string {
