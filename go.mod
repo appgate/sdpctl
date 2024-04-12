@@ -31,7 +31,7 @@ require (
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	github.com/vbauerster/mpb/v8 v8.7.2
-	github.com/zalando/go-keyring v0.2.3
+	github.com/zalando/go-keyring v0.2.4
 	golang.org/x/net v0.24.0
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.19.0
