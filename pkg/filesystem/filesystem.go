@@ -15,7 +15,6 @@ const (
 	AgDataDir     = "SDPCTL_DATA_DIR"
 	AgDownloadDir = "SDPCTL_DOWNLOAD_DIR"
 	XdgConfigHome = "XDG_CONFIG_HOME"
-	AppData       = "AppData"
 )
 
 func AbsolutePath(s string) string {
@@ -43,7 +42,14 @@ func ConfigDir() string {
 	if configDir, ok := ud["CONFIG"]; ok {
 		return configDir
 	}
-	return filepath.Join(xdg.Home, ".config", "sdpctl")
+	path := filepath.Join(xdg.ConfigHome, "sdpctl")
+	if len(xdg.ConfigHome) <= 0 {
+		path = filepath.Join(xdg.Home, ConfigSubDir, "sdpctl")
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.MkdirAll(path, 0700)
+	}
+	return path
 }
 
 func DataDir() string {
@@ -80,7 +86,7 @@ func BackupDir() string {
 
 func parseUsersDirs() (map[string]string, error) {
 	res := map[string]string{}
-	configHome := filepath.Join(xdg.Home, ".config")
+	configHome := filepath.Join(xdg.Home, ConfigSubDir)
 	if len(xdg.ConfigHome) > 0 {
 		configHome = xdg.ConfigHome
 	}

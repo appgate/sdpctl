@@ -31,7 +31,7 @@ func NewPrivilegesCmd(f *factory.Factory) *cobra.Command {
 		Use:   "privileges",
 		Short: docs.PrivilegesDocs.Short,
 		RunE: func(c *cobra.Command, args []string) error {
-			return privilegeRun(c, args, &opts)
+			return privilegeRun(&opts)
 		},
 	}
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
@@ -39,7 +39,7 @@ func NewPrivilegesCmd(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func privilegeRun(cmd *cobra.Command, args []string, opts *privilegeOption) error {
+func privilegeRun(opts *privilegeOption) error {
 	cfg := opts.config
 	client, err := opts.factory.APIClient(cfg)
 	if err != nil {

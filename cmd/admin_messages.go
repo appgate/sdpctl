@@ -31,7 +31,7 @@ func NewAdminMessageCmd(f *factory.Factory) *cobra.Command {
 		Use:   "admin-messages",
 		Short: docs.AdminMessagesRootDoc.Short,
 		RunE: func(c *cobra.Command, args []string) error {
-			return adminMessagesRun(c, args, &opts)
+			return adminMessagesRun(&opts)
 		},
 	}
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
@@ -47,7 +47,7 @@ const messageTemplate = `Messages:
 {{ end }}
 `
 
-func adminMessagesRun(cmd *cobra.Command, args []string, opts *adminMessageOpts) error {
+func adminMessagesRun(opts *adminMessageOpts) error {
 	cfg := opts.config
 	client, err := opts.factory.APIClient(cfg)
 	if err != nil {
