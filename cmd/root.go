@@ -244,7 +244,7 @@ func Execute() cmdutil.ExitCode {
 
 // logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
 // if no TTY is available, stdout will be used
-func logOutput(cmd *cobra.Command, f *factory.Factory, cfg *configuration.Config) io.Writer {
+func logOutput(cmd *cobra.Command, f *factory.Factory) io.Writer {
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: time.RFC3339,
@@ -303,7 +303,7 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.DebugLevel)
 		}
 
-		log.SetOutput(logOutput(cmd, f, cfg))
+		log.SetOutput(logOutput(cmd, f))
 		if v, err := cmd.Flags().GetString("events-path"); err == nil && len(v) > 0 {
 			if err := util.AddSocketLogHook(v); err != nil {
 				return fmt.Errorf("failed to initialize events-path: %w", err)

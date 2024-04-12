@@ -38,14 +38,14 @@ func NewSigninCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ConfigureSigninDocs.Long,
 		Example: docs.ConfigureSigninDocs.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
-			return signinRun(c, args, &opts)
+			return signinRun(c, &opts)
 		},
 	}
 
 	return signinCmd
 }
 
-func signinRun(cmd *cobra.Command, args []string, opts *signinOptions) error {
+func signinRun(cmd *cobra.Command, opts *signinOptions) error {
 	if len(os.Getenv("SDPCTL_NO_KEYRING")) > 0 {
 		fmt.Fprintf(opts.StdErr, "the %s command has no effect when using SDPCTL_NO_KEYRING\n", cmd.CalledAs())
 		fmt.Fprintln(opts.StdErr, "When the keyring integration is disabled, you must provide credentials for each command call.")

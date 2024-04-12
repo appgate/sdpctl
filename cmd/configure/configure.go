@@ -74,7 +74,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			return configRun(c, args, &opts)
+			return configRun(&opts)
 		},
 	}
 
@@ -85,7 +85,7 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func configRun(cmd *cobra.Command, args []string, opts *configureOptions) error {
+func configRun(opts *configureOptions) error {
 	if len(opts.URL) < 1 {
 		return errors.New("Missing URL for the Controller")
 	}

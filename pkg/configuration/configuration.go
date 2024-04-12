@@ -320,9 +320,6 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 	// Write new check time to config after request is made
 	c.LastVersionCheck = time.Now().Format(time.RFC3339Nano)
 	viper.Set("last_version_check", c.LastVersionCheck)
-	if err != nil {
-		return c, err
-	}
 	req.Header.Add("Accept", "application/vnd.github+json")
 	res, err := api.RequestRetry(client, req)
 	if err != nil {
