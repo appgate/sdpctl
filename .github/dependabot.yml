@@ -4,3 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "github.com/vbauerster/mpb/v8"
+        versions: ["8.7.x"]
