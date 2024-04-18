@@ -1032,7 +1032,7 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 
 	tb := &bytes.Buffer{}
 	tp := util.NewPrinter(tb, 4)
-	tp.AddHeader("Appliance", "Upgraded to")
+	tp.AddHeader("Appliance", "Current Version")
 	for _, k := range keys {
 		tp.AddLine(k, applianceVersions[k])
 	}
