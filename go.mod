@@ -33,7 +33,7 @@ require (
 	github.com/vbauerster/mpb/v8 v8.6.2
 	github.com/zalando/go-keyring v0.2.4
 	golang.org/x/net v0.24.0
-	golang.org/x/sync v0.6.0
+	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.19.0
 )
 
