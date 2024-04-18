@@ -58,7 +58,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceUpgradeCancelDoc.Long,
 		Example: docs.ApplianceUpgradeCancelDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
-			return upgradeCancelRun(c, args, &opts)
+			return upgradeCancelRun(c, &opts)
 		},
 	}
 
@@ -69,7 +69,7 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 	return upgradeCancelCmd
 }
 
-func upgradeCancelRun(cmd *cobra.Command, args []string, opts *upgradeCancelOptions) error {
+func upgradeCancelRun(cmd *cobra.Command, opts *upgradeCancelOptions) error {
 	terminal.Lock()
 	defer terminal.Unlock()
 	cfg := opts.Config

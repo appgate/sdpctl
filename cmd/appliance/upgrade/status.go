@@ -43,7 +43,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceUpgradeStatusDoc.Long,
 		Example: docs.ApplianceUpgradeStatusDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
-			return upgradeStatusRun(c, args, &opts)
+			return upgradeStatusRun(c, &opts)
 		},
 	}
 
@@ -53,7 +53,7 @@ func NewUpgradeStatusCmd(f *factory.Factory) *cobra.Command {
 	return upgradeStatusCmd
 }
 
-func upgradeStatusRun(cmd *cobra.Command, args []string, opts *upgradeStatusOptions) error {
+func upgradeStatusRun(cmd *cobra.Command, opts *upgradeStatusOptions) error {
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {

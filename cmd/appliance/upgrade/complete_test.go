@@ -734,7 +734,10 @@ Appliances that will be skipped:
 			if err != nil {
 				t.Fatalf("Failed to parse toVersion %s", err)
 			}
-			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.logServersForwarders, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
+			res, err := func() (string, error) {
+				var _ io.Writer = &b
+				return printCompleteSummary(tt.primaryController, tt.additionalControllers, tt.logServersForwarders, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
+			}()
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}

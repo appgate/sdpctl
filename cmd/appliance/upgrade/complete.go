@@ -414,12 +414,12 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 	msg := ""
 	if primaryControllerUpgradeStatus.Status == appliancepkg.UpgradeStatusReady {
-		msg, err = printCompleteSummary(opts.Out, primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, primaryControllerPreparedVersion)
+		msg, err = printCompleteSummary(primaryController, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, primaryControllerPreparedVersion)
 		if err != nil {
 			return err
 		}
 	} else {
-		msg, err = printCompleteSummary(opts.Out, nil, additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, primaryControllerPreparedVersion)
+		msg, err = printCompleteSummary((*openapi.Appliance)(nil), additionalControllers, logForwardersAndServers, chunks, skipping, toBackup, opts.backupDestination, primaryControllerPreparedVersion)
 		if err != nil {
 			return err
 		}
@@ -862,7 +862,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	return nil
 }
 
-func printCompleteSummary(out io.Writer, primaryController *openapi.Appliance, additionalControllers, logForwardersServers []openapi.Appliance, chunks [][]openapi.Appliance, skipped []appliancepkg.SkipUpgrade, backup []openapi.Appliance, backupDestination string, toVersion *version.Version) (string, error) {
+func printCompleteSummary(primaryController *openapi.Appliance, additionalControllers, logForwardersServers []openapi.Appliance, chunks [][]openapi.Appliance, skipped []appliancepkg.SkipUpgrade, backup []openapi.Appliance, backupDestination string, toVersion *version.Version) (string, error) {
 	var (
 		completeSummaryTpl = `
 UPGRADE COMPLETE SUMMARY{{ if .Version }}
