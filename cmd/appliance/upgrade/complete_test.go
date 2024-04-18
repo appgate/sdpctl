@@ -762,8 +762,8 @@ func TestPrintPostCompleteSummary(t *testing.T) {
 			hasDiff: false,
 			expect: `UPGRADE COMPLETE
 
-Appliance     Upgraded to
----------     -----------
+Appliance     Current Version
+---------     ---------------
 controller    6.0.0+12345
 gateway       6.0.0+12345
 
@@ -779,8 +779,8 @@ gateway       6.0.0+12345
 			hasDiff: true,
 			expect: `UPGRADE COMPLETE
 
-Appliance               Upgraded to
----------               -----------
+Appliance               Current Version
+---------               ---------------
 gateway                 6.0.0+23456
 primary-controller      6.0.0-beta+12345
 secondary-controller    6.0.0+23456
