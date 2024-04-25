@@ -197,7 +197,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if err := network.ValidateHostnameUniqueness(h); err != nil {
 				return err
 			}
-			return prepareRun(c, args, opts)
+			return prepareRun(c, opts)
 		},
 	}
 
@@ -224,7 +224,7 @@ func checkImageFilename(i string) error {
 	return nil
 }
 
-func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) error {
+func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 	fmt.Fprintf(opts.Out, "sdpctl_version: %s\n\n", cmd.Root().Version)
 	terminal.Lock()
 	defer terminal.Unlock()

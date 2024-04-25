@@ -734,7 +734,10 @@ Appliances that will be skipped:
 			if err != nil {
 				t.Fatalf("Failed to parse toVersion %s", err)
 			}
-			res, err := printCompleteSummary(&b, tt.primaryController, tt.additionalControllers, tt.logServersForwarders, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
+			res, err := func() (string, error) {
+				var _ io.Writer = &b
+				return printCompleteSummary(tt.primaryController, tt.additionalControllers, tt.logServersForwarders, tt.chunks, tt.skipped, tt.backup, tt.backupDestination, version)
+			}()
 			if err != nil {
 				t.Errorf("printCompleteSummary() error - %s", err)
 			}
@@ -759,8 +762,8 @@ func TestPrintPostCompleteSummary(t *testing.T) {
 			hasDiff: false,
 			expect: `UPGRADE COMPLETE
 
-Appliance     Upgraded to
----------     -----------
+Appliance     Current Version
+---------     ---------------
 controller    6.0.0+12345
 gateway       6.0.0+12345
 
@@ -776,8 +779,8 @@ gateway       6.0.0+12345
 			hasDiff: true,
 			expect: `UPGRADE COMPLETE
 
-Appliance               Upgraded to
----------               -----------
+Appliance               Current Version
+---------               ---------------
 gateway                 6.0.0+23456
 primary-controller      6.0.0-beta+12345
 secondary-controller    6.0.0+23456
