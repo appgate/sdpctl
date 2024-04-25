@@ -81,7 +81,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			ctx := context.Background()
-			filesAPI := files.FilesAPI{API: api}
+			filesAPI := files.FileManager{API: api}
 			if !opts.ciMode {
 				filesAPI.Progress = tui.New(ctx, f.SpinnerOut)
 			}
@@ -138,12 +138,12 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 					continue
 				}
 				wg.Add(1)
-				go func(ctx context.Context, wg *sync.WaitGroup, err chan<- error, f *os.File, filesAPI *files.FilesAPI, rename string) {
+				go func(ctx context.Context, wg *sync.WaitGroup, err chan<- error, f *os.File, filesAPI *files.FileManager, rename string) {
 					defer func() {
 						wg.Done()
 						f.Close()
 					}()
-					err <- filesAPI.Upload(ctx, f, rename)
+					err <- filesAPI.Upload(ctx, files.QueueItem{File: f, RemoteName: rename})
 				}(ctx, &wg, errChan, file, &filesAPI, rename)
 			}
 

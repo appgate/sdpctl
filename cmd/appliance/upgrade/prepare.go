@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -26,6 +25,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -301,14 +301,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		})
 	}
 
-	if hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData()); len(hasLowDiskSpace) > 0 {
-		appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace, opts.Config.Version)
-		if !opts.NoInteractive {
-			if err := prompt.AskConfirmation(); err != nil {
-				return err
-			}
-		}
-	}
+	hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData())
 	autoScalingWarning := false
 	constraints, _ := version.NewConstraint(">= 5.5.0")
 	if constraints.Check(opts.targetVersion) {
@@ -423,21 +416,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}
 	}
 
-	uploadWithProgress := func(ctx context.Context, reader io.Reader, name string, size int64, headers map[string]string) error {
-		p := tui.New(ctx, spinnerOut)
-		defer p.Wait()
-		endMsg := "uploaded"
-		proxyReader, t := p.FileUploadProgress(name, endMsg, size, reader)
-		defer proxyReader.Close()
-		go t.Watch([]string{endMsg}, []string{"failed"})
-		if err = a.UploadFile(ctx, proxyReader, headers); err != nil {
-			t.Fail(err.Error())
-			return err
-		}
-		t.Update(endMsg)
-		return nil
+	fm := files.NewFileManager(a, nil)
+	if !opts.ciMode {
+		fm.Progress = tui.New(ctx, opts.SpinnerOut())
 	}
-
 	// Step 1
 	if logserverbundleupload {
 		// Download image bundle and zip it up
@@ -451,10 +433,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			return err
 		}
 		logServerZipName := fmt.Sprintf("logserver-%s.zip", tagVersion)
-		localLogServerBundleName := logServerZipName
-		if len(opts.logServerBundlePath) > 0 {
-			localLogServerBundleName = filepath.Base(opts.logServerBundlePath)
-		}
 
 		// check if already exists
 		// we don't know the exact name, so we match with all existing files in the repository
@@ -471,7 +449,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 			}
 		}
 		if !exists {
-			fmt.Fprintf(opts.Out, "[%s] Preparing image bundle for LogServer %s:\n", time.Now().Format(time.RFC3339), tagVersion)
+			lsImageMsg := fmt.Sprintf("Preparing image bundle for LogServer %s", tagVersion)
 			var zip *os.File
 			if len(opts.logServerBundlePath) <= 0 {
 				logServerImages := map[string]string{
@@ -481,7 +459,8 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 				var bundleProgress *tui.Progress
 				if !opts.ciMode {
-					bundleProgress = tui.New(ctx, opts.SpinnerOut())
+					bundleProgress = tui.New(ctx, spinnerOut)
+					bundleProgress.WriteLine(lsImageMsg, "")
 				}
 				path := filepath.Join(filesystem.DownloadDir(), logServerZipName)
 				zip, err = appliancepkg.DownloadDockerBundles(ctx, bundleProgress, client, path, opts.dockerRegistry, logServerImages, opts.ciMode)
@@ -490,57 +469,17 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 				}
 				defer os.Remove(zip.Name())
 				opts.logServerBundlePath = zip.Name()
-			}
-			zip, err = os.Open(opts.logServerBundlePath)
-			if err != nil {
-				return err
-			}
-			defer zip.Close()
-
-			pr, pw := io.Pipe()
-			writer := multipart.NewWriter(pw)
-			go func() {
-				defer pw.Close()
-				defer writer.Close()
-
-				part, err := writer.CreateFormFile("file", logServerZipName)
-				if err != nil {
-					log.Warnf("multipart form err %s", err)
-					return
+				if !opts.ciMode {
+					bundleProgress.WriteLine("Bundle prepared successfully", "")
+					bundleProgress.Wait()
 				}
+			}
 
-				size, err := io.Copy(part, zip)
-				if err != nil {
-					log.Warnf("copy err %s", err)
-					return
-				}
-				log.WithField("size", size).WithField("zip", logServerZipName).Debug("wrote zip part")
-			}()
-
-			zipInfo, err := zip.Stat()
-			if err != nil {
+			if err := fm.AddToQueue(zip, logServerZipName); err != nil {
 				return err
 			}
-
-			headers := map[string]string{
-				"Content-Type":        writer.FormDataContentType(),
-				"Content-Disposition": fmt.Sprintf("attachment; filename=%q", zipInfo.Name()),
-			}
-			log.WithFields(log.Fields{
-				"local-name":  localLogServerBundleName,
-				"remote-name": logServerZipName,
-			}).Info("uploading local logserver bundle")
-			if !opts.ciMode {
-				err = uploadWithProgress(ctx, pr, "uploading "+localLogServerBundleName, zipInfo.Size(), headers)
-			} else {
-				err = a.UploadFile(ctx, pr, headers)
-			}
-			if err != nil {
-				return err
-			}
-			fmt.Fprint(opts.Out, "Image bundles prepared\n\n")
 		} else {
-			fmt.Fprint(opts.Out, "LogServer image already exists on appliance. Skipping\n\n")
+			fmt.Fprint(spinnerOut, "LogServer image already exists on appliance. Skipping\n\n")
 		}
 	}
 
@@ -564,61 +503,27 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	}
 
 	if shouldUpload && !opts.remoteImage {
-		imageFile, err := os.Open(opts.image)
+		i, err := os.Open(opts.image)
 		if err != nil {
 			return err
 		}
-		defer imageFile.Close()
-
-		fileStat, err := imageFile.Stat()
-		if err != nil {
+		if err := fm.AddToQueue(i, ""); err != nil {
 			return err
 		}
-
-		pr, pw := io.Pipe()
-		writer := multipart.NewWriter(pw)
-		go func() {
-			defer pw.Close()
-			defer writer.Close()
-
-			part, err := writer.CreateFormFile("file", fileStat.Name())
-			if err != nil {
-				log.Warnf("multipart form err %s", err)
-				return
+	}
+	if fm.QueueLen() > 0 {
+		if len(hasLowDiskSpace) > 0 {
+			appliancepkg.PrintDiskSpaceWarningMessage(opts.Out, hasLowDiskSpace, opts.Config.Version)
+			if !opts.NoInteractive {
+				if err := prompt.AskConfirmation(); err != nil {
+					return err
+				}
 			}
-
-			if _, err = io.Copy(part, imageFile); err != nil {
-				log.Warnf("copy err %s", err)
-				return
-			}
-		}()
-
-		headers := map[string]string{
-			"Content-Type":        writer.FormDataContentType(),
-			"Content-Disposition": fmt.Sprintf("attachment; filename=%q", fileStat.Name()),
 		}
 
-		fmt.Fprintf(opts.Out, "\n[%s] Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
-		if !opts.ciMode {
-			err = uploadWithProgress(ctx, pr, fileStat.Name(), fileStat.Size(), headers)
-		} else {
-			err = a.UploadFile(ctx, pr, headers)
-		}
-		if err != nil {
+		if err := fm.WorkQueue(ctx); err != nil {
 			return err
 		}
-
-		log.WithField("file", imageFile.Name()).Info("Uploaded file")
-
-		remoteFile, err := a.FileStatus(ctx, opts.filename)
-		if err != nil {
-			return err
-		}
-		if remoteFile.GetStatus() != appliancepkg.FileReady {
-			return fmt.Errorf("Remote file %q is uploaded, but is in status %s - %s", opts.filename, remoteFile.GetStatus(), remoteFile.GetFailureReason())
-		}
-		log.WithField("file", remoteFile.GetName()).Infof("Status %s", remoteFile.GetStatus())
-
 	}
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "[%s] The primary Controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
@@ -678,7 +583,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	// prepare the image on the appliances,
 	// its throttle based on nWorkers to reduce internal rate limit if we try to download from too many appliances at once.
 	prepare := func(ctx context.Context, remoteFilePath string, appliances []openapi.Appliance, workers int) error {
-		var errs error
+		var errs *multierr.Error
 		log.Infof("Remote file path for the Controller %s", remoteFilePath)
 		var (
 			count = len(appliances)
@@ -697,6 +602,7 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 
 		if !opts.ciMode {
 			updateProgressBars = tui.New(ctx, spinnerOut)
+			updateProgressBars.WriteLine("Preparing appliances", "\n")
 			defer updateProgressBars.Wait()
 		}
 
@@ -826,10 +732,10 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 		}(&wg, errChan)
 
 		for err := range errChan {
-			errs = multierr.Append(err, errs)
+			errs = multierr.Append(errs, err)
 		}
 
-		return errs
+		return errs.ErrorOrNil()
 	}
 
 	workers, err := cmd.Flags().GetInt("throttle")
@@ -839,7 +745,6 @@ func prepareRun(cmd *cobra.Command, args []string, opts *prepareUpgradeOptions) 
 	if workers <= 0 {
 		workers = len(appliances)
 	}
-	fmt.Fprintf(opts.Out, "\n[%s] Preparing image on appliances:\n", time.Now().Format(time.RFC3339))
 	if err := prepare(ctx, remoteFilePath, appliances, workers); err != nil {
 		return err
 	}
