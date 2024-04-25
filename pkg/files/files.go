@@ -13,7 +13,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -91,7 +90,7 @@ func (f *FileManager) WorkQueue(ctx context.Context) error {
 	if f.Progress != nil {
 		f.Progress.WriteLine(msg, "\n")
 	}
-	logrus.WithFields(log.Fields{
+	log.WithFields(log.Fields{
 		"files": strings.Join(f.FileNames(), ","),
 	}).Info(msg)
 	for _, q := range f.queue {
