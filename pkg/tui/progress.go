@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"time"
 
@@ -146,4 +147,9 @@ func (p *Progress) Wait() {
 		p.Abort()
 	case <-done:
 	}
+}
+
+func (p *Progress) WriteLine(s, prepend string) {
+	t := fmt.Sprintf("[%s] ", time.Now().Format(time.RFC3339))
+	p.pc.Write([]byte(prepend + t + s + "\n"))
 }
