@@ -1060,7 +1060,7 @@ func getPublicECRToken(client *http.Client, images map[string]string) (*string, 
 	}
 	params := []string{"service=public.ecr.aws"}
 	for image := range images {
-		params = append(params, fmt.Sprintf("scope=repsoitory:appgate-sdp/%s:pull", image))
+		params = append(params, fmt.Sprintf("scope=repository:appgate-sdp/%s:pull", image))
 	}
 	res, err := client.Get(fmt.Sprintf("https://public.ecr.aws/token/?%s", strings.Join(params, "&")))
 	if err != nil {
@@ -1073,6 +1073,9 @@ func getPublicECRToken(client *http.Client, images map[string]string) (*string, 
 	var token ecrToken
 	if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
 		return nil, err
+	}
+	if len(token.Token) <= 0 {
+		return nil, fmt.Errorf("public ECR token is empty")
 	}
 	return &token.Token, nil
 }
