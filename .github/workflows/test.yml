@@ -23,7 +23,7 @@ jobs:
 
       - name: Get dependencies
         run: |
-          go get -v -t -d ./...
+          go get -t -x ./...
 
       - name: Test formatting
         run: make fmtcheck
