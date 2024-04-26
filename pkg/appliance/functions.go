@@ -1074,6 +1074,9 @@ func getPublicECRToken(client *http.Client, images map[string]string) (*string, 
 	if err := json.NewDecoder(res.Body).Decode(&token); err != nil {
 		return nil, err
 	}
+	if len(token.Token) <= 0 {
+		return nil, fmt.Errorf("public ECR token is empty")
+	}
 	return &token.Token, nil
 }
 
