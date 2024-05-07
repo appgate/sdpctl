@@ -473,6 +473,11 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 					bundleProgress.WriteLine("Bundle prepared successfully", "")
 					bundleProgress.Wait()
 				}
+			} else {
+				zip, err = os.Open(opts.logServerBundlePath)
+				if err != nil {
+					return err
+				}
 			}
 
 			if err := fm.AddToQueue(zip, logServerZipName); err != nil {
