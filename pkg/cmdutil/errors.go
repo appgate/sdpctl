@@ -35,4 +35,6 @@ var (
 	ErrVersionCheckDisabled = errors.New("version check disabled")
 	// ErrUnsupportedOperation is used when the user tries to do an operation that is unsupported by the Appliance, likely due to version
 	ErrUnsupportedOperation = errors.New("Operation not supported on your appliance version")
+	// ErrControllerMaintenanceMode is used when trying to connect to appliance where maintenance mode is enabled
+	ErrControllerMaintenanceMode = errors.New("controller seem to be in maintenance mode")
 )

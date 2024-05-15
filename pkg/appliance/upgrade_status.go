@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
@@ -51,6 +52,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 	hasRebooted := false
 	offlineRegex := regexp.MustCompile(`No response Get`)
 	onlineRegex := regexp.MustCompile(`Bad Gateway`)
+	unavailableRegex := regexp.MustCompile(`Service Temporarily Unavailable`)
 	return func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
@@ -62,14 +64,23 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 				// Check if upgrading primary controller and apply logic for offline check
 				if primaryUpgrade, ok := ctx.Value(PrimaryUpgrade).(bool); ok && primaryUpgrade {
 					msg = "switching partition"
-					if offlineRegex.MatchString(err.Error()) {
+					errMsg := err.Error()
+					if offlineRegex.MatchString(errMsg) {
 						hasRebooted = true
-					} else if onlineRegex.MatchString(err.Error()) {
+					} else if onlineRegex.MatchString(errMsg) {
 						if hasRebooted {
 							msg = "initializing"
 						} else {
 							msg = "installing"
 						}
+					} else if unavailableRegex.MatchString(errMsg) {
+						// This error indicates that the controller we are polling is in maintanance mode
+						// This is fatal to the upgrade process since we are polling the wrong controller,
+						// probably because of some load balancer redirecting traffic
+						err = cmdutil.ErrControllerMaintenanceMode
+						tracker.Update(undesiredStatuses[0])
+						tracker.Fail(fmt.Sprintf("failed - %s", err.Error()))
+						return backoff.Permanent(err)
 					} else {
 						msg = err.Error()
 					}

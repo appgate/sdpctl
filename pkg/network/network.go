@@ -2,8 +2,11 @@ package network
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
+	"net/url"
+	"slices"
 	"sort"
 	"strings"
 
@@ -14,6 +17,10 @@ type ResolverError struct {
 	ip       []net.IP
 	hostname string
 }
+
+var (
+	ErrNameResolution = errors.New("failed to resolve any hostname IPs")
+)
 
 func (r *ResolverError) Error() string {
 	ips := make([]string, 0, len(r.ip))
@@ -60,4 +67,26 @@ func ValidateHostnameUniqueness(addr string) error {
 	}
 
 	return nil
+}
+
+func ResolveHostnameIPs(addr string) ([]string, error) {
+	url, err := url.ParseRequestURI(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	ips, err := Resolver.LookupIP(ctx, "ip", url.Hostname())
+	if err != nil {
+		return nil, err
+	}
+	if len(ips) <= 0 {
+		return nil, ErrNameResolution
+	}
+	res := make([]string, 0, len(ips))
+	for _, i := range ips {
+		res = append(res, i.String())
+	}
+	slices.Sort(res)
+	return res, nil
 }
