@@ -130,6 +130,9 @@ func (f *FileManager) Upload(ctx context.Context, q QueueItem) error {
 	}
 	name := fileInfo.Name()
 	size := q.size
+	if size <= 0 {
+		size = fileInfo.Size()
+	}
 	uploadName := name
 	if len(q.RemoteName) > 0 {
 		uploadName = q.RemoteName
