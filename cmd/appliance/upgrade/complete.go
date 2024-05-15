@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -17,6 +18,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -547,7 +549,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
 
-			logEntry := log.WithField("appliance", controller.GetName())
+			logEntry := log.WithFields(log.Fields{
+				"appliance": controller.GetName(),
+				"url":       cfg.URL,
+			})
+			ips, err := network.ResolveHostnameIPs(cfg.URL)
+			if err != nil {
+				logEntry.WithError(err).Error("failed to lookup hostname ips")
+			}
 			logEntry.Info("Completing upgrade and switching partition")
 			if err := a.UpgradeComplete(ctx, controller.GetId(), true); err != nil {
 				return err
@@ -555,6 +564,19 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			msg := "Upgrading primary Controller, installing and rebooting..."
 			logEntry.WithField("want", appliancepkg.StatReady).Info(msg)
 			if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(context.WithValue(ctx, appliancepkg.PrimaryUpgrade, true), controller, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
+				if errors.Is(err, cmdutil.ErrControllerMaintenanceMode) {
+					if ips != nil {
+						postIPs, _ := network.ResolveHostnameIPs(cfg.URL)
+						cmpResult := slices.Equal(ips, postIPs)
+						if !cmpResult {
+							logEntry.WithError(fmt.Errorf("hostname resolves to different ip")).WithFields(log.Fields{
+								"original_resolution": ips,
+								"current_resolution":  postIPs,
+							}).Error("changed hostname resolution detected")
+						}
+					}
+					return fmt.Errorf("possible primary controller redirection detected: %w", err)
+				}
 				return err
 			}
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
