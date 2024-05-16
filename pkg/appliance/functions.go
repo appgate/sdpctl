@@ -160,6 +160,123 @@ func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Ap
 	return result
 }
 
+type UpgradePlan struct {
+	PrimaryController       openapi.Appliance
+	Controllers             []openapi.Appliance
+	LogForwardersAndServers []openapi.Appliance
+	Batches                 [][]openapi.Appliance
+	Skipping                []SkipUpgrade
+}
+
+func MakeUpgradePlan(primary *openapi.Appliance, appliances []openapi.Appliance, fromVersion, toVersion *version.Version) UpgradePlan {
+	plan := UpgradePlan{}
+	if primary != nil {
+		plan.PrimaryController = *primary
+	}
+
+	// Sort input group first
+	sort.SliceStable(appliances, func(i, j int) bool {
+		return appliances[i].GetName() < appliances[j].GetName()
+	})
+
+	gatewaysGroupedBySite := map[string][]openapi.Appliance{}
+	other := []openapi.Appliance{}
+
+	// LogForwarders and LogServers need to in their own group
+	// when upgrading from <= 5.5 to >= 6.0
+	lflsConstraint, _ := version.NewConstraint(">= 6.0.0-beta")
+
+	for _, a := range appliances {
+		if ctrl, ok := a.GetControllerOk(); ok {
+			if ctrl.GetEnabled() {
+				plan.Controllers = append(plan.Controllers, a)
+				continue
+			}
+		}
+		if gw, ok := a.GetGatewayOk(); ok {
+			if gw.GetEnabled() {
+				site := a.GetSite()
+				gatewaysGroupedBySite[site] = append(gatewaysGroupedBySite[site], a)
+				continue
+			}
+		}
+		if !lflsConstraint.Check(fromVersion) && lflsConstraint.Check(toVersion) {
+			if ls, ok := a.GetLogServerOk(); ok {
+				if ls.GetEnabled() {
+					plan.LogForwardersAndServers = append(plan.LogForwardersAndServers, a)
+					continue
+				}
+			}
+			if lf, ok := a.GetLogForwarderOk(); ok {
+				if lf.GetEnabled() {
+					plan.LogForwardersAndServers = append(plan.LogForwardersAndServers, a)
+					continue
+				}
+			}
+		}
+		other = append(other, a)
+	}
+
+	// Determine how many batches we will do
+	batchSize := 0
+	for _, g := range gatewaysGroupedBySite {
+		if len(g) > batchSize {
+			batchSize = len(g)
+		}
+	}
+
+	// Equally distribute gateways to batches
+	// Each batch should contain only one gateway per site
+	plan.Batches = make([][]openapi.Appliance, batchSize)
+	for _, appliances := range gatewaysGroupedBySite {
+		batchIndex := 0
+		for _, a := range appliances {
+			batch := plan.Batches[batchIndex]
+			batch = append(batch, a)
+			plan.Batches[batchIndex] = batch
+			if batchIndex == batchSize-1 {
+				batchIndex = 0
+				continue
+			}
+			batchIndex++
+		}
+	}
+
+	// Distribute the rest of the appliances into the batches
+	// Strategy is to balance the batches so they are of roughly equal size
+	batchIndex := 0
+	for _, a := range other {
+		// Get the index of the batch with the least amount of appliances in
+		var minBatch *int
+		for i, b := range plan.Batches {
+			if minBatch == nil {
+				minBatch = openapi.PtrInt(len(b))
+				batchIndex = i
+				continue
+			}
+			if len(b) < *minBatch {
+				minBatch = openapi.PtrInt(len(b))
+				batchIndex = i
+			}
+		}
+
+		// Append appliance to the batch with index found above
+		plan.Batches[batchIndex] = append(plan.Batches[batchIndex], a)
+	}
+
+	// Sort the output in the upgrade plan
+	sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
+		return plan.LogForwardersAndServers[i].GetName() < plan.LogForwardersAndServers[j].GetName()
+	})
+	for i := 0; i < len(plan.Batches); i++ {
+		sort.SliceStable(plan.Batches[i], func(ix, jx int) bool {
+			return plan.Batches[i][ix].GetName() < plan.Batches[i][jx].GetName()
+		})
+	}
+
+	return plan
+}
+
 // ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
 // functions and site configuration
 func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
