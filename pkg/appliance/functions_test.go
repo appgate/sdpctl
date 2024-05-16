@@ -1327,6 +1327,203 @@ func TestSplitAppliancesByGroup(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "large collective, multiple gateways and sites",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "ctrl1",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "ctrl1.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "ctrl2",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "ctrl2.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "ctrl3",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "ctrl3.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "gw1",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw1.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "gw2",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw2.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "gw3",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw3.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "gw4",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw4.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "gw5",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw5.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "gw6",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw6.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["C"],
+					},
+				},
+			},
+			want: map[int][]openapi.Appliance{
+				hashcode.String("controller=true"): {
+					{
+						Name: "ctrl1",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "ctrl1.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "ctrl2",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "ctrl2.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "ctrl3",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "ctrl3.devops",
+						},
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["C"],
+					},
+				},
+				hashcode.String(fmt.Sprintf("%s%s", *sites["A"], "&gateway=true")): {
+					{
+						Name: "gw1",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw1.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["A"],
+					},
+					{
+						Name: "gw2",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw2.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["A"],
+					},
+				},
+				hashcode.String(fmt.Sprintf("%s%s", *sites["B"], "&gateway=true")): {
+					{
+						Name: "gw3",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw3.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["B"],
+					},
+					{
+						Name: "gw4",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw4.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["B"],
+					},
+				},
+				hashcode.String(fmt.Sprintf("%s%s", *sites["C"], "&gateway=true")): {
+					{
+						Name: "gw5",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw5.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["C"],
+					},
+					{
+						Name: "gw6",
+						AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+							Hostname: "gw6.devops",
+						},
+						Gateway: &openapi.ApplianceAllOfGateway{
+							Enabled: openapi.PtrBool(true),
+						},
+						Site: sites["C"],
+					},
+				},
+			},
+		},
 	}
 	opts := []cmp.Option{cmp.AllowUnexported(openapi.NullableElasticsearch{})}
 	for _, tt := range tests {
@@ -3148,4 +3345,251 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, versio
 	appstatdata.SetStatus(status)
 	appstatdata.SetVersion(version)
 	return app, appstatdata
+}
+
+func TestMakeUpgradePlan(t *testing.T) {
+	siteA := uuid.NewString()
+	siteB := uuid.NewString()
+	siteC := uuid.NewString()
+
+	primary := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "primary-controller",
+		Controller: &openapi.ApplianceAllOfController{
+			Enabled: openapi.PtrBool(true),
+		},
+		AdminInterface: &openapi.ApplianceAllOfAdminInterface{
+			Hostname: "appgate.test",
+		},
+		Site: openapi.PtrString(siteA),
+	}
+	secondary := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "secondary-controller",
+		Controller: &openapi.ApplianceAllOfController{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteB),
+	}
+	gatewayA1 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-A1",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteA),
+	}
+	gatewayA2 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-A2",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteA),
+	}
+	gatewayA3 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-A3",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteA),
+	}
+	gatewayB1 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-B1",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteB),
+	}
+	gatewayB2 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-B2",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteB),
+	}
+	gatewayC1 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-C1",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteC),
+	}
+	gatewayC2 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "gateway-C2",
+		Gateway: &openapi.ApplianceAllOfGateway{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteC),
+	}
+	portalA1 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "portal-A1",
+		Portal: &openapi.Portal{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteA),
+	}
+	connectorA1 := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "connector-A1",
+		Connector: &openapi.ApplianceAllOfConnector{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteA),
+	}
+	logServer := openapi.Appliance{
+		Id:   openapi.PtrString(uuid.NewString()),
+		Name: "logserver",
+		LogServer: &openapi.ApplianceAllOfLogServer{
+			Enabled: openapi.PtrBool(true),
+		},
+		Site: openapi.PtrString(siteA),
+	}
+
+	v55, _ := version.NewVersion("5.5")
+	v60, _ := version.NewVersion("6.0")
+	v62, _ := version.NewVersion("6.2")
+	v63, _ := version.NewVersion("6.3")
+	type args struct {
+		primary     *openapi.Appliance
+		groups      []openapi.Appliance
+		fromVersion *version.Version
+		toVersion   *version.Version
+	}
+	tests := []struct {
+		name string
+		args args
+		want UpgradePlan
+	}{
+		{
+			name: "grouping test",
+			args: args{
+				primary: &primary,
+				groups: []openapi.Appliance{
+					secondary,
+					gatewayA1,
+					gatewayA2,
+					gatewayA3,
+					gatewayB1,
+					gatewayB2,
+					gatewayC1,
+					gatewayC2,
+					portalA1,
+					connectorA1,
+					logServer,
+				},
+				fromVersion: v62,
+				toVersion:   v63,
+			},
+			want: UpgradePlan{
+				PrimaryController: primary,
+				Controllers:       []openapi.Appliance{secondary},
+				Batches: [][]openapi.Appliance{
+					{gatewayA1, gatewayB1, gatewayC1, portalA1},
+					{gatewayA2, gatewayB2, gatewayC2},
+					{connectorA1, gatewayA3, logServer},
+				},
+			},
+		},
+		{
+			name: "test grouping from unordered",
+			args: args{
+				primary: &primary,
+				groups: []openapi.Appliance{
+					gatewayA1,
+					gatewayB2,
+					gatewayA2,
+					logServer,
+					gatewayB1,
+					connectorA1,
+					gatewayC1,
+					secondary,
+					gatewayA3,
+					gatewayC2,
+					portalA1,
+				},
+				fromVersion: v62,
+				toVersion:   v63,
+			},
+			want: UpgradePlan{
+				PrimaryController: primary,
+				Controllers:       []openapi.Appliance{secondary},
+				Batches: [][]openapi.Appliance{
+					{gatewayA1, gatewayB1, gatewayC1, portalA1},
+					{gatewayA2, gatewayB2, gatewayC2},
+					{connectorA1, gatewayA3, logServer},
+				},
+			},
+		},
+		{
+			name: "grouping with logserver/logforwarder constraint",
+			args: args{
+				primary: &primary,
+				groups: []openapi.Appliance{
+					secondary,
+					gatewayA1,
+					gatewayA2,
+					gatewayA3,
+					gatewayB1,
+					gatewayB2,
+					gatewayC1,
+					gatewayC2,
+					portalA1,
+					connectorA1,
+					logServer,
+				},
+				fromVersion: v55,
+				toVersion:   v60,
+			},
+			want: UpgradePlan{
+				PrimaryController:       primary,
+				Controllers:             []openapi.Appliance{secondary},
+				LogForwardersAndServers: []openapi.Appliance{logServer},
+				Batches: [][]openapi.Appliance{
+					{gatewayA1, gatewayB1, gatewayC1},
+					{gatewayA2, gatewayB2, gatewayC2},
+					{connectorA1, gatewayA3, portalA1},
+				},
+			},
+		},
+		{
+			name: "test grouping without primary controller",
+			args: args{
+				groups: []openapi.Appliance{
+					gatewayA1,
+					gatewayB2,
+					gatewayA2,
+					logServer,
+					gatewayB1,
+					connectorA1,
+					gatewayC1,
+					secondary,
+					gatewayA3,
+					gatewayC2,
+					portalA1,
+				},
+				fromVersion: v62,
+				toVersion:   v63,
+			},
+			want: UpgradePlan{
+				Controllers: []openapi.Appliance{secondary},
+				Batches: [][]openapi.Appliance{
+					{gatewayA1, gatewayB1, gatewayC1, portalA1},
+					{gatewayA2, gatewayB2, gatewayC2},
+					{connectorA1, gatewayA3, logServer},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, MakeUpgradePlan(tt.args.primary, tt.args.groups, tt.args.fromVersion, tt.args.toVersion))
+		})
+	}
 }
