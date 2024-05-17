@@ -197,6 +197,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if len(opts.actualHostname) > 0 {
 		controlHost = opts.actualHostname
 	}
+	initialStats, _, err := a.Stats(ctx, nil, orderBy, descending)
+	if err != nil {
+		return err
+	}
+	// upgradePlan, err := appliancepkg.NewUpgradePlan(rawAppliances, *initialStats, controlHost, filter, orderBy, descending)
+	// if err != nil {
+	// 	return err
+	// }
 	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, controlHost, true)
 	if err != nil {
 		return err
@@ -217,10 +225,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	skipping := []appliancepkg.SkipUpgrade{}
-	initialStats, _, err := a.Stats(ctx, nil, orderBy, descending)
-	if err != nil {
-		return err
-	}
 	online, offline, err := appliancepkg.FilterAvailable(rawAppliances, initialStats.GetData())
 	if err != nil {
 		return fmt.Errorf("Could not complete the upgrade operation %w", err)
