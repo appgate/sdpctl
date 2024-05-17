@@ -122,23 +122,6 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 	return tpl.String(), nil
 }
 
-type SkipUpgrade struct {
-	Reason    string
-	Appliance openapi.Appliance
-}
-
-const (
-	SkipReasonNotPrepared            = "appliance is not prepared for upgrade"
-	SkipReasonOffline                = "appliance is offline"
-	SkipReasonFiltered               = "filtered using the '--include' and/or '--exclude' flag"
-	SkipReasonAlreadyPrepared        = "appliance is already prepared for upgrade with a higher or equal version"
-	SkipReasonUnsupportedUpgradePath = "Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required."
-)
-
-func (su SkipUpgrade) Error() string {
-	return fmt.Sprintf("%s: %s", su.Appliance.GetName(), su.Reason)
-}
-
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
 func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipUpgrade) {
