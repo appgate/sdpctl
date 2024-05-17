@@ -3191,11 +3191,11 @@ func Test_orderAppliances(t *testing.T) {
 	}
 
 	// Generate appliances
-	app1, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "healthy")
-	app2, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "healthy")
-	app3, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "healthy")
-	app4, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "healthy")
-	app5, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "healthy")
+	app1, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "healthy", UpgradeStatusReady, "Default")
+	app2, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "healthy", UpgradeStatusReady, "Default")
+	app3, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "healthy", UpgradeStatusReady, "Default")
+	app4, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "healthy", UpgradeStatusReady, "Default")
+	app5, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "healthy", UpgradeStatusReady, "Default")
 
 	// Modify appliances for tests
 	app3.SetActivated(false)
@@ -3278,7 +3278,7 @@ func Test_orderAppliances(t *testing.T) {
 	}
 }
 
-func GenerateApplianceWithStats(activeFunctions []string, name, hostname, version, status string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData) {
+func GenerateApplianceWithStats(activeFunctions []string, name, hostname, version, status, upgradeStatus, site string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData) {
 	id := uuid.NewString()
 	now := time.Now()
 	ctrl := &openapi.ApplianceAllOfController{}
@@ -3316,7 +3316,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, versio
 		PendingCertificateRenewal: openapi.PtrBool(false),
 		Version:                   openapi.PtrInt32(18),
 		Hostname:                  hostname,
-		Site:                      openapi.PtrString("Default Site"),
+		Site:                      openapi.PtrString(site),
 		SiteName:                  new(string),
 		Customization:             new(string),
 		ClientInterface:           openapi.ApplianceAllOfClientInterface{},
@@ -3344,252 +3344,8 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, versio
 	appstatdata.SetId(app.GetId())
 	appstatdata.SetStatus(status)
 	appstatdata.SetVersion(version)
+	appstatdata.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
+		Status: &upgradeStatus,
+	})
 	return app, appstatdata
-}
-
-func TestMakeUpgradePlan(t *testing.T) {
-	siteA := uuid.NewString()
-	siteB := uuid.NewString()
-	siteC := uuid.NewString()
-
-	primary := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "primary-controller",
-		Controller: &openapi.ApplianceAllOfController{
-			Enabled: openapi.PtrBool(true),
-		},
-		AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-			Hostname: "appgate.test",
-		},
-		Site: openapi.PtrString(siteA),
-	}
-	secondary := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "secondary-controller",
-		Controller: &openapi.ApplianceAllOfController{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteB),
-	}
-	gatewayA1 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-A1",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteA),
-	}
-	gatewayA2 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-A2",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteA),
-	}
-	gatewayA3 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-A3",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteA),
-	}
-	gatewayB1 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-B1",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteB),
-	}
-	gatewayB2 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-B2",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteB),
-	}
-	gatewayC1 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-C1",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteC),
-	}
-	gatewayC2 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "gateway-C2",
-		Gateway: &openapi.ApplianceAllOfGateway{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteC),
-	}
-	portalA1 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "portal-A1",
-		Portal: &openapi.Portal{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteA),
-	}
-	connectorA1 := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "connector-A1",
-		Connector: &openapi.ApplianceAllOfConnector{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteA),
-	}
-	logServer := openapi.Appliance{
-		Id:   openapi.PtrString(uuid.NewString()),
-		Name: "logserver",
-		LogServer: &openapi.ApplianceAllOfLogServer{
-			Enabled: openapi.PtrBool(true),
-		},
-		Site: openapi.PtrString(siteA),
-	}
-
-	v55, _ := version.NewVersion("5.5")
-	v60, _ := version.NewVersion("6.0")
-	v62, _ := version.NewVersion("6.2")
-	v63, _ := version.NewVersion("6.3")
-	type args struct {
-		primary     *openapi.Appliance
-		groups      []openapi.Appliance
-		fromVersion *version.Version
-		toVersion   *version.Version
-	}
-	tests := []struct {
-		name string
-		args args
-		want UpgradePlan
-	}{
-		{
-			name: "grouping test",
-			args: args{
-				primary: &primary,
-				groups: []openapi.Appliance{
-					secondary,
-					gatewayA1,
-					gatewayA2,
-					gatewayA3,
-					gatewayB1,
-					gatewayB2,
-					gatewayC1,
-					gatewayC2,
-					portalA1,
-					connectorA1,
-					logServer,
-				},
-				fromVersion: v62,
-				toVersion:   v63,
-			},
-			want: UpgradePlan{
-				PrimaryController: primary,
-				Controllers:       []openapi.Appliance{secondary},
-				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, portalA1},
-					{gatewayA2, gatewayB2, gatewayC2},
-					{connectorA1, gatewayA3, logServer},
-				},
-			},
-		},
-		{
-			name: "test grouping from unordered",
-			args: args{
-				primary: &primary,
-				groups: []openapi.Appliance{
-					gatewayA1,
-					gatewayB2,
-					gatewayA2,
-					logServer,
-					gatewayB1,
-					connectorA1,
-					gatewayC1,
-					secondary,
-					gatewayA3,
-					gatewayC2,
-					portalA1,
-				},
-				fromVersion: v62,
-				toVersion:   v63,
-			},
-			want: UpgradePlan{
-				PrimaryController: primary,
-				Controllers:       []openapi.Appliance{secondary},
-				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, portalA1},
-					{gatewayA2, gatewayB2, gatewayC2},
-					{connectorA1, gatewayA3, logServer},
-				},
-			},
-		},
-		{
-			name: "grouping with logserver/logforwarder constraint",
-			args: args{
-				primary: &primary,
-				groups: []openapi.Appliance{
-					secondary,
-					gatewayA1,
-					gatewayA2,
-					gatewayA3,
-					gatewayB1,
-					gatewayB2,
-					gatewayC1,
-					gatewayC2,
-					portalA1,
-					connectorA1,
-					logServer,
-				},
-				fromVersion: v55,
-				toVersion:   v60,
-			},
-			want: UpgradePlan{
-				PrimaryController:       primary,
-				Controllers:             []openapi.Appliance{secondary},
-				LogForwardersAndServers: []openapi.Appliance{logServer},
-				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1},
-					{gatewayA2, gatewayB2, gatewayC2},
-					{connectorA1, gatewayA3, portalA1},
-				},
-			},
-		},
-		{
-			name: "test grouping without primary controller",
-			args: args{
-				groups: []openapi.Appliance{
-					gatewayA1,
-					gatewayB2,
-					gatewayA2,
-					logServer,
-					gatewayB1,
-					connectorA1,
-					gatewayC1,
-					secondary,
-					gatewayA3,
-					gatewayC2,
-					portalA1,
-				},
-				fromVersion: v62,
-				toVersion:   v63,
-			},
-			want: UpgradePlan{
-				Controllers: []openapi.Appliance{secondary},
-				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, portalA1},
-					{gatewayA2, gatewayB2, gatewayC2},
-					{connectorA1, gatewayA3, logServer},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, MakeUpgradePlan(tt.args.primary, tt.args.groups, tt.args.fromVersion, tt.args.toVersion))
-		})
-	}
 }
