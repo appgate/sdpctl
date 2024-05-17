@@ -18,65 +18,75 @@ func TestMakeUpgradePlan(t *testing.T) {
 	v63, _ := version.NewVersion("6.3")
 
 	stats := *openapi.NewStatsAppliancesListWithDefaults()
-	primary, s := GenerateApplianceWithStats([]string{FunctionController}, "primary-controller", hostname, v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	primary, s := GenerateApplianceWithStats([]string{FunctionController}, "primary-controller", hostname, v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count := stats.GetControllerCount()
-	stats.SetControllerCount(*openapi.PtrFloat32(count + 1))
+	stats.SetControllerCount(count + 1)
 
-	secondary, s := GenerateApplianceWithStats([]string{FunctionController}, "secondary-controller", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	secondary, s := GenerateApplianceWithStats([]string{FunctionController}, "secondary-controller", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetControllerCount()
-	stats.SetControllerCount(*openapi.PtrFloat32(count + 1))
+	stats.SetControllerCount(count + 1)
 
-	gatewayA1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A1", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	gatewayA1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	gatewayA2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A2", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	gatewayA2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	gatewayA3, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A3", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	gatewayA3, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A3", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	gatewayB1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B1", "", v62.String(), statusHealthy, UpgradeStatusReady, siteB)
+	gatewayB1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteB)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	gatewayB2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B2", "", v62.String(), statusHealthy, UpgradeStatusReady, siteB)
+	gatewayB2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteB)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	gatewayC1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C1", "", v62.String(), statusHealthy, UpgradeStatusReady, siteC)
+	gatewayC1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteC)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	gatewayC2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C2", "", v62.String(), statusHealthy, UpgradeStatusReady, siteC)
+	gatewayC2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteC)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(*openapi.PtrFloat32(count + 1))
+	stats.SetGatewayCount(count + 1)
 
-	portalA1, s := GenerateApplianceWithStats([]string{FunctionPortal}, "portal-A1", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	logforwarderA1, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	stats.Data = append(stats.Data, s)
+	count = stats.GetLogForwarderCount()
+	stats.SetLogForwarderCount(count + 1)
+
+	logforwarderA2, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	stats.Data = append(stats.Data, s)
+	count = stats.GetLogForwarderCount()
+	stats.SetLogForwarderCount(count + 1)
+
+	portalA1, s := GenerateApplianceWithStats([]string{FunctionPortal}, "portal-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetPortalCount()
-	stats.SetPortalCount(*openapi.PtrFloat32(count + 1))
+	stats.SetPortalCount(count + 1)
 
-	connectorA1, s := GenerateApplianceWithStats([]string{FunctionConnector}, "connector-A1", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	connectorA1, s := GenerateApplianceWithStats([]string{FunctionConnector}, "connector-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetConnectorCount()
-	stats.SetConnectorCount(*openapi.PtrFloat32(count + 1))
+	stats.SetConnectorCount(count + 1)
 
-	logServer, s := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", v62.String(), statusHealthy, UpgradeStatusReady, siteA)
+	logServer, s := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetLogServerCount()
-	stats.SetLogServerCount(*openapi.PtrFloat32(count + 1))
+	stats.SetLogServerCount(count + 1)
 
 	type args struct {
 		appliances    []openapi.Appliance
@@ -106,6 +116,8 @@ func TestMakeUpgradePlan(t *testing.T) {
 					gatewayB2,
 					gatewayC1,
 					gatewayC2,
+					logforwarderA1,
+					logforwarderA2,
 					portalA1,
 					connectorA1,
 					logServer,
@@ -121,10 +133,12 @@ func TestMakeUpgradePlan(t *testing.T) {
 				PrimaryController: primary,
 				Controllers:       []openapi.Appliance{secondary},
 				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, portalA1},
-					{gatewayA2, gatewayB2, gatewayC2},
-					{connectorA1, gatewayA3, logServer},
+					{gatewayA1, gatewayB1, gatewayC1, logforwarderA1},
+					{gatewayA2, gatewayB2, gatewayC2, logforwarderA2},
+					{connectorA1, gatewayA3, logServer, portalA1},
 				},
+				adminHostname: hostname,
+				stats:         stats,
 			},
 		},
 		{
@@ -136,6 +150,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					gatewayB2,
 					gatewayA2,
 					logServer,
+					logforwarderA2,
 					gatewayB1,
 					connectorA1,
 					gatewayC1,
@@ -143,6 +158,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					gatewayA3,
 					gatewayC2,
 					portalA1,
+					logforwarderA1,
 				},
 				stats:         stats,
 				ctrlHostname:  hostname,
@@ -155,16 +171,18 @@ func TestMakeUpgradePlan(t *testing.T) {
 				PrimaryController: primary,
 				Controllers:       []openapi.Appliance{secondary},
 				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, portalA1},
-					{gatewayA2, gatewayB2, gatewayC2},
-					{connectorA1, gatewayA3, logServer},
+					{gatewayA1, gatewayB1, gatewayC1, logforwarderA1},
+					{gatewayA2, gatewayB2, gatewayC2, logforwarderA2},
+					{connectorA1, gatewayA3, logServer, portalA1},
 				},
+				adminHostname: hostname,
+				stats:         stats,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending, tt.args.targetVersion)
+			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

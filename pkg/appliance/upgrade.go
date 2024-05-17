@@ -1,6 +1,7 @@
 package appliance
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -26,18 +27,28 @@ const (
 	SkipReasonUnsupportedUpgradePath = "Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required."
 )
 
+var (
+	ErrNoApplianceStats = errors.New("failed to find appliance stats")
+)
+
 type UpgradePlan struct {
 	PrimaryController       openapi.Appliance
 	Controllers             []openapi.Appliance
 	LogForwardersAndServers []openapi.Appliance
 	Batches                 [][]openapi.Appliance
 	Skipping                []SkipUpgrade
+	lowDiskSpace            []*openapi.StatsAppliancesListAllOfData
+	stats                   openapi.StatsAppliancesList
+	adminHostname           string
 }
 
-func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliancesList, ctrlHostname string, filter map[string]map[string]string, orderBy []string, descending bool, targetVersion *version.Version) (*UpgradePlan, error) {
-	plan := UpgradePlan{}
+func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliancesList, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
+	plan := UpgradePlan{
+		adminHostname: adminHostname,
+		stats:         stats,
+	}
 
-	primary, err := FindPrimaryController(appliances, ctrlHostname, false)
+	primary, err := FindPrimaryController(appliances, plan.adminHostname, false)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +88,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	})
 
 	gatewaysGroupedBySite := map[string][]openapi.Appliance{}
+	logforwardersGroupedBySite := map[string][]openapi.Appliance{}
 	other := []openapi.Appliance{}
 
 	// LogForwarders and LogServers need to in their own group
@@ -85,7 +97,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 
 	var errs *multierror.Error
 	for _, a := range finalApplianceList {
-		stats, err := ApplianceStats(a, stats)
+		stats, err := ApplianceStats(a, plan.stats)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
@@ -103,6 +115,20 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 			})
 			continue
 		}
+		upgradeStatus := stats.GetUpgrade()
+		targetVersion, err := ParseVersionString(upgradeStatus.GetDetails())
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			plan.Skipping = append(plan.Skipping, SkipUpgrade{
+				Appliance: a,
+				Reason:    "failed to parse prepared appliance version",
+			})
+			continue
+		}
+		if stats.GetDisk() >= 75 {
+			plan.lowDiskSpace = append(plan.lowDiskSpace, stats)
+		}
+
 		if ctrl, ok := a.GetControllerOk(); ok {
 			if ctrl.GetEnabled() {
 				if a.GetId() == primary.GetId() {
@@ -133,15 +159,28 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 					continue
 				}
 			}
+		} else {
+			if lf, ok := a.GetLogForwarderOk(); ok {
+				if lf.GetEnabled() {
+					logforwardersGroupedBySite[a.GetSite()] = append(logforwardersGroupedBySite[a.GetSite()], a)
+					continue
+				}
+			}
 		}
 		other = append(other, a)
 	}
 
 	// Determine how many batches we will do
+	// using the amount of gateways and logforwarders per site
 	batchSize := 0
 	for _, g := range gatewaysGroupedBySite {
 		if len(g) > batchSize {
 			batchSize = len(g)
+		}
+	}
+	for _, lf := range logforwardersGroupedBySite {
+		if len(lf) > batchSize {
+			batchSize = len(lf)
 		}
 	}
 
@@ -149,6 +188,22 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	// Each batch should contain only one gateway per site
 	plan.Batches = make([][]openapi.Appliance, batchSize)
 	for _, appliances := range gatewaysGroupedBySite {
+		batchIndex := 0
+		for _, a := range appliances {
+			batch := plan.Batches[batchIndex]
+			batch = append(batch, a)
+			plan.Batches[batchIndex] = batch
+			if batchIndex == batchSize-1 {
+				batchIndex = 0
+				continue
+			}
+			batchIndex++
+		}
+	}
+
+	// Equally distribute logforwarders to batches
+	// Each batch should contain only one logforwarder per site
+	for _, appliances := range logforwardersGroupedBySite {
 		batchIndex := 0
 		for _, a := range appliances {
 			batch := plan.Batches[batchIndex]
@@ -185,9 +240,11 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	}
 
 	// Sort the output in the upgrade plan
-	sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
-		return plan.LogForwardersAndServers[i].GetName() < plan.LogForwardersAndServers[j].GetName()
-	})
+	if len(plan.LogForwardersAndServers) > 0 {
+		sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
+			return plan.LogForwardersAndServers[i].GetName() < plan.LogForwardersAndServers[j].GetName()
+		})
+	}
 	for i := 0; i < len(plan.Batches); i++ {
 		sort.SliceStable(plan.Batches[i], func(ix, jx int) bool {
 			return plan.Batches[i][ix].GetName() < plan.Batches[i][jx].GetName()
@@ -203,5 +260,5 @@ func ApplianceStats(a openapi.Appliance, stats openapi.StatsAppliancesList) (*op
 			return &s, nil
 		}
 	}
-	return nil, fmt.Errorf("failed to find appliance stats")
+	return nil, ErrNoApplianceStats
 }
