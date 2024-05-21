@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"bytes"
+	"errors"
 	"reflect"
 	"runtime"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrintDiskSpaceWarningMessage(t *testing.T) {
@@ -580,6 +582,107 @@ func TestUpgradeCheckFunctions(t *testing.T) {
 				funcName := runtime.FuncForPC(reflect.ValueOf(tt.checkFunc).Pointer()).Name()
 				t.Errorf("%v() = %v, want %v", funcName, got, tt.want)
 			}
+		})
+	}
+}
+
+func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
+	// unprepared
+	c1, s1 := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.test", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+	c2, s2 := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+	c3, s3 := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+
+	// prepared
+	c4, s4 := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
+	c5, s5 := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
+	c6, s6 := GenerateApplianceWithStats([]string{FunctionController}, "controller6", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
+
+	// unprepared max version
+	c7, s7 := GenerateApplianceWithStats([]string{FunctionController}, "controller7", "", "6.3.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+
+	// offline
+	c8, s8 := GenerateApplianceWithStats([]string{FunctionController}, "controller8", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, false, "default")
+
+	type inData struct {
+		appliance openapi.Appliance
+		stat      openapi.StatsAppliancesListAllOfData
+	}
+	tests := []struct {
+		name      string
+		in        []inData
+		want      []openapi.Appliance
+		wantErr   bool
+		wantError error
+	}{
+		{
+			name: "none prepared",
+			in: []inData{
+				{c1, s1},
+				{c2, s2},
+				{c3, s3},
+			},
+		},
+		{
+			name: "all prepared",
+			in: []inData{
+				{c4, s4},
+				{c5, s5},
+				{c6, s6},
+			},
+		},
+		{
+			name: "mix unprepared and prepared",
+			in: []inData{
+				{c1, s1},
+				{c2, s2},
+				{c4, s4},
+				{c5, s5},
+			},
+			wantErr:   true,
+			want:      []openapi.Appliance{c1, c2},
+			wantError: ErrNeedsAllControllerUpgrade,
+		},
+		{
+			name: "mix with unprepared max version",
+			in: []inData{
+				{c1, s1},
+				{c4, s4},
+				{c7, s7},
+			},
+			wantErr:   true,
+			want:      []openapi.Appliance{c1},
+			wantError: ErrNeedsAllControllerUpgrade,
+		},
+		{
+			name: "offline controller",
+			in: []inData{
+				{c4, s4},
+				{c8, s8},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			count := float32(len(tt.in))
+			stats := openapi.StatsAppliancesList{
+				ControllerCount: openapi.PtrFloat32(count),
+				ApplianceCount:  openapi.PtrFloat32(count),
+			}
+			argAppliances := make([]openapi.Appliance, 0, len(tt.in))
+			for _, d := range tt.in {
+				stats.Data = append(stats.Data, d.stat)
+				argAppliances = append(argAppliances, d.appliance)
+			}
+			got, err := CheckNeedsMultiControllerUpgrade(stats, argAppliances)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CheckNeedsMultiControllerUpgrade() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if (err != nil) == tt.wantErr && !errors.Is(err, tt.wantError) {
+				t.Errorf("CheckNeedsMultiControllerUpgrade() error = %v, wantError %v", err, tt.wantError)
+				return
+			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
