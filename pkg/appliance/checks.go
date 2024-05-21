@@ -3,14 +3,17 @@ package appliance
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 )
@@ -292,6 +295,102 @@ func controllerCount(appliances []openapi.Appliance) int {
 	return i
 }
 
+var ErrNeedsAllControllerUpgrade = errors.New("all controllers need to be prepared when doing a major or minor version upgrade.")
+
+func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+	var (
+		errs                   *multierror.Error
+		preparedControllers    []openapi.Appliance
+		unpreparedControllers  []openapi.Appliance
+		alreadySameVersion     []openapi.Appliance
+		isMajorOrMinor         bool
+		offlineControllers     int
+		totalControllers       = int(stats.GetControllerCount())
+		highestPreparedVersion = version.Must(version.NewVersion("0.0.0"))
+		highestCurrentVersion  = version.Must(version.NewVersion("0.0.0"))
+	)
+
+	for _, as := range stats.GetData() {
+		for _, app := range appliances {
+			if as.GetId() != app.GetId() {
+				continue
+			}
+			if online, ok := as.GetOnlineOk(); ok {
+				if !*online {
+					offlineControllers++
+					continue
+				}
+			}
+			if ctrl, ok := app.GetControllerOk(); ok && ctrl.GetEnabled() {
+				current, err := ParseVersionString(as.GetVersion())
+				if err != nil {
+					errs = multierror.Append(errs, err)
+					continue
+				}
+				if res, _ := CompareVersionsAndBuildNumber(highestCurrentVersion, current); res > 0 {
+					highestCurrentVersion = current
+				}
+				us := as.GetUpgrade()
+				if us.GetStatus() == UpgradeStatusReady {
+					preparedControllers = append(preparedControllers, app)
+					targetVersion, err := ParseVersionString(us.GetDetails())
+					if err != nil {
+						errs = multierror.Append(errs, err)
+						continue
+					}
+					if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion); res > 0 {
+						highestPreparedVersion = targetVersion
+					}
+					isMajorOrMinor = IsMajorUpgrade(current, targetVersion) || IsMinorUpgrade(current, targetVersion)
+				} else {
+					unpreparedControllers = append(unpreparedControllers, app)
+				}
+			}
+		}
+	}
+
+	// Now we need to check if the unprepared controllers
+	// are already running the max prepared version
+	unpreparedClone := slices.Clone(unpreparedControllers)
+	for i, a := range unpreparedClone {
+		for _, s := range stats.GetData() {
+			if a.GetId() != s.GetId() {
+				continue
+			}
+
+			currentVersion, err := ParseVersionString(s.GetVersion())
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, currentVersion); res == 0 {
+				alreadySameVersion = append(alreadySameVersion, a)
+				unpreparedControllers = append(unpreparedControllers[:i], unpreparedControllers[i+1:]...)
+			}
+		}
+	}
+
+	// if something went wrong during version identification
+	// just return the errors
+	if errs != nil {
+		return nil, errs.ErrorOrNil()
+	}
+
+	// If this is true, no need to check anymore
+	// we ignore offline controllers at this point
+	if (totalControllers - offlineControllers) == (len(preparedControllers) + len(alreadySameVersion)) {
+		return nil, nil
+	}
+
+	// If all controllers need upgrading, but some are unprepared
+	// we return a list of the controllers that need to be prapared along with an error
+	if isMajorOrMinor {
+		return unpreparedControllers, ErrNeedsAllControllerUpgrade
+	}
+
+	return nil, nil
+}
+
 func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, initialStatData []openapi.StatsAppliancesListAllOfData, all, preparing []openapi.Appliance, majorOrMinor bool) (bool, error) {
 	controllerCount := controllerCount(all)
 	controllerPrepareCount := 0
@@ -331,8 +430,4 @@ func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult,
 		}
 	}
 	return (controllerCount != controllerPrepareCount+alreadySameVersion) && majorOrMinor, nil
-}
-
-func SpecificVersionChecks(current, future *version.Version) error {
-	return nil
 }
