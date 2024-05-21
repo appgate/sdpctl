@@ -166,18 +166,32 @@ func switchPartitionRunE(opts *options) error {
 		go t.Watch(appliancepkg.StatusNotBusy, []string{"error"})
 	}
 
+	log.Info("switching partition")
 	err = backoff.Retry(func() error {
+		log.Debug("calling switch-partition on appliance")
 		return api.ApplianceSwitchPartition(ctx, opts.id.String())
 	}, backoff.NewExponentialBackOff())
 	if err != nil {
+		if t != nil {
+			t.Update("error")
+			t.Fail(err.Error())
+		}
+		log.WithError(err).Error("partition switch failed")
 		return fmt.Errorf("partition switch failed on appliance %s: %v", opts.id, err)
 	}
 
+	log.Info("polling for appliance state")
 	if err := api.ApplianceStats.WaitForApplianceState(ctx, *appliance, appliancepkg.StatReady, t); err != nil {
 		if t != nil {
+			t.Update("error")
 			t.Fail(err.Error())
 		}
+		log.WithError(err).Error("failed to get appliance state")
 		return fmt.Errorf("failed to get appliance stats: %w", err)
+	}
+
+	if err := api.ApplianceStats.WaitForApplianceStatus(ctx, *appliance, appliancepkg.StatusNotBusy, t); err != nil {
+		return err
 	}
 
 	if p != nil {
