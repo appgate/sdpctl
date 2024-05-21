@@ -342,7 +342,7 @@ func (a *Appliance) ApplianceSwitchPartition(ctx context.Context, id string) err
 	if err != nil {
 		return err
 	}
-	if response.StatusCode != http.StatusAccepted {
+	if response.StatusCode >= 400 {
 		return api.HTTPErrorResponse(response, fmt.Errorf("unexpected response: %s", response.Status))
 	}
 	return nil
