@@ -190,6 +190,10 @@ func switchPartitionRunE(opts *options) error {
 		return fmt.Errorf("failed to get appliance stats: %w", err)
 	}
 
+	if err := api.ApplianceStats.WaitForApplianceStatus(ctx, *appliance, appliancepkg.StatusNotBusy, t); err != nil {
+		return err
+	}
+
 	if p != nil {
 		p.Wait()
 	}
