@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -593,13 +594,13 @@ Upgrade will be completed in steps:
 					Appliance: openapi.Appliance{
 						Name: "secondary-controller",
 					},
-					Reason: "appliance is offline",
+					Reason: appliancepkg.ErrSkipReasonOffline,
 				},
 				{
 					Appliance: openapi.Appliance{
 						Name: "additional-controller",
 					},
-					Reason: "appliance is not prepared for upgrade",
+					Reason: appliancepkg.ErrSkipReasonNotPrepared,
 				},
 			},
 			backup: []openapi.Appliance{
@@ -668,13 +669,13 @@ Appliances that will be skipped:
 					Appliance: openapi.Appliance{
 						Name: "secondary-controller",
 					},
-					Reason: "skip1",
+					Reason: errors.New("skip1"),
 				},
 				{
 					Appliance: openapi.Appliance{
 						Name: "additional-controller",
 					},
-					Reason: "skip2",
+					Reason: errors.New("skip2"),
 				},
 			},
 			backup: []openapi.Appliance{

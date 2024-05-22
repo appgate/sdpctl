@@ -710,14 +710,14 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 							Id:   openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),
 							Name: "controller3",
 						},
-						Reason: "appliance is offline",
+						Reason: appliancepkg.ErrSkipReasonOffline,
 					},
 					{
 						Appliance: openapi.Appliance{
 							Id:   openapi.PtrString("57a06ae4-8204-4780-a7c2-a9cdf03e5a0f"),
 							Name: "gateway2",
 						},
-						Reason: "version is already greater or equal to prepare version",
+						Reason: appliancepkg.ErrSkipReasonAlreadySameVersion,
 					},
 				},
 			},
@@ -738,7 +738,7 @@ The following appliances will be skipped:
   Appliance      Online    Current version    Reason
   ---------      ------    ---------------    ------
   controller3    ⨯         5.5.7+28767        appliance is offline
-  gateway2       ✓         6.0.0+29426        version is already greater or equal to prepare version
+  gateway2       ✓         6.0.0+29426        appliance is already running a version higher or equal to the prepare version
 
 `,
 		},

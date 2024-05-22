@@ -230,10 +230,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return fmt.Errorf("Could not complete the upgrade operation %w", err)
 	}
 	for _, o := range offline {
-		log.WithField("appliance", o.GetName()).Info(appliancepkg.SkipReasonOffline)
+		log.WithField("appliance", o.GetName()).Info(appliancepkg.ErrSkipReasonOffline)
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: o,
-			Reason:    appliancepkg.SkipReasonOffline,
+			Reason:    appliancepkg.ErrSkipReasonOffline,
 		})
 	}
 	appliances, filtered, err := appliancepkg.FilterAppliances(online, filter, orderBy, descending)
@@ -241,10 +241,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		return err
 	}
 	for _, f := range filtered {
-		log.WithField("appliance", f.GetName()).Info(appliancepkg.SkipReasonFiltered)
+		log.WithField("appliance", f.GetName()).Info(appliancepkg.ErrSkipReasonFiltered)
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: f,
-			Reason:    appliancepkg.SkipReasonFiltered,
+			Reason:    appliancepkg.ErrSkipReasonFiltered,
 		})
 	}
 
@@ -273,10 +273,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		log.WithContext(ctx).WithError(err).Error("Failed to determine upgrade version")
 	}
 	if primaryControllerUpgradeStatus.Status != appliancepkg.UpgradeStatusReady {
-		log.WithField("appliance", primaryController.GetName()).Info(appliancepkg.SkipReasonNotPrepared)
+		log.WithField("appliance", primaryController.GetName()).Info(appliancepkg.ErrSkipReasonNotPrepared)
 		skipping = append(skipping, appliancepkg.SkipUpgrade{
 			Appliance: *primaryController,
-			Reason:    appliancepkg.SkipReasonNotPrepared,
+			Reason:    appliancepkg.ErrSkipReasonNotPrepared,
 		})
 	}
 
@@ -295,7 +295,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if id == appliance.GetId() {
 					skipping = append(skipping, appliancepkg.SkipUpgrade{
 						Appliance: appliance,
-						Reason:    appliancepkg.SkipReasonNotPrepared,
+						Reason:    appliancepkg.ErrSkipReasonNotPrepared,
 					})
 					appliances = append(appliances[:i], appliances[i+1:]...)
 				}
@@ -936,7 +936,8 @@ Appliances that will be skipped:{{ range .Skipped }}
 		TableString string
 	}
 	type skipStruct struct {
-		Name, Reason string
+		Name   string
+		Reason error
 	}
 
 	type tplStub struct {
