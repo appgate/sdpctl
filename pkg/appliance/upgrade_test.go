@@ -18,84 +18,95 @@ func TestMakeUpgradePlan(t *testing.T) {
 	v63, _ := version.NewVersion("6.3")
 
 	stats := *openapi.NewStatsAppliancesListWithDefaults()
-	primary, s := GenerateApplianceWithStats([]string{FunctionController}, "primary-controller", hostname, v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	primary, s := GenerateApplianceWithStats([]string{FunctionController}, "primary-controller", hostname, v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count := stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
 
-	secondary, s := GenerateApplianceWithStats([]string{FunctionController}, "secondary-controller", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	secondary, s := GenerateApplianceWithStats([]string{FunctionController}, "secondary-controller", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
 
-	gatewayA1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	// not prepared controller
+	controller3, s := GenerateApplianceWithStats([]string{FunctionController}, "controller-3", "", v62.String(), "", statusHealthy, UpgradeStatusIdle, true, siteA)
+	stats.Data = append(stats.Data, s)
+	count = stats.GetControllerCount()
+	stats.SetControllerCount(count + 1)
+
+	// offline controller
+	controller4, s := GenerateApplianceWithStats([]string{FunctionController}, "controller-4", "", v62.String(), "", statusOffline, UpgradeStatusIdle, false, siteA)
+	stats.Data = append(stats.Data, s)
+	count = stats.GetControllerCount()
+	stats.SetControllerCount(count + 1)
+
+	gatewayA1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	gatewayA2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	gatewayA2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	gatewayA3, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A3", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	gatewayA3, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A3", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	gatewayB1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteB)
+	gatewayB1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteB)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	gatewayB2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteB)
+	gatewayB2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteB)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	gatewayC1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteC)
+	gatewayC1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteC)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	gatewayC2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteC)
+	gatewayC2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteC)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
 
-	logforwarderA1, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	logforwarderA1, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetLogForwarderCount()
 	stats.SetLogForwarderCount(count + 1)
 
-	logforwarderA2, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	logforwarderA2, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetLogForwarderCount()
 	stats.SetLogForwarderCount(count + 1)
 
-	portalA1, s := GenerateApplianceWithStats([]string{FunctionPortal}, "portal-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	portalA1, s := GenerateApplianceWithStats([]string{FunctionPortal}, "portal-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetPortalCount()
 	stats.SetPortalCount(count + 1)
 
-	connectorA1, s := GenerateApplianceWithStats([]string{FunctionConnector}, "connector-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	connectorA1, s := GenerateApplianceWithStats([]string{FunctionConnector}, "connector-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetConnectorCount()
 	stats.SetConnectorCount(count + 1)
 
-	logServer, s := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, siteA)
+	logServer, s := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
 	count = stats.GetLogServerCount()
 	stats.SetLogServerCount(count + 1)
 
 	type args struct {
-		appliances    []openapi.Appliance
-		stats         openapi.StatsAppliancesList
-		ctrlHostname  string
-		filter        map[string]map[string]string
-		orderBy       []string
-		descending    bool
-		targetVersion *version.Version
+		appliances   []openapi.Appliance
+		stats        openapi.StatsAppliancesList
+		ctrlHostname string
+		filter       map[string]map[string]string
+		orderBy      []string
+		descending   bool
 	}
 	tests := []struct {
 		name    string
@@ -122,12 +133,11 @@ func TestMakeUpgradePlan(t *testing.T) {
 					connectorA1,
 					logServer,
 				},
-				stats:         stats,
-				ctrlHostname:  hostname,
-				filter:        DefaultCommandFilter,
-				orderBy:       nil,
-				descending:    false,
-				targetVersion: v63,
+				stats:        stats,
+				ctrlHostname: hostname,
+				filter:       DefaultCommandFilter,
+				orderBy:      nil,
+				descending:   false,
 			},
 			want: &UpgradePlan{
 				PrimaryController: primary,
@@ -160,12 +170,11 @@ func TestMakeUpgradePlan(t *testing.T) {
 					portalA1,
 					logforwarderA1,
 				},
-				stats:         stats,
-				ctrlHostname:  hostname,
-				filter:        DefaultCommandFilter,
-				orderBy:       nil,
-				descending:    false,
-				targetVersion: v63,
+				stats:        stats,
+				ctrlHostname: hostname,
+				filter:       DefaultCommandFilter,
+				orderBy:      nil,
+				descending:   false,
 			},
 			want: &UpgradePlan{
 				PrimaryController: primary,
@@ -179,14 +188,68 @@ func TestMakeUpgradePlan(t *testing.T) {
 				stats:         stats,
 			},
 		},
+		{
+			name: "test multi controller upgrade error",
+			args: args{
+				appliances: []openapi.Appliance{
+					primary,
+					controller3,
+					gatewayA1,
+					gatewayB2,
+					gatewayA2,
+					logServer,
+					logforwarderA2,
+					gatewayB1,
+					connectorA1,
+					gatewayC1,
+					secondary,
+					gatewayA3,
+					gatewayC2,
+					portalA1,
+					logforwarderA1,
+				},
+				stats:        stats,
+				ctrlHostname: hostname,
+				filter:       DefaultCommandFilter,
+				orderBy:      nil,
+				descending:   false,
+			},
+			wantErr: true,
+		},
+		{
+			name: "test offline controller",
+			args: args{
+				appliances: []openapi.Appliance{
+					primary,
+					controller4,
+					gatewayA1,
+					gatewayB2,
+					gatewayA2,
+					logServer,
+					logforwarderA2,
+					gatewayB1,
+					connectorA1,
+					gatewayC1,
+					secondary,
+					gatewayA3,
+					gatewayC2,
+					portalA1,
+					logforwarderA1,
+				},
+				stats:        stats,
+				ctrlHostname: hostname,
+				filter:       DefaultCommandFilter,
+				orderBy:      nil,
+				descending:   false,
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if tt.wantErr {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

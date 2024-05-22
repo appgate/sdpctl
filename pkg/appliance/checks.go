@@ -304,7 +304,7 @@ func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, applian
 		unpreparedControllers  []openapi.Appliance
 		alreadySameVersion     []openapi.Appliance
 		isMajorOrMinor         bool
-		offlineControllers     int
+		offlineControllers     []openapi.Appliance
 		totalControllers       = int(stats.GetControllerCount())
 		highestPreparedVersion = version.Must(version.NewVersion("0.0.0"))
 		highestCurrentVersion  = version.Must(version.NewVersion("0.0.0"))
@@ -317,7 +317,7 @@ func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, applian
 			}
 			if online, ok := as.GetOnlineOk(); ok {
 				if !*online {
-					offlineControllers++
+					offlineControllers = append(offlineControllers, app)
 					continue
 				}
 			}
@@ -378,13 +378,13 @@ func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, applian
 
 	// If this is true, no need to check anymore
 	// we ignore offline controllers at this point
-	if (totalControllers - offlineControllers) == (len(preparedControllers) + len(alreadySameVersion)) {
+	if (totalControllers - len(offlineControllers)) == (len(preparedControllers) + len(alreadySameVersion)) {
 		return nil, nil
 	}
 
 	// If all controllers need upgrading, but some are unprepared
 	// we return a list of the controllers that need to be prapared along with an error
-	if isMajorOrMinor {
+	if isMajorOrMinor && len(unpreparedControllers) > 0 {
 		return unpreparedControllers, ErrNeedsAllControllerUpgrade
 	}
 
