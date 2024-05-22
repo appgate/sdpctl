@@ -11,7 +11,7 @@ import (
 )
 
 type SkipUpgrade struct {
-	Reason    string
+	Reason    error
 	Appliance openapi.Appliance
 }
 
@@ -19,16 +19,15 @@ func (su SkipUpgrade) Error() string {
 	return fmt.Sprintf("%s: %s", su.Appliance.GetName(), su.Reason)
 }
 
-const (
-	SkipReasonNotPrepared            = "appliance is not prepared for upgrade"
-	SkipReasonOffline                = "appliance is offline"
-	SkipReasonFiltered               = "filtered using the '--include' and/or '--exclude' flag"
-	SkipReasonAlreadyPrepared        = "appliance is already prepared for upgrade with a higher or equal version"
-	SkipReasonUnsupportedUpgradePath = "Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required."
-)
-
 var (
-	ErrNoApplianceStats = errors.New("failed to find appliance stats")
+	ErrSkipReasonNotPrepared            = errors.New("appliance is not prepared for upgrade")
+	ErrSkipReasonOffline                = errors.New("appliance is offline")
+	ErrSkipReasonFiltered               = errors.New("filtered using the '--include' and/or '--exclude' flag")
+	ErrSkipReasonAlreadyPrepared        = errors.New("appliance is already prepared for upgrade with a higher or equal version")
+	ErrSkipReasonUnsupportedUpgradePath = errors.New("Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required.")
+	ErrSkipReasonAlreadySameVersion     = errors.New("appliance is already running a version higher or equal to the prepare version")
+	ErrNoApplianceStats                 = errors.New("failed to find appliance stats")
+	ErrVersionParse                     = errors.New("failed to parse current appliance version")
 )
 
 type UpgradePlan struct {
@@ -73,7 +72,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	for _, o := range offline {
 		plan.Skipping = append(plan.Skipping, SkipUpgrade{
 			Appliance: o,
-			Reason:    SkipReasonOffline,
+			Reason:    ErrSkipReasonOffline,
 		})
 	}
 
@@ -84,7 +83,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	for _, f := range filtered {
 		plan.Skipping = append(plan.Skipping, SkipUpgrade{
 			Appliance: f,
-			Reason:    SkipReasonFiltered,
+			Reason:    ErrSkipReasonFiltered,
 		})
 	}
 
@@ -103,12 +102,13 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 
 	var errs *multierror.Error
 	for _, a := range finalApplianceList {
+		// Get current version and stats
 		stats, err := ApplianceStats(a, plan.stats)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
-				Reason:    "failed to get appliance stats",
+				Reason:    ErrNoApplianceStats,
 			})
 			continue
 		}
@@ -117,15 +117,22 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 			errs = multierror.Append(errs, err)
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
-				Reason:    "failed to parse current appliance version",
+				Reason:    ErrVersionParse,
 			})
 			continue
 		}
+
+		// disk space check
+		if stats.GetDisk() >= 75 {
+			plan.lowDiskSpace = append(plan.lowDiskSpace, stats)
+		}
+
+		// Get upgrade status and target version
 		upgradeStatus := stats.GetUpgrade()
 		if status, ok := upgradeStatus.GetStatusOk(); ok && *status != UpgradeStatusReady {
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
-				Reason:    SkipReasonNotPrepared,
+				Reason:    ErrSkipReasonNotPrepared,
 			})
 			continue
 		}
@@ -134,12 +141,9 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 			errs = multierror.Append(errs, err)
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
-				Reason:    "failed to parse prepared appliance version",
+				Reason:    ErrVersionParse,
 			})
 			continue
-		}
-		if stats.GetDisk() >= 75 {
-			plan.lowDiskSpace = append(plan.lowDiskSpace, stats)
 		}
 
 		if ctrl, ok := a.GetControllerOk(); ok {

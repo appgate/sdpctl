@@ -139,7 +139,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					log.Warn("failed to parse version from stats")
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "failed to parse version from stats",
+						Reason:    ErrVersionParse,
 					})
 					continue
 				}
@@ -148,14 +148,19 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					log.Warn("failed to compare versions")
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "failed to compare versions",
+						Reason:    errors.New("failed to compare versions"),
 					})
 					continue
 				}
 				if res < 1 {
+					us := stat.GetUpgrade()
+					reason := ErrSkipReasonAlreadyPrepared
+					if us.GetStatus() != UpgradeStatusReady {
+						reason = ErrSkipReasonAlreadySameVersion
+					}
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "appliance version is already greater or equal to prepare version",
+						Reason:    reason,
 					})
 					continue
 				}
@@ -166,7 +171,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 				if statV.Equal(v600) && v.GreaterThanOrEqual(v62) {
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    SkipReasonUnsupportedUpgradePath,
+						Reason:    ErrSkipReasonUnsupportedUpgradePath,
 					})
 					continue
 				}

@@ -286,7 +286,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 	online, offline, _ := appliancepkg.FilterAvailable(Allappliances, initialStats.GetData())
 	for _, a := range offline {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
-			Reason:    appliancepkg.SkipReasonOffline,
+			Reason:    appliancepkg.ErrSkipReasonOffline,
 			Appliance: a,
 		})
 	}
@@ -297,7 +297,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 	for _, f := range filtered {
 		skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 			Appliance: f,
-			Reason:    appliancepkg.SkipReasonFiltered,
+			Reason:    appliancepkg.ErrSkipReasonFiltered,
 		})
 	}
 
@@ -347,7 +347,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 			if res, err := appliancepkg.CompareVersionsAndBuildNumber(opts.targetVersion, prepareVersion); err == nil && res >= 0 {
 				skipAppliances = append(skipAppliances, appliancepkg.SkipUpgrade{
 					Appliance: app,
-					Reason:    appliancepkg.SkipReasonAlreadyPrepared,
+					Reason:    appliancepkg.ErrSkipReasonAlreadyPrepared,
 				})
 				continue
 			}
