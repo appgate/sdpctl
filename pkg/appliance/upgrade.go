@@ -1,11 +1,16 @@
 package appliance
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
+	"strings"
+	"text/template"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 )
@@ -31,7 +36,7 @@ var (
 )
 
 type UpgradePlan struct {
-	PrimaryController       openapi.Appliance
+	PrimaryController       *openapi.Appliance
 	Controllers             []openapi.Appliance
 	LogForwardersAndServers []openapi.Appliance
 	Batches                 [][]openapi.Appliance
@@ -149,7 +154,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 		if ctrl, ok := a.GetControllerOk(); ok {
 			if ctrl.GetEnabled() {
 				if a.GetId() == primary.GetId() {
-					plan.PrimaryController = a
+					plan.PrimaryController = &a
 				} else {
 					plan.Controllers = append(plan.Controllers, a)
 				}
@@ -271,6 +276,106 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	return &plan, nil
 }
 
+func (up *UpgradePlan) PrintSummary(out io.Writer) error {
+	type upgradeStep struct {
+		Description, Table string
+	}
+	type stubStruct struct {
+		Steps   []upgradeStep
+		Skipped []SkipUpgrade
+	}
+
+	stub := stubStruct{
+		Steps: []upgradeStep{},
+	}
+	if up.PrimaryController != nil {
+		currentVersion, targetVersion := applianceVersions(*up.PrimaryController, up.stats)
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		t.AddHeader("Appliance", "Current version", "Prepared version")
+		t.AddLine(up.PrimaryController.GetName(), currentVersion, targetVersion)
+		t.Print()
+		stub.Steps = append(stub.Steps, upgradeStep{
+			Description: strings.Join(primaryControllerDescription, descriptionIndent),
+			Table:       util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+	if len(up.Controllers) > 0 {
+		step := upgradeStep{
+			Description: strings.Join(additionalControllerDescription, descriptionIndent),
+		}
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		t.AddHeader("Appliance", "Current version", "Prepared version")
+		for _, ctrl := range up.Controllers {
+			current, target := applianceVersions(ctrl, up.stats)
+			t.AddLine(ctrl.GetName(), current, target)
+		}
+		t.Print()
+		step.Table = util.PrefixStringLines(tb.String(), " ", 4)
+		stub.Steps = append(stub.Steps, step)
+	}
+	if len(up.LogForwardersAndServers) > 0 {
+		step := upgradeStep{
+			Description: strings.Join(logForwaredersAndServersDescription, descriptionIndent),
+		}
+		tb := &bytes.Buffer{}
+		t := util.NewPrinter(tb, 4)
+		for _, lfls := range up.LogForwardersAndServers {
+			current, target := applianceVersions(lfls, up.stats)
+			s := fmt.Sprintf("- %s: %s -> %s", lfls.GetName(), current, target)
+			t.AddLine(s)
+		}
+		t.Print()
+		step.Table = util.PrefixStringLines(tb.String(), " ", 4)
+		stub.Steps = append(stub.Steps, step)
+	}
+	if len(up.Batches) > 0 {
+		tb := &bytes.Buffer{}
+		for i, c := range up.Batches {
+			fmt.Fprintf(tb, "Batch #%d:\n\n", i+1)
+			t := util.NewPrinter(tb, 4)
+			t.AddHeader("Appliance", "Current version", "Prepared version")
+			for _, a := range c {
+				current, target := applianceVersions(a, up.stats)
+				// s := fmt.Sprintf("- %s: %s -> %s", a.GetName(), current, target)
+				t.AddLine(a.GetName(), current.String(), target.String())
+			}
+			t.AddLine("")
+			t.Print()
+		}
+		stub.Steps = append(stub.Steps, upgradeStep{
+			Description: strings.Join(additionalAppliancesDescription, descriptionIndent),
+			Table:       util.PrefixStringLines(tb.String(), " ", 4),
+		})
+	}
+
+	if len(up.Skipping) > 0 {
+		stub.Skipped = up.Skipping
+		sort.Slice(stub.Skipped, func(i, j int) bool {
+			return stub.Skipped[i].Appliance.GetName() < stub.Skipped[j].Appliance.GetName()
+		})
+	}
+
+	t := template.Must(template.New("").Funcs(util.TPLFuncMap).Parse(upgradeSummaryTpl))
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, stub); err != nil {
+		return err
+	}
+
+	_, err := fmt.Fprint(out, tpl.String())
+
+	return err
+}
+
+func applianceVersions(a openapi.Appliance, s openapi.StatsAppliancesList) (currentVersion *version.Version, targetVersion *version.Version) {
+	stats, _ := ApplianceStats(a, s)
+	currentVersion, _ = ParseVersionString(stats.GetVersion())
+	us := stats.GetUpgrade()
+	targetVersion, _ = ParseVersionString(us.GetDetails())
+	return
+}
+
 func ApplianceStats(a openapi.Appliance, stats openapi.StatsAppliancesList) (*openapi.StatsAppliancesListAllOfData, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == a.GetId() {
@@ -279,3 +384,40 @@ func ApplianceStats(a openapi.Appliance, stats openapi.StatsAppliancesList) (*op
 	}
 	return nil, ErrNoApplianceStats
 }
+
+var upgradeSummaryTpl string = `
+UPGRADE COMPLETE SUMMARY
+
+Upgrade will be completed in steps:
+{{ range $i, $s := .Steps }}
+ {{ sum $i 1 }}. {{ $s.Description }}
+
+{{ $s.Table }}
+{{ end }}{{ if .Skipped }}
+Appliances that will be skipped:{{ range .Skipped }}
+  - {{ .Name }}: {{ .Reason }}
+{{ end }}{{ end }}`
+
+var (
+	descriptionIndent            = "\n    "
+	primaryControllerDescription = []string{
+		"The primary Controller will be upgraded",
+		"This will result in the API being unreachable while completing the primary Controller upgrade",
+	}
+	additionalControllerDescription = []string{
+		"Additional Controllers will be upgraded in serial",
+		"In some cases, the Controller function on additional Controllers will need to be disabled",
+		"before proceeding with the upgrade. The disabled Controllers will then be re-enabled once",
+		"the upgrade is completed",
+		"This step will also reboot the upgraded Controllers for the upgrade to take effect",
+	}
+	logForwaredersAndServersDescription = []string{
+		"Appliances with LogForwarder/LogServer functions are upgraded",
+		"Other appliances need a connection to to these appliances for logging",
+	}
+	additionalAppliancesDescription = []string{
+		"Additional appliances will be upgraded in parallell batches. The additional appliances will be split into",
+		"batches to keep the Collective as available as possible during the upgrade process",
+		"Some of the additional appliances may need to be rebooted for the upgrade to take effect",
+	}
+)
