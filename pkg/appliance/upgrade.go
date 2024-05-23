@@ -10,7 +10,9 @@ import (
 	"text/template"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/cheynewallace/tabby"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 )
@@ -41,6 +43,7 @@ type UpgradePlan struct {
 	LogForwardersAndServers []openapi.Appliance
 	Batches                 [][]openapi.Appliance
 	Skipping                []SkipUpgrade
+	backupAppliances        []string
 	lowDiskSpace            []*openapi.StatsAppliancesListAllOfData
 	stats                   openapi.StatsAppliancesList
 	adminHostname           string
@@ -276,6 +279,10 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	return &plan, nil
 }
 
+func (up *UpgradePlan) AddBackups(applianceIds []string) {
+	up.backupAppliances = applianceIds
+}
+
 func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 	type upgradeStep struct {
 		Description, Table string
@@ -285,15 +292,25 @@ func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 		Skipped []SkipUpgrade
 	}
 
+	shouldBackup := func(id string) string {
+		res := tui.No
+		if util.InSlice(id, up.backupAppliances) {
+			res = tui.Yes
+		}
+		return res
+	}
 	stub := stubStruct{
 		Steps: []upgradeStep{},
+	}
+	tableHeaders := func(t *tabby.Tabby) {
+		t.AddHeader("Appliance", "Current version", "Prepared version", "Backup")
 	}
 	if up.PrimaryController != nil {
 		currentVersion, targetVersion := applianceVersions(*up.PrimaryController, up.stats)
 		tb := &bytes.Buffer{}
 		t := util.NewPrinter(tb, 4)
-		t.AddHeader("Appliance", "Current version", "Prepared version")
-		t.AddLine(up.PrimaryController.GetName(), currentVersion, targetVersion)
+		tableHeaders(t)
+		t.AddLine(up.PrimaryController.GetName(), currentVersion, targetVersion, shouldBackup(up.PrimaryController.GetId()))
 		t.Print()
 		stub.Steps = append(stub.Steps, upgradeStep{
 			Description: strings.Join(primaryControllerDescription, descriptionIndent),
@@ -306,10 +323,10 @@ func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 		}
 		tb := &bytes.Buffer{}
 		t := util.NewPrinter(tb, 4)
-		t.AddHeader("Appliance", "Current version", "Prepared version")
+		tableHeaders(t)
 		for _, ctrl := range up.Controllers {
 			current, target := applianceVersions(ctrl, up.stats)
-			t.AddLine(ctrl.GetName(), current, target)
+			t.AddLine(ctrl.GetName(), current, target, shouldBackup(ctrl.GetId()))
 		}
 		t.Print()
 		step.Table = util.PrefixStringLines(tb.String(), " ", 4)
@@ -321,10 +338,10 @@ func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 		}
 		tb := &bytes.Buffer{}
 		t := util.NewPrinter(tb, 4)
+		tableHeaders(t)
 		for _, lfls := range up.LogForwardersAndServers {
 			current, target := applianceVersions(lfls, up.stats)
-			s := fmt.Sprintf("- %s: %s -> %s", lfls.GetName(), current, target)
-			t.AddLine(s)
+			t.AddLine(lfls.GetName(), current, target, shouldBackup(lfls.GetId()))
 		}
 		t.Print()
 		step.Table = util.PrefixStringLines(tb.String(), " ", 4)
@@ -335,11 +352,11 @@ func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 		for i, c := range up.Batches {
 			fmt.Fprintf(tb, "Batch #%d:\n\n", i+1)
 			t := util.NewPrinter(tb, 4)
-			t.AddHeader("Appliance", "Current version", "Prepared version")
+			tableHeaders(t)
 			for _, a := range c {
 				current, target := applianceVersions(a, up.stats)
 				// s := fmt.Sprintf("- %s: %s -> %s", a.GetName(), current, target)
-				t.AddLine(a.GetName(), current.String(), target.String())
+				t.AddLine(a.GetName(), current, target, shouldBackup(a.GetId()))
 			}
 			t.AddLine("")
 			t.Print()
