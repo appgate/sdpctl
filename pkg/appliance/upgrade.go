@@ -393,10 +393,13 @@ Upgrade will be completed in steps:
  {{ sum $i 1 }}. {{ $s.Description }}
 
 {{ $s.Table }}
-{{ end }}{{ if .Skipped }}
-Appliances that will be skipped:{{ range .Skipped }}
-  - {{ .Name }}: {{ .Reason }}
-{{ end }}{{ end }}`
+{{ end }}
+
+
+{{- if .Skipped -}}
+Appliances that will be skipped:
+  {{ range .Skipped }}- {{ .Appliance.Name }}: {{ .Reason -}}{{- end }}
+{{ end }}`
 
 var (
 	descriptionIndent            = "\n    "
