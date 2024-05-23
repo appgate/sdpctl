@@ -11,95 +11,12 @@ import (
 )
 
 func TestMakeUpgradePlan(t *testing.T) {
-	siteA := uuid.NewString()
-	siteB := uuid.NewString()
-	siteC := uuid.NewString()
 	hostname := "appgate.test"
 	v62, _ := version.NewVersion("6.2")
 	v63, _ := version.NewVersion("6.3")
 
-	stats := *openapi.NewStatsAppliancesListWithDefaults()
-	primary, s := GenerateApplianceWithStats([]string{FunctionController}, "primary-controller", hostname, v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count := stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-
-	secondary, s := GenerateApplianceWithStats([]string{FunctionController}, "secondary-controller", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-
-	// not prepared controller
-	controller3, s := GenerateApplianceWithStats([]string{FunctionController}, "controller-3", "", v62.String(), "", statusHealthy, UpgradeStatusIdle, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-
-	// offline controller
-	controller4, s := GenerateApplianceWithStats([]string{FunctionController}, "controller-4", "", v62.String(), "", statusOffline, UpgradeStatusIdle, false, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-
-	gatewayA1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	gatewayA2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	gatewayA3, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-A3", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	gatewayB1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteB)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	gatewayB2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-B2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteB)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	gatewayC1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteC)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	gatewayC2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gateway-C2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteC)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-
-	logforwarderA1, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetLogForwarderCount()
-	stats.SetLogForwarderCount(count + 1)
-
-	logforwarderA2, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarder-A2", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetLogForwarderCount()
-	stats.SetLogForwarderCount(count + 1)
-
-	portalA1, s := GenerateApplianceWithStats([]string{FunctionPortal}, "portal-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetPortalCount()
-	stats.SetPortalCount(count + 1)
-
-	connectorA1, s := GenerateApplianceWithStats([]string{FunctionConnector}, "connector-A1", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetConnectorCount()
-	stats.SetConnectorCount(count + 1)
-
-	logServer, s := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", v62.String(), v63.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	count = stats.GetLogServerCount()
-	stats.SetLogServerCount(count + 1)
+	coll := generateCollective(hostname, v62, v63)
+	primary := coll.appliances["primary"]
 
 	type args struct {
 		appliances   []openapi.Appliance
@@ -119,22 +36,22 @@ func TestMakeUpgradePlan(t *testing.T) {
 			name: "grouping test",
 			args: args{
 				appliances: []openapi.Appliance{
-					primary,
-					secondary,
-					gatewayA1,
-					gatewayA2,
-					gatewayA3,
-					gatewayB1,
-					gatewayB2,
-					gatewayC1,
-					gatewayC2,
-					logforwarderA1,
-					logforwarderA2,
-					portalA1,
-					connectorA1,
-					logServer,
+					coll.appliances["primary"],
+					coll.appliances["secondary"],
+					coll.appliances["gatewayA1"],
+					coll.appliances["gatewayA2"],
+					coll.appliances["gatewayA3"],
+					coll.appliances["gatewayB1"],
+					coll.appliances["gatewayB2"],
+					coll.appliances["gatewayC1"],
+					coll.appliances["gatewayC2"],
+					coll.appliances["logforwarderA1"],
+					coll.appliances["logforwarderA2"],
+					coll.appliances["portalA1"],
+					coll.appliances["connectorA1"],
+					coll.appliances["logserver"],
 				},
-				stats:        stats,
+				stats:        coll.stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -142,36 +59,36 @@ func TestMakeUpgradePlan(t *testing.T) {
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{secondary},
+				Controllers:       []openapi.Appliance{coll.appliances["secondary"]},
 				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, logforwarderA1},
-					{gatewayA2, gatewayB2, gatewayC2, logforwarderA2},
-					{connectorA1, gatewayA3, logServer, portalA1},
+					{coll.appliances["gatewayA1"], coll.appliances["gatewayB1"], coll.appliances["gatewayC1"], coll.appliances["logforwarderA1"]},
+					{coll.appliances["gatewayA2"], coll.appliances["gatewayB2"], coll.appliances["gatewayC2"], coll.appliances["logforwarderA2"]},
+					{coll.appliances["connectorA1"], coll.appliances["gatewayA3"], coll.appliances["logserver"], coll.appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         stats,
+				stats:         coll.stats,
 			},
 		},
 		{
 			name: "test grouping from unordered",
 			args: args{
 				appliances: []openapi.Appliance{
-					primary,
-					gatewayA1,
-					gatewayB2,
-					gatewayA2,
-					logServer,
-					logforwarderA2,
-					gatewayB1,
-					connectorA1,
-					gatewayC1,
-					secondary,
-					gatewayA3,
-					gatewayC2,
-					portalA1,
-					logforwarderA1,
+					coll.appliances["primary"],
+					coll.appliances["gatewayA1"],
+					coll.appliances["gatewayB2"],
+					coll.appliances["gatewayA2"],
+					coll.appliances["logserver"],
+					coll.appliances["logforwarderA2"],
+					coll.appliances["gatewayB1"],
+					coll.appliances["connectorA1"],
+					coll.appliances["gatewayC1"],
+					coll.appliances["secondary"],
+					coll.appliances["gatewayA3"],
+					coll.appliances["gatewayC2"],
+					coll.appliances["portalA1"],
+					coll.appliances["logforwarderA1"],
 				},
-				stats:        stats,
+				stats:        coll.stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -179,37 +96,37 @@ func TestMakeUpgradePlan(t *testing.T) {
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{secondary},
+				Controllers:       []openapi.Appliance{coll.appliances["secondary"]},
 				Batches: [][]openapi.Appliance{
-					{gatewayA1, gatewayB1, gatewayC1, logforwarderA1},
-					{gatewayA2, gatewayB2, gatewayC2, logforwarderA2},
-					{connectorA1, gatewayA3, logServer, portalA1},
+					{coll.appliances["gatewayA1"], coll.appliances["gatewayB1"], coll.appliances["gatewayC1"], coll.appliances["logforwarderA1"]},
+					{coll.appliances["gatewayA2"], coll.appliances["gatewayB2"], coll.appliances["gatewayC2"], coll.appliances["logforwarderA2"]},
+					{coll.appliances["connectorA1"], coll.appliances["gatewayA3"], coll.appliances["logserver"], coll.appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         stats,
+				stats:         coll.stats,
 			},
 		},
 		{
 			name: "test multi controller upgrade error",
 			args: args{
 				appliances: []openapi.Appliance{
-					primary,
-					controller3,
-					gatewayA1,
-					gatewayB2,
-					gatewayA2,
-					logServer,
-					logforwarderA2,
-					gatewayB1,
-					connectorA1,
-					gatewayC1,
-					secondary,
-					gatewayA3,
-					gatewayC2,
-					portalA1,
-					logforwarderA1,
+					coll.appliances["primary"],
+					coll.appliances["controller3"],
+					coll.appliances["gatewayA1"],
+					coll.appliances["gatewayB2"],
+					coll.appliances["gatewayA2"],
+					coll.appliances["logserver"],
+					coll.appliances["logforwarderA2"],
+					coll.appliances["gatewayB1"],
+					coll.appliances["connectorA1"],
+					coll.appliances["gatewayC1"],
+					coll.appliances["secondary"],
+					coll.appliances["gatewayA3"],
+					coll.appliances["gatewayC2"],
+					coll.appliances["portalA1"],
+					coll.appliances["logforwarderA1"],
 				},
-				stats:        stats,
+				stats:        coll.stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -221,23 +138,23 @@ func TestMakeUpgradePlan(t *testing.T) {
 			name: "test offline controller",
 			args: args{
 				appliances: []openapi.Appliance{
-					primary,
-					controller4,
-					gatewayA1,
-					gatewayB2,
-					gatewayA2,
-					logServer,
-					logforwarderA2,
-					gatewayB1,
-					connectorA1,
-					gatewayC1,
-					secondary,
-					gatewayA3,
-					gatewayC2,
-					portalA1,
-					logforwarderA1,
+					coll.appliances["primary"],
+					coll.appliances["controller4"],
+					coll.appliances["gatewayA1"],
+					coll.appliances["gatewayB2"],
+					coll.appliances["gatewayA2"],
+					coll.appliances["logserver"],
+					coll.appliances["logforwarderA2"],
+					coll.appliances["gatewayB1"],
+					coll.appliances["connectorA1"],
+					coll.appliances["gatewayC1"],
+					coll.appliances["secondary"],
+					coll.appliances["gatewayA3"],
+					coll.appliances["gatewayC2"],
+					coll.appliances["portalA1"],
+					coll.appliances["logforwarderA1"],
 				},
-				stats:        stats,
+				stats:        coll.stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -270,6 +187,7 @@ func TestUpgradePlan_PrintSummary(t *testing.T) {
 		filter     map[string]map[string]string
 		orderBy    []string
 		descending bool
+		backup     []string
 	}
 	tests := []struct {
 		name    string
@@ -300,6 +218,7 @@ func TestUpgradePlan_PrintSummary(t *testing.T) {
 				to:       v63,
 				hostname: hostname,
 				filter:   DefaultCommandFilter,
+				backup:   []string{"primary", "secondary"},
 			},
 			wantOut: `
 UPGRADE COMPLETE SUMMARY
@@ -309,9 +228,9 @@ Upgrade will be completed in steps:
  1. The primary Controller will be upgraded
     This will result in the API being unreachable while completing the primary Controller upgrade
 
-    Appliance    Current version    Prepared version
-    ---------    ---------------    ----------------
-    primary      6.2.0              6.3.0
+    Appliance    Current version    Prepared version    Backup
+    ---------    ---------------    ----------------    ------
+    primary      6.2.0              6.3.0               ✓
 
 
  2. Additional Controllers will be upgraded in serial
@@ -320,9 +239,9 @@ Upgrade will be completed in steps:
     the upgrade is completed
     This step will also reboot the upgraded Controllers for the upgrade to take effect
 
-    Appliance    Current version    Prepared version
-    ---------    ---------------    ----------------
-    secondary    6.2.0              6.3.0
+    Appliance    Current version    Prepared version    Backup
+    ---------    ---------------    ----------------    ------
+    secondary    6.2.0              6.3.0               ✓
 
 
  3. Additional appliances will be upgraded in parallell batches. The additional appliances will be split into
@@ -331,30 +250,30 @@ Upgrade will be completed in steps:
 
     Batch #1:
 
-    Appliance         Current version    Prepared version
-    ---------         ---------------    ----------------
-    gatewayA1         6.2.0              6.3.0
-    gatewayB1         6.2.0              6.3.0
-    gatewayC1         6.2.0              6.3.0
-    logforwarderA1    6.2.0              6.3.0
+    Appliance         Current version    Prepared version    Backup
+    ---------         ---------------    ----------------    ------
+    gatewayA1         6.2.0              6.3.0               ⨯
+    gatewayB1         6.2.0              6.3.0               ⨯
+    gatewayC1         6.2.0              6.3.0               ⨯
+    logforwarderA1    6.2.0              6.3.0               ⨯
 
     Batch #2:
 
-    Appliance         Current version    Prepared version
-    ---------         ---------------    ----------------
-    gatewayA2         6.2.0              6.3.0
-    gatewayB2         6.2.0              6.3.0
-    gatewayC2         6.2.0              6.3.0
-    logforwarderA2    6.2.0              6.3.0
+    Appliance         Current version    Prepared version    Backup
+    ---------         ---------------    ----------------    ------
+    gatewayA2         6.2.0              6.3.0               ⨯
+    gatewayB2         6.2.0              6.3.0               ⨯
+    gatewayC2         6.2.0              6.3.0               ⨯
+    logforwarderA2    6.2.0              6.3.0               ⨯
 
     Batch #3:
 
-    Appliance      Current version    Prepared version
-    ---------      ---------------    ----------------
-    connectorA1    6.2.0              6.3.0
-    gatewayA3      6.2.0              6.3.0
-    logserver      6.2.0              6.3.0
-    portalA1       6.2.0              6.3.0
+    Appliance      Current version    Prepared version    Backup
+    ---------      ---------------    ----------------    ------
+    connectorA1    6.2.0              6.3.0               ⨯
+    gatewayA3      6.2.0              6.3.0               ⨯
+    logserver      6.2.0              6.3.0               ⨯
+    portalA1       6.2.0              6.3.0               ⨯
 
 
 `,
@@ -373,6 +292,7 @@ Upgrade will be completed in steps:
 					"gatewayA1",
 					"gatewayA2",
 				},
+				backup: []string{"primary"},
 			},
 			wantOut: `
 UPGRADE COMPLETE SUMMARY
@@ -382,9 +302,9 @@ Upgrade will be completed in steps:
  1. The primary Controller will be upgraded
     This will result in the API being unreachable while completing the primary Controller upgrade
 
-    Appliance    Current version    Prepared version
-    ---------    ---------------    ----------------
-    primary      6.2.0              6.2.1
+    Appliance    Current version    Prepared version    Backup
+    ---------    ---------------    ----------------    ------
+    primary      6.2.0              6.2.1               ✓
 
 
  2. Additional Controllers will be upgraded in serial
@@ -393,9 +313,9 @@ Upgrade will be completed in steps:
     the upgrade is completed
     This step will also reboot the upgraded Controllers for the upgrade to take effect
 
-    Appliance    Current version    Prepared version
-    ---------    ---------------    ----------------
-    secondary    6.2.0              6.2.1
+    Appliance    Current version    Prepared version    Backup
+    ---------    ---------------    ----------------    ------
+    secondary    6.2.0              6.2.1               ⨯
 
 
  3. Additional appliances will be upgraded in parallell batches. The additional appliances will be split into
@@ -404,15 +324,15 @@ Upgrade will be completed in steps:
 
     Batch #1:
 
-    Appliance    Current version    Prepared version
-    ---------    ---------------    ----------------
-    gatewayA1    6.2.0              6.2.1
+    Appliance    Current version    Prepared version    Backup
+    ---------    ---------------    ----------------    ------
+    gatewayA1    6.2.0              6.2.1               ⨯
 
     Batch #2:
 
-    Appliance    Current version    Prepared version
-    ---------    ---------------    ----------------
-    gatewayA2    6.2.0              6.2.1
+    Appliance    Current version    Prepared version    Backup
+    ---------    ---------------    ----------------    ------
+    gatewayA2    6.2.0              6.2.1               ⨯
 
 
 Appliances that will be skipped:
@@ -430,6 +350,14 @@ Appliances that will be skipped:
 			up, err := NewUpgradePlan(appliances, coll.stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
+			}
+			if len(tt.in.backup) > 0 {
+				ids := make([]string, 0, len(tt.in.backup))
+				for _, name := range tt.in.backup {
+					a := coll.appliances[name]
+					ids = append(ids, a.GetId())
+				}
+				up.AddBackups(ids)
 			}
 			out := &bytes.Buffer{}
 			if err := up.PrintSummary(out); (err != nil) != tt.wantErr {
