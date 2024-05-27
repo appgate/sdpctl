@@ -43,7 +43,7 @@ type UpgradePlan struct {
 	LogForwardersAndServers []openapi.Appliance
 	Batches                 [][]openapi.Appliance
 	Skipping                []SkipUpgrade
-	backupAppliances        []string
+	BackupIds               []string
 	lowDiskSpace            []*openapi.StatsAppliancesListAllOfData
 	stats                   openapi.StatsAppliancesList
 	adminHostname           string
@@ -279,8 +279,19 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	return &plan, nil
 }
 
-func (up *UpgradePlan) AddBackups(applianceIds []string) {
-	up.backupAppliances = applianceIds
+func (up *UpgradePlan) AddBackups(applianceIds []string) error {
+	var errs *multierror.Error
+	for _, id := range applianceIds {
+		if !util.IsUUID(id) {
+			errs = multierror.Append(errs, fmt.Errorf("%s is not a valid UUID", id))
+		}
+	}
+	up.BackupIds = applianceIds
+	return errs.ErrorOrNil()
+}
+
+func (up *UpgradePlan) NothingToUpgrade() bool {
+	return up.PrimaryController == nil && len(up.Controllers) <= 0 && len(up.LogForwardersAndServers) <= 0 && len(up.Batches) <= 0
 }
 
 func (up *UpgradePlan) PrintSummary(out io.Writer) error {
@@ -294,7 +305,7 @@ func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 
 	shouldBackup := func(id string) string {
 		res := tui.No
-		if util.InSlice(id, up.backupAppliances) {
+		if util.InSlice(id, up.BackupIds) {
 			res = tui.Yes
 		}
 		return res
