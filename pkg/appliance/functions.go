@@ -925,18 +925,6 @@ func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	return util.InSlice(s.GetStatus(), []string{statusHealthy, statusBusy, statusWarning, statusError})
 }
 
-func ShouldDisable(from, to *version.Version) bool {
-	compare, _ := version.NewVersion("5.4")
-
-	if from.LessThan(compare) {
-		majorChange := from.Segments()[0] < to.Segments()[0]
-		minorChange := from.Segments()[1] < to.Segments()[1]
-		return majorChange || minorChange
-	}
-
-	return false
-}
-
 func PrettyBytes(v float64) string {
 	for _, unit := range []string{"", "K", "M", "G", "T", "P", "E", "Z"} {
 		if math.Abs(float64(v)) < 1024.0 {
