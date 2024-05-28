@@ -20,7 +20,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 
 	type args struct {
 		appliances   []openapi.Appliance
-		stats        openapi.StatsAppliancesList
+		stats        *openapi.StatsAppliancesList
 		ctrlHostname string
 		filter       map[string]map[string]string
 		orderBy      []string
@@ -66,7 +66,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.appliances["connectorA1"], coll.appliances["gatewayA3"], coll.appliances["logserver"], coll.appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         coll.stats,
+				stats:         *coll.stats,
 			},
 		},
 		{
@@ -103,7 +103,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.appliances["connectorA1"], coll.appliances["gatewayA3"], coll.appliances["logserver"], coll.appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         coll.stats,
+				stats:         *coll.stats,
 			},
 		},
 		{
@@ -165,7 +165,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
+			got, err := NewUpgradePlan(tt.args.appliances, *tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
@@ -174,7 +174,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 	}
 }
 
-func TestUpgradePlan_PrintSummary(t *testing.T) {
+func TestUpgradePlan_PrintPreCompleteSummary(t *testing.T) {
 	hostname := "appgate.test"
 	v62, _ := version.NewVersion("6.2")
 	v621, _ := version.NewVersion("6.2.1")
@@ -347,7 +347,7 @@ Appliances that will be skipped:
 			for _, v := range tt.in.Appliances {
 				appliances = append(appliances, coll.appliances[v])
 			}
-			up, err := NewUpgradePlan(appliances, coll.stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
+			up, err := NewUpgradePlan(appliances, *coll.stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
@@ -360,7 +360,7 @@ Appliances that will be skipped:
 				up.AddBackups(ids)
 			}
 			out := &bytes.Buffer{}
-			if err := up.PrintSummary(out); (err != nil) != tt.wantErr {
+			if err := up.PrintPreCompleteSummary(out); (err != nil) != tt.wantErr {
 				t.Errorf("UpgradePlan.PrintSummary() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -369,126 +369,244 @@ Appliances that will be skipped:
 	}
 }
 
+func TestUpgradePlan_PrintPostCompleteSummary(t *testing.T) {
+	v62, _ := version.NewVersion("6.2")
+	v621, _ := version.NewVersion("6.2.1")
+
+	testCases := []struct {
+		name       string
+		appliances []string
+		expect     string
+		from, to   *version.Version
+	}{
+		{
+			name: "print no diff summary",
+			appliances: []string{
+				"primary",
+				"gatewayA1",
+			},
+			from: v62,
+			to:   v621,
+			expect: `UPGRADE COMPLETE
+
+Appliance    Current Version
+---------    ---------------
+gatewayA1    6.2.1
+primary      6.2.1
+
+`,
+		},
+		{
+			name: "diff on three appliances",
+			appliances: []string{
+				"primary",
+				"controller3",
+				"gatewayA1",
+			},
+			from: v62,
+			to:   v621,
+			expect: `UPGRADE COMPLETE
+
+Appliance      Current Version
+---------      ---------------
+controller3    6.2.0
+gatewayA1      6.2.1
+primary        6.2.1
+
+WARNING: Upgrade was completed, but not all appliances are running the same version.
+`,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			hostname := "appgate.test"
+			coll := generateCollective(hostname, tt.from, tt.to)
+			appliances := make([]openapi.Appliance, 0, len(tt.appliances))
+			upgradedStats := make([]openapi.StatsAppliancesListAllOfData, 0, len(appliances))
+			for _, v := range tt.appliances {
+				a := coll.appliances[v]
+				for _, s := range coll.upgradedStats.GetData() {
+					if a.GetId() != s.GetId() {
+						continue
+					}
+					upgradedStats = append(upgradedStats, s)
+				}
+				appliances = append(appliances, a)
+			}
+			up, err := NewUpgradePlan(appliances, *coll.stats, hostname, DefaultCommandFilter, nil, false)
+			if err != nil {
+				t.Fatalf("PrintPostCompleteSummary() - internal test error: %v", err)
+				return
+			}
+			buf := &bytes.Buffer{}
+			err = up.PrintPostCompleteSummary(buf, upgradedStats)
+			if err != nil {
+				t.Fatal("error printing summary")
+			}
+			if !assert.Contains(t, buf.String(), tt.expect) {
+				assert.Equal(t, tt.expect, buf.String())
+			}
+		})
+	}
+}
+
 type collectiveTestStruct struct {
-	appliances map[string]openapi.Appliance
-	stats      openapi.StatsAppliancesList
+	appliances    map[string]openapi.Appliance
+	stats         *openapi.StatsAppliancesList
+	upgradedStats *openapi.StatsAppliancesList
 }
 
 func generateCollective(hostname string, from, to *version.Version) collectiveTestStruct {
-	stats := *openapi.NewStatsAppliancesListWithDefaults()
+	stats := openapi.NewStatsAppliancesListWithDefaults()
+	upgradedStats := openapi.NewStatsAppliancesListWithDefaults()
 	appliances := map[string]openapi.Appliance{}
 
 	siteA := uuid.NewString()
 	siteB := uuid.NewString()
 	siteC := uuid.NewString()
 
-	primary, s := GenerateApplianceWithStats([]string{FunctionController}, "primary", hostname, from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	primary, s, u := GenerateApplianceWithStats([]string{FunctionController}, "primary", hostname, from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count := stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
+	upgradedStats.SetControllerCount(count + 1)
 	appliances[primary.GetName()] = primary
 
-	secondary, s := GenerateApplianceWithStats([]string{FunctionController}, "secondary", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	secondary, s, u := GenerateApplianceWithStats([]string{FunctionController}, "secondary", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
+	upgradedStats.SetControllerCount(count + 1)
 	appliances[secondary.GetName()] = secondary
 
 	// not prepared controller
-	controller3, s := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "", from.String(), "", statusHealthy, UpgradeStatusIdle, true, siteA)
+	controller3, s, u := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "", from.String(), from.String(), statusHealthy, UpgradeStatusIdle, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
+	upgradedStats.SetControllerCount(count + 1)
 	appliances[controller3.GetName()] = controller3
 
 	// offline controller
-	controller4, s := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", from.String(), "", statusOffline, UpgradeStatusIdle, false, siteA)
+	controller4, s, u := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", from.String(), from.String(), statusOffline, UpgradeStatusIdle, false, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
+	upgradedStats.SetControllerCount(count + 1)
 	appliances[controller4.GetName()] = controller4
 
 	// already same version
-	controller5, s := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", to.String(), "", statusHealthy, UpgradeStatusIdle, true, siteA)
+	controller5, s, u := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", to.String(), to.String(), statusHealthy, UpgradeStatusIdle, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetControllerCount()
 	stats.SetControllerCount(count + 1)
+	upgradedStats.SetControllerCount(count + 1)
 	appliances[controller5.GetName()] = controller5
 
-	gatewayA1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	gatewayA1, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayA1.GetName()] = gatewayA1
 
-	gatewayA2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	gatewayA2, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayA2.GetName()] = gatewayA2
 
-	gatewayA3, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA3", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	gatewayA3, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA3", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayA3.GetName()] = gatewayA3
 
-	gatewayB1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayB1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteB)
+	gatewayB1, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayB1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteB)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayB1.GetName()] = gatewayB1
 
-	gatewayB2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayB2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteB)
+	gatewayB2, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayB2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteB)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayB2.GetName()] = gatewayB2
 
-	gatewayC1, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayC1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteC)
+	gatewayC1, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayC1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteC)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayC1.GetName()] = gatewayC1
 
-	gatewayC2, s := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayC2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteC)
+	gatewayC2, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayC2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteC)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetGatewayCount()
 	stats.SetGatewayCount(count + 1)
+	upgradedStats.SetGatewayCount(count + 1)
 	appliances[gatewayC2.GetName()] = gatewayC2
 
-	logforwarderA1, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarderA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	logforwarderA1, s, u := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarderA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetLogForwarderCount()
 	stats.SetLogForwarderCount(count + 1)
+	upgradedStats.SetLogForwarderCount(count + 1)
 	appliances[logforwarderA1.GetName()] = logforwarderA1
 
-	logforwarderA2, s := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarderA2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	logforwarderA2, s, u := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarderA2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetLogForwarderCount()
 	stats.SetLogForwarderCount(count + 1)
+	upgradedStats.SetLogForwarderCount(count + 1)
 	appliances[logforwarderA2.GetName()] = logforwarderA2
 
-	portalA1, s := GenerateApplianceWithStats([]string{FunctionPortal}, "portalA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	portalA1, s, u := GenerateApplianceWithStats([]string{FunctionPortal}, "portalA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetPortalCount()
 	stats.SetPortalCount(count + 1)
+	upgradedStats.SetPortalCount(count + 1)
 	appliances[portalA1.GetName()] = portalA1
 
-	connectorA1, s := GenerateApplianceWithStats([]string{FunctionConnector}, "connectorA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	connectorA1, s, u := GenerateApplianceWithStats([]string{FunctionConnector}, "connectorA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetConnectorCount()
 	stats.SetConnectorCount(count + 1)
+	upgradedStats.SetConnectorCount(count + 1)
 	appliances[connectorA1.GetName()] = connectorA1
 
-	logServer, s := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
+	logServer, s, u := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
 	stats.Data = append(stats.Data, s)
+	upgradedStats.Data = append(upgradedStats.Data, u)
 	count = stats.GetLogServerCount()
 	stats.SetLogServerCount(count + 1)
+	upgradedStats.SetLogServerCount(count + 1)
 	appliances[logServer.GetName()] = logServer
 
 	return collectiveTestStruct{
-		appliances: appliances,
-		stats:      stats,
+		appliances:    appliances,
+		stats:         stats,
+		upgradedStats: upgradedStats,
 	}
 }

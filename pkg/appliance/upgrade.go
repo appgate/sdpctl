@@ -15,6 +15,7 @@ import (
 	"github.com/cheynewallace/tabby"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
+	log "github.com/sirupsen/logrus"
 )
 
 type SkipUpgrade struct {
@@ -44,7 +45,6 @@ type UpgradePlan struct {
 	Batches                 [][]openapi.Appliance
 	Skipping                []SkipUpgrade
 	BackupIds               []string
-	lowDiskSpace            []*openapi.StatsAppliancesListAllOfData
 	stats                   openapi.StatsAppliancesList
 	adminHostname           string
 }
@@ -128,11 +128,6 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 				Reason:    ErrVersionParse,
 			})
 			continue
-		}
-
-		// disk space check
-		if stats.GetDisk() >= 75 {
-			plan.lowDiskSpace = append(plan.lowDiskSpace, stats)
 		}
 
 		// Get upgrade status and target version
@@ -290,11 +285,37 @@ func (up *UpgradePlan) AddBackups(applianceIds []string) error {
 	return errs.ErrorOrNil()
 }
 
+func (up *UpgradePlan) HasDiffVersions(newStats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {
+	res := map[string]string{}
+	versionList := []string{}
+	for _, stat := range newStats {
+		statVersionString := stat.GetVersion()
+		if statVersionString != unknownStat {
+			v, err := ParseVersionString(statVersionString)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"appliance": stat.GetName(),
+					"version":   statVersionString,
+				}).Warn("failed to parse version string")
+			}
+			versionString := statVersionString
+			if v != nil {
+				versionString = v.String()
+			}
+			res[stat.GetName()] = versionString
+			versionList = append(versionList, versionString)
+		}
+
+	}
+	unique := uniqueString(versionList)
+	return len(unique) != 1, res
+}
+
 func (up *UpgradePlan) NothingToUpgrade() bool {
 	return up.PrimaryController == nil && len(up.Controllers) <= 0 && len(up.LogForwardersAndServers) <= 0 && len(up.Batches) <= 0
 }
 
-func (up *UpgradePlan) PrintSummary(out io.Writer) error {
+func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 	type upgradeStep struct {
 		Description, Table string
 	}
@@ -394,6 +415,43 @@ func (up *UpgradePlan) PrintSummary(out io.Writer) error {
 	_, err := fmt.Fprint(out, tpl.String())
 
 	return err
+}
+
+var postCompleteTPL string = `{{ now }}
+
+UPGRADE COMPLETE
+
+{{ .VersionTable }}
+{{ if .HasDiff }}WARNING: Upgrade was completed, but not all appliances are running the same version.{{ end }}
+`
+
+func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) error {
+	hasDiff, applianceVersions := up.HasDiffVersions(stats)
+	keys := make([]string, 0, len(applianceVersions))
+	for k := range applianceVersions {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	type tplStub struct {
+		VersionTable string
+		HasDiff      bool
+	}
+
+	tb := &bytes.Buffer{}
+	tp := util.NewPrinter(tb, 4)
+	tp.AddHeader("Appliance", "Current Version")
+	for _, k := range keys {
+		tp.AddLine(k, applianceVersions[k])
+	}
+	tp.Print()
+
+	tplData := tplStub{
+		VersionTable: tb.String(),
+		HasDiff:      hasDiff,
+	}
+	t := template.Must(template.New("").Funcs(util.TPLFuncMap).Parse(postCompleteTPL))
+	return t.Execute(out, tplData)
 }
 
 func applianceVersions(a openapi.Appliance, s openapi.StatsAppliancesList) (currentVersion *version.Version, targetVersion *version.Version) {

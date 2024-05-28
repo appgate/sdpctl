@@ -3135,11 +3135,11 @@ func Test_orderAppliances(t *testing.T) {
 	}
 
 	// Generate appliances
-	app1, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
-	app2, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
-	app3, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
-	app4, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
-	app5, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
+	app1, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
+	app2, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
+	app3, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
+	app4, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
+	app5, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default")
 
 	// Modify appliances for tests
 	app3.SetActivated(false)
@@ -3222,7 +3222,7 @@ func Test_orderAppliances(t *testing.T) {
 	}
 }
 
-func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData) {
+func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData, openapi.StatsAppliancesListAllOfData) {
 	id := uuid.NewString()
 	now := time.Now()
 	ctrl := &openapi.ApplianceAllOfController{}
@@ -3284,14 +3284,26 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 		RsyslogDestinations: []openapi.ApplianceAllOfRsyslogDestinations{},
 		HostnameAliases:     []string{},
 	}
-	appstatdata := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
-	appstatdata.SetId(app.GetId())
-	appstatdata.SetStatus(status)
-	appstatdata.SetVersion(currentVersion)
-	appstatdata.SetOnline(online)
-	appstatdata.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
+	currentStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
+	currentStatsData.SetId(app.GetId())
+	currentStatsData.SetName(app.GetName())
+	currentStatsData.SetStatus(status)
+	currentStatsData.SetVersion(currentVersion)
+	currentStatsData.SetOnline(online)
+	currentStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
 		Status:  &upgradeStatus,
 		Details: openapi.PtrString(targetVersion),
 	})
-	return app, appstatdata
+
+	upgradedStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
+	upgradedStatsData.SetId(app.GetId())
+	upgradedStatsData.SetName(app.GetName())
+	upgradedStatsData.SetStatus(status)
+	upgradedStatsData.SetOnline(online)
+	upgradedStatsData.SetVersion(targetVersion)
+	upgradedStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
+		Status: openapi.PtrString(UpgradeStatusIdle),
+	})
+
+	return app, currentStatsData, upgradedStatsData
 }
