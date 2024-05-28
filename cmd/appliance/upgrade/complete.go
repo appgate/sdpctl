@@ -270,28 +270,8 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 	}
 
-	// 1. Disable Controller function on the following appliance
-	// we will run this sequencelly, since this is a sensitive operation
-	// so that we can leave the Collective gracefully.
 	fmt.Fprintf(opts.Out, "\n[%s] Initializing upgrade:\n", time.Now().Format(time.RFC3339))
 	initP := mpb.NewWithContext(ctx, mpb.WithOutput(spinnerOut))
-	for _, controller := range plan.Controllers {
-		spinner := tui.AddDefaultSpinner(initP, controller.GetName(), "disabling", "disabled")
-		f := log.Fields{"appliance": controller.GetName()}
-		log.WithFields(f).Info("Disabling controller function")
-		if err := a.DisableController(ctx, controller.GetId(), controller); err != nil {
-			spinner.Abort(false)
-			log.WithFields(f).Error("Unable to disable the Controller")
-			return err
-		}
-		if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, nil); err != nil {
-			spinner.Abort(false)
-			log.WithFields(f).Error("Never reached desired state")
-			return err
-		}
-		spinner.Increment()
-	}
-
 	// verify the state for all Controllers
 	verifyingSpinner := tui.AddDefaultSpinner(initP, "verifying states", "verifying", "ready")
 	if err := a.ApplianceStats.WaitForApplianceState(ctx, *primaryController, appliancepkg.StatReady, nil); err != nil {
