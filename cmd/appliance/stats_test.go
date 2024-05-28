@@ -12,7 +12,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestApplianceStatsCommandJSON(t *testing.T) {
@@ -124,15 +124,10 @@ func TestApplianceStatsCommandTable(t *testing.T) {
 		t.Fatalf("unable to read stdout %s", err)
 	}
 	gotStr := string(got)
-	want := `Name                                                     Status     Function                 CPU     Memory    Network out/in           Disk    Version        Sessions
-----                                                     ------     --------                 ---     ------    --------------           ----    -------        --------
-controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1    healthy    LogServer, Controller    0.8%    48.8%     0.26 Kbps / 0.26 Kbps    1.2%    5.3.4+24950    0
-gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1       healthy    Gateway                  0.7%    7.8%      76.8 bps / 96.0 bps      4.9%    5.3.4+24950    5
+	want := `Name                                                     Status     Function                 CPU     Memory    Network out/in           Disk    Version    Sessions
+----                                                     ------     --------                 ---     ------    --------------           ----    -------    --------
+controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1    healthy    LogServer, Controller    0.8%    48.8%     0.26 Kbps / 0.26 Kbps    1.2%    6.2.1      0
+gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1       healthy    Gateway                  0.7%    7.8%      76.8 bps / 96.0 bps      4.9%    6.2.1      5
 `
-	if !cmp.Equal(want, gotStr) {
-		i, _ := applianceCMD.Flags().GetStringToString("include")
-		e, _ := applianceCMD.Flags().GetStringToString("exclude")
-		t.Log(applianceCMD.CommandPath(), applianceCMD.CalledAs(), i, e)
-		t.Fatalf("\n Diff \n %s", cmp.Diff(want, gotStr))
-	}
+	assert.Equal(t, want, gotStr)
 }
