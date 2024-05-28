@@ -588,20 +588,20 @@ func TestUpgradeCheckFunctions(t *testing.T) {
 
 func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 	// unprepared
-	c1, s1 := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.test", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
-	c2, s2 := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
-	c3, s3 := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+	c1, s1, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.test", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+	c2, s2, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+	c3, s3, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
 
 	// prepared
-	c4, s4 := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
-	c5, s5 := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
-	c6, s6 := GenerateApplianceWithStats([]string{FunctionController}, "controller6", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
+	c4, s4, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
+	c5, s5, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
+	c6, s6, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller6", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default")
 
 	// unprepared max version
-	c7, s7 := GenerateApplianceWithStats([]string{FunctionController}, "controller7", "", "6.3.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
+	c7, s7, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller7", "", "6.3.0", "", statusHealthy, UpgradeStatusIdle, true, "default")
 
 	// offline
-	c8, s8 := GenerateApplianceWithStats([]string{FunctionController}, "controller8", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, false, "default")
+	c8, s8, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller8", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, false, "default")
 
 	type inData struct {
 		appliance openapi.Appliance
