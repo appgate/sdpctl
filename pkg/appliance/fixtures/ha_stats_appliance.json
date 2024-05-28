@@ -7,7 +7,7 @@
             "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
             "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
             "online": true,
-            "version": "5.3.4-24950",
+            "version": "6.2.1",
             "state": "multi_controller_ready",
             "volumeNumber": 2,
             "status": "healthy",
@@ -52,14 +52,15 @@
                 }
             },
             "upgrade": {
-                "status": "idle"
+                "status": "ready",
+                "details": "6.2.3"
             }
         },
         {
             "id": "ed95fac8-9098-472b-b9f0-fe741881e2ca",
             "name": "controller2-ed95fac8-9098-472b-b9f0-fe741881e2ca-site1",
             "online": true,
-            "version": "5.3.4-24950",
+            "version": "6.2.1",
             "state": "multi_controller_ready",
             "volumeNumber": 2,
             "status": "healthy",
@@ -104,14 +105,15 @@
                 }
             },
             "upgrade": {
-                "status": "idle"
+                "status": "ready",
+                "details": "6.2.3"
             }
         },
         {
             "id": "21ac20ec-410a-4b59-baf3-fdacbe455581",
             "name": "controller3-21ac20ec-410a-4b59-baf3-fdacbe455581-site1",
             "online": true,
-            "version": "5.3.4-24950",
+            "version": "6.2.1",
             "state": "multi_controller_ready",
             "volumeNumber": 2,
             "status": "healthy",
@@ -156,14 +158,15 @@
                 }
             },
             "upgrade": {
-                "status": "idle"
+                "status": "ready",
+                "details": "6.2.3"
             }
         },
         {
             "id": "9c557978-1dcd-4b42-ad56-afb6abf1490c",
             "name": "controller4-9c557978-1dcd-4b42-ad56-afb6abf1490c-site1",
             "online": true,
-            "version": "5.3.4-24950",
+            "version": "6.2.1",
             "state": "multi_controller_ready",
             "volumeNumber": 2,
             "status": "healthy",
@@ -208,14 +211,15 @@
                 }
             },
             "upgrade": {
-                "status": "idle"
+                "status": "ready",
+                "details": "6.2.3"
             }
         },
         {
             "id": "ee639d70-e075-4f01-596b-930d5f24f569",
             "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
             "online": true,
-            "version": "5.3.4-24950",
+            "version": "6.2.1",
             "state": "appliance_ready",
             "volumeNumber": 1,
             "status": "healthy",
@@ -262,7 +266,8 @@
                 }
             },
             "upgrade": {
-                "status": "idle"
+                "status": "ready",
+                "details": "6.2.3"
             }
         }
     ],
