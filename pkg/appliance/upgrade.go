@@ -486,11 +486,10 @@ var (
 		"This will result in the API being unreachable while completing the primary Controller upgrade",
 	}
 	additionalControllerDescription = []string{
-		"Additional Controllers will be upgraded in serial",
-		"In some cases, the Controller function on additional Controllers will need to be disabled",
-		"before proceeding with the upgrade. The disabled Controllers will then be re-enabled once",
-		"the upgrade is completed",
-		"This step will also reboot the upgraded Controllers for the upgrade to take effect",
+		"Additional Controllers will be upgraded in series.",
+		"Additional Controllers will be put into maintenance mode before being upgraded. Maintenance",
+		"mode will then be disabled once the upgrade has completed on the controller.",
+		"This step will also reboot the upgraded Controllers for the upgrade to take effect.",
 	}
 	logForwaredersAndServersDescription = []string{
 		"Appliances with LogForwarder/LogServer functions are upgraded",

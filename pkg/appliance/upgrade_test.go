@@ -230,11 +230,10 @@ Upgrade will be completed in steps:
     primary      SiteA    6.2.0              6.3.0               ✓
 
 
- 2. Additional Controllers will be upgraded in serial
-    In some cases, the Controller function on additional Controllers will need to be disabled
-    before proceeding with the upgrade. The disabled Controllers will then be re-enabled once
-    the upgrade is completed
-    This step will also reboot the upgraded Controllers for the upgrade to take effect
+ 2. Additional Controllers will be upgraded in series.
+    Additional Controllers will be put into maintenance mode before being upgraded. Maintenance
+    mode will then be disabled once the upgrade has completed on the controller.
+    This step will also reboot the upgraded Controllers for the upgrade to take effect.
 
     Appliance    Site     Current version    Prepared version    Backup
     ---------    ----     ---------------    ----------------    ------
@@ -304,11 +303,10 @@ Upgrade will be completed in steps:
     primary      SiteA    6.2.0              6.2.1               ✓
 
 
- 2. Additional Controllers will be upgraded in serial
-    In some cases, the Controller function on additional Controllers will need to be disabled
-    before proceeding with the upgrade. The disabled Controllers will then be re-enabled once
-    the upgrade is completed
-    This step will also reboot the upgraded Controllers for the upgrade to take effect
+ 2. Additional Controllers will be upgraded in series.
+    Additional Controllers will be put into maintenance mode before being upgraded. Maintenance
+    mode will then be disabled once the upgrade has completed on the controller.
+    This step will also reboot the upgraded Controllers for the upgrade to take effect.
 
     Appliance    Site     Current version    Prepared version    Backup
     ---------    ----     ---------------    ----------------    ------
