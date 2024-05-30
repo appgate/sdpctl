@@ -61,39 +61,42 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 	}
 
 	siteA := uuid.NewString()
+	siteNameA := "SiteA"
 	siteB := uuid.NewString()
+	siteNameB := "SiteB"
 	siteC := uuid.NewString()
+	siteNameC := "SiteC"
 
 	for _, n := range appliances {
 		switch n {
 		case TestAppliancePrimary:
-			res.addAppliance(n, hostname, siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
 		case TestApplianceUnpreparedPrimary:
-			res.addAppliance(n, hostname, siteA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
+			res.addAppliance(n, hostname, siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
 		case TestApplianceSecondary:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
 		case TestApplianceController3:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
 		case TestApplianceControllerOffline:
-			res.addAppliance(n, "", siteA, from, to, statusOffline, UpgradeStatusIdle, false, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusOffline, UpgradeStatusIdle, false, []string{FunctionController})
 		case TestApplianceControllerNotPrepared:
-			res.addAppliance(n, "", siteA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
 		case TestApplianceControllerMismatch:
-			res.addAppliance(n, "", siteA, "6.1", from, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, "6.1", from, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
 		case TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
 		case TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3:
-			res.addAppliance(n, "", siteB, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
+			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
 		case TestApplianceGatewayC1, TestApplianceGatewayC2:
-			res.addAppliance(n, "", siteC, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
+			res.addAppliance(n, "", siteC, siteNameC, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
 		case TestApplianceLogForwarderA1, TestApplianceLogForwarderA2:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogForwarder})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogForwarder})
 		case TestAppliancePortalA1:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
 		case TestApplianceConnectorA1:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
 		case TestApplianceLogServer:
-			res.addAppliance(n, "", siteA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogServer})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogServer})
 		default:
 		}
 	}
@@ -101,8 +104,8 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 	return &res
 }
 
-func (cts *CollectiveTestStruct) addAppliance(name, hostname, site, fromVersion, toVersion, status, upgradeStatus string, online bool, functions []string) {
-	a, s, u := GenerateApplianceWithStats(functions, name, hostname, fromVersion, toVersion, status, upgradeStatus, online, site)
+func (cts *CollectiveTestStruct) addAppliance(name, hostname, site, siteName, fromVersion, toVersion, status, upgradeStatus string, online bool, functions []string) {
+	a, s, u := GenerateApplianceWithStats(functions, name, hostname, fromVersion, toVersion, status, upgradeStatus, online, site, siteName)
 	for _, f := range functions {
 		switch f {
 		case FunctionController:
@@ -293,7 +296,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 	return stubs
 }
 
-func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData, openapi.StatsAppliancesListAllOfData) {
+func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site, siteName string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData, openapi.StatsAppliancesListAllOfData) {
 	id := uuid.NewString()
 	now := time.Now()
 	ctrl := &openapi.ApplianceAllOfController{}
@@ -332,7 +335,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 		Version:                   openapi.PtrInt32(18),
 		Hostname:                  hostname,
 		Site:                      openapi.PtrString(site),
-		SiteName:                  new(string),
+		SiteName:                  openapi.PtrString(siteName),
 		Customization:             new(string),
 		ClientInterface:           openapi.ApplianceAllOfClientInterface{},
 		AdminInterface: &openapi.ApplianceAllOfAdminInterface{
@@ -358,6 +361,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 	currentStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
 	currentStatsData.SetId(app.GetId())
 	currentStatsData.SetName(app.GetName())
+	currentStatsData.SetSiteName(siteName)
 	currentStatsData.SetStatus(status)
 	currentStatsData.SetVersion(currentVersion)
 	currentStatsData.SetOnline(online)
@@ -370,6 +374,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 	upgradedStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
 	upgradedStatsData.SetId(app.GetId())
 	upgradedStatsData.SetName(app.GetName())
+	upgradedStatsData.SetSiteName(siteName)
 	upgradedStatsData.SetStatus(status)
 	upgradedStatsData.SetOnline(online)
 	upgradedStatsData.SetVersion(targetVersion)

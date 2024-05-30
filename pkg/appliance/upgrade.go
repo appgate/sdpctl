@@ -327,14 +327,14 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 		Steps: []upgradeStep{},
 	}
 	tableHeaders := func(t *tabby.Tabby) {
-		t.AddHeader("Appliance", "Current version", "Prepared version", "Backup")
+		t.AddHeader("Appliance", "Site", "Current version", "Prepared version", "Backup")
 	}
 	if up.PrimaryController != nil {
 		currentVersion, targetVersion := applianceVersions(*up.PrimaryController, up.stats)
 		tb := &bytes.Buffer{}
 		t := util.NewPrinter(tb, 4)
 		tableHeaders(t)
-		t.AddLine(up.PrimaryController.GetName(), currentVersion, targetVersion, shouldBackup(up.PrimaryController.GetId()))
+		t.AddLine(up.PrimaryController.GetName(), up.PrimaryController.GetSiteName(), currentVersion, targetVersion, shouldBackup(up.PrimaryController.GetId()))
 		t.Print()
 		stub.Steps = append(stub.Steps, upgradeStep{
 			Description: strings.Join(primaryControllerDescription, descriptionIndent),
@@ -350,7 +350,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 		tableHeaders(t)
 		for _, ctrl := range up.Controllers {
 			current, target := applianceVersions(ctrl, up.stats)
-			t.AddLine(ctrl.GetName(), current, target, shouldBackup(ctrl.GetId()))
+			t.AddLine(ctrl.GetName(), ctrl.GetSiteName(), current, target, shouldBackup(ctrl.GetId()))
 		}
 		t.Print()
 		step.Table = util.PrefixStringLines(tb.String(), " ", 4)
@@ -365,7 +365,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 		tableHeaders(t)
 		for _, lfls := range up.LogForwardersAndServers {
 			current, target := applianceVersions(lfls, up.stats)
-			t.AddLine(lfls.GetName(), current, target, shouldBackup(lfls.GetId()))
+			t.AddLine(lfls.GetName(), lfls.GetSiteName(), current, target, shouldBackup(lfls.GetId()))
 		}
 		t.Print()
 		step.Table = util.PrefixStringLines(tb.String(), " ", 4)
@@ -380,7 +380,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 			for _, a := range c {
 				current, target := applianceVersions(a, up.stats)
 				// s := fmt.Sprintf("- %s: %s -> %s", a.GetName(), current, target)
-				t.AddLine(a.GetName(), current, target, shouldBackup(a.GetId()))
+				t.AddLine(a.GetName(), a.GetSiteName(), current, target, shouldBackup(a.GetId()))
 			}
 			t.AddLine("")
 			t.Print()

@@ -225,9 +225,9 @@ Upgrade will be completed in steps:
  1. The primary Controller will be upgraded
     This will result in the API being unreachable while completing the primary Controller upgrade
 
-    Appliance    Current version    Prepared version    Backup
-    ---------    ---------------    ----------------    ------
-    primary      6.2.0              6.3.0               ✓
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    primary      SiteA    6.2.0              6.3.0               ✓
 
 
  2. Additional Controllers will be upgraded in serial
@@ -236,9 +236,9 @@ Upgrade will be completed in steps:
     the upgrade is completed
     This step will also reboot the upgraded Controllers for the upgrade to take effect
 
-    Appliance    Current version    Prepared version    Backup
-    ---------    ---------------    ----------------    ------
-    secondary    6.2.0              6.3.0               ✓
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    secondary    SiteA    6.2.0              6.3.0               ✓
 
 
  3. Additional appliances will be upgraded in parallell batches. The additional appliances will be split into
@@ -247,30 +247,30 @@ Upgrade will be completed in steps:
 
     Batch #1:
 
-    Appliance         Current version    Prepared version    Backup
-    ---------         ---------------    ----------------    ------
-    gatewayA1         6.2.0              6.3.0               ⨯
-    gatewayB1         6.2.0              6.3.0               ⨯
-    gatewayC1         6.2.0              6.3.0               ⨯
-    logforwarderA1    6.2.0              6.3.0               ⨯
+    Appliance         Site     Current version    Prepared version    Backup
+    ---------         ----     ---------------    ----------------    ------
+    gatewayA1         SiteA    6.2.0              6.3.0               ⨯
+    gatewayB1         SiteB    6.2.0              6.3.0               ⨯
+    gatewayC1         SiteC    6.2.0              6.3.0               ⨯
+    logforwarderA1    SiteA    6.2.0              6.3.0               ⨯
 
     Batch #2:
 
-    Appliance         Current version    Prepared version    Backup
-    ---------         ---------------    ----------------    ------
-    gatewayA2         6.2.0              6.3.0               ⨯
-    gatewayB2         6.2.0              6.3.0               ⨯
-    gatewayC2         6.2.0              6.3.0               ⨯
-    logforwarderA2    6.2.0              6.3.0               ⨯
+    Appliance         Site     Current version    Prepared version    Backup
+    ---------         ----     ---------------    ----------------    ------
+    gatewayA2         SiteA    6.2.0              6.3.0               ⨯
+    gatewayB2         SiteB    6.2.0              6.3.0               ⨯
+    gatewayC2         SiteC    6.2.0              6.3.0               ⨯
+    logforwarderA2    SiteA    6.2.0              6.3.0               ⨯
 
     Batch #3:
 
-    Appliance      Current version    Prepared version    Backup
-    ---------      ---------------    ----------------    ------
-    connectorA1    6.2.0              6.3.0               ⨯
-    gatewayA3      6.2.0              6.3.0               ⨯
-    logserver      6.2.0              6.3.0               ⨯
-    portalA1       6.2.0              6.3.0               ⨯
+    Appliance      Site     Current version    Prepared version    Backup
+    ---------      ----     ---------------    ----------------    ------
+    connectorA1    SiteA    6.2.0              6.3.0               ⨯
+    gatewayA3      SiteA    6.2.0              6.3.0               ⨯
+    logserver      SiteA    6.2.0              6.3.0               ⨯
+    portalA1       SiteA    6.2.0              6.3.0               ⨯
 
 
 `,
@@ -299,9 +299,9 @@ Upgrade will be completed in steps:
  1. The primary Controller will be upgraded
     This will result in the API being unreachable while completing the primary Controller upgrade
 
-    Appliance    Current version    Prepared version    Backup
-    ---------    ---------------    ----------------    ------
-    primary      6.2.0              6.2.1               ✓
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    primary      SiteA    6.2.0              6.2.1               ✓
 
 
  2. Additional Controllers will be upgraded in serial
@@ -310,9 +310,9 @@ Upgrade will be completed in steps:
     the upgrade is completed
     This step will also reboot the upgraded Controllers for the upgrade to take effect
 
-    Appliance    Current version    Prepared version    Backup
-    ---------    ---------------    ----------------    ------
-    secondary    6.2.0              6.2.1               ⨯
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    secondary    SiteA    6.2.0              6.2.1               ⨯
 
 
  3. Additional appliances will be upgraded in parallell batches. The additional appliances will be split into
@@ -321,15 +321,15 @@ Upgrade will be completed in steps:
 
     Batch #1:
 
-    Appliance    Current version    Prepared version    Backup
-    ---------    ---------------    ----------------    ------
-    gatewayA1    6.2.0              6.2.1               ⨯
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    gatewayA1    SiteA    6.2.0              6.2.1               ⨯
 
     Batch #2:
 
-    Appliance    Current version    Prepared version    Backup
-    ---------    ---------------    ----------------    ------
-    gatewayA2    6.2.0              6.2.1               ⨯
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    gatewayA2    SiteA    6.2.0              6.2.1               ⨯
 
 
 Appliances that will be skipped:
