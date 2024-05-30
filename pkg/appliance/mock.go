@@ -175,6 +175,14 @@ var (
 	}
 )
 
+func (cts *CollectiveTestStruct) GetAppliances() []openapi.Appliance {
+	a := make([]openapi.Appliance, 0, len(cts.Appliances))
+	for _, app := range cts.Appliances {
+		a = append(a, app)
+	}
+	return a
+}
+
 func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, stats, upgradedStats openapi.StatsAppliancesList) []httpmock.Stub {
 	stubs := []httpmock.Stub{}
 
@@ -290,6 +298,28 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 		stubs = append(stubs, httpmock.Stub{
 			URL:       fmt.Sprintf("/admin/appliances/%s/backup/%s", a.GetId(), backupID),
 			Responder: httpmock.FileResponse(),
+		})
+
+		stubs = append(stubs, httpmock.Stub{
+			URL: fmt.Sprintf("/admin/appliances/%s/name-resolution-status", a.GetId()),
+			Responder: func(w http.ResponseWriter, r *http.Request) {
+				res := openapi.NewAppliancesIdNameResolutionStatusGet200ResponseWithDefaults()
+				res.Resolutions = &map[string]openapi.AppliancesIdNameResolutionStatusGet200ResponseResolutionsValue{
+					"aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev": {
+						Partial:  openapi.PtrBool(false),
+						Finals:   []string{"3.120.51.78", "35.156.237.184"},
+						Partials: []string{"dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com", "dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com"},
+						Errors:   []string{},
+					},
+				}
+				b, err := res.MarshalJSON()
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				w.Header().Add("Content-Type", "application/json")
+				w.Write(b)
+			},
 		})
 	}
 
