@@ -40,48 +40,48 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			cli:  "cryptzone.com",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
-					URL: "/appliances/force-disable-controllers",
+					URL: "/admin/appliances/force-disable-controllers",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "ba86a668-a965-44bb-a6b0-07df8f449c01")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/repartition-ip-allocations",
+					URL: "/admin/appliances/repartition-ip-allocations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "1012ad03-f4ac-4760-ab21-b9bfc2c769d7")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
@@ -94,34 +94,34 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			cli:  "cryptzone.com ctrl3.cryptzone.com",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
-					URL: "/appliances/force-disable-controllers",
+					URL: "/admin/appliances/force-disable-controllers",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "ba86a668-a965-44bb-a6b0-07df8f449c01")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/repartition-ip-allocations",
+					URL: "/admin/appliances/repartition-ip-allocations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "1012ad03-f4ac-4760-ab21-b9bfc2c769d7")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
@@ -134,34 +134,34 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			cli:  "ed95fac8-9098-472b-b9f0-fe741881e2ca ctrl3.cryptzone.com",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
-					URL: "/appliances/force-disable-controllers",
+					URL: "/admin/appliances/force-disable-controllers",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "ba86a668-a965-44bb-a6b0-07df8f449c01")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/repartition-ip-allocations",
+					URL: "/admin/appliances/repartition-ip-allocations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "1012ad03-f4ac-4760-ab21-b9bfc2c769d7")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
@@ -174,62 +174,62 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			cli:  "ctrl4.cryptzone.com",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
-					URL: "/appliances/force-disable-controllers",
+					URL: "/admin/appliances/force-disable-controllers",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "ba86a668-a965-44bb-a6b0-07df8f449c01")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					URL: "/admin/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/repartition-ip-allocations",
+					URL: "/admin/appliances/repartition-ip-allocations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Change-ID", "1012ad03-f4ac-4760-ab21-b9bfc2c769d7")
 					},
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/ed95fac8-9098-472b-b9f0-fe741881e2ca/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
 					},
 				},
 				{
-					URL: "/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					URL: "/admin/appliances/21ac20ec-410a-4b59-baf3-fdacbe455581/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.Header().Add("Content-Type", "application/json")
 						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
@@ -244,11 +244,11 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`No Controllers selected to disable`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 			},

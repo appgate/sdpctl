@@ -300,7 +300,10 @@ func controllerCount(appliances []openapi.Appliance) int {
 	return i
 }
 
-var ErrNeedsAllControllerUpgrade = errors.New("all controllers need to be prepared when doing a major or minor version upgrade.")
+var (
+	ErrNeedsAllControllerUpgrade = errors.New("all controllers need to be prepared when doing a major or minor version upgrade.")
+	ErrControllerVersionMismatch = errors.New("all controllers need to be prepared with the same version when doing a major or minor version upgrade.")
+)
 
 func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	var (
@@ -308,6 +311,7 @@ func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, applian
 		preparedControllers    []openapi.Appliance
 		unpreparedControllers  []openapi.Appliance
 		alreadySameVersion     []openapi.Appliance
+		mismatchControllers    []openapi.Appliance
 		isMajorOrMinor         bool
 		offlineControllers     []openapi.Appliance
 		totalControllers       = int(stats.GetControllerCount())
@@ -343,13 +347,38 @@ func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, applian
 						errs = multierror.Append(errs, err)
 						continue
 					}
-					if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion); res > 0 {
+					res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion)
+					if res < 0 {
+						unpreparedControllers = append(unpreparedControllers, app)
+					}
+					if res > 0 {
 						highestPreparedVersion = targetVersion
 					}
 					isMajorOrMinor = IsMajorUpgrade(current, targetVersion) || IsMinorUpgrade(current, targetVersion)
 				} else {
 					unpreparedControllers = append(unpreparedControllers, app)
 				}
+			}
+		}
+	}
+
+	// check if prepared controllers has mismatching version
+	preparedClone := slices.Clone(preparedControllers)
+	for i, a := range preparedClone {
+		for _, s := range stats.GetData() {
+			if a.GetId() != s.GetId() {
+				continue
+			}
+
+			us := s.GetUpgrade()
+			targetVersion, err := ParseVersionString(us.GetDetails())
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion); res < 0 {
+				mismatchControllers = append(mismatchControllers, a)
+				preparedControllers = append(preparedControllers[:i], preparedControllers[i+1:]...)
 			}
 		}
 	}
@@ -387,7 +416,10 @@ func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, applian
 		return nil, nil
 	}
 
-	// If all controllers need upgrading, but some are unprepared
+	if isMajorOrMinor && len(mismatchControllers) > 0 {
+		return mismatchControllers, ErrControllerVersionMismatch
+	}
+
 	// we return a list of the controllers that need to be prapared along with an error
 	if isMajorOrMinor && len(unpreparedControllers) > 0 {
 		return unpreparedControllers, ErrNeedsAllControllerUpgrade

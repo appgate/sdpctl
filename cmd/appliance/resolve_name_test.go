@@ -29,7 +29,7 @@ func TestNewResolveNameCmdJSON(t *testing.T) {
 			name: "test JSON 200",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/test-resolver-name",
+					URL: "/admin/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/test-resolver-name",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -48,7 +48,7 @@ func TestNewResolveNameCmdJSON(t *testing.T) {
 			name: "test JSON 422",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/test-resolver-name",
+					URL: "/admin/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/test-resolver-name",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")

@@ -21,32 +21,32 @@ func TestBackupCmd(t *testing.T) {
 
 	// Appliance list route
 	registry.Register(
-		"/appliances",
+		"/admin/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	// Appliance stats route
 	registry.Register(
-		"/stats/appliances",
+		"/admin/stats/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	// Backup state
 	registry.Register(
-		"/global-settings",
+		"/admin/global-settings",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_global_options.json"),
 	)
 	// Initiate backup request
 	registry.Register(
-		fmt.Sprintf("/appliances/%s/backup", applianceUUID),
+		fmt.Sprintf("/admin/appliances/%s/backup", applianceUUID),
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_initiated.json"),
 	)
 	// Backup is done
 	registry.Register(
-		fmt.Sprintf("/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
+		fmt.Sprintf("/admin/appliances/%s/backup/%s/status", applianceUUID, backupUUID),
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_backup_status_done.json"),
 	)
 	// Download backup
 	registry.Register(
-		fmt.Sprintf("/appliances/%s/backup/%s", applianceUUID, backupUUID),
+		fmt.Sprintf("/admin/appliances/%s/backup/%s", applianceUUID, backupUUID),
 		httpmock.FileResponse(),
 	)
 	defer registry.Teardown()
@@ -170,7 +170,7 @@ func TestBackupCmdDisabledAPI(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	// Backup state
 	registry.Register(
-		"/global-settings",
+		"/admin/global-settings",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_global_options_backup_disabled.json"),
 	)
 	defer registry.Teardown()

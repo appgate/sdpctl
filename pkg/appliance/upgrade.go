@@ -61,15 +61,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	}
 
 	// we check if all controllers need upgrade very early
-	if unprepared, err := CheckNeedsMultiControllerUpgrade(stats, appliances); err != nil {
-		if errors.Is(err, ErrNeedsAllControllerUpgrade) && len(unprepared) > 0 {
-			var errs *multierror.Error
-			errs = multierror.Append(errs, err)
-			for _, up := range unprepared {
-				errs = multierror.Append(errs, fmt.Errorf("%s is not prepared with the correct version", up.GetName()))
-			}
-			return nil, errs.ErrorOrNil()
-		}
+	if _, err := CheckNeedsMultiControllerUpgrade(stats, appliances); err != nil {
 		return nil, err
 	}
 

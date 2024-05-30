@@ -38,8 +38,8 @@ func TestPromptSelect(t *testing.T) {
 				APIClient: registry.Client,
 				Token:     "",
 			}
-			registry.Register("/appliances", httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"))
-			registry.Register("/stats/appliances", httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"))
+			registry.Register("/admin/appliances", httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"))
+			registry.Register("/admin/stats/appliances", httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"))
 			stubber, teardown := prompt.InitAskStubber(t)
 			func(s *prompt.AskStubber) {
 				s.StubOne(1)

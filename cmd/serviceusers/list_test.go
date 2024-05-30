@@ -71,7 +71,7 @@ func TestServiceUsersList(t *testing.T) {
 			args: []string{"list"},
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users",
+					URL:       "/admin/service-users",
 					Responder: httpmock.JSONResponse("../../pkg/serviceusers/fixtures/service-users-list.json"),
 				},
 			},
@@ -82,7 +82,7 @@ func TestServiceUsersList(t *testing.T) {
 			args: []string{"list", "--json"},
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users",
+					URL:       "/admin/service-users",
 					Responder: httpmock.JSONResponse("../../pkg/serviceusers/fixtures/service-users-list.json"),
 				},
 			},

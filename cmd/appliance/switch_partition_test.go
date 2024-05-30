@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"regexp"
 	"testing"
 
 	"github.com/Netflix/go-expect"
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
@@ -44,60 +46,60 @@ func TestSwitchPartition(t *testing.T) {
 		wantErr  bool
 		expect   *regexp.Regexp
 	}{
-		// {
-		// 	desc: "no arg",
-		// 	tty:  true,
-		// 	askStubs: func(s *prompt.AskStubber) {
-		// 		s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
-		// 		s.StubOne(true) // Confirmation prompt
-		// 	},
-		// 	apiStubs: []httpmock.Stub{
-		// 		{
-		// 			URL:       "/appliances",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
-		// 		},
-		// 		{
-		// 			URL:       "/stats/appliances",
-		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
-		// 		},
-		// 		{
-		// 			URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
-		// 		},
-		// 		{
-		// 			URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
-		// 			Responder: func(w http.ResponseWriter, r *http.Request) {
-		// 				w.WriteHeader(http.StatusAccepted)
-		// 			},
-		// 		},
-		// 	},
-		// 	expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
-		// },
-		// {
-		// 	desc: "with id arg",
-		// 	tty:  true,
-		// 	args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
-		// 	apiStubs: []httpmock.Stub{
-		// 		{
-		// 			URL:       "/stats/appliances",
-		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
-		// 		},
-		// 		{
-		// 			URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
-		// 		},
-		// 		{
-		// 			URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
-		// 			Responder: func(w http.ResponseWriter, r *http.Request) {
-		// 				w.WriteHeader(http.StatusAccepted)
-		// 			},
-		// 		},
-		// 	},
-		// 	askStubs: func(as *prompt.AskStubber) {
-		// 		as.StubOne(true) // Confirmation prompt
-		// 	},
-		// 	expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
-		// },
+		{
+			desc: "no arg",
+			tty:  true,
+			askStubs: func(s *prompt.AskStubber) {
+				s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
+				s.StubOne(true) // Confirmation prompt
+			},
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/admin/stats/appliances",
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
+				},
+				{
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
+		},
+		{
+			desc: "with id arg",
+			tty:  true,
+			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/stats/appliances",
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
+				},
+				{
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(true) // Confirmation prompt
+			},
+			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
+		},
 		{
 			desc:    "with invalid arg",
 			args:    []string{"dslkjflkjdsaf"},
@@ -113,11 +115,11 @@ func TestSwitchPartition(t *testing.T) {
 			},
 			apiStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
 				},
 			},
@@ -129,47 +131,47 @@ func TestSwitchPartition(t *testing.T) {
 			wantErr: true,
 			expect:  regexp.MustCompile(`no TTY present and no appliance ID provided`),
 		},
-		// {
-		// 	desc: "no TTY, with argument",
-		// 	args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
-		// 	apiStubs: []httpmock.Stub{
-		// 		{
-		// 			URL:       "/stats/appliances",
-		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
-		// 		},
-		// 		{
-		// 			URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
-		// 		},
-		// 		{
-		// 			URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
-		// 			Responder: func(w http.ResponseWriter, r *http.Request) {
-		// 				w.WriteHeader(http.StatusAccepted)
-		// 			},
-		// 		},
-		// 	},
-		// 	expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
-		// },
-		// {
-		// 	desc: "no user confirmation",
-		// 	args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
-		// 	tty:  true,
-		// 	apiStubs: []httpmock.Stub{
-		// 		{
-		// 			URL:       "/stats/appliances",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
-		// 		},
-		// 		{
-		// 			URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
-		// 		},
-		// 	},
-		// 	askStubs: func(as *prompt.AskStubber) {
-		// 		as.StubOne(false) // User confirmation
-		// 	},
-		// 	wantErr: true,
-		// 	expect:  regexp.MustCompile(cmdutil.ErrExecutionCanceledByUser.Error()),
-		// },
+		{
+			desc: "no TTY, with argument",
+			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/stats/appliances",
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
+				},
+				{
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
+		},
+		{
+			desc: "no user confirmation",
+			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
+			tty:  true,
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
+				},
+				{
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubOne(false) // User confirmation
+			},
+			wantErr: true,
+			expect:  regexp.MustCompile(cmdutil.ErrExecutionCanceledByUser.Error()),
+		},
 	}
 	for _, tt := range testCases {
 		t.Run(tt.desc, func(t *testing.T) {

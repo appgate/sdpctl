@@ -25,7 +25,7 @@ func TestAuthProviderNames(t *testing.T) {
 			name: "list providers",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/identity-providers/names",
+					URL: "/admin/identity-providers/names",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")
@@ -133,7 +133,7 @@ func TestAuthAuthentication(t *testing.T) {
 			name: "authentication OK",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication",
+					URL: "/admin/authentication",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -156,7 +156,7 @@ func TestAuthAuthentication(t *testing.T) {
 			name: "authentication 406",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication",
+					URL: "/admin/authentication",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -184,7 +184,7 @@ func TestAuthAuthentication(t *testing.T) {
 			name: "authentication 500",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication",
+					URL: "/admin/authentication",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -252,7 +252,7 @@ func TestAuthAuthorization(t *testing.T) {
 			name: "Authorization OK",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authorization",
+					URL: "/admin/authorization",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")
@@ -275,7 +275,7 @@ func TestAuthAuthorization(t *testing.T) {
 			name: "Authorization 412",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authorization",
+					URL: "/admin/authorization",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")
@@ -338,7 +338,7 @@ func TestAuthInitializeOTP(t *testing.T) {
 			name: "otp initialize already seeded",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication/otp/initialize",
+					URL: "/admin/authentication/otp/initialize",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -364,7 +364,7 @@ func TestAuthInitializeOTP(t *testing.T) {
 			name: "otp initialize 422",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication/otp/initialize",
+					URL: "/admin/authentication/otp/initialize",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -431,7 +431,7 @@ func TestAuthPushOTP(t *testing.T) {
 			name: "otp initialize already seeded",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication/otp",
+					URL: "/admin/authentication/otp",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -447,7 +447,7 @@ func TestAuthPushOTP(t *testing.T) {
 			name: "otp initialize invalid token",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/authentication/otp",
+					URL: "/admin/authentication/otp",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")

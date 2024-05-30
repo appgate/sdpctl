@@ -273,7 +273,7 @@ func TestNewSeedCmd(t *testing.T) {
 			wantJSON: true,
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/08cd20c0-f175-4503-96f7-c5b429c19236",
+					URL: "/admin/appliances/08cd20c0-f175-4503-96f7-c5b429c19236",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")
@@ -286,7 +286,7 @@ func TestNewSeedCmd(t *testing.T) {
 					},
 				},
 				{
-					URL: "/appliances/08cd20c0-f175-4503-96f7-c5b429c19236/export",
+					URL: "/admin/appliances/08cd20c0-f175-4503-96f7-c5b429c19236/export",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method != http.MethodPost {
 							panic("test error: expected only HTTP POST")
@@ -309,7 +309,7 @@ func TestNewSeedCmd(t *testing.T) {
 			},
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances",
+					URL: "/admin/appliances",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
@@ -318,7 +318,7 @@ func TestNewSeedCmd(t *testing.T) {
 				},
 
 				{
-					URL: "/appliances/08cd20c0-f175-4503-96f7-c5b429c19236",
+					URL: "/admin/appliances/08cd20c0-f175-4503-96f7-c5b429c19236",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")
@@ -331,7 +331,7 @@ func TestNewSeedCmd(t *testing.T) {
 					},
 				},
 				{
-					URL: "/appliances/08cd20c0-f175-4503-96f7-c5b429c19236/export/iso",
+					URL: "/admin/appliances/08cd20c0-f175-4503-96f7-c5b429c19236/export/iso",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method != http.MethodPost {
 							panic("test error: expected only HTTP POST")
