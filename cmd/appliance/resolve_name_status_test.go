@@ -26,18 +26,18 @@ func TestResolveNameStatusCMD(t *testing.T) {
 		{
 			name:      "basic name resolution status test",
 			appliance: appliancepkg.TestAppliancePrimary,
-			want: `Name                                                          Partial Resolutions    Final Resolutions               Errors
-----                                                          -------------------    -----------------               ------
-aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev    false                  [3.120.51.78 35.156.237.184]    []
+			want: `Name                                                          Final Resolutions               Partial Resolution    Errors
+----                                                          -----------------               ------------------    ------
+aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev    [3.120.51.78 35.156.237.184]    false                 []
 `,
 		},
 		{
 			name:      "name resolution status table with partials",
-			cli:       "--with-partials",
+			cli:       "--partial-resolution",
 			appliance: appliancepkg.TestAppliancePrimary,
-			want: `Name                                                          Partial Resolutions    Final Resolutions               Errors    Partials
-----                                                          -------------------    -----------------               ------    --------
-aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev    false                  [3.120.51.78 35.156.237.184]    []        [dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com]
+			want: `Name                                                          Final Resolutions               Partial Resolution    Errors    Partials
+----                                                          -----------------               ------------------    ------    --------
+aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev    [3.120.51.78 35.156.237.184]    false                 []        [dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com]
 `,
 		},
 	}

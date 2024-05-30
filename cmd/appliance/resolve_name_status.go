@@ -86,7 +86,7 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 			return resolveNameStatusRun(&opts)
 		},
 	}
-	cmd.Flags().BoolVar(&opts.withPartials, "with-partials", false, "include all partial resolutions in table")
+	cmd.Flags().BoolVar(&opts.withPartials, "partial-resolution", false, "include all partial resolutions in table")
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 
@@ -114,14 +114,14 @@ func resolveNameStatusRun(opts *resolveNameStatusOpts) error {
 
 	p := util.NewPrinter(opts.Out, 4)
 	if opts.withPartials {
-		p.AddHeader("Name", "Partial Resolutions", "Final Resolutions", "Errors", "Partials")
+		p.AddHeader("Name", "Final Resolutions", "Partial Resolution", "Errors", "Partials")
 		for k, r := range result.GetResolutions() {
-			p.AddLine(k, r.GetPartial(), r.GetFinals(), r.GetErrors(), r.GetPartials())
+			p.AddLine(k, r.GetFinals(), r.GetPartial(), r.GetErrors(), r.GetPartials())
 		}
 	} else {
-		p.AddHeader("Name", "Partial Resolutions", "Final Resolutions", "Errors")
+		p.AddHeader("Name", "Final Resolutions", "Partial Resolution", "Errors")
 		for k, r := range result.GetResolutions() {
-			p.AddLine(k, r.GetPartial(), r.GetFinals(), r.GetErrors())
+			p.AddLine(k, r.GetFinals(), r.GetPartial(), r.GetErrors())
 		}
 	}
 	p.Print()
