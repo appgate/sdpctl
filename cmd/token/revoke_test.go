@@ -25,7 +25,7 @@ func setupTokenRevokeTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *byt
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			URL:   fmt.Sprintf("http://localhost:%d/admin", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,
@@ -57,7 +57,7 @@ func setupTokenRevokeTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *byt
 
 func TestTokenRevokeByTokenType(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
+	registry.Register("/admin/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
@@ -89,7 +89,7 @@ e433ec11-cb89-4a59-a0e3-f89848783b04  Entitlement  CN=b37de2ed4b4c4d21952f718e2d
 
 func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
+	registry.Register("/admin/token-records/revoked/by-type/administration", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
@@ -114,7 +114,7 @@ func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
 
 func TestTokenRevokeByDistinguishedName(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+	registry.Register("/admin/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
@@ -143,7 +143,7 @@ c3eeb87b-e406-42ee-a1a9-0dadb4752023  AdminClaims     CN=70e076801c4b5bdc87b4afc
 
 func TestTokenRevokeByDistinguishedNameJSON(t *testing.T) {
 	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+	registry.Register("/admin/token-records/revoked/by-dn/CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
 	registry.Serve()
 	defer registry.Teardown()
 

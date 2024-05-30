@@ -17,19 +17,19 @@ import (
 func TestUpgradeStatusCommandJSON(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/appliances",
+		"/admin/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	registry.Register(
-		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+		"/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registry.Register(
-		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+		"/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registry.Register(
-		"/stats/appliances",
+		"/admin/stats/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()
@@ -97,19 +97,19 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 func TestUpgradeStatusCommandTable(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/appliances",
+		"/admin/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 	)
 	registry.Register(
-		"/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+		"/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registry.Register(
-		"/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+		"/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registry.Register(
-		"/stats/appliances",
+		"/admin/stats/appliances",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()

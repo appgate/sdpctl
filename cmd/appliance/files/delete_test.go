@@ -53,7 +53,7 @@ func setupDeleteTest(t *testing.T) (*httpmock.Registry, *factory.Factory, *bytes
 func TestDeleteSingleFile(t *testing.T) {
 	registry, f, out := setupDeleteTest(t)
 	defer registry.Teardown()
-	registry.Register("/files/appgate-6.0.1-29983-beta.img.zip", func(w http.ResponseWriter, r *http.Request) {
+	registry.Register("/admin/files/appgate-6.0.1-29983-beta.img.zip", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -87,15 +87,15 @@ func TestDeleteSingleFile(t *testing.T) {
 func TestDeleteAllFiles(t *testing.T) {
 	registry, f, out := setupDeleteTest(t)
 	defer registry.Teardown()
-	registry.Register("/files", httpmock.JSONResponse("../../../pkg/appliance/fixtures/file_list.json"))
-	registry.Register("/files/appgate-6.0.1-29983-beta.img.zip", func(w http.ResponseWriter, r *http.Request) {
+	registry.Register("/admin/files", httpmock.JSONResponse("../../../pkg/appliance/fixtures/file_list.json"))
+	registry.Register("/admin/files/appgate-6.0.1-29983-beta.img.zip", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 	})
-	registry.Register("/files/appgate-5.5.1-29983.img.zip", func(w http.ResponseWriter, r *http.Request) {
+	registry.Register("/admin/files/appgate-5.5.1-29983.img.zip", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodDelete {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -131,7 +131,7 @@ appgate-6.0.1-29983-beta.img.zip: deleted
 func TestFilesDeleteNoInteractive(t *testing.T) {
 	registry, f, out := setupDeleteTest(t)
 	defer registry.Teardown()
-	registry.Register("/files", httpmock.JSONResponse("../../../pkg/appliance/fixtures/file_list.json"))
+	registry.Register("/admin/files", httpmock.JSONResponse("../../../pkg/appliance/fixtures/file_list.json"))
 	registry.Serve()
 
 	cmd := NewFilesCmd(f)

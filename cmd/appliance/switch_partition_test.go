@@ -56,19 +56,19 @@ func TestSwitchPartition(t *testing.T) {
 			},
 			apiStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.WriteHeader(http.StatusAccepted)
 					},
@@ -82,15 +82,15 @@ func TestSwitchPartition(t *testing.T) {
 			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
 			apiStubs: []httpmock.Stub{
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.WriteHeader(http.StatusAccepted)
 					},
@@ -116,11 +116,11 @@ func TestSwitchPartition(t *testing.T) {
 			},
 			apiStubs: []httpmock.Stub{
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
 				},
 			},
@@ -137,15 +137,15 @@ func TestSwitchPartition(t *testing.T) {
 			args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
 			apiStubs: []httpmock.Stub{
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
 				},
 				{
-					URL: "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						w.WriteHeader(http.StatusAccepted)
 					},
@@ -159,11 +159,11 @@ func TestSwitchPartition(t *testing.T) {
 			tty:  true,
 			apiStubs: []httpmock.Stub{
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
 				},
 			},

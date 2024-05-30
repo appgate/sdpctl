@@ -5,18 +5,16 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
-	"github.com/google/uuid"
-	"github.com/hashicorp/go-version"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMakeUpgradePlan(t *testing.T) {
 	hostname := "appgate.test"
-	v62, _ := version.NewVersion("6.2")
-	v63, _ := version.NewVersion("6.3")
+	v62 := "6.2"
+	v63 := "6.3"
 
-	coll := generateCollective(hostname, v62, v63)
-	primary := coll.appliances["primary"]
+	coll := GenerateCollective(t, hostname, v62, v63, PreSetApplianceNames)
+	primary := coll.Appliances["primary"]
 
 	type args struct {
 		appliances   []openapi.Appliance
@@ -36,22 +34,22 @@ func TestMakeUpgradePlan(t *testing.T) {
 			name: "grouping test",
 			args: args{
 				appliances: []openapi.Appliance{
-					coll.appliances["primary"],
-					coll.appliances["secondary"],
-					coll.appliances["gatewayA1"],
-					coll.appliances["gatewayA2"],
-					coll.appliances["gatewayA3"],
-					coll.appliances["gatewayB1"],
-					coll.appliances["gatewayB2"],
-					coll.appliances["gatewayC1"],
-					coll.appliances["gatewayC2"],
-					coll.appliances["logforwarderA1"],
-					coll.appliances["logforwarderA2"],
-					coll.appliances["portalA1"],
-					coll.appliances["connectorA1"],
-					coll.appliances["logserver"],
+					coll.Appliances["primary"],
+					coll.Appliances["secondary"],
+					coll.Appliances["gatewayA1"],
+					coll.Appliances["gatewayA2"],
+					coll.Appliances["gatewayA3"],
+					coll.Appliances["gatewayB1"],
+					coll.Appliances["gatewayB2"],
+					coll.Appliances["gatewayC1"],
+					coll.Appliances["gatewayC2"],
+					coll.Appliances["logforwarderA1"],
+					coll.Appliances["logforwarderA2"],
+					coll.Appliances["portalA1"],
+					coll.Appliances["connectorA1"],
+					coll.Appliances["logserver"],
 				},
-				stats:        coll.stats,
+				stats:        coll.Stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -59,36 +57,36 @@ func TestMakeUpgradePlan(t *testing.T) {
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{coll.appliances["secondary"]},
+				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
 				Batches: [][]openapi.Appliance{
-					{coll.appliances["gatewayA1"], coll.appliances["gatewayB1"], coll.appliances["gatewayC1"], coll.appliances["logforwarderA1"]},
-					{coll.appliances["gatewayA2"], coll.appliances["gatewayB2"], coll.appliances["gatewayC2"], coll.appliances["logforwarderA2"]},
-					{coll.appliances["connectorA1"], coll.appliances["gatewayA3"], coll.appliances["logserver"], coll.appliances["portalA1"]},
+					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC1"], coll.Appliances["logforwarderA1"]},
+					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
+					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         *coll.stats,
+				stats:         *coll.Stats,
 			},
 		},
 		{
 			name: "test grouping from unordered",
 			args: args{
 				appliances: []openapi.Appliance{
-					coll.appliances["primary"],
-					coll.appliances["gatewayA1"],
-					coll.appliances["gatewayB2"],
-					coll.appliances["gatewayA2"],
-					coll.appliances["logserver"],
-					coll.appliances["logforwarderA2"],
-					coll.appliances["gatewayB1"],
-					coll.appliances["connectorA1"],
-					coll.appliances["gatewayC1"],
-					coll.appliances["secondary"],
-					coll.appliances["gatewayA3"],
-					coll.appliances["gatewayC2"],
-					coll.appliances["portalA1"],
-					coll.appliances["logforwarderA1"],
+					coll.Appliances["primary"],
+					coll.Appliances["gatewayA1"],
+					coll.Appliances["gatewayB2"],
+					coll.Appliances["gatewayA2"],
+					coll.Appliances["logserver"],
+					coll.Appliances["logforwarderA2"],
+					coll.Appliances["gatewayB1"],
+					coll.Appliances["connectorA1"],
+					coll.Appliances["gatewayC1"],
+					coll.Appliances["secondary"],
+					coll.Appliances["gatewayA3"],
+					coll.Appliances["gatewayC2"],
+					coll.Appliances["portalA1"],
+					coll.Appliances["logforwarderA1"],
 				},
-				stats:        coll.stats,
+				stats:        coll.Stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -96,37 +94,37 @@ func TestMakeUpgradePlan(t *testing.T) {
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{coll.appliances["secondary"]},
+				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
 				Batches: [][]openapi.Appliance{
-					{coll.appliances["gatewayA1"], coll.appliances["gatewayB1"], coll.appliances["gatewayC1"], coll.appliances["logforwarderA1"]},
-					{coll.appliances["gatewayA2"], coll.appliances["gatewayB2"], coll.appliances["gatewayC2"], coll.appliances["logforwarderA2"]},
-					{coll.appliances["connectorA1"], coll.appliances["gatewayA3"], coll.appliances["logserver"], coll.appliances["portalA1"]},
+					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC1"], coll.Appliances["logforwarderA1"]},
+					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
+					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         *coll.stats,
+				stats:         *coll.Stats,
 			},
 		},
 		{
 			name: "test multi controller upgrade error",
 			args: args{
 				appliances: []openapi.Appliance{
-					coll.appliances["primary"],
-					coll.appliances["controller3"],
-					coll.appliances["gatewayA1"],
-					coll.appliances["gatewayB2"],
-					coll.appliances["gatewayA2"],
-					coll.appliances["logserver"],
-					coll.appliances["logforwarderA2"],
-					coll.appliances["gatewayB1"],
-					coll.appliances["connectorA1"],
-					coll.appliances["gatewayC1"],
-					coll.appliances["secondary"],
-					coll.appliances["gatewayA3"],
-					coll.appliances["gatewayC2"],
-					coll.appliances["portalA1"],
-					coll.appliances["logforwarderA1"],
+					coll.Appliances["primary"],
+					coll.Appliances["controller3"],
+					coll.Appliances["gatewayA1"],
+					coll.Appliances["gatewayB2"],
+					coll.Appliances["gatewayA2"],
+					coll.Appliances["logserver"],
+					coll.Appliances["logforwarderA2"],
+					coll.Appliances["gatewayB1"],
+					coll.Appliances["connectorA1"],
+					coll.Appliances["gatewayC1"],
+					coll.Appliances["secondary"],
+					coll.Appliances["gatewayA3"],
+					coll.Appliances["gatewayC2"],
+					coll.Appliances["portalA1"],
+					coll.Appliances["logforwarderA1"],
 				},
-				stats:        coll.stats,
+				stats:        coll.Stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -138,23 +136,23 @@ func TestMakeUpgradePlan(t *testing.T) {
 			name: "test offline controller",
 			args: args{
 				appliances: []openapi.Appliance{
-					coll.appliances["primary"],
-					coll.appliances["controller4"],
-					coll.appliances["gatewayA1"],
-					coll.appliances["gatewayB2"],
-					coll.appliances["gatewayA2"],
-					coll.appliances["logserver"],
-					coll.appliances["logforwarderA2"],
-					coll.appliances["gatewayB1"],
-					coll.appliances["connectorA1"],
-					coll.appliances["gatewayC1"],
-					coll.appliances["secondary"],
-					coll.appliances["gatewayA3"],
-					coll.appliances["gatewayC2"],
-					coll.appliances["portalA1"],
-					coll.appliances["logforwarderA1"],
+					coll.Appliances["primary"],
+					coll.Appliances["controller4"],
+					coll.Appliances["gatewayA1"],
+					coll.Appliances["gatewayB2"],
+					coll.Appliances["gatewayA2"],
+					coll.Appliances["logserver"],
+					coll.Appliances["logforwarderA2"],
+					coll.Appliances["gatewayB1"],
+					coll.Appliances["connectorA1"],
+					coll.Appliances["gatewayC1"],
+					coll.Appliances["secondary"],
+					coll.Appliances["gatewayA3"],
+					coll.Appliances["gatewayC2"],
+					coll.Appliances["portalA1"],
+					coll.Appliances["logforwarderA1"],
 				},
-				stats:        coll.stats,
+				stats:        coll.Stats,
 				ctrlHostname: hostname,
 				filter:       DefaultCommandFilter,
 				orderBy:      nil,
@@ -176,18 +174,17 @@ func TestMakeUpgradePlan(t *testing.T) {
 
 func TestUpgradePlan_PrintPreCompleteSummary(t *testing.T) {
 	hostname := "appgate.test"
-	v62, _ := version.NewVersion("6.2")
-	v621, _ := version.NewVersion("6.2.1")
-	v63, _ := version.NewVersion("6.3")
+	v62 := "6.2"
+	v621 := "6.2.1"
+	v63 := "6.3"
 
 	type inData struct {
-		Appliances []string
-		from, to   *version.Version
-		hostname   string
-		filter     map[string]map[string]string
-		orderBy    []string
-		descending bool
-		backup     []string
+		Appliances         []string
+		from, to, hostname string
+		filter             map[string]map[string]string
+		orderBy            []string
+		descending         bool
+		backup             []string
 	}
 	tests := []struct {
 		name    string
@@ -199,26 +196,26 @@ func TestUpgradePlan_PrintPreCompleteSummary(t *testing.T) {
 			name: "test summary",
 			in: inData{
 				Appliances: []string{
-					"primary",
-					"secondary",
-					"gatewayA1",
-					"gatewayA2",
-					"gatewayA3",
-					"gatewayB1",
-					"gatewayB2",
-					"gatewayC1",
-					"gatewayC2",
-					"logforwarderA1",
-					"logforwarderA2",
-					"portalA1",
-					"connectorA1",
-					"logserver",
+					TestAppliancePrimary,
+					TestApplianceSecondary,
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayC1,
+					TestApplianceGatewayC2,
+					TestApplianceLogForwarderA1,
+					TestApplianceLogForwarderA2,
+					TestAppliancePortalA1,
+					TestApplianceConnectorA1,
+					TestApplianceLogServer,
 				},
 				from:     v62,
 				to:       v63,
 				hostname: hostname,
 				filter:   DefaultCommandFilter,
-				backup:   []string{"primary", "secondary"},
+				backup:   []string{TestAppliancePrimary, TestApplianceSecondary},
 			},
 			wantOut: `
 UPGRADE COMPLETE SUMMARY
@@ -286,11 +283,11 @@ Upgrade will be completed in steps:
 				hostname: hostname,
 				filter:   DefaultCommandFilter,
 				Appliances: []string{
-					"primary",
-					"secondary",
-					"controller5",
-					"gatewayA1",
-					"gatewayA2",
+					TestAppliancePrimary,
+					TestApplianceSecondary,
+					TestApplianceControllerNotPrepared,
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
 				},
 				backup: []string{"primary"},
 			},
@@ -342,19 +339,19 @@ Appliances that will be skipped:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			coll := generateCollective(tt.in.hostname, tt.in.from, tt.in.to)
+			coll := GenerateCollective(t, tt.in.hostname, tt.in.from, tt.in.to, tt.in.Appliances)
 			appliances := make([]openapi.Appliance, 0, len(tt.in.Appliances))
 			for _, v := range tt.in.Appliances {
-				appliances = append(appliances, coll.appliances[v])
+				appliances = append(appliances, coll.Appliances[v])
 			}
-			up, err := NewUpgradePlan(appliances, *coll.stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
+			up, err := NewUpgradePlan(appliances, *coll.Stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
 			if len(tt.in.backup) > 0 {
 				ids := make([]string, 0, len(tt.in.backup))
 				for _, name := range tt.in.backup {
-					a := coll.appliances[name]
+					a := coll.Appliances[name]
 					ids = append(ids, a.GetId())
 				}
 				up.AddBackups(ids)
@@ -370,20 +367,20 @@ Appliances that will be skipped:
 }
 
 func TestUpgradePlan_PrintPostCompleteSummary(t *testing.T) {
-	v62, _ := version.NewVersion("6.2")
-	v621, _ := version.NewVersion("6.2.1")
+	v62 := "6.2"
+	v621 := "6.2.1"
 
 	testCases := []struct {
 		name       string
 		appliances []string
 		expect     string
-		from, to   *version.Version
+		from, to   string
 	}{
 		{
 			name: "print no diff summary",
 			appliances: []string{
-				"primary",
-				"gatewayA1",
+				TestAppliancePrimary,
+				TestApplianceGatewayA1,
 			},
 			from: v62,
 			to:   v621,
@@ -399,9 +396,9 @@ primary      6.2.1
 		{
 			name: "diff on three appliances",
 			appliances: []string{
-				"primary",
-				"controller3",
-				"gatewayA1",
+				TestAppliancePrimary,
+				TestApplianceControllerNotPrepared,
+				TestApplianceGatewayA1,
 			},
 			from: v62,
 			to:   v621,
@@ -409,7 +406,7 @@ primary      6.2.1
 
 Appliance      Current Version
 ---------      ---------------
-controller3    6.2.0
+controller5    6.2.0
 gatewayA1      6.2.1
 primary        6.2.1
 
@@ -420,26 +417,18 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			hostname := "appgate.test"
-			coll := generateCollective(hostname, tt.from, tt.to)
+			coll := GenerateCollective(t, hostname, tt.from, tt.to, tt.appliances)
 			appliances := make([]openapi.Appliance, 0, len(tt.appliances))
-			upgradedStats := make([]openapi.StatsAppliancesListAllOfData, 0, len(appliances))
 			for _, v := range tt.appliances {
-				a := coll.appliances[v]
-				for _, s := range coll.upgradedStats.GetData() {
-					if a.GetId() != s.GetId() {
-						continue
-					}
-					upgradedStats = append(upgradedStats, s)
-				}
-				appliances = append(appliances, a)
+				appliances = append(appliances, coll.Appliances[v])
 			}
-			up, err := NewUpgradePlan(appliances, *coll.stats, hostname, DefaultCommandFilter, nil, false)
+			up, err := NewUpgradePlan(appliances, *coll.Stats, hostname, DefaultCommandFilter, nil, false)
 			if err != nil {
 				t.Fatalf("PrintPostCompleteSummary() - internal test error: %v", err)
 				return
 			}
 			buf := &bytes.Buffer{}
-			err = up.PrintPostCompleteSummary(buf, upgradedStats)
+			err = up.PrintPostCompleteSummary(buf, coll.UpgradedStats.GetData())
 			if err != nil {
 				t.Fatal("error printing summary")
 			}
@@ -447,166 +436,5 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 				assert.Equal(t, tt.expect, buf.String())
 			}
 		})
-	}
-}
-
-type collectiveTestStruct struct {
-	appliances    map[string]openapi.Appliance
-	stats         *openapi.StatsAppliancesList
-	upgradedStats *openapi.StatsAppliancesList
-}
-
-func generateCollective(hostname string, from, to *version.Version) collectiveTestStruct {
-	stats := openapi.NewStatsAppliancesListWithDefaults()
-	upgradedStats := openapi.NewStatsAppliancesListWithDefaults()
-	appliances := map[string]openapi.Appliance{}
-
-	siteA := uuid.NewString()
-	siteB := uuid.NewString()
-	siteC := uuid.NewString()
-
-	primary, s, u := GenerateApplianceWithStats([]string{FunctionController}, "primary", hostname, from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count := stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-	upgradedStats.SetControllerCount(count + 1)
-	appliances[primary.GetName()] = primary
-
-	secondary, s, u := GenerateApplianceWithStats([]string{FunctionController}, "secondary", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-	upgradedStats.SetControllerCount(count + 1)
-	appliances[secondary.GetName()] = secondary
-
-	// not prepared controller
-	controller3, s, u := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "", from.String(), from.String(), statusHealthy, UpgradeStatusIdle, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-	upgradedStats.SetControllerCount(count + 1)
-	appliances[controller3.GetName()] = controller3
-
-	// offline controller
-	controller4, s, u := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", from.String(), from.String(), statusOffline, UpgradeStatusIdle, false, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-	upgradedStats.SetControllerCount(count + 1)
-	appliances[controller4.GetName()] = controller4
-
-	// already same version
-	controller5, s, u := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", to.String(), to.String(), statusHealthy, UpgradeStatusIdle, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetControllerCount()
-	stats.SetControllerCount(count + 1)
-	upgradedStats.SetControllerCount(count + 1)
-	appliances[controller5.GetName()] = controller5
-
-	gatewayA1, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayA1.GetName()] = gatewayA1
-
-	gatewayA2, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayA2.GetName()] = gatewayA2
-
-	gatewayA3, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayA3", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayA3.GetName()] = gatewayA3
-
-	gatewayB1, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayB1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteB)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayB1.GetName()] = gatewayB1
-
-	gatewayB2, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayB2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteB)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayB2.GetName()] = gatewayB2
-
-	gatewayC1, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayC1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteC)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayC1.GetName()] = gatewayC1
-
-	gatewayC2, s, u := GenerateApplianceWithStats([]string{FunctionGateway}, "gatewayC2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteC)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetGatewayCount()
-	stats.SetGatewayCount(count + 1)
-	upgradedStats.SetGatewayCount(count + 1)
-	appliances[gatewayC2.GetName()] = gatewayC2
-
-	logforwarderA1, s, u := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarderA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetLogForwarderCount()
-	stats.SetLogForwarderCount(count + 1)
-	upgradedStats.SetLogForwarderCount(count + 1)
-	appliances[logforwarderA1.GetName()] = logforwarderA1
-
-	logforwarderA2, s, u := GenerateApplianceWithStats([]string{FunctionLogForwarder}, "logforwarderA2", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetLogForwarderCount()
-	stats.SetLogForwarderCount(count + 1)
-	upgradedStats.SetLogForwarderCount(count + 1)
-	appliances[logforwarderA2.GetName()] = logforwarderA2
-
-	portalA1, s, u := GenerateApplianceWithStats([]string{FunctionPortal}, "portalA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetPortalCount()
-	stats.SetPortalCount(count + 1)
-	upgradedStats.SetPortalCount(count + 1)
-	appliances[portalA1.GetName()] = portalA1
-
-	connectorA1, s, u := GenerateApplianceWithStats([]string{FunctionConnector}, "connectorA1", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetConnectorCount()
-	stats.SetConnectorCount(count + 1)
-	upgradedStats.SetConnectorCount(count + 1)
-	appliances[connectorA1.GetName()] = connectorA1
-
-	logServer, s, u := GenerateApplianceWithStats([]string{FunctionLogServer}, "logserver", "", from.String(), to.String(), statusHealthy, UpgradeStatusReady, true, siteA)
-	stats.Data = append(stats.Data, s)
-	upgradedStats.Data = append(upgradedStats.Data, u)
-	count = stats.GetLogServerCount()
-	stats.SetLogServerCount(count + 1)
-	upgradedStats.SetLogServerCount(count + 1)
-	appliances[logServer.GetName()] = logServer
-
-	return collectiveTestStruct{
-		appliances:    appliances,
-		stats:         stats,
-		upgradedStats: upgradedStats,
 	}
 }

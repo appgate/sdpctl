@@ -14,7 +14,7 @@ func TestServiceUsersGet(t *testing.T) {
 			args: []string{"get", "068d9e30-7847-48c3-a88e-5fa7c0964288"},
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/068d9e30-7847-48c3-a88e-5fa7c0964288",
+					URL:       "/admin/service-users/068d9e30-7847-48c3-a88e-5fa7c0964288",
 					Responder: httpmock.JSONResponse("../../pkg/serviceusers/fixtures/service-user-create.json"),
 				},
 			},

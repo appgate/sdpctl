@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
-	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/dns"
@@ -3220,90 +3219,4 @@ func Test_orderAppliances(t *testing.T) {
 			assert.Equal(t, got, tt.want)
 		})
 	}
-}
-
-func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData, openapi.StatsAppliancesListAllOfData) {
-	id := uuid.NewString()
-	now := time.Now()
-	ctrl := &openapi.ApplianceAllOfController{}
-	ls := &openapi.ApplianceAllOfLogServer{}
-	gw := &openapi.ApplianceAllOfGateway{}
-	lf := &openapi.ApplianceAllOfLogForwarder{}
-	con := &openapi.ApplianceAllOfConnector{}
-	portal := &openapi.Portal{}
-
-	for _, f := range activeFunctions {
-		switch f {
-		case FunctionController:
-			ctrl.SetEnabled(true)
-		case FunctionGateway:
-			gw.SetEnabled(true)
-		case FunctionLogServer:
-			ls.SetEnabled(true)
-		case FunctionLogForwarder:
-			lf.SetEnabled(true)
-		case FunctionPortal:
-			portal.SetEnabled(true)
-		case FunctionConnector:
-			con.SetEnabled(true)
-		}
-	}
-
-	app := openapi.Appliance{
-		Id:                        openapi.PtrString(id),
-		Name:                      name,
-		Notes:                     nil,
-		Created:                   openapi.PtrTime(now),
-		Updated:                   openapi.PtrTime(now),
-		Tags:                      []string{},
-		Activated:                 openapi.PtrBool(true),
-		PendingCertificateRenewal: openapi.PtrBool(false),
-		Version:                   openapi.PtrInt32(18),
-		Hostname:                  hostname,
-		Site:                      openapi.PtrString(site),
-		SiteName:                  new(string),
-		Customization:             new(string),
-		ClientInterface:           openapi.ApplianceAllOfClientInterface{},
-		AdminInterface: &openapi.ApplianceAllOfAdminInterface{
-			Hostname:  hostname,
-			HttpsPort: openapi.PtrInt32(8443),
-		},
-		Networking:          openapi.ApplianceAllOfNetworking{},
-		Ntp:                 &openapi.ApplianceAllOfNtp{},
-		SshServer:           &openapi.ApplianceAllOfSshServer{},
-		SnmpServer:          &openapi.ApplianceAllOfSnmpServer{},
-		HealthcheckServer:   &openapi.ApplianceAllOfHealthcheckServer{},
-		PrometheusExporter:  &openapi.PrometheusExporter{},
-		Ping:                &openapi.ApplianceAllOfPing{},
-		LogServer:           ls,
-		Controller:          ctrl,
-		Gateway:             gw,
-		LogForwarder:        lf,
-		Connector:           con,
-		Portal:              portal,
-		RsyslogDestinations: []openapi.ApplianceAllOfRsyslogDestinations{},
-		HostnameAliases:     []string{},
-	}
-	currentStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
-	currentStatsData.SetId(app.GetId())
-	currentStatsData.SetName(app.GetName())
-	currentStatsData.SetStatus(status)
-	currentStatsData.SetVersion(currentVersion)
-	currentStatsData.SetOnline(online)
-	currentStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
-		Status:  &upgradeStatus,
-		Details: openapi.PtrString(targetVersion),
-	})
-
-	upgradedStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
-	upgradedStatsData.SetId(app.GetId())
-	upgradedStatsData.SetName(app.GetName())
-	upgradedStatsData.SetStatus(status)
-	upgradedStatsData.SetOnline(online)
-	upgradedStatsData.SetVersion(targetVersion)
-	upgradedStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
-		Status: openapi.PtrString(UpgradeStatusIdle),
-	})
-
-	return app, currentStatsData, upgradedStatsData
 }

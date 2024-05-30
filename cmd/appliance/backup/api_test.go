@@ -22,7 +22,7 @@ import (
 func TestBackupAPICommandAlreadyEnabled(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/global-settings",
+		"/admin/global-settings",
 		func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")
@@ -99,7 +99,7 @@ func TestBackupAPICommandAlreadyEnabled(t *testing.T) {
 func TestBackupAPICommand(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/global-settings",
+		"/admin/global-settings",
 		func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")

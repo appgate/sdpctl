@@ -328,6 +328,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			for _, appData := range initialStats.GetData() {
 				if controller.GetId() == appData.GetId() {
 					initialVolume = appData.GetVolumeNumber()
+					break
 				}
 			}
 			ctx, cancel := context.WithTimeout(ctx, opts.Timeout)

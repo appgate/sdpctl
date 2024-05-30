@@ -31,7 +31,7 @@ func TestNewEnableCmd(t *testing.T) {
 			args: []string{"20e75a08-96c6-4ea3-833e-cdbac346e2ae", "--no-interactive", "--json"},
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/maintenance",
+					URL: "/admin/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/maintenance",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							rw.Header().Set("Content-Type", "application/json")
@@ -43,7 +43,7 @@ func TestNewEnableCmd(t *testing.T) {
 					},
 				},
 				{
-					URL: "/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/change/1ed6bc6a-9e6f-4d74-bdc5-a76e2a2b49e6",
+					URL: "/admin/appliances/20e75a08-96c6-4ea3-833e-cdbac346e2ae/change/1ed6bc6a-9e6f-4d74-bdc5-a76e2a2b49e6",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")

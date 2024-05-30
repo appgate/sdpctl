@@ -18,7 +18,7 @@ import (
 func TestAdminMessageCommandOutput(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/admin-messages/summarize",
+		"/admin/admin-messages/summarize",
 		func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/vnd.appgate.peer-v19+json")

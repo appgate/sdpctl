@@ -25,7 +25,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			},
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users",
+					URL: "/admin/service-users",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							filename := "../../pkg/serviceusers/fixtures/service-user-create.json"
@@ -64,7 +64,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			},
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users",
+					URL: "/admin/service-users",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							filename := "../../pkg/serviceusers/fixtures/service-user-create.json"
@@ -96,7 +96,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			},
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users",
+					URL: "/admin/service-users",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							filename := "../../pkg/serviceusers/fixtures/service-user-create.json"
@@ -129,7 +129,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			},
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users",
+					URL: "/admin/service-users",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodPost {
 							filename := "../../pkg/serviceusers/fixtures/service-user-create.json"
