@@ -21,21 +21,21 @@ import (
 )
 
 func TestSwitchPartition(t *testing.T) {
-	// mutatingFunc := func(count int, b []byte) ([]byte, error) {
-	// 	stats := &openapi.StatsAppliancesList{}
-	// 	if err := json.Unmarshal(b, stats); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	data := stats.GetData()
-	// 	for i := 0; i < len(data); i++ {
-	// 		data[i].VolumeNumber = openapi.PtrFloat32(float32(count))
-	// 	}
-	// 	bytes, err := json.Marshal(stats)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return bytes, nil
-	// }
+	mutatingFunc := func(count int, b []byte) ([]byte, error) {
+		stats := &openapi.StatsAppliancesList{}
+		if err := json.Unmarshal(b, stats); err != nil {
+			return nil, err
+		}
+		data := stats.GetData()
+		for i := 0; i < len(data); i++ {
+			data[i].VolumeNumber = openapi.PtrFloat32(float32(count))
+		}
+		bytes, err := json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+		return bytes, nil
+	}
 
 	testCases := []struct {
 		desc     string
