@@ -103,7 +103,7 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 				opts.applianceStats = &s
 			}
 
-			minVersion, _ := version.NewVersion("6.2.6-0")
+			minVersion, _ := version.NewVersion("6.2.10-0")
 			currentVersion, err := version.NewVersion(opts.applianceStats.GetVersion())
 			if err != nil {
 				return err
@@ -113,7 +113,7 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			if i < 0 {
-				return fmt.Errorf("minimum supported version for the 'switch-partition' command is 6.2.6. current version is %s", currentVersion.String())
+				return fmt.Errorf("minimum supported version for the 'switch-partition' command is 6.2.10. current version is %s", currentVersion.String())
 			}
 
 			return nil
