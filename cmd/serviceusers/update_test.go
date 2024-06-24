@@ -19,7 +19,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			args: []string{"update", "1767c791-4001-429b-82cf-0a471cc2f5d2", "--from-file=../../pkg/serviceusers/fixtures/service-user-update.json"},
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},
@@ -31,7 +31,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantOut: regexp.MustCompile(`"disabled": true`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},
@@ -42,7 +42,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantOut: regexp.MustCompile(`"disabled": true`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},
@@ -53,7 +53,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantOut: regexp.MustCompile(`"somelabelkey": "testlabel"`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},
@@ -64,7 +64,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantOut: regexp.MustCompile(`"test-tag"`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},
@@ -76,7 +76,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`No key or value provided for label`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},
@@ -88,7 +88,7 @@ func TestServiceUsersUpdate(t *testing.T) {
 			wantErrOut: regexp.MustCompile(`Not enough arguments`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
+					URL:       "/admin/service-users/1767c791-4001-429b-82cf-0a471cc2f5d2",
 					Responder: defaultUpdateResponseHandler,
 				},
 			},

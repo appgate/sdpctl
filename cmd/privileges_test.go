@@ -39,7 +39,7 @@ var adminResponse = `
 func TestNewPrivilegesCmd(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/authorization",
+		"/admin/authorization",
 		func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")

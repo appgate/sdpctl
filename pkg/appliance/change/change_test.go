@@ -27,7 +27,7 @@ func TestApplianceChangeGet(t *testing.T) {
 			name: "change running HTTP 200",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/de0d2354-13cf-4c9e-8044-80563e340764/change/96525303-ef06-4f9b-922c-4a940e5b505e",
+					URL: "/admin/appliances/de0d2354-13cf-4c9e-8044-80563e340764/change/96525303-ef06-4f9b-922c-4a940e5b505e",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)
@@ -54,11 +54,10 @@ func TestApplianceChangeGet(t *testing.T) {
 			name: "change error http 500",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/de0d2354-13cf-4c9e-8044-80563e340764/change/96525303-ef06-4f9b-922c-4a940e5b505e",
+					URL: "/admin/appliances/de0d2354-13cf-4c9e-8044-80563e340764/change/96525303-ef06-4f9b-922c-4a940e5b505e",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusServiceUnavailable)
-
 					},
 				},
 			},
@@ -111,7 +110,7 @@ func TestApplianceChangeRetryUntilCompleted(t *testing.T) {
 			name: "change running HTTP 200",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/de0d2354-13cf-4c9e-8044-80563e340764/change/96525303-ef06-4f9b-922c-4a940e5b505e",
+					URL: "/admin/appliances/de0d2354-13cf-4c9e-8044-80563e340764/change/96525303-ef06-4f9b-922c-4a940e5b505e",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						rw.Header().Set("Content-Type", "application/json")
 						rw.WriteHeader(http.StatusOK)

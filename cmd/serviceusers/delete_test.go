@@ -16,7 +16,7 @@ func TestServiceUsersDeleteCMD(t *testing.T) {
 			wantOut: regexp.MustCompile(`deleted: e857d763-37d6-4476-a8ce-092bf9ac8537`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users/e857d763-37d6-4476-a8ce-092bf9ac8537",
+					URL: "/admin/service-users/e857d763-37d6-4476-a8ce-092bf9ac8537",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodDelete {
 							w.WriteHeader(http.StatusAccepted)
@@ -32,7 +32,7 @@ func TestServiceUsersDeleteCMD(t *testing.T) {
 deleted: ff3d10ab-2474-4193-b670-86e230495188`),
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users/e857d763-37d6-4476-a8ce-092bf9ac8537",
+					URL: "/admin/service-users/e857d763-37d6-4476-a8ce-092bf9ac8537",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodDelete {
 							w.WriteHeader(http.StatusAccepted)
@@ -40,7 +40,7 @@ deleted: ff3d10ab-2474-4193-b670-86e230495188`),
 					},
 				},
 				{
-					URL: "/service-users/ff3d10ab-2474-4193-b670-86e230495188",
+					URL: "/admin/service-users/ff3d10ab-2474-4193-b670-86e230495188",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodDelete {
 							w.WriteHeader(http.StatusAccepted)
@@ -56,7 +56,7 @@ deleted: ff3d10ab-2474-4193-b670-86e230495188`),
 			wantErrOut: regexp.MustCompile("404 Not Found"),
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/service-users/ee3d10ab-2474-4193-b670-86e230495188",
+					URL: "/admin/service-users/ee3d10ab-2474-4193-b670-86e230495188",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodDelete {
 							w.WriteHeader(http.StatusNotFound)

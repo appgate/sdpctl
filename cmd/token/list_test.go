@@ -18,7 +18,7 @@ import (
 func setupTokenListTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
 	t.Helper()
 	registry := httpmock.NewRegistry(t)
-	registry.Register("/token-records/dn", httpmock.JSONResponse("../../pkg/token/fixtures/token_list.json"))
+	registry.Register("/admin/token-records/dn", httpmock.JSONResponse("../../pkg/token/fixtures/token_list.json"))
 	registry.Serve()
 
 	stdout := &bytes.Buffer{}
@@ -28,7 +28,7 @@ func setupTokenListTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes
 	f := &factory.Factory{
 		Config: &configuration.Config{
 			Debug: false,
-			URL:   fmt.Sprintf("http://localhost:%d", registry.Port),
+			URL:   fmt.Sprintf("http://localhost:%d/admin", registry.Port),
 		},
 		IOOutWriter: stdout,
 		Stdin:       in,

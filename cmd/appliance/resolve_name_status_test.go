@@ -29,7 +29,7 @@ func TestNewResolveNameStatusCmdJSON(t *testing.T) {
 			name: "test JSON 200",
 			httpStubs: []httpmock.Stub{
 				{
-					URL: "/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/name-resolution-status",
+					URL: "/admin/appliances/0a11e7ba-4d18-4be1-bdc1-083be1411d7e/name-resolution-status",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")

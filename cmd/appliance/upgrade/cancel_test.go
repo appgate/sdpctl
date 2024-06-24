@@ -29,19 +29,19 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			name: "test cancel multiple appliances",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 				{
-					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					URL:       "/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 			},
@@ -54,11 +54,11 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			name: "test cancel multiple appliances no acceptance",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 			},
@@ -68,19 +68,19 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			name: "Test no appliance idle upgrade status",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/stats/appliances",
+					URL:       "/admin/stats/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
-					URL:       "/appliances",
+					URL:       "/admin/appliances",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file_idle.json"),
 				},
 				{
-					URL:       "/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					URL:       "/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file_idle.json"),
 				},
 			},

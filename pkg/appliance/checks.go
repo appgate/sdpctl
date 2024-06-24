@@ -3,14 +3,17 @@ package appliance
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
 )
@@ -122,23 +125,6 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 	return tpl.String(), nil
 }
 
-type SkipUpgrade struct {
-	Reason    string
-	Appliance openapi.Appliance
-}
-
-const (
-	SkipReasonNotPrepared            = "appliance is not prepared for upgrade"
-	SkipReasonOffline                = "appliance is offline"
-	SkipReasonFiltered               = "filtered using the '--include' and/or '--exclude' flag"
-	SkipReasonAlreadyPrepared        = "appliance is already prepared for upgrade with a higher or equal version"
-	SkipReasonUnsupportedUpgradePath = "Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required."
-)
-
-func (su SkipUpgrade) Error() string {
-	return fmt.Sprintf("%s: %s", su.Appliance.GetName(), su.Reason)
-}
-
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
 func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipUpgrade) {
@@ -153,7 +139,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					log.Warn("failed to parse version from stats")
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "failed to parse version from stats",
+						Reason:    ErrVersionParse,
 					})
 					continue
 				}
@@ -162,14 +148,19 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					log.Warn("failed to compare versions")
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "failed to compare versions",
+						Reason:    errors.New("failed to compare versions"),
 					})
 					continue
 				}
 				if res < 1 {
+					us := stat.GetUpgrade()
+					reason := ErrSkipReasonAlreadyPrepared
+					if us.GetStatus() != UpgradeStatusReady {
+						reason = ErrSkipReasonAlreadySameVersion
+					}
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    "appliance version is already greater or equal to prepare version",
+						Reason:    reason,
 					})
 					continue
 				}
@@ -180,7 +171,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 				if statV.Equal(v600) && v.GreaterThanOrEqual(v62) {
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    SkipReasonUnsupportedUpgradePath,
+						Reason:    ErrSkipReasonUnsupportedUpgradePath,
 					})
 					continue
 				}
@@ -309,6 +300,134 @@ func controllerCount(appliances []openapi.Appliance) int {
 	return i
 }
 
+var (
+	ErrNeedsAllControllerUpgrade = errors.New("all controllers need to be prepared when doing a major or minor version upgrade.")
+	ErrControllerVersionMismatch = errors.New("all controllers need to be prepared with the same version when doing a major or minor version upgrade.")
+)
+
+func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+	var (
+		errs                   *multierror.Error
+		preparedControllers    []openapi.Appliance
+		unpreparedControllers  []openapi.Appliance
+		alreadySameVersion     []openapi.Appliance
+		mismatchControllers    []openapi.Appliance
+		isMajorOrMinor         bool
+		offlineControllers     []openapi.Appliance
+		totalControllers       = int(stats.GetControllerCount())
+		highestPreparedVersion = version.Must(version.NewVersion("0.0.0"))
+		highestCurrentVersion  = version.Must(version.NewVersion("0.0.0"))
+	)
+
+	for _, as := range stats.GetData() {
+		for _, app := range appliances {
+			if as.GetId() != app.GetId() {
+				continue
+			}
+			if online, ok := as.GetOnlineOk(); ok {
+				if !*online {
+					offlineControllers = append(offlineControllers, app)
+					continue
+				}
+			}
+			if ctrl, ok := app.GetControllerOk(); ok && ctrl.GetEnabled() {
+				current, err := ParseVersionString(as.GetVersion())
+				if err != nil {
+					errs = multierror.Append(errs, err)
+					continue
+				}
+				if res, _ := CompareVersionsAndBuildNumber(highestCurrentVersion, current); res > 0 {
+					highestCurrentVersion = current
+				}
+				us := as.GetUpgrade()
+				if us.GetStatus() == UpgradeStatusReady {
+					preparedControllers = append(preparedControllers, app)
+					targetVersion, err := ParseVersionString(us.GetDetails())
+					if err != nil {
+						errs = multierror.Append(errs, err)
+						continue
+					}
+					res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion)
+					if res < 0 {
+						unpreparedControllers = append(unpreparedControllers, app)
+					}
+					if res > 0 {
+						highestPreparedVersion = targetVersion
+					}
+					isMajorOrMinor = IsMajorUpgrade(current, targetVersion) || IsMinorUpgrade(current, targetVersion)
+				} else {
+					unpreparedControllers = append(unpreparedControllers, app)
+				}
+			}
+		}
+	}
+
+	// check if prepared controllers has mismatching version
+	preparedClone := slices.Clone(preparedControllers)
+	for i, a := range preparedClone {
+		for _, s := range stats.GetData() {
+			if a.GetId() != s.GetId() {
+				continue
+			}
+
+			us := s.GetUpgrade()
+			targetVersion, err := ParseVersionString(us.GetDetails())
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion); res < 0 {
+				mismatchControllers = append(mismatchControllers, a)
+				preparedControllers = append(preparedControllers[:i], preparedControllers[i+1:]...)
+			}
+		}
+	}
+
+	// Now we need to check if the unprepared controllers
+	// are already running the max prepared version
+	unpreparedClone := slices.Clone(unpreparedControllers)
+	for i, a := range unpreparedClone {
+		for _, s := range stats.GetData() {
+			if a.GetId() != s.GetId() {
+				continue
+			}
+
+			currentVersion, err := ParseVersionString(s.GetVersion())
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, currentVersion); res == 0 {
+				alreadySameVersion = append(alreadySameVersion, a)
+				unpreparedControllers = append(unpreparedControllers[:i], unpreparedControllers[i+1:]...)
+			}
+		}
+	}
+
+	// if something went wrong during version identification
+	// just return the errors
+	if errs != nil {
+		return nil, errs.ErrorOrNil()
+	}
+
+	// If this is true, no need to check anymore
+	// we ignore offline controllers at this point
+	if (totalControllers - len(offlineControllers)) == (len(preparedControllers) + len(alreadySameVersion)) {
+		return nil, nil
+	}
+
+	if isMajorOrMinor && len(mismatchControllers) > 0 {
+		return mismatchControllers, ErrControllerVersionMismatch
+	}
+
+	// we return a list of the controllers that need to be prapared along with an error
+	if isMajorOrMinor && len(unpreparedControllers) > 0 {
+		return unpreparedControllers, ErrNeedsAllControllerUpgrade
+	}
+
+	return nil, nil
+}
+
 func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, initialStatData []openapi.StatsAppliancesListAllOfData, all, preparing []openapi.Appliance, majorOrMinor bool) (bool, error) {
 	controllerCount := controllerCount(all)
 	controllerPrepareCount := 0
@@ -348,8 +467,4 @@ func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult,
 		}
 	}
 	return (controllerCount != controllerPrepareCount+alreadySameVersion) && majorOrMinor, nil
-}
-
-func SpecificVersionChecks(current, future *version.Version) error {
-	return nil
 }

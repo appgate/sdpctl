@@ -21,7 +21,6 @@ import (
 	"sync"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
-	"github.com/appgate/sdpctl/pkg/hashcode"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -147,138 +146,6 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 		}
 	}
 	return result, offline, err
-}
-
-// SplitAppliancesByGroup return a map of slices of appliances based on their active function and site.
-// e.g All active gateways in the same site are grouped together.
-func SplitAppliancesByGroup(appliances []openapi.Appliance) map[int][]openapi.Appliance {
-	result := make(map[int][]openapi.Appliance)
-	for _, a := range appliances {
-		groupID := applianceGroupHash(a)
-		result[groupID] = append(result[groupID], a)
-	}
-	return result
-}
-
-// ChunkApplianceGroup separates the result from SplitAppliancesByGroup into different slices based on the appliance
-// functions and site configuration
-func ChunkApplianceGroup(chunkSize int, applianceGroups map[int][]openapi.Appliance) [][]openapi.Appliance {
-	if chunkSize <= 0 {
-		chunkSize = 2
-	}
-
-	chunks := make([][]openapi.Appliance, chunkSize)
-	for i := range chunks {
-		chunks[i] = make([]openapi.Appliance, 0)
-	}
-	// for consistency, we need to sort all input and output slices to generate a consistent result
-	for id := range applianceGroups {
-		sort.Slice(applianceGroups[id], func(i, j int) bool {
-			return applianceGroups[id][i].GetName() < applianceGroups[id][j].GetName()
-		})
-	}
-
-	keys := make([]int, 0, len(applianceGroups))
-	for k := range applianceGroups {
-		keys = append(keys, k)
-	}
-	sort.Ints(keys)
-
-	count := 0
-	for _, slice := range applianceGroups {
-		for range slice {
-			count += 1
-		}
-	}
-	for i := 0; i <= count; i++ {
-		// select which initial slice we are going to put the appliance in
-		// the appliance may be moved later if the slice ends up to big.
-		index := i % chunkSize
-		chunk := chunks[index]
-		for _, groupID := range keys {
-			slice := applianceGroups[groupID]
-			if len(slice) > 0 {
-				item, slice := slice[len(slice)-1], slice[:len(slice)-1]
-				applianceGroups[groupID] = slice
-				temp := make([]openapi.Appliance, 0)
-				temp = append(temp, item)
-				chunk = append(chunk, temp...)
-			}
-		}
-		chunks[index] = chunk
-	}
-
-	candidates := make([]openapi.Appliance, 0)
-	for index, slice := range chunks {
-		if len(slice) == 1 {
-			item, org := slice[len(slice)-1], slice[:len(slice)-1]
-			if v, ok := item.GetGatewayOk(); ok && v.GetEnabled() {
-				// needed so that we don't accidentally add same site gateways to the same batch
-				continue
-			}
-			if v, ok := item.GetConnectorOk(); ok && v.GetEnabled() {
-				continue
-			}
-			chunks[index] = org
-			candidates = append(candidates, item)
-		}
-	}
-	chunks = append(chunks, candidates)
-	// make sure we sort each slice for a consistent output and remove any empty slices.
-	var r [][]openapi.Appliance
-	for index := range chunks {
-		sort.Slice(chunks[index], func(i, j int) bool {
-			return chunks[index][i].GetName() < chunks[index][j].GetName()
-		})
-
-		if len(chunks[index]) > 0 {
-			r = append(r, chunks[index])
-		}
-	}
-
-	return r
-}
-
-// applianceGroupHash return a unique id hash based on the active function of the appliance and their site ID.
-func applianceGroupHash(appliance openapi.Appliance) int {
-	var buf bytes.Buffer
-	if v, ok := appliance.GetControllerOk(); ok {
-		if enabled := v.GetEnabled(); enabled {
-			buf.WriteString(fmt.Sprintf("%s=%t", "controller", enabled))
-			// we want to group all controllers to the same group
-			return hashcode.String(buf.String())
-		}
-	}
-	if len(appliance.GetSite()) > 0 {
-		buf.WriteString(appliance.GetSite())
-	}
-	if v, ok := appliance.GetGatewayOk(); ok {
-		enabled := v.GetEnabled()
-		buf.WriteString(fmt.Sprintf("%s=%t", "&gateway", enabled))
-		if enabled {
-			// all enabled gateways with same site need to be grouped together regardless of other functions enabled
-			return hashcode.String(buf.String())
-		}
-	}
-	if v, ok := appliance.GetConnectorOk(); ok {
-		enabled := v.GetEnabled()
-		buf.WriteString(fmt.Sprintf("%s=%t", "&connector", enabled))
-		if enabled {
-			// same rules apply to connectors as gateways
-			return hashcode.String(buf.String())
-		}
-	}
-	if v, ok := appliance.GetLogForwarderOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s=%t", "&log_forwarder", v.GetEnabled()))
-	}
-	if v, ok := appliance.GetLogServerOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s=%t", "&log_server", v.GetEnabled()))
-	}
-	if v, ok := appliance.GetPortalOk(); ok {
-		buf.WriteString(fmt.Sprintf("%s=%t", "&portal", v.GetEnabled()))
-	}
-
-	return hashcode.String(buf.String())
 }
 
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
@@ -923,18 +790,6 @@ func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
 	}
 	// unknown or empty status will report appliance as offline.
 	return util.InSlice(s.GetStatus(), []string{statusHealthy, statusBusy, statusWarning, statusError})
-}
-
-func ShouldDisable(from, to *version.Version) bool {
-	compare, _ := version.NewVersion("5.4")
-
-	if from.LessThan(compare) {
-		majorChange := from.Segments()[0] < to.Segments()[0]
-		minorChange := from.Segments()[1] < to.Segments()[1]
-		return majorChange || minorChange
-	}
-
-	return false
 }
 
 func PrettyBytes(v float64) string {

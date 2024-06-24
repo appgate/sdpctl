@@ -27,7 +27,7 @@ import (
 
 var (
 	authenticationResponse = httpmock.Stub{
-		URL: "/authentication",
+		URL: "/admin/authentication",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if v, ok := r.Header["Accept"]; ok && v[0] == "application/vnd.appgate.peer-v5+json" {
 				rw.Header().Set("Content-Type", "application/json")
@@ -54,7 +54,7 @@ var (
 			}
 		}}
 	unauthorizedResponse = httpmock.Stub{
-		URL: "/authentication",
+		URL: "/admin/authentication",
 		Responder: func(w http.ResponseWriter, r *http.Request) {
 			if v, ok := r.Header["Accept"]; ok && v[0] == "application/vnd.appgate.peer-v5+json" {
 				w.Header().Set("Content-Type", "application/json")
@@ -75,7 +75,7 @@ var (
 		},
 	}
 	identityProviderNames = httpmock.Stub{
-		URL: "/identity-providers/names",
+		URL: "/admin/identity-providers/names",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")
@@ -92,7 +92,7 @@ var (
 			}
 		}}
 	identityProviderMultipleNames = httpmock.Stub{
-		URL: "/identity-providers/names",
+		URL: "/admin/identity-providers/names",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")
@@ -129,7 +129,7 @@ var (
 		}}
 
 	authorizationGET = httpmock.Stub{
-		URL: "/authorization",
+		URL: "/admin/authorization",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")
@@ -165,7 +165,7 @@ var (
 			}
 		}}
 	authorizationGETNeedOTP = httpmock.Stub{
-		URL: "/authorization",
+		URL: "/admin/authorization",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodGet {
 				rw.Header().Set("Content-Type", "application/json")
@@ -180,7 +180,7 @@ var (
 		}}
 
 	authorizationInitAlreadySeeded = httpmock.Stub{
-		URL: "/authentication/otp/initialize",
+		URL: "/admin/authentication/otp/initialize",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost {
 				rw.Header().Set("Content-Type", "application/json")
@@ -192,7 +192,7 @@ var (
 			}
 		}}
 	authorizationOtpAccepted = httpmock.Stub{
-		URL: "/authentication/otp",
+		URL: "/admin/authentication/otp",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost {
 				rw.Header().Set("Content-Type", "application/json")
@@ -210,7 +210,7 @@ var (
 			}
 		}}
 	authorizationOtpDenied = httpmock.Stub{
-		URL: "/authentication/otp",
+		URL: "/admin/authentication/otp",
 		Responder: func(rw http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost {
 				rw.Header().Set("Content-Type", "application/json")
@@ -540,7 +540,7 @@ func TestSignin(t *testing.T) {
 				authenticationResponse,
 				identityProviderNames,
 				{
-					URL: "/authorization",
+					URL: "/admin/authorization",
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							rw.Header().Set("Content-Type", "application/json")
