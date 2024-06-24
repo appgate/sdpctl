@@ -60,11 +60,6 @@ func NewRegistry(t *testing.T) *Registry {
 	os.Setenv("SDPCTL_BEARER", "header-token-value")
 	t.Cleanup(func() {
 		t.Helper()
-		for _, s := range r.stubs {
-			if !s.matched {
-				t.Logf("URL %s was registered but never used", s.URL)
-			}
-		}
 		for _, notFound := range r.notFound {
 			t.Logf("%s was not registered, but requested", notFound)
 		}

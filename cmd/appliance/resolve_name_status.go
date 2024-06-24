@@ -18,13 +18,14 @@ import (
 )
 
 type resolveNameStatusOpts struct {
-	Config      *configuration.Config
-	Out         io.Writer
-	Client      func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance   func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug       bool
-	json        bool
-	applianceID string
+	Config       *configuration.Config
+	Out          io.Writer
+	Client       func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance    func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	withPartials bool
+	debug        bool
+	json         bool
+	applianceID  string
 }
 
 func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
@@ -82,16 +83,17 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			return resolveNameStatusRun(c, args, &opts)
+			return resolveNameStatusRun(&opts)
 		},
 	}
+	cmd.Flags().BoolVar(&opts.withPartials, "partial-resolution", false, "include all partial resolutions in table")
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 
 	return cmd
 }
 
-func resolveNameStatusRun(cmd *cobra.Command, args []string, opts *resolveNameStatusOpts) error {
+func resolveNameStatusRun(opts *resolveNameStatusOpts) error {
 	client, err := opts.Client(opts.Config)
 	if err != nil {
 		return err
@@ -111,9 +113,16 @@ func resolveNameStatusRun(cmd *cobra.Command, args []string, opts *resolveNameSt
 	}
 
 	p := util.NewPrinter(opts.Out, 4)
-	p.AddHeader("Partial", "Finals", "Partials", "Errors")
-	for _, r := range result.GetResolutions() {
-		p.AddLine(r.GetPartial(), r.GetFinals(), r.GetPartials(), r.GetErrors())
+	if opts.withPartials {
+		p.AddHeader("Name", "Final Resolutions", "Partial Resolution", "Errors", "Partials")
+		for k, r := range result.GetResolutions() {
+			p.AddLine(k, r.GetFinals(), r.GetPartial(), r.GetErrors(), r.GetPartials())
+		}
+	} else {
+		p.AddHeader("Name", "Final Resolutions", "Partial Resolution", "Errors")
+		for k, r := range result.GetResolutions() {
+			p.AddLine(k, r.GetFinals(), r.GetPartial(), r.GetErrors())
+		}
 	}
 	p.Print()
 	return nil

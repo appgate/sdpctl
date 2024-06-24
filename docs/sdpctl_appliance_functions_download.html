@@ -33,9 +33,10 @@
   &gt; sdpctl appliance functions download LogServer --docker-registry=&lt;path-to-custom-docker-registry&gt;
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>      --docker-registry string   docker registry for downloading image bundles
+<pre class="code-editor margin-bottom"><code>      --destination string       path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist (default &quot;$HOME/Downloads/appgate&quot;)
+      --docker-registry string   docker registry for downloading image bundles
   -h, --help                     help for download
-      --save-path string         path to where the container bundle should be saved (default &quot;$HOME/Downloads/appgate&quot;)
+      --save-path string         [DEPRECATED, use '--destination' instead] path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist
       --version string           Override the LogServer version that will be downloaded. Defaults to the same version as the primary controller.
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
