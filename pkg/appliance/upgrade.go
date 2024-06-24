@@ -496,7 +496,7 @@ var (
 		"Other appliances need a connection to to these appliances for logging",
 	}
 	additionalAppliancesDescription = []string{
-		"Additional appliances will be upgraded in parallell batches. The additional appliances will be split into",
+		"Additional appliances will be upgraded in parallel batches. The additional appliances will be split into",
 		"batches to keep the Collective as available as possible during the upgrade process",
 		"Some of the additional appliances may need to be rebooted for the upgrade to take effect",
 	}
