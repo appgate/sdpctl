@@ -240,7 +240,7 @@ Upgrade will be completed in steps:
     secondary    SiteA    6.2.0              6.3.0               ✓
 
 
- 3. Additional appliances will be upgraded in parallell batches. The additional appliances will be split into
+ 3. Additional appliances will be upgraded in parallel batches. The additional appliances will be split into
     batches to keep the Collective as available as possible during the upgrade process
     Some of the additional appliances may need to be rebooted for the upgrade to take effect
 
@@ -313,7 +313,7 @@ Upgrade will be completed in steps:
     secondary    SiteA    6.2.0              6.2.1               ⨯
 
 
- 3. Additional appliances will be upgraded in parallell batches. The additional appliances will be split into
+ 3. Additional appliances will be upgraded in parallel batches. The additional appliances will be split into
     batches to keep the Collective as available as possible during the upgrade process
     Some of the additional appliances may need to be rebooted for the upgrade to take effect
 
