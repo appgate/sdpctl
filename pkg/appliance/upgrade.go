@@ -124,7 +124,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 
 		// Get upgrade status and target version
 		upgradeStatus := stats.GetUpgrade()
-		if status, ok := upgradeStatus.GetStatusOk(); ok && *status != UpgradeStatusReady {
+		if status := upgradeStatus.GetStatus(); status != UpgradeStatusReady {
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
 				Reason:    ErrSkipReasonNotPrepared,
