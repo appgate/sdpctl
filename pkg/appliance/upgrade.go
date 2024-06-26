@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -49,7 +50,7 @@ type UpgradePlan struct {
 	adminHostname           string
 }
 
-func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliancesList, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
+func NewUpgradePlan(api *Appliance, appliances []openapi.Appliance, stats openapi.StatsAppliancesList, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
 	plan := UpgradePlan{
 		adminHostname: adminHostname,
 		stats:         stats,
@@ -123,7 +124,14 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 		}
 
 		// Get upgrade status and target version
-		upgradeStatus := stats.GetUpgrade()
+		upgradeStatus, err := api.UpgradeStatus(context.Background(), a.GetId())
+		if err != nil {
+			plan.Skipping = append(plan.Skipping, SkipUpgrade{
+				Appliance: a,
+				Reason:    ErrNoApplianceStats,
+			})
+			continue
+		}
 		if status := upgradeStatus.GetStatus(); status != UpgradeStatusReady {
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
