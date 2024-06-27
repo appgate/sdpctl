@@ -49,7 +49,7 @@ type UpgradePlan struct {
 	adminHostname           string
 }
 
-func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
+func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
 	plan := UpgradePlan{
 		adminHostname: adminHostname,
 		stats:         stats,
@@ -123,15 +123,21 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		}
 
 		// Get upgrade status and target version
-		upgradeStatus := stats.GetUpgrade()
-		if status := upgradeStatus.GetStatus(); status != UpgradeStatusReady {
+		upgradeStatus, ok := upgradeStatusMap[a.GetId()]
+		if !ok {
+			plan.Skipping = append(plan.Skipping, SkipUpgrade{
+				Appliance: a,
+				Reason:    ErrNoApplianceStats,
+			})
+		}
+		if upgradeStatus.Status != UpgradeStatusReady {
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
 				Appliance: a,
 				Reason:    ErrSkipReasonNotPrepared,
 			})
 			continue
 		}
-		targetVersion, err := ParseVersionString(upgradeStatus.GetDetails())
+		targetVersion, err := ParseVersionString(upgradeStatus.Details)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{

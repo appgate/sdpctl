@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 	"time"
 
@@ -234,7 +233,6 @@ func BindEnvs(iface interface{}, parts ...string) {
 }
 
 func Execute() cmdutil.ExitCode {
-	defer runtime.GC()
 	var currentProfile string
 	rFlag := pflag.NewFlagSet("", pflag.ContinueOnError)
 	rFlag.StringVarP(&currentProfile, "profile", "p", "", "")

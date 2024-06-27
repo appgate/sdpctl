@@ -163,7 +163,21 @@ func TestMakeUpgradePlan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
+			upgradeStatusMap := map[string]UpgradeStatusResult{}
+			for _, a := range tt.args.appliances {
+				for _, s := range tt.args.stats.GetData() {
+					if a.GetId() != s.GetId() {
+						continue
+					}
+					us := s.GetUpgrade()
+					upgradeStatusMap[a.GetId()] = UpgradeStatusResult{
+						Name:    a.GetName(),
+						Status:  us.GetStatus(),
+						Details: us.GetDetails(),
+					}
+				}
+			}
+			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, upgradeStatusMap, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
@@ -339,10 +353,27 @@ Appliances that will be skipped:
 		t.Run(tt.name, func(t *testing.T) {
 			coll := GenerateCollective(t, tt.in.hostname, tt.in.from, tt.in.to, tt.in.Appliances)
 			appliances := make([]openapi.Appliance, 0, len(tt.in.Appliances))
+			upgradeStatusMap := map[string]UpgradeStatusResult{}
 			for _, v := range tt.in.Appliances {
-				appliances = append(appliances, coll.Appliances[v])
+				appliance, ok := coll.Appliances[v]
+				if !ok {
+					t.Fatalf("internal testing error: appliance name does not match any appliance")
+					return
+				}
+				for _, stat := range coll.Stats.GetData() {
+					if stat.GetId() != appliance.GetId() {
+						continue
+					}
+					us := stat.GetUpgrade()
+					upgradeStatusMap[appliance.GetId()] = UpgradeStatusResult{
+						Name:    appliance.GetName(),
+						Status:  us.GetStatus(),
+						Details: us.GetDetails(),
+					}
+				}
+				appliances = append(appliances, appliance)
 			}
-			up, err := NewUpgradePlan(appliances, coll.Stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
+			up, err := NewUpgradePlan(appliances, coll.Stats, upgradeStatusMap, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
@@ -417,10 +448,23 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 			hostname := "appgate.test"
 			coll := GenerateCollective(t, hostname, tt.from, tt.to, tt.appliances)
 			appliances := make([]openapi.Appliance, 0, len(tt.appliances))
+			upgradeStatusMap := map[string]UpgradeStatusResult{}
 			for _, v := range tt.appliances {
-				appliances = append(appliances, coll.Appliances[v])
+				a := coll.Appliances[v]
+				for _, s := range coll.Stats.GetData() {
+					if s.GetId() != a.GetId() {
+						continue
+					}
+					us := s.GetUpgrade()
+					upgradeStatusMap[a.GetId()] = UpgradeStatusResult{
+						Name:    a.GetName(),
+						Status:  us.GetStatus(),
+						Details: us.GetDetails(),
+					}
+				}
+				appliances = append(appliances, a)
 			}
-			up, err := NewUpgradePlan(appliances, coll.Stats, hostname, DefaultCommandFilter, nil, false)
+			up, err := NewUpgradePlan(appliances, coll.Stats, upgradeStatusMap, hostname, DefaultCommandFilter, nil, false)
 			if err != nil {
 				t.Fatalf("PrintPostCompleteSummary() - internal test error: %v", err)
 				return
