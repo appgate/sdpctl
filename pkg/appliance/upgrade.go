@@ -45,11 +45,11 @@ type UpgradePlan struct {
 	Batches                 [][]openapi.Appliance
 	Skipping                []SkipUpgrade
 	BackupIds               []string
-	stats                   openapi.StatsAppliancesList
+	stats                   *openapi.StatsAppliancesList
 	adminHostname           string
 }
 
-func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliancesList, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
+func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
 	plan := UpgradePlan{
 		adminHostname: adminHostname,
 		stats:         stats,
@@ -103,7 +103,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats openapi.StatsAppliance
 	var errs *multierror.Error
 	for _, a := range finalApplianceList {
 		// Get current version and stats
-		stats, err := ApplianceStats(a, plan.stats)
+		stats, err := ApplianceStats(&a, plan.stats)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			plan.Skipping = append(plan.Skipping, SkipUpgrade{
@@ -330,7 +330,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 		t.AddHeader("Appliance", "Site", "Current version", "Prepared version", "Backup")
 	}
 	if up.PrimaryController != nil {
-		currentVersion, targetVersion := applianceVersions(*up.PrimaryController, up.stats)
+		currentVersion, targetVersion := applianceVersions(*up.PrimaryController, *up.stats)
 		tb := &bytes.Buffer{}
 		t := util.NewPrinter(tb, 4)
 		tableHeaders(t)
@@ -349,7 +349,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 		t := util.NewPrinter(tb, 4)
 		tableHeaders(t)
 		for _, ctrl := range up.Controllers {
-			current, target := applianceVersions(ctrl, up.stats)
+			current, target := applianceVersions(ctrl, *up.stats)
 			t.AddLine(ctrl.GetName(), ctrl.GetSiteName(), current, target, shouldBackup(ctrl.GetId()))
 		}
 		t.Print()
@@ -364,7 +364,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 		t := util.NewPrinter(tb, 4)
 		tableHeaders(t)
 		for _, lfls := range up.LogForwardersAndServers {
-			current, target := applianceVersions(lfls, up.stats)
+			current, target := applianceVersions(lfls, *up.stats)
 			t.AddLine(lfls.GetName(), lfls.GetSiteName(), current, target, shouldBackup(lfls.GetId()))
 		}
 		t.Print()
@@ -378,7 +378,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 			t := util.NewPrinter(tb, 4)
 			tableHeaders(t)
 			for _, a := range c {
-				current, target := applianceVersions(a, up.stats)
+				current, target := applianceVersions(a, *up.stats)
 				// s := fmt.Sprintf("- %s: %s -> %s", a.GetName(), current, target)
 				t.AddLine(a.GetName(), a.GetSiteName(), current, target, shouldBackup(a.GetId()))
 			}
@@ -447,14 +447,14 @@ func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.S
 }
 
 func applianceVersions(a openapi.Appliance, s openapi.StatsAppliancesList) (currentVersion *version.Version, targetVersion *version.Version) {
-	stats, _ := ApplianceStats(a, s)
+	stats, _ := ApplianceStats(&a, &s)
 	currentVersion, _ = ParseVersionString(stats.GetVersion())
 	us := stats.GetUpgrade()
 	targetVersion, _ = ParseVersionString(us.GetDetails())
 	return
 }
 
-func ApplianceStats(a openapi.Appliance, stats openapi.StatsAppliancesList) (*openapi.StatsAppliancesListAllOfData, error) {
+func ApplianceStats(a *openapi.Appliance, stats *openapi.StatsAppliancesList) (*openapi.StatsAppliancesListAllOfData, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == a.GetId() {
 			return &s, nil

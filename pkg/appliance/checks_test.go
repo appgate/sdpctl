@@ -673,7 +673,7 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 				stats.Data = append(stats.Data, d.stat)
 				argAppliances = append(argAppliances, d.appliance)
 			}
-			got, err := CheckNeedsMultiControllerUpgrade(stats, argAppliances)
+			got, err := CheckNeedsMultiControllerUpgrade(&stats, argAppliances)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckNeedsMultiControllerUpgrade() error = %v, wantErr %v", err, tt.wantErr)
 				return

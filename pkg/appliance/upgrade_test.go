@@ -64,7 +64,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         *coll.Stats,
+				stats:         coll.Stats,
 			},
 		},
 		{
@@ -101,7 +101,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
 				adminHostname: hostname,
-				stats:         *coll.Stats,
+				stats:         coll.Stats,
 			},
 		},
 		{
@@ -163,7 +163,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewUpgradePlan(tt.args.appliances, *tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
+			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
@@ -342,7 +342,7 @@ Appliances that will be skipped:
 			for _, v := range tt.in.Appliances {
 				appliances = append(appliances, coll.Appliances[v])
 			}
-			up, err := NewUpgradePlan(appliances, *coll.Stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
+			up, err := NewUpgradePlan(appliances, coll.Stats, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
@@ -420,7 +420,7 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 			for _, v := range tt.appliances {
 				appliances = append(appliances, coll.Appliances[v])
 			}
-			up, err := NewUpgradePlan(appliances, *coll.Stats, hostname, DefaultCommandFilter, nil, false)
+			up, err := NewUpgradePlan(appliances, coll.Stats, hostname, DefaultCommandFilter, nil, false)
 			if err != nil {
 				t.Fatalf("PrintPostCompleteSummary() - internal test error: %v", err)
 				return
