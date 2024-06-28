@@ -80,6 +80,22 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			name:       "test no appliances ready",
 			cli:        "upgrade complete --no-interactive",
 			appliances: []string{appliancepkg.TestApplianceUnpreparedPrimary, appliancepkg.TestApplianceControllerNotPrepared},
+			customStubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/{appliance}/upgrade",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						us := openapi.NewStatsAppliancesListAllOfUpgradeWithDefaults()
+						us.SetStatus(appliancepkg.UpgradeStatusIdle)
+						body, err := us.MarshalJSON()
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(body)
+					},
+				},
+			},
 			from:       "6.2.0",
 			to:         "6.2.1",
 			wantErr:    true,

@@ -305,7 +305,7 @@ var (
 	ErrControllerVersionMismatch = errors.New("all controllers need to be prepared with the same version when doing a major or minor version upgrade.")
 )
 
-func CheckNeedsMultiControllerUpgrade(stats openapi.StatsAppliancesList, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	var (
 		errs                   *multierror.Error
 		preparedControllers    []openapi.Appliance

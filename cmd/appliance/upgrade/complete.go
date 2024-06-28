@@ -198,7 +198,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	plan, err := appliancepkg.NewUpgradePlan(rawAppliances, *initialStats, controlHost, filter, orderBy, descending)
+	upgradeStatusMap, err := a.UpgradeStatusMap(ctx, rawAppliances)
+	if err != nil {
+		return err
+	}
+	plan, err := appliancepkg.NewUpgradePlan(rawAppliances, initialStats, upgradeStatusMap, controlHost, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@
 project_name: sdpctl
 env:
   - SNAPSHOT_VERSION={{ .Now.Format "2006.01.02" }}
+  - SDPCTL_LOG_LEVEL={{ if .IsSnapshot }}debug{{ else }}info{{ end }}
 before:
   hooks:
     - make clean

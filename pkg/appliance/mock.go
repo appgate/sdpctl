@@ -147,23 +147,16 @@ var (
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, string(body))
 	}
+	DefaultResponder = func(callback func(rw http.ResponseWriter, req *http.Request, count int)) http.HandlerFunc {
+		count := 0
+		return func(w http.ResponseWriter, r *http.Request) {
+			callback(w, r, count)
+		}
+	}
 	mutatingResponder = func(callback func(count int) ([]byte, error)) http.HandlerFunc {
 		count := 0
 		return func(w http.ResponseWriter, r *http.Request) {
 			mutated, err := callback(count)
-			if err != nil {
-				panic(fmt.Sprintf("Internal testing error; request mutation failed %q", err))
-			}
-			count++
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, string(mutated))
-		}
-	}
-	mutatingApplianceResponder = func(id string, callback func(id string, count int) ([]byte, error)) http.HandlerFunc {
-		count := 0
-		return func(w http.ResponseWriter, r *http.Request) {
-			mutated, err := callback(id, count)
 			if err != nil {
 				panic(fmt.Sprintf("Internal testing error; request mutation failed %q", err))
 			}
@@ -217,6 +210,32 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 	}
 	stubs = append(stubs, statsStub)
 
+	stubs = append(stubs, httpmock.Stub{
+		URL: "/admin/appliances/{appliance}/upgrade",
+		Responder: DefaultResponder(func(rw http.ResponseWriter, req *http.Request, count int) {
+			id := req.PathValue("appliance")
+			for _, s := range stats.GetData() {
+				if s.GetId() != id {
+					continue
+				}
+				us := s.GetUpgrade()
+				if count <= 0 {
+					us.SetStatus(UpgradeStatusReady)
+				} else if count == 1 {
+					us.SetStatus(UpgradeStatusIdle)
+					us.SetDetails("")
+				}
+				body, err := us.MarshalJSON()
+				if err != nil {
+					rw.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				rw.Header().Set("Content-Type", "application/json")
+				rw.Write(body)
+			}
+		}),
+	})
+
 	// global settings stub
 	globalSettingsStub := httpmock.Stub{
 		URL: "/admin/global-settings",
@@ -244,25 +263,6 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 		stubs = append(stubs, httpmock.Stub{
 			URL:       fmt.Sprintf("/admin/appliances/%s/maintenance", a.GetId()),
 			Responder: changeRequestResponder,
-		})
-		stubs = append(stubs, httpmock.Stub{
-			URL: fmt.Sprintf("/admin/appliances/%s/upgrade", a.GetId()),
-			Responder: mutatingApplianceResponder(a.GetId(), func(id string, count int) ([]byte, error) {
-				for _, s := range stats.GetData() {
-					if s.GetId() != id {
-						continue
-					}
-					us := s.GetUpgrade()
-					if count <= 0 {
-						us.SetStatus(UpgradeStatusReady)
-					} else if count == 1 {
-						us.SetStatus(UpgradeStatusIdle)
-						us.SetDetails("")
-					}
-					return json.Marshal(us)
-				}
-				return nil, fmt.Errorf("failed to find stats for '%s'", id)
-			}),
 		})
 
 		backupID := uuid.NewString()
