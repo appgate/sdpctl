@@ -13,13 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.x
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ^1.22
         id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Get dependencies
         run: |
@@ -37,14 +37,14 @@ jobs:
     name: "Static analysis"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: "1.22.x"
       - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@2023.1"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/staticcheck
           key: staticcheck-${{ github.sha }}
