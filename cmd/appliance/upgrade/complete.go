@@ -212,6 +212,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	primaryController := plan.GetPrimaryController()
 	plan.AddOfflineAppliances(offline)
+	if err := plan.Validate(); err != nil {
+		return err
+	}
 	bOpts := appliancepkg.BackupOpts{
 		Config:        opts.Config,
 		Appliance:     opts.Appliance,
