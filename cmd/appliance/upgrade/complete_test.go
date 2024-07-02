@@ -103,7 +103,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		},
 		{
 			name:       "test complete with filter function gateway",
-			cli:        "upgrade complete --backup=false --filter function=gateway --no-interactive",
+			cli:        "upgrade complete --backup=false --include function=gateway --no-interactive",
 			appliances: []string{appliancepkg.TestAppliancePrimary, appliancepkg.TestApplianceGatewayA1, appliancepkg.TestApplianceGatewayA2},
 			from:       "6.2.0",
 			to:         "6.2.1",
@@ -262,8 +262,9 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			cmd.AddCommand(upgradeCmd)
 
 			// cobra hack
-			cmd.Flags().BoolP("help", "x", false, "")
-			cmd.Flags().Bool("no-interactive", false, "usage")
+			cmd.PersistentFlags().BoolP("help", "x", false, "")
+			cmd.PersistentFlags().Bool("ci-mode", false, "")
+			cmd.PersistentFlags().Bool("no-interactive", false, "usage")
 			cmd.PersistentFlags().String("actual-hostname", "", "")
 
 			argv, err := shlex.Split(tt.cli)

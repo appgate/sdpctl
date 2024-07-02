@@ -16,6 +16,7 @@ import (
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/dns"
+	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -47,14 +48,16 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 	// define prepare parent command flags so we can include these in the tests.
 	cmd := &cobra.Command{
 		Use:              "appliance",
-		Short:            "interact with appliances",
+		Short:            docs.ApplianceRootDoc.Short,
+		Long:             docs.ApplianceRootDoc.Long,
 		Aliases:          []string{"app", "a"},
 		TraverseChildren: true,
 	}
-	cmd.PersistentFlags().Bool("no-interactive", false, "suppress interactive prompt with auto accept")
-	cmd.PersistentFlags().Bool("ci-mode", false, "ci mode")
-	cmd.PersistentFlags().StringToStringP("filter", "f", map[string]string{}, "")
-	cmd.PersistentFlags().StringToStringP("exclude", "e", map[string]string{}, "Exclude appliances. Adheres to the same syntax and key-value pairs as '--filter'")
+	pFlags := cmd.PersistentFlags()
+	pFlags.StringToStringP("include", "i", map[string]string{}, "Include appliances. Adheres to the same syntax and key-value pairs as '--exclude'")
+	pFlags.StringToStringP("exclude", "e", map[string]string{}, "")
+	pFlags.StringSlice("order-by", []string{"name"}, "")
+	pFlags.Bool("descending", false, "Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.")
 	return cmd
 }
 
@@ -160,7 +163,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "with gateway filter",
-			cli:  `upgrade prepare --filter function=gateway --image './testdata/appgate-6.2.2-9876.img.zip'`,
+			cli:  `upgrade prepare --include function=gateway --image './testdata/appgate-6.2.2-9876.img.zip'`,
 			askStubs: func(s *prompt.AskStubber) {
 				s.StubOne(true) // upgrade_confirm
 			},
@@ -549,6 +552,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 
 			// cobra hack
 			cmd.Flags().BoolP("help", "x", false, "")
+			cmd.PersistentFlags().Bool("ci-mode", false, "")
 
 			argv, err := shlex.Split(tt.cli)
 			if err != nil {
