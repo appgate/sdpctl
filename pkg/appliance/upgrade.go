@@ -30,6 +30,7 @@ func (su SkipUpgrade) Error() string {
 var (
 	ErrSkipReasonNotPrepared            = errors.New("appliance is not prepared for upgrade")
 	ErrSkipReasonOffline                = errors.New("appliance is offline")
+	ErrSkipReasonInactive               = errors.New("appliance is inactive")
 	ErrSkipReasonFiltered               = errors.New("filtered using the '--include' and/or '--exclude' flag")
 	ErrSkipReasonAlreadyPrepared        = errors.New("appliance is already prepared for upgrade with a higher or equal version")
 	ErrSkipReasonUnsupportedUpgradePath = errors.New("Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required.")
@@ -95,44 +96,30 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		stats, err := ApplianceStats(&a, plan.stats)
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrNoApplianceStats,
-			})
+			plan.addSkip(a, ErrNoApplianceStats)
 			continue
 		}
 		currentVersion, err := ParseVersionString(stats.GetVersion())
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrVersionParse,
-			})
+			plan.addSkip(a, ErrVersionParse)
 			continue
 		}
 
 		// Get upgrade status and target version
 		upgradeStatus, ok := upgradeStatusMap[a.GetId()]
 		if !ok {
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrNoApplianceStats,
-			})
+			plan.addSkip(a, ErrNoApplianceStats)
+			continue
 		}
 		if upgradeStatus.Status != UpgradeStatusReady {
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrSkipReasonNotPrepared,
-			})
+			plan.addSkip(a, ErrSkipReasonNotPrepared)
 			continue
 		}
 		targetVersion, err := ParseVersionString(upgradeStatus.Details)
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrVersionParse,
-			})
+			plan.addSkip(a, ErrVersionParse)
 			continue
 		}
 
@@ -246,11 +233,6 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		plan.Batches[batchIndex] = append(plan.Batches[batchIndex], a)
 	}
 
-	// Check if there are any appliances to actually upgrade
-	if plan.NothingToUpgrade() {
-		return nil, ErrNothingToUpgrade
-	}
-
 	// Sort the output in the upgrade plan
 	if len(plan.LogForwardersAndServers) > 0 {
 		sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
@@ -277,14 +259,24 @@ func (up *UpgradePlan) AddBackups(applianceIds []string) error {
 	return errs.ErrorOrNil()
 }
 
+func (up *UpgradePlan) addSkip(appliance openapi.Appliance, reason error) {
+	up.Skipping = append(up.Skipping, SkipUpgrade{
+		Appliance: appliance,
+		Reason:    reason,
+	})
+	up.allAppliances = append(up.allAppliances, appliance)
+}
+
 func (up *UpgradePlan) AddOfflineAppliances(appliances []openapi.Appliance) {
 	for _, a := range appliances {
-		up.Skipping = append(up.Skipping, SkipUpgrade{
-			Appliance: a,
-			Reason:    ErrSkipReasonOffline,
-		})
+		up.addSkip(a, ErrSkipReasonOffline)
 	}
-	up.allAppliances = append(up.allAppliances, appliances...)
+}
+
+func (up *UpgradePlan) AddInactiveAppliances(appliances []openapi.Appliance) {
+	for _, a := range appliances {
+		up.addSkip(a, ErrSkipReasonInactive)
+	}
 }
 
 func (up *UpgradePlan) GetPrimaryController() *openapi.Appliance {

@@ -202,7 +202,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	active, _ := appliancepkg.FilterActivated(postOnlineInclude)
+	active, inactive := appliancepkg.FilterActivated(postOnlineInclude)
 
 	upgradeStatusMap, err := a.UpgradeStatusMap(ctx, active)
 	if err != nil {
@@ -214,6 +214,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 	primaryController := plan.GetPrimaryController()
 	plan.AddOfflineAppliances(offline)
+	plan.AddInactiveAppliances(inactive)
 	if err := plan.Validate(); err != nil {
 		return err
 	}
