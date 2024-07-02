@@ -198,18 +198,20 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
+	postOnlineInclude, offline, err := appliancepkg.FilterAvailable(rawAppliances, initialStats.GetData())
+	if err != nil {
+		return err
+	}
 	upgradeStatusMap, err := a.UpgradeStatusMap(ctx, rawAppliances)
 	if err != nil {
 		return err
 	}
-	plan, err := appliancepkg.NewUpgradePlan(rawAppliances, initialStats, upgradeStatusMap, controlHost, filter, orderBy, descending)
+	plan, err := appliancepkg.NewUpgradePlan(postOnlineInclude, initialStats, upgradeStatusMap, controlHost, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}
-	primaryController, err := appliancepkg.FindPrimaryController(rawAppliances, controlHost, true)
-	if err != nil {
-		return err
-	}
+	primaryController := plan.GetPrimaryController()
+	plan.AddOfflineAppliances(offline)
 	bOpts := appliancepkg.BackupOpts{
 		Config:        opts.Config,
 		Appliance:     opts.Appliance,

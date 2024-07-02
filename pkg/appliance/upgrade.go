@@ -36,6 +36,7 @@ var (
 	ErrSkipReasonAlreadySameVersion     = errors.New("appliance is already running a version higher or equal to the prepare version")
 	ErrNoApplianceStats                 = errors.New("failed to find appliance stats")
 	ErrVersionParse                     = errors.New("failed to parse current appliance version")
+	ErrNothingToUpgrade                 = errors.New("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
 )
 
 type UpgradePlan struct {
@@ -47,6 +48,7 @@ type UpgradePlan struct {
 	BackupIds               []string
 	stats                   *openapi.StatsAppliancesList
 	adminHostname           string
+	primary                 *openapi.Appliance
 }
 
 func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
@@ -59,24 +61,14 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 	if err != nil {
 		return nil, err
 	}
+	plan.primary = primary
 
 	// we check if all controllers need upgrade very early
 	if _, err := CheckNeedsMultiControllerUpgrade(stats, appliances); err != nil {
 		return nil, err
 	}
 
-	postOnlineInclude, offline, err := FilterAvailable(appliances, stats.GetData())
-	if err != nil {
-		return nil, err
-	}
-	for _, o := range offline {
-		plan.Skipping = append(plan.Skipping, SkipUpgrade{
-			Appliance: o,
-			Reason:    ErrSkipReasonOffline,
-		})
-	}
-
-	finalApplianceList, filtered, err := FilterAppliances(postOnlineInclude, filter, orderBy, descending)
+	finalApplianceList, filtered, err := FilterAppliances(appliances, filter, orderBy, descending)
 	if err != nil {
 		return nil, err
 	}
@@ -257,6 +249,11 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		plan.Batches[batchIndex] = append(plan.Batches[batchIndex], a)
 	}
 
+	// Check if there are any appliances to actually upgrade
+	if plan.NothingToUpgrade() {
+		return nil, ErrNothingToUpgrade
+	}
+
 	// Sort the output in the upgrade plan
 	if len(plan.LogForwardersAndServers) > 0 {
 		sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
@@ -281,6 +278,19 @@ func (up *UpgradePlan) AddBackups(applianceIds []string) error {
 	}
 	up.BackupIds = applianceIds
 	return errs.ErrorOrNil()
+}
+
+func (up *UpgradePlan) AddOfflineAppliances(appliances []openapi.Appliance) {
+	for _, a := range appliances {
+		up.Skipping = append(up.Skipping, SkipUpgrade{
+			Appliance: a,
+			Reason:    ErrSkipReasonOffline,
+		})
+	}
+}
+
+func (up *UpgradePlan) GetPrimaryController() *openapi.Appliance {
+	return up.primary
 }
 
 func (up *UpgradePlan) HasDiffVersions(newStats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {
