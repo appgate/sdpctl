@@ -63,8 +63,6 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
 					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
-				adminHostname: hostname,
-				stats:         coll.Stats,
 			},
 		},
 		{
@@ -100,65 +98,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
 					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
-				adminHostname: hostname,
-				stats:         coll.Stats,
 			},
-		},
-		{
-			name: "test multi controller upgrade error",
-			args: args{
-				appliances: []openapi.Appliance{
-					coll.Appliances["primary"],
-					coll.Appliances["controller3"],
-					coll.Appliances["gatewayA1"],
-					coll.Appliances["gatewayB2"],
-					coll.Appliances["gatewayA2"],
-					coll.Appliances["logserver"],
-					coll.Appliances["logforwarderA2"],
-					coll.Appliances["gatewayB1"],
-					coll.Appliances["connectorA1"],
-					coll.Appliances["gatewayC1"],
-					coll.Appliances["secondary"],
-					coll.Appliances["gatewayA3"],
-					coll.Appliances["gatewayC2"],
-					coll.Appliances["portalA1"],
-					coll.Appliances["logforwarderA1"],
-				},
-				stats:        coll.Stats,
-				ctrlHostname: hostname,
-				filter:       DefaultCommandFilter,
-				orderBy:      nil,
-				descending:   false,
-			},
-			wantErr: true,
-		},
-		{
-			name: "test offline controller",
-			args: args{
-				appliances: []openapi.Appliance{
-					coll.Appliances["primary"],
-					coll.Appliances["controller4"],
-					coll.Appliances["gatewayA1"],
-					coll.Appliances["gatewayB2"],
-					coll.Appliances["gatewayA2"],
-					coll.Appliances["logserver"],
-					coll.Appliances["logforwarderA2"],
-					coll.Appliances["gatewayB1"],
-					coll.Appliances["connectorA1"],
-					coll.Appliances["gatewayC1"],
-					coll.Appliances["secondary"],
-					coll.Appliances["gatewayA3"],
-					coll.Appliances["gatewayC2"],
-					coll.Appliances["portalA1"],
-					coll.Appliances["logforwarderA1"],
-				},
-				stats:        coll.Stats,
-				ctrlHostname: hostname,
-				filter:       DefaultCommandFilter,
-				orderBy:      nil,
-				descending:   false,
-			},
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -181,7 +121,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
-			assert.Equal(t, tt.want, got)
+			assert.EqualExportedValues(t, tt.want, got)
 		})
 	}
 }

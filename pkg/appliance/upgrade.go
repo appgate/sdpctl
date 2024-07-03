@@ -30,12 +30,14 @@ func (su SkipUpgrade) Error() string {
 var (
 	ErrSkipReasonNotPrepared            = errors.New("appliance is not prepared for upgrade")
 	ErrSkipReasonOffline                = errors.New("appliance is offline")
+	ErrSkipReasonInactive               = errors.New("appliance is inactive")
 	ErrSkipReasonFiltered               = errors.New("filtered using the '--include' and/or '--exclude' flag")
 	ErrSkipReasonAlreadyPrepared        = errors.New("appliance is already prepared for upgrade with a higher or equal version")
 	ErrSkipReasonUnsupportedUpgradePath = errors.New("Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required.")
 	ErrSkipReasonAlreadySameVersion     = errors.New("appliance is already running a version higher or equal to the prepare version")
 	ErrNoApplianceStats                 = errors.New("failed to find appliance stats")
 	ErrVersionParse                     = errors.New("failed to parse current appliance version")
+	ErrNothingToUpgrade                 = errors.New("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
 )
 
 type UpgradePlan struct {
@@ -47,36 +49,24 @@ type UpgradePlan struct {
 	BackupIds               []string
 	stats                   *openapi.StatsAppliancesList
 	adminHostname           string
+	primary                 *openapi.Appliance
+	allAppliances           []openapi.Appliance
 }
 
 func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
 	plan := UpgradePlan{
 		adminHostname: adminHostname,
 		stats:         stats,
+		allAppliances: appliances,
 	}
 
 	primary, err := FindPrimaryController(appliances, plan.adminHostname, false)
 	if err != nil {
 		return nil, err
 	}
+	plan.primary = primary
 
-	// we check if all controllers need upgrade very early
-	if _, err := CheckNeedsMultiControllerUpgrade(stats, appliances); err != nil {
-		return nil, err
-	}
-
-	postOnlineInclude, offline, err := FilterAvailable(appliances, stats.GetData())
-	if err != nil {
-		return nil, err
-	}
-	for _, o := range offline {
-		plan.Skipping = append(plan.Skipping, SkipUpgrade{
-			Appliance: o,
-			Reason:    ErrSkipReasonOffline,
-		})
-	}
-
-	finalApplianceList, filtered, err := FilterAppliances(postOnlineInclude, filter, orderBy, descending)
+	finalApplianceList, filtered, err := FilterAppliances(appliances, filter, orderBy, descending)
 	if err != nil {
 		return nil, err
 	}
@@ -106,44 +96,30 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		stats, err := ApplianceStats(&a, plan.stats)
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrNoApplianceStats,
-			})
+			plan.addSkip(a, ErrNoApplianceStats)
 			continue
 		}
 		currentVersion, err := ParseVersionString(stats.GetVersion())
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrVersionParse,
-			})
+			plan.addSkip(a, ErrVersionParse)
 			continue
 		}
 
 		// Get upgrade status and target version
 		upgradeStatus, ok := upgradeStatusMap[a.GetId()]
 		if !ok {
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrNoApplianceStats,
-			})
+			plan.addSkip(a, ErrNoApplianceStats)
+			continue
 		}
 		if upgradeStatus.Status != UpgradeStatusReady {
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrSkipReasonNotPrepared,
-			})
+			plan.addSkip(a, ErrSkipReasonNotPrepared)
 			continue
 		}
 		targetVersion, err := ParseVersionString(upgradeStatus.Details)
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			plan.Skipping = append(plan.Skipping, SkipUpgrade{
-				Appliance: a,
-				Reason:    ErrVersionParse,
-			})
+			plan.addSkip(a, ErrVersionParse)
 			continue
 		}
 
@@ -281,6 +257,38 @@ func (up *UpgradePlan) AddBackups(applianceIds []string) error {
 	}
 	up.BackupIds = applianceIds
 	return errs.ErrorOrNil()
+}
+
+func (up *UpgradePlan) addSkip(appliance openapi.Appliance, reason error) {
+	up.Skipping = append(up.Skipping, SkipUpgrade{
+		Appliance: appliance,
+		Reason:    reason,
+	})
+	up.allAppliances = append(up.allAppliances, appliance)
+}
+
+func (up *UpgradePlan) AddOfflineAppliances(appliances []openapi.Appliance) {
+	for _, a := range appliances {
+		up.addSkip(a, ErrSkipReasonOffline)
+	}
+}
+
+func (up *UpgradePlan) AddInactiveAppliances(appliances []openapi.Appliance) {
+	for _, a := range appliances {
+		up.addSkip(a, ErrSkipReasonInactive)
+	}
+}
+
+func (up *UpgradePlan) GetPrimaryController() *openapi.Appliance {
+	return up.primary
+}
+
+func (up *UpgradePlan) Validate() error {
+	// we check if all controllers need upgrade very early
+	if _, err := CheckNeedsMultiControllerUpgrade(up.stats, up.allAppliances); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (up *UpgradePlan) HasDiffVersions(newStats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {

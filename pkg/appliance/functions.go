@@ -148,6 +148,19 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	return result, offline, err
 }
 
+func FilterActivated(appliances []openapi.Appliance) (active []openapi.Appliance, inactive []openapi.Appliance) {
+	inactive = []openapi.Appliance{}
+	active = []openapi.Appliance{}
+	for _, a := range appliances {
+		if a.GetActivated() {
+			active = append(active, a)
+			continue
+		}
+		inactive = append(inactive, a)
+	}
+	return
+}
+
 func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == appliance.GetId() {
