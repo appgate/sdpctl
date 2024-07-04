@@ -108,8 +108,8 @@ release:
 brews:
   - name: sdpctl
     commit_author:
-      name: aitorbot
-      email: aitorbot@appgate.com
+      name: "{{ .Env.COMMIT_AUTHOR_NAME }}"
+      email: "{{ .Env.COMMIT_AUTHOR_EMAIL }}"
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     folder: Formula
     homepage: "https://github.com/appgate/sdpctl/releases"
