@@ -14,30 +14,33 @@ import (
 )
 
 const (
-	TestAppliancePrimary               = "primary"
-	TestApplianceUnpreparedPrimary     = "primary-unprepared"
-	TestApplianceSecondary             = "secondary"
-	TestApplianceController3           = "controller3"
-	TestApplianceControllerOffline     = "controller4"
-	TestApplianceControllerNotPrepared = "controller5"
-	TestApplianceControllerMismatch    = "controller6"
-	TestApplianceGatewayA1             = "gatewayA1"
-	TestApplianceGatewayA2             = "gatewayA2"
-	TestApplianceGatewayA3             = "gatewayA3"
-	TestApplianceGatewayB1             = "gatewayB1"
-	TestApplianceGatewayB2             = "gatewayB2"
-	TestApplianceGatewayB3             = "gatewayB3"
-	TestApplianceGatewayC1             = "gatewayC1"
-	TestApplianceGatewayC2             = "gatewayC2"
-	TestApplianceLogForwarderA1        = "logforwarderA1"
-	TestApplianceLogForwarderA2        = "logforwarderA2"
-	TestAppliancePortalA1              = "portalA1"
-	TestApplianceConnectorA1           = "connectorA1"
-	TestApplianceLogServer             = "logserver"
+	TestAppliancePrimary                  = "primary"
+	TestApplianceUnpreparedPrimary        = "primary-unprepared"
+	TestApplianceSecondary                = "secondary"
+	TestApplianceController3              = "controller3"
+	TestApplianceControllerOffline        = "controller4"
+	TestApplianceControllerNotPrepared    = "controller5"
+	TestApplianceControllerMismatch       = "controller6"
+	TestApplianceControllerGatewayPrimary = "controller-gateway-primary"
+	TestApplianceGatewayA1                = "gatewayA1"
+	TestApplianceGatewayA2                = "gatewayA2"
+	TestApplianceGatewayA3                = "gatewayA3"
+	TestApplianceGatewayB1                = "gatewayB1"
+	TestApplianceGatewayB2                = "gatewayB2"
+	TestApplianceGatewayB3                = "gatewayB3"
+	TestApplianceGatewayC1                = "gatewayC1"
+	TestApplianceGatewayC2                = "gatewayC2"
+	TestApplianceLogForwarderA1           = "logforwarderA1"
+	TestApplianceLogForwarderA2           = "logforwarderA2"
+	TestAppliancePortalA1                 = "portalA1"
+	TestApplianceConnectorA1              = "connectorA1"
+	TestApplianceLogServer                = "logserver"
+	TestApplianceControllerGatewayA1      = "controller-gatewayA1"
+	TestApplianceControllerGatewayB1      = "controller-gatewayB1"
 )
 
 var (
-	PreSetApplianceNames                              = []string{TestAppliancePrimary, TestApplianceSecondary, TestApplianceController3, TestApplianceControllerOffline, TestApplianceControllerNotPrepared, TestApplianceControllerMismatch, TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3, TestApplianceGatewayC1, TestApplianceGatewayC2, TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestAppliancePortalA1, TestApplianceConnectorA1, TestApplianceLogServer}
+	PreSetApplianceNames                              = []string{TestAppliancePrimary, TestApplianceSecondary, TestApplianceController3, TestApplianceControllerOffline, TestApplianceControllerNotPrepared, TestApplianceControllerMismatch, TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3, TestApplianceGatewayC1, TestApplianceGatewayC2, TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestAppliancePortalA1, TestApplianceConnectorA1, TestApplianceLogServer, TestApplianceControllerGatewayA1, TestApplianceControllerGatewayB1, TestApplianceControllerGatewayPrimary}
 	InitialTestStats     *openapi.StatsAppliancesList = openapi.NewStatsAppliancesListWithDefaults()
 	UpgradedTestStats    *openapi.StatsAppliancesList = openapi.NewStatsAppliancesListWithDefaults()
 )
@@ -83,6 +86,8 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
 		case TestApplianceControllerMismatch:
 			res.addAppliance(n, "", siteA, siteNameA, "6.1", from, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+		case TestApplianceControllerGatewayPrimary:
+			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController, FunctionGateway})
 		case TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3:
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
 		case TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3:
@@ -97,6 +102,10 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
 		case TestApplianceLogServer:
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogServer})
+		case TestApplianceControllerGatewayA1:
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController, FunctionGateway})
+		case TestApplianceControllerGatewayB1:
+			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController, FunctionGateway})
 		default:
 		}
 	}
