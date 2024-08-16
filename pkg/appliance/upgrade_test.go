@@ -15,6 +15,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 
 	coll := GenerateCollective(t, hostname, v62, v63, PreSetApplianceNames)
 	primary := coll.Appliances["primary"]
+	primaryWithGateway := coll.Appliances["controller-gateway-primary"]
 
 	type args struct {
 		appliances   []openapi.Appliance
@@ -98,6 +99,26 @@ func TestMakeUpgradePlan(t *testing.T) {
 					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
 					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
+			},
+		},
+		{
+			name: "test grouping with no other batches",
+			args: args{
+				appliances: []openapi.Appliance{
+					coll.Appliances["controller-gateway-primary"],
+					coll.Appliances["controller-gatewayB1"],
+					coll.Appliances["logserver"],
+				},
+				stats:        coll.Stats,
+				ctrlHostname: hostname,
+				filter:       DefaultCommandFilter,
+				orderBy:      nil,
+				descending:   false,
+			},
+			want: &UpgradePlan{
+				PrimaryController: &primaryWithGateway,
+				Controllers:       []openapi.Appliance{coll.Appliances["controller-gatewayB1"]},
+				Batches:           [][]openapi.Appliance{{coll.Appliances["logserver"]}},
 			},
 		},
 	}
