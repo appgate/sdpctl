@@ -177,6 +177,10 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 			batchSize = len(lf)
 		}
 	}
+	// batchSize needs to min 1 if there are any other appliances prepared
+	if len(other) > 0 && batchSize == 0 {
+		batchSize = 1
+	}
 
 	// Equally distribute gateways to batches
 	// Each batch should contain only one gateway per site
