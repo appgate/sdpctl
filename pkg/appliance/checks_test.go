@@ -673,7 +673,16 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 				stats.Data = append(stats.Data, d.stat)
 				argAppliances = append(argAppliances, d.appliance)
 			}
-			got, err := CheckNeedsMultiControllerUpgrade(&stats, argAppliances)
+			upgradeStatusMap := map[string]UpgradeStatusResult{}
+			for _, s := range stats.GetData() {
+				us := s.GetUpgrade()
+				upgradeStatusMap[s.GetId()] = UpgradeStatusResult{
+					Status:  us.GetStatus(),
+					Details: us.GetDetails(),
+					Name:    s.GetName(),
+				}
+			}
+			got, err := CheckNeedsMultiControllerUpgrade(&stats, upgradeStatusMap, argAppliances)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckNeedsMultiControllerUpgrade() error = %v, wantErr %v", err, tt.wantErr)
 				return
