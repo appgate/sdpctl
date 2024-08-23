@@ -228,7 +228,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 					continue
 				}
 				us := s.GetUpgrade()
-				if count <= 0 {
+				if us.GetStatus() != UpgradeStatusIdle && count <= 0 {
 					us.SetStatus(UpgradeStatusReady)
 				} else if count == 1 {
 					us.SetStatus(UpgradeStatusIdle)
@@ -406,7 +406,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 	currentStatsData.SetOnline(online)
 	currentStatsData.SetVolumeNumber(0)
 	currentStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
-		Status:  &upgradeStatus,
+		Status:  openapi.PtrString(upgradeStatus),
 		Details: openapi.PtrString(targetVersion),
 	})
 

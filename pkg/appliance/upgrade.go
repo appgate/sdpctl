@@ -48,6 +48,7 @@ type UpgradePlan struct {
 	Skipping                []SkipUpgrade
 	BackupIds               []string
 	stats                   *openapi.StatsAppliancesList
+	upgradeStatusMap        map[string]UpgradeStatusResult
 	adminHostname           string
 	primary                 *openapi.Appliance
 	allAppliances           []openapi.Appliance
@@ -55,9 +56,10 @@ type UpgradePlan struct {
 
 func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
 	plan := UpgradePlan{
-		adminHostname: adminHostname,
-		stats:         stats,
-		allAppliances: appliances,
+		adminHostname:    adminHostname,
+		stats:            stats,
+		upgradeStatusMap: upgradeStatusMap,
+		allAppliances:    appliances,
 	}
 
 	primary, err := FindPrimaryController(appliances, plan.adminHostname, false)
@@ -289,7 +291,7 @@ func (up *UpgradePlan) GetPrimaryController() *openapi.Appliance {
 
 func (up *UpgradePlan) Validate() error {
 	// we check if all controllers need upgrade very early
-	if _, err := CheckNeedsMultiControllerUpgrade(up.stats, up.allAppliances); err != nil {
+	if _, err := CheckNeedsMultiControllerUpgrade(up.stats, up.upgradeStatusMap, up.allAppliances); err != nil {
 		return err
 	}
 	return nil

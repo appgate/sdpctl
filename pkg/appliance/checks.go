@@ -305,7 +305,7 @@ var (
 	ErrControllerVersionMismatch = errors.New("all controllers need to be prepared with the same version when doing a major or minor version upgrade.")
 )
 
-func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	var (
 		errs                   *multierror.Error
 		preparedControllers    []openapi.Appliance
@@ -339,10 +339,10 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, applia
 				if res, _ := CompareVersionsAndBuildNumber(highestCurrentVersion, current); res > 0 {
 					highestCurrentVersion = current
 				}
-				us := as.GetUpgrade()
-				if us.GetStatus() == UpgradeStatusReady {
+				us := upgradeStatusMap[app.GetId()]
+				if us.Status == UpgradeStatusReady {
 					preparedControllers = append(preparedControllers, app)
-					targetVersion, err := ParseVersionString(us.GetDetails())
+					targetVersion, err := ParseVersionString(us.Details)
 					if err != nil {
 						errs = multierror.Append(errs, err)
 						continue
@@ -365,21 +365,19 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, applia
 	// check if prepared controllers has mismatching version
 	preparedClone := slices.Clone(preparedControllers)
 	for i, a := range preparedClone {
-		for _, s := range stats.GetData() {
-			if a.GetId() != s.GetId() {
-				continue
-			}
-
-			us := s.GetUpgrade()
-			targetVersion, err := ParseVersionString(us.GetDetails())
-			if err != nil {
-				errs = multierror.Append(errs, err)
-				continue
-			}
-			if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion); res < 0 {
-				mismatchControllers = append(mismatchControllers, a)
-				preparedControllers = append(preparedControllers[:i], preparedControllers[i+1:]...)
-			}
+		us, ok := upgradeStatusMap[a.GetId()]
+		if !ok {
+			errs = multierror.Append(errs, ErrNoApplianceStats)
+			continue
+		}
+		targetVersion, err := ParseVersionString(us.Details)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, targetVersion); res < 0 {
+			mismatchControllers = append(mismatchControllers, a)
+			preparedControllers = append(preparedControllers[:i], preparedControllers[i+1:]...)
 		}
 	}
 
