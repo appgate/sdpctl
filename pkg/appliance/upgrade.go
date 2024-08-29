@@ -496,7 +496,8 @@ Upgrade will be completed in steps:
 
 {{- if .Skipped -}}
 Appliances that will be skipped:
-  {{ range .Skipped }}- {{ .Appliance.Name }}: {{ .Reason -}}{{- end }}
+{{ range .Skipped }}  - {{ .Appliance.Name }}: {{ .Reason }}
+{{ end -}}
 {{ end }}`
 
 var (

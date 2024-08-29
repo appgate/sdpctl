@@ -260,6 +260,7 @@ Upgrade will be completed in steps:
 					TestAppliancePrimary,
 					TestApplianceSecondary,
 					TestApplianceControllerNotPrepared,
+					TestApplianceController2NotPrepared,
 					TestApplianceGatewayA1,
 					TestApplianceGatewayA2,
 				},
@@ -307,6 +308,7 @@ Upgrade will be completed in steps:
 
 Appliances that will be skipped:
   - controller5: appliance is not prepared for upgrade
+  - controller7: appliance is not prepared for upgrade
 `,
 		},
 	}

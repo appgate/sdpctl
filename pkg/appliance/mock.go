@@ -20,6 +20,7 @@ const (
 	TestApplianceController3              = "controller3"
 	TestApplianceControllerOffline        = "controller4"
 	TestApplianceControllerNotPrepared    = "controller5"
+	TestApplianceController2NotPrepared   = "controller7"
 	TestApplianceControllerMismatch       = "controller6"
 	TestApplianceControllerGatewayPrimary = "controller-gateway-primary"
 	TestApplianceGatewayA1                = "gatewayA1"
@@ -40,7 +41,7 @@ const (
 )
 
 var (
-	PreSetApplianceNames                              = []string{TestAppliancePrimary, TestApplianceSecondary, TestApplianceController3, TestApplianceControllerOffline, TestApplianceControllerNotPrepared, TestApplianceControllerMismatch, TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3, TestApplianceGatewayC1, TestApplianceGatewayC2, TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestAppliancePortalA1, TestApplianceConnectorA1, TestApplianceLogServer, TestApplianceControllerGatewayA1, TestApplianceControllerGatewayB1, TestApplianceControllerGatewayPrimary}
+	PreSetApplianceNames                              = []string{TestAppliancePrimary, TestApplianceSecondary, TestApplianceController3, TestApplianceControllerOffline, TestApplianceControllerNotPrepared, TestApplianceController2NotPrepared, TestApplianceControllerMismatch, TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3, TestApplianceGatewayC1, TestApplianceGatewayC2, TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestAppliancePortalA1, TestApplianceConnectorA1, TestApplianceLogServer, TestApplianceControllerGatewayA1, TestApplianceControllerGatewayB1, TestApplianceControllerGatewayPrimary}
 	InitialTestStats     *openapi.StatsAppliancesList = openapi.NewStatsAppliancesListWithDefaults()
 	UpgradedTestStats    *openapi.StatsAppliancesList = openapi.NewStatsAppliancesListWithDefaults()
 )
@@ -82,7 +83,7 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
 		case TestApplianceControllerOffline:
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusOffline, UpgradeStatusIdle, false, []string{FunctionController})
-		case TestApplianceControllerNotPrepared:
+		case TestApplianceControllerNotPrepared, TestApplianceController2NotPrepared:
 			res.addAppliance(n, "", siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
 		case TestApplianceControllerMismatch:
 			res.addAppliance(n, "", siteA, siteNameA, "6.1", from, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
