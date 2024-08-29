@@ -270,7 +270,7 @@ func (up *UpgradePlan) addSkip(appliance openapi.Appliance, reason error) {
 		Appliance: appliance,
 		Reason:    reason,
 	})
-	up.allAppliances = append(up.allAppliances, appliance)
+	up.allAppliances = AppendUniqueAppliance(up.allAppliances, appliance)
 }
 
 func (up *UpgradePlan) AddOfflineAppliances(appliances []openapi.Appliance) {
@@ -496,7 +496,8 @@ Upgrade will be completed in steps:
 
 {{- if .Skipped -}}
 Appliances that will be skipped:
-  {{ range .Skipped }}- {{ .Appliance.Name }}: {{ .Reason -}}{{- end }}
+{{ range .Skipped }}  - {{ .Appliance.Name }}: {{ .Reason }}
+{{ end -}}
 {{ end }}`
 
 var (
