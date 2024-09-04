@@ -10,7 +10,7 @@ require (
 	github.com/billgraziano/dpapi v0.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cheynewallace/tabby v1.1.1
-	github.com/creack/pty v1.1.21
+	github.com/creack/pty v1.1.23
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/enriquebris/goconcurrentqueue v0.7.0
 	github.com/foxcpp/go-mockdns v1.1.0
