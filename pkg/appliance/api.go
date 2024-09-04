@@ -338,7 +338,7 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 
 func (a *Appliance) ApplianceSwitchPartition(ctx context.Context, id string) error {
 	req := a.APIClient.ApplianceApi.AppliancesIdSwitchPartitionPost(ctx, id).Authorization(a.Token)
-	_, err := req.Execute()
+	_, _, err := req.Execute()
 	if err != nil {
 		return err
 	}
@@ -367,7 +367,7 @@ func (a *Appliance) ForceDisableControllers(ctx context.Context, disable []opena
 }
 
 func (a *Appliance) RepartitionIPAllocations(ctx context.Context) (string, error) {
-	resp, err := a.APIClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Authorization(a.Token).Execute()
+	_, resp, err := a.APIClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return "", api.HTTPErrorResponse(resp, err)
 	}
