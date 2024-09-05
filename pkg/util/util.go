@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -33,20 +32,6 @@ func AppendIfMissing[V comparable](slice []V, i V) []V {
 		}
 	}
 	return append(slice, i)
-}
-
-func InSlice(needle string, haystack []string) bool {
-	stack := make([]string, len(haystack))
-	copy(stack, haystack)
-	sort.Strings(stack)
-	i := sort.Search(
-		len(stack),
-		func(i int) bool { return stack[i] >= needle },
-	)
-	if i < len(stack) && stack[i] == needle {
-		return true
-	}
-	return false
 }
 
 // SearchSlice will search a slice of strings and return all matching results.
@@ -203,14 +188,4 @@ func AddSocketLogHook(path string) error {
 	}
 	log.AddHook(hook)
 	return nil
-}
-
-func Find[T any](s []T, f func(T) bool) (T, error) {
-	var r T
-	for _, v := range s {
-		if f(v) {
-			return v, nil
-		}
-	}
-	return r, errors.New("no match in slice")
 }
