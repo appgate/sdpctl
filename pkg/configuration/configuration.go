@@ -12,18 +12,21 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/appgate/sdpctl/pkg/profiles"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/net/context"
@@ -42,11 +45,118 @@ type Config struct {
 	PemBase64           *string `mapstructure:"pem_base64"`
 	DisableVersionCheck bool    `mapstructure:"disable_version_check"`
 	LastVersionCheck    string  `mapstructure:"last_version_check"`
+	NoInteractive       bool    `mapstructure:"-"`
+	CiMode              bool    `mapstructure:"-"`
+	EventsPath          string  `mapstructure:"-"`
 }
 
 type Credentials struct {
 	Username string
 	Password string
+}
+
+func NewConfiguration(profile *string) (*Config, error) {
+	dir := filesystem.ConfigDir()
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("failed to create configuration directory: %w", err)
+		}
+	}
+	if profiles.FileExists() {
+		p, err := profiles.Read()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read profiles from path '%s': %w", profiles.FilePath(), err)
+		}
+		var selectedProfile string
+		if profile != nil && len(*profile) > 0 {
+			selectedProfile = *profile
+		} else if v := os.Getenv("SDPCTL_PROFILE"); len(v) > 0 {
+			selectedProfile = v
+		}
+		if len(selectedProfile) > 0 {
+			found := false
+			for _, profile := range p.List {
+				if selectedProfile == profile.Name {
+					viper.AddConfigPath(profile.Directory)
+					found = true
+					break
+				}
+			}
+			if !found {
+				return nil, fmt.Errorf("invalid profile name: selected '%s', available %v", selectedProfile, p.Available())
+			}
+		} else if p.Current != nil {
+			if profile, err := p.GetProfile(*p.Current); err == nil && profile != nil {
+				// Move old logs if exists in profile dir
+				matches, _ := filepath.Glob(profile.Directory + "/*.log")
+				if len(matches) > 0 {
+					if !profiles.LogDirectoryExists() {
+						if err := profiles.CreateLogDirectory(); err != nil {
+							logrus.WithError(err).Warn("failed to create log directory")
+						}
+					}
+					for _, m := range matches {
+						newPath := filepath.Join(filesystem.DataDir(), "logs", profile.Name+".log")
+						if err := os.Rename(m, newPath); err != nil {
+							logrus.WithError(err).Warn("failed to migrate old log file")
+							profile.LogPath = m
+						}
+						profile.LogPath = newPath
+					}
+				}
+				viper.AddConfigPath(profile.Directory)
+			}
+		} else if len(p.List) <= 0 {
+			// There's a profile file, but there are no profiles configured or selected.
+			// This probably only happens when config files are manually created, or some
+			// configuration change has happened.
+			// At this point, we fallback to creating the default profile and select that.
+			pn := "default"
+			p.Current = &pn
+			defaultProfile, err := p.CreateDefaultProfile()
+			if err != nil {
+				os.Exit(1)
+			}
+			viper.AddConfigPath(defaultProfile.Directory)
+		}
+	} else {
+		// if we don't have any profiles
+		// we will assume there is only one Collective to respect
+		// and we will default to base dir.
+		viper.AddConfigPath(dir)
+
+		// Migration code to move old root log file to proper place
+		matches, _ := filepath.Glob(filesystem.ConfigDir() + "/*.log")
+		matchOldLogs, _ := filepath.Glob(filesystem.DataDir() + "/*.log")
+		matches = append(matches, matchOldLogs...)
+		if len(matches) > 0 {
+			logDir := filepath.Join(filesystem.DataDir(), "logs")
+			if ok, err := util.FileExists(logDir); err == nil && !ok {
+				os.MkdirAll(logDir, os.ModePerm)
+			}
+			logPath := filepath.Join(logDir, "sdpctl.log")
+			for _, m := range matches {
+				if err := os.Rename(m, logPath); err != nil {
+					logrus.WithError(err).Warn("failed to migrate old log file")
+				}
+			}
+		}
+
+	}
+
+	viper.SetConfigName("config")
+	viper.SetEnvPrefix("SDPCTL")
+	viper.AutomaticEnv()
+	viper.SetConfigType("json")
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Its OK if we can't the file, fallback to arguments and/or environment variables
+			// or configure it with sdpctl configure
+		} else {
+			return nil, fmt.Errorf("no sdpctl configuration found; run 'sdpctl configure'")
+		}
+	}
+	return &Config{}, nil
 }
 
 func (c *Config) GetBearTokenHeaderValue() (string, error) {

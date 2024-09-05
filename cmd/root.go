@@ -15,6 +15,7 @@ import (
 
 	"github.com/appgate/sdpctl/cmd/license"
 	cmdprofile "github.com/appgate/sdpctl/cmd/profile"
+	"github.com/appgate/sdpctl/cmd/sites"
 	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
 
@@ -159,7 +160,7 @@ func initConfig(currentProfile *string) {
 	}
 }
 
-func NewCmdRoot(currentProfile *string) *cobra.Command {
+func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 	var rootCmd = &cobra.Command{
 		Use:               "sdpctl",
 		Short:             "sdpctl is a command line tool to manage Appgate SDP Collectives",
@@ -170,45 +171,54 @@ func NewCmdRoot(currentProfile *string) *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	cfg := &configuration.Config{}
+	cfg, err := configuration.NewConfiguration(currentProfile)
+	if err != nil {
+		return nil, fmt.Errorf("sdpctl configuration error: %w", err)
+	}
 
 	pFlags := rootCmd.PersistentFlags()
 	pFlags.BoolVar(&cfg.Debug, "debug", false, "Enable debug logging")
 	pFlags.IntVar(&cfg.Version, "api-version", cfg.Version, "Peer API version override")
 	pFlags.BoolVar(&cfg.Insecure, "no-verify", cfg.Insecure, "Don't verify TLS on for the given command, overriding settings from config file")
-	pFlags.Bool("no-interactive", false, "Suppress interactive prompt with auto accept")
-	pFlags.Bool("ci-mode", false, "Log to stderr instead of file and disable progress-bars")
-	pFlags.String("events-path", "", "send logs to unix domain socket path")
+	pFlags.BoolVar(&cfg.NoInteractive, "no-interactive", false, "Suppress interactive prompt with auto accept")
+	pFlags.BoolVar(&cfg.CiMode, "ci-mode", false, "Log to stderr instead of file and disable progress-bars")
+	pFlags.StringVar(&cfg.EventsPath, "events-path", "", "send logs to unix domain socket path")
 
 	// hack this is just a dummy flag to show up in --help menu, the real flag is defined
 	// in Execute() because we need to parse it first before the others to be able
 	// to resolve factory.New
-	var dummy string
-	pFlags.StringVarP(&dummy, "profile", "p", "", "Profile configuration to use")
-
-	initConfig(currentProfile)
+	pFlags.StringP("profile", "p", "", "Profile configuration to use")
 
 	BindEnvs(*cfg)
 	viper.Unmarshal(cfg)
 
+	initConfig(currentProfile)
+
 	f := factory.New(version, cfg)
-	rootCmd.AddCommand(cfgcmd.NewCmdConfigure(f))
-	rootCmd.AddCommand(appliancecmd.NewApplianceCmd(f))
-	rootCmd.AddCommand(token.NewTokenCmd(f))
-	rootCmd.AddCommand(NewCmdCompletion())
-	rootCmd.AddCommand(NewHelpCmd(f))
-	rootCmd.AddCommand(NewOpenCmd(f))
-	rootCmd.AddCommand(NewPrivilegesCmd(f))
-	rootCmd.AddCommand(cmdprofile.NewProfileCmd(f))
-	rootCmd.AddCommand(generateCmd)
-	rootCmd.AddCommand(serviceusers.NewServiceUsersCMD(f))
-	rootCmd.AddCommand(license.NewLicenseCmd(f))
-	rootCmd.AddCommand(NewAdminMessageCmd(f))
+	sitesCMD, err := sites.NewSitesCmd(f, cfg)
+	if err != nil {
+		return nil, err
+	}
+	rootCmd.AddCommand(
+		cfgcmd.NewCmdConfigure(f),
+		appliancecmd.NewApplianceCmd(f),
+		token.NewTokenCmd(f),
+		NewCmdCompletion(),
+		NewHelpCmd(f),
+		NewOpenCmd(f),
+		NewPrivilegesCmd(f),
+		cmdprofile.NewProfileCmd(f),
+		serviceusers.NewServiceUsersCMD(f),
+		license.NewLicenseCmd(f),
+		NewAdminMessageCmd(f),
+		sitesCMD,
+		generateCmd,
+	)
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
 
-	return rootCmd
+	return rootCmd, nil
 }
 
 // BindEnvs Consider env vars when unmarshalling
@@ -239,7 +249,13 @@ func Execute() cmdutil.ExitCode {
 	rFlag.Usage = func() {}
 	rFlag.Parse(os.Args[1:])
 
-	return cmdutil.ExecuteCommand(NewCmdRoot(&currentProfile))
+	cmd, err := NewCmdRoot(&currentProfile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "\n%v: %v\n", cmdutil.ErrExitConfiguration, err)
+		return cmdutil.ExitConfiguration
+	}
+
+	return cmdutil.ExecuteCommand(cmd)
 }
 
 // logOutput defaults to logfile in $XDG_DATA_HOME or $HOME/.local/share
@@ -272,16 +288,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 	return func(cmd *cobra.Command, args []string) error {
 		logLevel := strings.ToLower(util.Getenv("SDPCTL_LOG_LEVEL", "info"))
 
-		if !cmdutil.IsTTY(os.Stdout) {
-			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
-				return err
-			}
-			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
-				return err
-			}
-			log.Debug("Output is not TTY. Using no-interactive and ci-mode")
-		}
-
 		switch logLevel {
 		case "panic":
 			log.SetLevel(log.PanicLevel)
@@ -303,9 +309,20 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			log.SetLevel(log.DebugLevel)
 		}
 
+		if !f.CanPrompt() {
+			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
+				return err
+			}
+			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
+				return err
+			}
+			f.SetSpinnerOutput(io.Discard)
+			log.Debug("Output is not TTY. Using no-interactive and ci-mode")
+		}
+
 		log.SetOutput(logOutput(cmd, f))
-		if v, err := cmd.Flags().GetString("events-path"); err == nil && len(v) > 0 {
-			if err := util.AddSocketLogHook(v); err != nil {
+		if len(cfg.EventsPath) > 0 {
+			if err := util.AddSocketLogHook(cfg.EventsPath); err != nil {
 				return fmt.Errorf("failed to initialize events-path: %w", err)
 			}
 		}
@@ -320,13 +337,8 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 		log.WithFields(logFields).Info()
 
-		if value, err := cmd.Flags().GetBool("no-interactive"); err == nil {
-			f.DisablePrompt(value)
-		}
-		if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
-			f.SetSpinnerOutput(io.Discard)
-		}
-		if !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr) {
+		f.DisablePrompt(cfg.NoInteractive)
+		if cfg.CiMode {
 			f.SetSpinnerOutput(io.Discard)
 		}
 

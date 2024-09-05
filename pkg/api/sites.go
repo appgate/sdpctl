@@ -26,10 +26,10 @@ func (s *SitesAPI) ListSites(ctx context.Context) ([]openapi.Site, error) {
 func (s *SitesAPI) ListResources(ctx context.Context, id string, resolver *openapi.ResolverType, type_ *openapi.ResourceType) (*openapi.ResolverResources, error) {
 	result, response, err := s.API.SitesIdResourcesGet(ctx, id).Authorization(s.Token).Resolver(*resolver).Type_(*type_).Execute()
 	if err != nil {
-		return nil, err
+		return nil, HTTPErrorResponse(response, err)
 	}
 	if response.StatusCode >= 400 {
-		return nil, fmt.Errorf("response does not indicate success: %s", response.Status)
+		return nil, HTTPErrorResponse(response, fmt.Errorf("response does not indicate success: %s", response.Status))
 	}
 	return result, nil
 }

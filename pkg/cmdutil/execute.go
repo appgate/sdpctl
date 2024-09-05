@@ -15,13 +15,17 @@ import (
 
 type ExitCode int
 
-var ErrExitAuth = errors.New("no authentication")
+var (
+	ErrExitAuth          = errors.New("no authentication")
+	ErrExitConfiguration = errors.New("internal configuration error")
+)
 
 const (
-	ExitOK     ExitCode = 0
-	ExitError  ExitCode = 1
-	ExitCancel ExitCode = 2
-	ExitAuth   ExitCode = 4
+	ExitOK            ExitCode = 0
+	ExitError         ExitCode = 1
+	ExitCancel        ExitCode = 2
+	ExitAuth          ExitCode = 4
+	ExitConfiguration ExitCode = 99
 )
 
 func privligeError(err *api.Error) error {
