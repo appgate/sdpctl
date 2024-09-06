@@ -31,7 +31,7 @@ func InSlice[C comparable](n C, h []C) bool {
 	return false
 }
 
-func InSliceFunc[C comparable](n C, h []C, f func(i, p C) bool) bool {
+func InSliceFunc[A any](n A, h []A, f func(i, p A) bool) bool {
 	for _, item := range h {
 		if f(item, n) {
 			return true
