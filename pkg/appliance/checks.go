@@ -384,7 +384,7 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 	// Now we need to check if the unprepared controllers
 	// are already running the max prepared version
 	unpreparedClone := slices.Clone(unpreparedControllers)
-	for i, a := range unpreparedClone {
+	for _, a := range unpreparedClone {
 		for _, s := range stats.GetData() {
 			if a.GetId() != s.GetId() {
 				continue
@@ -397,15 +397,22 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 			}
 			if res, _ := CompareVersionsAndBuildNumber(highestPreparedVersion, currentVersion); res == 0 {
 				alreadySameVersion = append(alreadySameVersion, a)
-				unpreparedControllers = append(unpreparedControllers[:i], unpreparedControllers[i+1:]...)
 			}
 		}
 	}
-
 	// if something went wrong during version identification
 	// just return the errors
 	if errs != nil {
 		return nil, errs.ErrorOrNil()
+	}
+
+	// If unprepared controllers are already upgraded, remove them from unpreparedController
+	if len(alreadySameVersion) > 0 {
+		unpreparedControllers = util.Filter(unpreparedControllers, func(a openapi.Appliance) bool {
+			return util.InSliceFunc(a, alreadySameVersion, func(i openapi.Appliance, c openapi.Appliance) bool {
+				return i.GetId() != c.GetId()
+			})
+		})
 	}
 
 	// If this is true, no need to check anymore
