@@ -596,9 +596,13 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 	c4, s4, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default", "default")
 	c5, s5, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default", "default")
 	c6, s6, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller6", "", "6.2.0", "6.3.0", statusHealthy, UpgradeStatusReady, true, "default", "default")
+	c12, s12, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller12", "", "6.3.0", "6.3.1", statusHealthy, UpgradeStatusReady, true, "default", "default")
 
 	// unprepared max version
 	c7, s7, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller7", "", "6.3.0", "", statusHealthy, UpgradeStatusIdle, true, "default", "default")
+	c9, s9, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller9", "", "6.3.1", "", statusHealthy, UpgradeStatusIdle, true, "default", "default")
+	c10, s10, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller10", "", "6.3.1", "", statusHealthy, UpgradeStatusIdle, true, "default", "default")
+	c11, s11, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller11", "", "6.3.1", "", statusHealthy, UpgradeStatusIdle, true, "default", "default")
 
 	// offline
 	c8, s8, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller8", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, false, "default", "default")
@@ -658,6 +662,15 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 			in: []inData{
 				{c4, s4},
 				{c8, s8},
+			},
+		},
+		{
+			name: "only one left to upgrade",
+			in: []inData{
+				{c12, s12},
+				{c9, s9},
+				{c10, s10},
+				{c11, s11},
 			},
 		},
 	}
