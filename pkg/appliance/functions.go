@@ -832,7 +832,7 @@ type ImageJSON struct {
 }
 
 type fileEntry struct {
-	r    io.Reader
+	r    *os.File
 	path string
 	err  error
 }
@@ -840,6 +840,7 @@ type fileEntry struct {
 type imageBundleArgs struct {
 	ctx           context.Context
 	client        *http.Client
+	bundleName    string
 	fileEntryChan chan<- fileEntry
 	wg            *sync.WaitGroup
 	ciMode        bool
@@ -882,6 +883,7 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 			args := imageBundleArgs{
 				ctx:           ctx,
 				client:        client,
+				bundleName:    filepath.Base(path),
 				ciMode:        ciMode,
 				registry:      registry,
 				token:         token,
@@ -911,11 +913,18 @@ func DownloadDockerBundles(ctx context.Context, p *tui.Progress, client *http.Cl
 			errs = multierror.Append(errs, err)
 			continue
 		}
-		size, err := io.Copy(fb, v.r)
+		f, err := os.Open(v.r.Name())
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
 		}
+		size, err := io.Copy(fb, f)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		f.Close()
+		os.Remove(f.Name())
 		log.WithField("path", v.path).WithField("size", size).Debug("wrote layer")
 	}
 
@@ -992,6 +1001,22 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		}, backoff.NewExponentialBackOff())
 	}
 
+	createTempFile := func(body io.Reader, tmpFolder string) (*os.File, error) {
+		tmpDir := os.TempDir() + "/" + tmpFolder
+		if err := os.MkdirAll(tmpDir, os.ModePerm); err != nil {
+			return nil, err
+		}
+		file, err := os.CreateTemp(tmpDir, "")
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+		if _, err := io.Copy(file, body); err != nil {
+			return nil, err
+		}
+		return file, nil
+	}
+
 	// Download the image manifest
 	// See https://github.com/distribution/distribution/blob/main/docs/spec/manifest-v2-2.md#image-manifest-field-descriptions
 	manifestURL := fmt.Sprintf("%s://%s%s/%s/manifests/%s", args.registry.Scheme, args.registry.Host, prependString(args.registry.Path, "/v2"), args.image, args.tag)
@@ -1010,8 +1035,19 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	}
 	defer manifestRes.Body.Close()
 
+	manifestFile, err := createTempFile(manifestRes.Body, args.bundleName)
+	if err != nil {
+		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to create temporary file: %w", err)}
+		return
+	}
+
+	tmpManifest, err := os.Open(manifestFile.Name())
+	if err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
 	manifestBuf := &bytes.Buffer{}
-	if _, err := io.Copy(manifestBuf, manifestRes.Body); err != nil {
+	if _, err := io.Copy(manifestBuf, tmpManifest); err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
 		return
 	}
@@ -1020,10 +1056,12 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		args.fileEntryChan <- fileEntry{err: err}
 		return
 	}
+	tmpManifest.Close()
+
 	// <tag>.json
 	args.fileEntryChan <- fileEntry{
 		path: fmt.Sprintf("%s/%s.json", args.image, args.tag),
-		r:    manifestBuf,
+		r:    manifestFile,
 	}
 
 	// Download the container image configuration
@@ -1045,15 +1083,15 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	}
 	defer configRes.Body.Close()
 
-	configBuf := &bytes.Buffer{}
-	if _, err := io.Copy(configBuf, configRes.Body); err != nil {
+	configFile, err := createTempFile(configRes.Body, args.bundleName)
+	if err != nil {
 		args.fileEntryChan <- fileEntry{err: err}
 		return
 	}
 	// <digest>.json
 	args.fileEntryChan <- fileEntry{
 		path: fmt.Sprintf("%s/%s.json", args.image, strings.Replace(ImageID, "sha256:", "", 1)),
-		r:    configBuf,
+		r:    configFile,
 	}
 
 	// Create image.json
@@ -1067,9 +1105,14 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 		args.fileEntryChan <- fileEntry{err: err}
 		return
 	}
+	imageFile, err := createTempFile(bytes.NewReader(ibytes), args.bundleName)
+	if err != nil {
+		args.fileEntryChan <- fileEntry{err: err}
+		return
+	}
 	args.fileEntryChan <- fileEntry{
 		path: fmt.Sprintf("%s/image.json", args.image),
-		r:    bytes.NewReader(ibytes),
+		r:    imageFile,
 	}
 
 	// Download .tar.gz file containing the layers of the image
@@ -1104,13 +1147,13 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 			}
 
 			layerName := fmt.Sprintf("%s/%s", args.image, f)
-			buf := &bytes.Buffer{}
-			if _, err := io.Copy(buf, bodyReader); err != nil {
+			layerTempFile, err := createTempFile(bodyReader, args.bundleName)
+			if err != nil {
 				return err
 			}
 			args.fileEntryChan <- fileEntry{
 				path: layerName,
-				r:    buf,
+				r:    layerTempFile,
 			}
 			layerLog.Info("download finished")
 			return nil
