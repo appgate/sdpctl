@@ -207,7 +207,7 @@ func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 		serviceusers.NewServiceUsersCMD(f),
 		license.NewLicenseCmd(f),
 		NewAdminMessageCmd(f),
-		sites.NewSitesCmd(f, cfg),
+		sites.NewSitesCmd(f),
 		generateCmd,
 	)
 	rootCmd.SetUsageTemplate(UsageTemplate())

@@ -18,7 +18,7 @@ type SitesOptions struct {
 	CiMode        bool
 }
 
-func NewSitesCmd(f *factory.Factory, configuration *configuration.Config) *cobra.Command {
+func NewSitesCmd(f *factory.Factory) *cobra.Command {
 	opts := SitesOptions{
 		Out: f.IOOutWriter,
 	}
@@ -29,14 +29,14 @@ func NewSitesCmd(f *factory.Factory, configuration *configuration.Config) *cobra
 		Long:    docs.SitesDocRoot.Long,
 		Example: docs.SitesDocRoot.ExampleString(),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			opts.URL = configuration.URL
-			opts.Provider = configuration.Provider
-			opts.Insecure = configuration.Insecure
-			opts.Version = configuration.Version
-			opts.BearerToken = configuration.BearerToken
-			opts.NoInteractive = configuration.NoInteractive
-			opts.CiMode = configuration.CiMode
-			api, err := f.APIClient(configuration)
+			opts.URL = f.BaseURL()
+			opts.Provider = f.Config.Provider
+			opts.Insecure = f.Config.Insecure
+			opts.Version = f.Config.Version
+			opts.BearerToken = f.Config.BearerToken
+			opts.NoInteractive = f.Config.NoInteractive
+			opts.CiMode = f.Config.CiMode
+			api, err := f.APIClient(f.Config)
 			if err != nil {
 				return err
 			}
