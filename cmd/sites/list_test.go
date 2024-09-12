@@ -98,6 +98,34 @@ func TestSitesListCommand(t *testing.T) {
 SomeSiteName                        []`,
 		},
 		{
+			desc: "one site matching partial argument",
+			cli:  "list SiteName",
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/sites/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := openapi.SiteWithStatusList{
+							Data: []openapi.SiteWithStatus{
+								{
+									Name: "SomeSiteName",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+			},
+			want: `Site Name       Short Name    ID    Tags    Description    Status
+---------       ----------    --    ----    -----------    ------
+SomeSiteName                        []`,
+		},
+		{
 			desc: "one site matching uuid argument",
 			cli:  "list 32bf476b-0ab9-4d9d-879e-321651586b6a",
 			stubs: []httpmock.Stub{

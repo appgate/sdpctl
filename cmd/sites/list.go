@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -61,7 +62,9 @@ func NewSitesListCmd(parentOpts *SitesOptions) *cobra.Command {
 			// Filter on arguments (ids and site-names)
 			if len(opts.ids) > 0 || len(opts.siteNames) > 0 {
 				sites = util.Filter(sites, func(s openapi.SiteWithStatus) bool {
-					return util.InSlice(s.GetId(), opts.ids) || util.InSlice(s.GetName(), opts.siteNames)
+					return util.InSlice(s.GetId(), opts.ids) || util.InSliceFunc(s.GetName(), opts.siteNames, func(predicate string, siteName string) bool {
+						return strings.Contains(siteName, predicate)
+					})
 				})
 			}
 			if len(sites) <= 0 {
