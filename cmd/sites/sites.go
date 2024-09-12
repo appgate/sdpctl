@@ -18,29 +18,9 @@ type SitesOptions struct {
 	CiMode        bool
 }
 
-func NewSitesCmd(f *factory.Factory, parentOpts *configuration.Config) (*cobra.Command, error) {
+func NewSitesCmd(f *factory.Factory, configuration *configuration.Config) *cobra.Command {
 	opts := SitesOptions{
 		Out: f.IOOutWriter,
-	}
-	opts.URL = parentOpts.URL
-	opts.Provider = parentOpts.Provider
-	opts.Insecure = parentOpts.Insecure
-	opts.Version = parentOpts.Version
-	opts.BearerToken = parentOpts.BearerToken
-	opts.NoInteractive = parentOpts.NoInteractive
-	opts.CiMode = parentOpts.CiMode
-
-	api, err := f.APIClient(parentOpts)
-	if err != nil {
-		return nil, err
-	}
-	token, err := f.Config.GetBearTokenHeaderValue()
-	if err != nil {
-		return nil, err
-	}
-	opts.SitesAPI = &pkgapi.SitesAPI{
-		API:   api.SitesApi,
-		Token: token,
 	}
 
 	cmd := &cobra.Command{
@@ -48,12 +28,33 @@ func NewSitesCmd(f *factory.Factory, parentOpts *configuration.Config) (*cobra.C
 		Short:   docs.SitesDocRoot.Short,
 		Long:    docs.SitesDocRoot.Long,
 		Example: docs.SitesDocRoot.ExampleString(),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			opts.URL = configuration.URL
+			opts.Provider = configuration.Provider
+			opts.Insecure = configuration.Insecure
+			opts.Version = configuration.Version
+			opts.BearerToken = configuration.BearerToken
+			opts.NoInteractive = configuration.NoInteractive
+			opts.CiMode = configuration.CiMode
+			api, err := f.APIClient(configuration)
+			if err != nil {
+				return err
+			}
+			token, err := f.Config.GetBearTokenHeaderValue()
+			if err != nil {
+				return err
+			}
+			opts.SitesAPI = &pkgapi.SitesAPI{
+				API:   api.SitesApi,
+				Token: token,
+			}
+			return nil
+		},
 	}
 
 	cmd.AddCommand(
 		NewSitesListCmd(&opts),
-		NewSitesStatusCmd(f, &opts),
 	)
 
-	return cmd, nil
+	return cmd
 }

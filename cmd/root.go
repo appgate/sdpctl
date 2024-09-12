@@ -195,10 +195,6 @@ func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 	initConfig(currentProfile)
 
 	f := factory.New(version, cfg)
-	sitesCMD, err := sites.NewSitesCmd(f, cfg)
-	if err != nil {
-		return nil, err
-	}
 	rootCmd.AddCommand(
 		cfgcmd.NewCmdConfigure(f),
 		appliancecmd.NewApplianceCmd(f),
@@ -211,7 +207,7 @@ func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 		serviceusers.NewServiceUsersCMD(f),
 		license.NewLicenseCmd(f),
 		NewAdminMessageCmd(f),
-		sitesCMD,
+		sites.NewSitesCmd(f, cfg),
 		generateCmd,
 	)
 	rootCmd.SetUsageTemplate(UsageTemplate())
