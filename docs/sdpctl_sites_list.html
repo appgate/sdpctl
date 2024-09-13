@@ -1,0 +1,59 @@
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="expires" content="0">
+  <title>sdpctl Reference Guide</title>
+  <link rel="stylesheet" href="./assets/guide.css">
+  <script type="text/javascript" src="./assets/guide.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
+</head>
+<body>
+  <main class="page text-center">
+    <div class="box">
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">Quick Start Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
+      <div class="content text-left">
+      <h2 class="text-left margin-bottom">sdpctl sites list</h2><p>List and see status of sites of a collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>List and see status of sites of a collective. By default, configured sites will be shown in a table, but viewing sites in json format is supported using the &lsquo;&ndash;json&rsquo; flag.
+Text lines that contain multiple lines will be abbreviated to only showing the first line in the table view. In that case, the abbreviated lines will be indicated with &lsquo;[&hellip;]&rsquo;.
+To view the full output, use the &lsquo;&ndash;json&rsquo; flag.</p><pre class="code-editor margin-bottom"><code>sdpctl sites list [&lt;site-id|site-name&gt;]... [flags]
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # will list all sites configured in a collective if no arguments are used.
+  &gt; sdpctl sites list
+  Site Name       Short Name    ID                                      Tags         Description    Status
+  ---------       ----------    --                                      ----         -----------    ------
+  Default Site                  8a4add9e-0e99-4bb1-949c-c9faf9a49ad4    [builtin]                   healthy
+
+  # list sites with json output
+  &gt; sdpctl sites list --json
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>  -h, --help   help for list
+      --json   
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int      Peer API version override
+      --ci-mode              Log to stderr instead of file and disable progress-bars
+      --debug                Enable debug logging
+      --events-path string   send logs to unix domain socket path
+      --no-interactive       Suppress interactive prompt with auto accept
+      --no-verify            Don't verify TLS on for the given command, overriding settings from config file
+  -p, --profile string       Profile configuration to use
+</code></pre>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p><a href="sdpctl_sites.html">sdpctl sites</a>	 - Root command for listing and checking status of sites in a collective</p></li>
+</ul>
+
+      </div>
+    </div>
+  </main>
+</body>
+</html>
