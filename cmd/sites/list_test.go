@@ -182,6 +182,35 @@ SomeSiteName                  32bf476b-0ab9-4d9d-879e-321651586b6a    []`,
 ---------       ----------    --    ----    -----------    ------
 SomeSiteName                        []`,
 		},
+		{
+			desc: "list sites with multiline description",
+			cli:  "list",
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/sites/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := openapi.SiteWithStatusList{
+							Data: []openapi.SiteWithStatus{
+								{
+									Name:        "SomeSiteName",
+									Description: openapi.PtrString("This is a comment\nspanning multiple lines"),
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+			},
+			want: `Site Name       Short Name    ID    Tags    Description                Status
+---------       ----------    --    ----    -----------                ------
+SomeSiteName                        []      This is a comment [...]`,
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {

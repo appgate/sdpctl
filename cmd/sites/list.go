@@ -82,7 +82,15 @@ func NewSitesListCmd(parentOpts *SitesOptions) *cobra.Command {
 				p := util.NewPrinter(opts.Out, 4)
 				p.AddHeader("Site Name", "Short Name", "ID", "Tags", "Description", "Status")
 				for _, s := range sites {
-					p.AddLine(s.GetName(), s.GetShortName(), s.GetId(), s.GetTags(), s.GetDescription(), s.GetStatus())
+
+					p.AddLine(
+						util.StringAbbreviate(s.GetName()),
+						util.StringAbbreviate(s.GetShortName()),
+						util.StringAbbreviate(s.GetId()),
+						s.GetTags(),
+						util.StringAbbreviate(s.GetDescription()),
+						util.StringAbbreviate(s.GetStatus()),
+					)
 				}
 				p.Print()
 			}

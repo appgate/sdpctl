@@ -189,3 +189,11 @@ func AddSocketLogHook(path string) error {
 	log.AddHook(hook)
 	return nil
 }
+
+func StringAbbreviate(s string) string {
+	i := strings.Index(s, "\n")
+	if i < 0 {
+		return s
+	}
+	return s[:i] + " [...]"
+}
