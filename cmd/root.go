@@ -213,6 +213,7 @@ func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 	rootCmd.SetUsageTemplate(UsageTemplate())
 	rootCmd.SetHelpTemplate(HelpTemplate())
 	rootCmd.PersistentPreRunE = rootPersistentPreRunEFunc(f, cfg)
+	cobra.EnableTraverseRunHooks = true
 
 	return rootCmd, nil
 }
