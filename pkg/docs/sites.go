@@ -7,6 +7,9 @@ var (
 	}
 	SitesListDocs = CommandDoc{
 		Short: "List and see status of sites of a collective",
+		Long: `List and see status of sites of a collective. By default, configured sites will be shown in a table, but viewing sites in json format is supported using the '--json' flag.
+Text lines that contain multiple lines will be abbreviated to only showing the first line in the table view. In that case, the abbreviated lines will be indicated with '[...]'.
+To view the full output, use the '--json' flag.`,
 		Examples: []ExampleDoc{
 			{
 				Command:     "sdpctl sites list",

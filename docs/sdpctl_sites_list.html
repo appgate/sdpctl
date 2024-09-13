@@ -20,7 +20,9 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl sites list</h2><p>List and see status of sites of a collective</p><pre class="code-editor margin-bottom"><code>sdpctl sites list [&lt;site-id|site-name&gt;]... [flags]
+      <h2 class="text-left margin-bottom">sdpctl sites list</h2><p>List and see status of sites of a collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>List and see status of sites of a collective. By default, configured sites will be shown in a table, but viewing sites in json format is supported using the &lsquo;&ndash;json&rsquo; flag.
+Text lines that contain multiple lines will be abbreviated to only showing the first line in the table view. In that case, the abbreviated lines will be indicated with &lsquo;[&hellip;]&rsquo;.
+To view the full output, use the &lsquo;&ndash;json&rsquo; flag.</p><pre class="code-editor margin-bottom"><code>sdpctl sites list [&lt;site-id|site-name&gt;]... [flags]
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
 <pre class="code-editor margin-bottom"><code>  # will list all sites configured in a collective if no arguments are used.
