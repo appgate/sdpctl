@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/sirupsen/logrus"
@@ -134,15 +134,15 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 }
 
 func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error {
-	response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Authorization(a.Token).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
 	return nil
 }
 
-func (a *Appliance) Stats(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.StatsAppliancesList, *http.Response, error) {
-	status, response, err := a.APIClient.ApplianceStatsApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
+func (a *Appliance) DeprecatedStats(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.StatsAppliancesList, *http.Response, error) {
+	status, response, err := a.APIClient.ApplianceStatsDeprecatedApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}

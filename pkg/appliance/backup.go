@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -185,7 +185,7 @@ NO_ENABLE_CHECK:
 	}
 
 	// Filter offline appliances
-	initialStats, _, err := app.Stats(ctx, nil, opts.OrderBy, opts.Descending)
+	initialStats, _, err := app.DeprecatedStats(ctx, nil, opts.OrderBy, opts.Descending)
 	if err != nil {
 		return backupIDs, err
 	}

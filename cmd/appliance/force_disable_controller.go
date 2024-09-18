@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -141,7 +141,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		return fmt.Errorf("No controllers to disable")
 	}
 
-	stats, _, err := a.Stats(ctx, nil, nil, false)
+	stats, _, err := a.DeprecatedStats(ctx, nil, nil, false)
 	if err != nil {
 		return err
 	}

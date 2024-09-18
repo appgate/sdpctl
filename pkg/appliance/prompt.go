@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/prompt"
 )
 
@@ -16,7 +16,7 @@ func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[strin
 	if err != nil {
 		return "", err
 	}
-	stats, _, err := a.Stats(ctx, nil, orderBy, descending)
+	stats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return "", err
 	}

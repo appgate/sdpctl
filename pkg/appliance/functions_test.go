@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/dns"
 	"github.com/foxcpp/go-mockdns"
 	"github.com/google/go-cmp/cmp"

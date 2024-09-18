@@ -17,7 +17,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
@@ -278,7 +278,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 		return err
 	}
 
-	initialStats, _, err := a.Stats(ctx, nil, orderBy, descending)
+	initialStats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -96,7 +96,7 @@ func upgradeCancelRun(cmd *cobra.Command, opts *upgradeCancelOptions) error {
 
 	ctx := context.WithValue(context.Background(), appliancepkg.Caller, cmd.CalledAs())
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
-	stats, _, err := a.Stats(ctx, nil, orderBy, descending)
+	stats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}

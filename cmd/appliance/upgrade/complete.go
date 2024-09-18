@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
@@ -194,7 +194,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if len(opts.actualHostname) > 0 {
 		controlHost = opts.actualHostname
 	}
-	initialStats, _, err := a.Stats(ctx, nil, orderBy, descending)
+	initialStats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -387,7 +387,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
 				return err
 			}
-			s, _, err := a.Stats(ctx, nil, orderBy, descending)
+			s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 			if err != nil {
 				return err
 			}
@@ -469,7 +469,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
-				s, _, err := a.Stats(ctx, nil, orderBy, descending)
+				s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 				if err != nil {
 					return err
 				}
@@ -558,7 +558,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 			}
-			s, _, err := a.Stats(ctx, nil, orderBy, descending)
+			s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 			if err != nil {
 				return err
 			}
@@ -637,7 +637,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// Get new stats for post complete summary
-	newStats, _, err := a.Stats(ctx, nil, orderBy, descending)
+	newStats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
