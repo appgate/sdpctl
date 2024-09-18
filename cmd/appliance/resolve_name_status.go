@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -18,14 +18,13 @@ import (
 )
 
 type resolveNameStatusOpts struct {
-	Config       *configuration.Config
-	Out          io.Writer
-	Client       func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance    func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	withPartials bool
-	debug        bool
-	json         bool
-	applianceID  string
+	Config      *configuration.Config
+	Out         io.Writer
+	Client      func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance   func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug       bool
+	json        bool
+	applianceID string
 }
 
 func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
@@ -86,7 +85,6 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 			return resolveNameStatusRun(&opts)
 		},
 	}
-	cmd.Flags().BoolVar(&opts.withPartials, "partial-resolution", false, "include all partial resolutions in table")
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
 	cmd.SetHelpFunc(cmdutil.HideIncludeExcludeFlags)
 
@@ -113,16 +111,10 @@ func resolveNameStatusRun(opts *resolveNameStatusOpts) error {
 	}
 
 	p := util.NewPrinter(opts.Out, 4)
-	if opts.withPartials {
-		p.AddHeader("Name", "Final Resolutions", "Partial Resolution", "Errors", "Partials")
-		for k, r := range result.GetResolutions() {
-			p.AddLine(k, r.GetFinals(), r.GetPartial(), r.GetErrors(), r.GetPartials())
-		}
-	} else {
-		p.AddHeader("Name", "Final Resolutions", "Partial Resolution", "Errors")
-		for k, r := range result.GetResolutions() {
-			p.AddLine(k, r.GetFinals(), r.GetPartial(), r.GetErrors())
-		}
+
+	p.AddHeader("Name", "Errors")
+	for k, r := range result.GetResolutions() {
+		p.AddLine(k, r.GetErrors())
 	}
 	p.Print()
 	return nil

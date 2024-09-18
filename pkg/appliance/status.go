@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
@@ -28,7 +28,7 @@ func (u *ApplianceStatus) WaitForApplianceStatus(ctx context.Context, appliance 
 	})
 	logEntry.WithField("want", want).Info("Polling for the appliance status")
 	return backoff.Retry(func() error {
-		stats, _, err := u.Appliance.Stats(ctx, nil, nil, false)
+		stats, _, err := u.Appliance.DeprecatedStats(ctx, nil, nil, false)
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 	return backoff.Retry(func() error {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
-		stats, _, err := u.Appliance.Stats(ctx, nil, nil, false)
+		stats, _, err := u.Appliance.DeprecatedStats(ctx, nil, nil, false)
 		if err != nil {
 			return err
 		}

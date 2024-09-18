@@ -7,7 +7,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -92,7 +92,7 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("failed to switch partition: no appliance identifier provided")
 			}
 
-			stats, _, err := api.Stats(ctx, nil, nil, false)
+			stats, _, err := api.DeprecatedStats(ctx, nil, nil, false)
 			if err != nil {
 				return err
 			}
@@ -199,7 +199,7 @@ func switchPartitionRunE(opts *options) error {
 	}
 
 	// verify partition switch
-	stats, _, err := api.Stats(ctx, nil, nil, false)
+	stats, _, err := api.DeprecatedStats(ctx, nil, nil, false)
 	if err != nil {
 		return fmt.Errorf("partition switch failed: %w", err)
 	}

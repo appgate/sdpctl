@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -60,7 +60,7 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	}
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 	ctx := context.Background()
-	stats, _, err := a.Stats(ctx, filter, orderBy, descending)
+	stats, _, err := a.DeprecatedStats(ctx, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}

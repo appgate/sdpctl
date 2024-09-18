@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/google/uuid"
@@ -279,7 +279,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 		stubs = append(stubs, httpmock.Stub{
 			URL: fmt.Sprintf("/admin/appliances/%s/backup", a.GetId()),
 			Responder: func(w http.ResponseWriter, r *http.Request) {
-				res := openapi.NewAppliancesIdBackupPost200ResponseWithDefaults()
+				res := openapi.NewAppliancesIdBackupPost202ResponseWithDefaults()
 				res.SetId(backupID)
 				b, err := json.Marshal(res)
 				if err != nil {
@@ -316,10 +316,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 				res := openapi.NewAppliancesIdNameResolutionStatusGet200ResponseWithDefaults()
 				res.Resolutions = &map[string]openapi.AppliancesIdNameResolutionStatusGet200ResponseResolutionsValue{
 					"aws://lb-tag:kubernetes.io/service-name=opsnonprod/erp-dev": {
-						Partial:  openapi.PtrBool(false),
-						Finals:   []string{"3.120.51.78", "35.156.237.184"},
-						Partials: []string{"dns://all.GW-ELB-2001535196.eu-central-1.elb.amazonaws.com", "dns://all.purple-lb-1785267452.eu-central-1.elb.amazonaws.com"},
-						Errors:   []string{},
+						Errors: []string{},
 					},
 				}
 				b, err := res.MarshalJSON()

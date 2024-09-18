@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v20/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -121,7 +121,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				logrus.WithField("primary-controller", primary.GetName()).Debug("found primary controller")
-				stats, response, err := api.Stats(ctx, nil, []string{"name"}, false)
+				stats, response, err := api.DeprecatedStats(ctx, nil, []string{"name"}, false)
 				if err != nil {
 					return apipkg.HTTPErrorResponse(response, err)
 				}
