@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -159,23 +158,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	flagIsChanged := cmd.Flags().Changed("backup")
 	toBackup := []openapi.Appliance{}
 	if !flagIsChanged && !opts.NoInteractive {
-		performBackup := &survey.Confirm{
-			Message: "Do you want to backup before proceeding?",
-			Default: opts.backup,
-		}
-
-		if err := survey.AskOne(performBackup, &opts.backup); err != nil {
-			return err
-		}
+		opts.backup = tui.YesNo("Do you want to backup before proceeding?", opts.backup)
 
 		// if answer is yes, ask where to save the backup
 		if opts.backup {
-			destPrompt := &survey.Input{
-				Message: "Path to where backup should be saved",
-				Default: filesystem.AbsolutePath(opts.backupDestination),
-			}
+			opts.backupDestination, err = tui.Input("Path to where backup should be saved: ", filesystem.AbsolutePath(opts.backupDestination))
 
-			if err := survey.AskOne(destPrompt, &opts.backupDestination, nil); err != nil {
+			if err != nil {
 				return err
 			}
 
