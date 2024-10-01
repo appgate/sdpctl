@@ -19,7 +19,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sync/errgroup"
 	"html/template"
 	"io"
@@ -449,12 +448,11 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
-			fmt.Print("The passphrase to encrypt the appliance backups when the Backup API is used:")
-			password, err := terminal.ReadPassword(1)
+			password, err := tui.Password("The passphrase to encrypt the appliance backups when the Backup API is used:")
 			if err != nil {
 				return false, err
 			}
-			settings.SetBackupPassphrase(string(password))
+			settings.SetBackupPassphrase(password)
 			result, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(token).Execute()
 			if err != nil {
 				return false, api.HTTPErrorResponse(result, err)
