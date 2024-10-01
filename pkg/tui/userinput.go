@@ -4,6 +4,7 @@ import "fmt"
 import "os"
 import "bufio"
 import "strings"
+import "golang.org/x/crypto/ssh/terminal"
 
 func YesNo(prompt string, defaultyes bool) bool {
 	for {
@@ -49,4 +50,12 @@ func Input(prompt string, defaultvalue string) (string, error) {
 	}
 
 	return text, nil
+}
+
+func Password(prompt string) (string, error) {
+	fmt.Print(prompt)
+	password, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+	if err != nil {return "",err}
+	return string(password), nil
 }
