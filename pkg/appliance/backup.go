@@ -5,16 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"html/template"
-	"io"
-	"net/http"
-	"os"
-	"path/filepath"
-	"reflect"
-	"strings"
-	"sync"
-	"time"
-
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
@@ -29,7 +19,17 @@ import (
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sync/errgroup"
+	"html/template"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
 )
 
 var (
@@ -443,22 +443,18 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
 		log.Warn("Backup API is disabled on the appliance")
-		var shouldEnable bool
-		q := &survey.Confirm{
-			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",
-			Default: true,
-		}
-		if err := prompt.SurveyAskOne(q, &shouldEnable, survey.WithValidator(survey.Required)); err != nil {
-			return false, err
-		}
+		shouldEnable := tui.YesNo(
+			"Backup API is disabled on the appliance. Do you want to enable it now?",
+			true)
 
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
-			password, err := prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
+			fmt.Print("The passphrase to encrypt the appliance backups when the Backup API is used:")
+			password, err := terminal.ReadPassword(1)
 			if err != nil {
 				return false, err
 			}
-			settings.SetBackupPassphrase(password)
+			settings.SetBackupPassphrase(string(password))
 			result, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(token).Execute()
 			if err != nil {
 				return false, api.HTTPErrorResponse(result, err)
