@@ -5,3 +5,4 @@ cover.out
 .idea/
 .release-env
 sdpctl
+sdpctl.exe
