@@ -10,14 +10,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlecAivazis/survey/v2"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/filesystem"
-	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
@@ -102,13 +100,10 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 				}
 				// no error means file already exists in the repository
 				if f.CanPrompt() {
-					p := &survey.Confirm{
-						Message: fmt.Sprintf("%s already exists. Overwrite?", name),
-					}
-					var overwrite bool
-					if err := prompt.SurveyAskOne(p, &overwrite); err != nil {
-						return err
-					}
+					overwrite := tui.YesNo(
+						fmt.Sprintf("%s already exists. Overwrite?", name),
+						false,
+					)
 					if !overwrite {
 						continue
 					}
