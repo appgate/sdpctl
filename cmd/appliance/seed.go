@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -17,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -109,14 +109,8 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 					jsonFormat: "JSON format",
 					isoFormat:  "ISO format",
 				}
-				qs := &survey.Select{
-					PageSize: len(format),
-					Message:  "Seed type:",
-					Options:  format,
-				}
-
-				selectedFormat := 0
-				if err := prompt.SurveyAskOne(qs, &selectedFormat, survey.WithValidator(survey.Required)); err != nil {
+				selectedFormat, err := tui.Choice("Seed type:", format)
+				if err != nil {
 					return err
 				}
 				opts.format = seedformat(selectedFormat)
@@ -128,32 +122,20 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 					publicKey:  "Use SSH public key",
 					passphrase: "Use Password",
 				}
-				qs = &survey.Select{
-					PageSize: len(methods),
-					Message:  "SSH Authentication Method:",
-					Options:  methods,
-				}
-				selectedIndex := 0
-				if err := prompt.SurveyAskOne(qs, &selectedIndex, survey.WithValidator(survey.Required)); err != nil {
+				selectedIndex, err := tui.Choice("SSH Authentication Method: ", methods)
+				if err != nil {
 					return err
 				}
 				switch selectedIndex {
 				case int(cloud):
 					opts.provideCloudSSHKey = true
 				case int(publicKey):
-					qs := &survey.Input{
-						Message: "path to public ssh key:",
-					}
-					if err := prompt.SurveyAskOne(qs, &opts.sshKey); err != nil {
+					opts.sshKey, err = tui.Input("path to public ssh key:", "")
+					if err != nil {
 						return err
 					}
 				case int(passphrase):
-					hasStdin := false
-					stat, err := os.Stdin.Stat()
-					if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
-						hasStdin = true
-					}
-					password, err := prompt.GetPassphrase(opts.In, opts.CanPrompt, hasStdin, "Appliance's CZ user password:")
+					password, err := tui.Password("Appliance's CZ user password:")
 					if err != nil {
 						return err
 					}
