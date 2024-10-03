@@ -9,14 +9,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
-	"github.com/appgate/sdpctl/pkg/prompt"
-	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/appgate/sdpctl/pkg/tui"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
@@ -118,10 +116,8 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		}
 		if !noInteractive {
 			if len(username) <= 0 {
-				qs := &survey.Input{
-					Message: "Name for service user:",
-				}
-				if err := prompt.SurveyAskOne(qs, &username); err != nil {
+				username, err = tui.Input("Name for service user:", "")
+				if err != nil {
 					return err
 				}
 			}
