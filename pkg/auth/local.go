@@ -3,10 +3,9 @@ package auth
 import (
 	"context"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 )
 
 type Local struct {
@@ -33,20 +32,18 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 	}
 
 	if len(credentials.Username) <= 0 && canPrompt {
-		err := prompt.SurveyAskOne(&survey.Input{
-			Message: "Username:",
-		}, &credentials.Username, survey.WithValidator(survey.Required))
-		if err != nil {
+		username, err := tui.Input("Username:", "")
+		if err != nil || len(username) == 0 {
 			return nil, err
 		}
+		credentials.Username = username
 	}
 	if len(credentials.Password) <= 0 && canPrompt {
-		err := prompt.SurveyAskOne(&survey.Password{
-			Message: "Password:",
-		}, &credentials.Password, survey.WithValidator(survey.Required))
-		if err != nil {
+		password, err := tui.Password("Password:")
+		if err != nil || len(password) == 0 {
 			return nil, err
 		}
+		credentials.Password = password
 	}
 
 	loginOpts.Username = openapi.PtrString(credentials.Username)
