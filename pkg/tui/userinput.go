@@ -38,7 +38,9 @@ func YesNo(prompt string, defaultyes bool) bool {
 
 func Input(prompt string, defaultvalue string) (string, error) {
 	fmt.Print(prompt)
-	fmt.Print("(default: " + defaultvalue + ") ")
+	if len(defaultvalue) > 0 {
+		fmt.Print("(default: " + defaultvalue + ") ")
+	}
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
