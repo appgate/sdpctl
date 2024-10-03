@@ -16,6 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
@@ -125,7 +126,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 				}
 			}
 			if len(password) <= 0 {
-				password, err = prompt.PasswordConfirmation("Passphrase for service user:")
+				password, err = tui.Password("Passphrase for service user:")
 				if err != nil {
 					return err
 				}
