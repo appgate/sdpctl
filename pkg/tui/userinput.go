@@ -3,6 +3,7 @@ package tui
 import "fmt"
 import "os"
 import "bufio"
+import "strconv"
 import "strings"
 import "golang.org/x/crypto/ssh/terminal"
 
@@ -56,6 +57,31 @@ func Password(prompt string) (string, error) {
 	fmt.Print(prompt)
 	password, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
-	if err != nil {return "",err}
+	if err != nil {
+		return "", err
+	}
 	return string(password), nil
+}
+
+func Choice(prompt string, choices []string) (int, error) {
+	for {
+		for i, v := range choices {
+			fmt.Printf("%d: %s\n", i, v)
+		}
+
+		fmt.Print(prompt)
+
+		reader := bufio.NewReader(os.Stdin)
+		text, err := reader.ReadString('\n')
+		if err != nil {
+			return 0, err
+		}
+
+		text = strings.Trim(text, "\r\n ")
+
+		value, _ := strconv.Atoi(text)
+		if (err == nil) && (value >= 0) && (value < len(choices)) {
+			return value, nil
+		}
+	}
 }
