@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
@@ -402,20 +401,15 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 		}
 		names = append(names, selectorName)
 	}
+	selectedEntries, err := tui.MultipleChoice("select appliances to backup: ", names)
 
-	qs := &survey.MultiSelect{
-		PageSize: len(appliances),
-		Message:  "select appliances to backup:",
-		Options:  names,
-		Default:  preSelectNames,
-	}
 	var selectedEntries []string
-	if err := prompt.SurveyAskOne(qs, &selectedEntries); err != nil {
+	if err != nil {
 		return nil, err
 	}
 	selected := []string{}
-	for _, selectorName := range selectedEntries {
-		selected = append(selected, selectorNameMap[selectorName])
+	for _, v := range selectedEntries {
+		selected = append(selected, selectorNameMap[names[v]])
 	}
 	log.WithField("appliances", selected).Info("selected appliances for backup")
 
