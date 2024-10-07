@@ -43,7 +43,7 @@ func promptAppliance(appliances []openapi.Appliance) (string, error) {
 	for _, a := range appliances {
 		names = append(names, fmt.Sprintf("%s - %s - %s", a.GetName(), a.GetSiteName(), a.GetTags()))
 	}
-	selectedIndex, err := tui.Choice("select appliance: ",names)
+	selectedIndex, err := tui.Choice("select appliance: ", names)
 	if err != nil {
 		return "", err
 	}

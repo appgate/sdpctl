@@ -58,7 +58,7 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 					for _, u := range userList {
 						userNames = append(userNames, u.Name)
 					}
-					selected, err := tui.MultipleChoice("select service users to delete: ",userNames)
+					selected, err := tui.MultipleChoice("select service users to delete: ", userNames)
 					if err != nil {
 						return err
 					}

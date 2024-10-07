@@ -8,7 +8,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/tui"
 )
 
-
 // GetPassphrase check stdin if we have anything, and use that as passphrase
 // otherwise, if we can prompt, Prompt user input
 func GetPassphrase(stdIn io.Reader, canPrompt, hasStdin bool, message string) (string, error) {
