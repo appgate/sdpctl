@@ -87,3 +87,50 @@ func Choice(prompt string, choices []string) (int, error) {
 		}
 	}
 }
+
+func MultipleChoice(prompt string, choices []string) ([]int, error) {
+	for {
+		for i, v := range choices {
+			fmt.Printf("%d: %s\n", i, v)
+		}
+		fmt.Print(prompt)
+
+		reader := bufio.NewReader(os.Stdin)
+		text, err := reader.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
+		text = strings.Trim(text, "\r\n ")
+
+		if text == "" {
+			return make([]int, 0), nil
+		}
+
+		selected := strings.Split(text, ",")
+
+		canreturn := true
+
+		var r []int
+		r = make([]int, len(selected))
+
+		for i, v := range selected {
+			v = strings.Trim(v, "\r\n ")
+			intval, err := strconv.Atoi(v)
+			if err != nil {
+				fmt.Println("Unable to parse as integer: " + v)
+				canreturn = false
+				break
+			}
+			if intval < 0 || intval >= len(choices) {
+				fmt.Println("Value out of range selected")
+				canreturn = false
+				break
+			}
+			r[i] = intval
+		}
+
+		if canreturn {
+			return r, nil
+		}
+	}
+}
