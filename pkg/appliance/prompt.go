@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 )
 
 // PromptSelect from online appliances
@@ -44,13 +43,8 @@ func promptAppliance(appliances []openapi.Appliance) (string, error) {
 	for _, a := range appliances {
 		names = append(names, fmt.Sprintf("%s - %s - %s", a.GetName(), a.GetSiteName(), a.GetTags()))
 	}
-	qs := &survey.Select{
-		PageSize: len(appliances),
-		Message:  "select appliance:",
-		Options:  names,
-	}
-	selectedIndex := 0
-	if err := prompt.SurveyAskOne(qs, &selectedIndex, survey.WithValidator(survey.Required)); err != nil {
+	selectedIndex, err := tui.Choice("select appliance: ",names)
+	if err != nil {
 		return "", err
 	}
 
