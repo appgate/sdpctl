@@ -81,7 +81,7 @@ func Choice(prompt string, choices []string) (int, error) {
 
 		text = strings.Trim(text, "\r\n ")
 
-		value, _ := strconv.Atoi(text)
+		value, err := strconv.Atoi(text)
 		if (err == nil) && (value >= 0) && (value < len(choices)) {
 			return value, nil
 		}
