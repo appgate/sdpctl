@@ -1,35 +1,17 @@
 package prompt
 
 import (
-	"errors"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/tui"
 )
 
-// AskConfirmation make sure user confirm action, otherwise abort.
+// AskConfirmation make sure user confirm action, otherwise return error.
 func AskConfirmation(m ...string) error {
-	m = append(m, "Do you want to continue?")
-	ok := false
-	p := &survey.Confirm{
-		Message: strings.Join(m, "\n\n"),
-	}
-	if err := SurveyAskOne(p, &ok); err != nil || !ok {
+	ok := tui.YesNo(strings.Join(m, "\n\n"), false)
+	if !ok {
 		return cmdutil.ErrExecutionCanceledByUser
-	}
-	return nil
-}
-
-// SurveyAskOne helper method with user interrupt check
-var SurveyAskOne = func(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
-	err := survey.AskOne(p, response, opts...)
-	if err != nil {
-		if errors.Is(err, terminal.InterruptErr) {
-			return cmdutil.ErrExecutionCanceledByUser
-		}
-		return err
 	}
 	return nil
 }
