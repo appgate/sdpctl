@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -90,14 +89,8 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 				for _, file := range fileList {
 					fileNameList = append(fileNameList, file.GetName())
 				}
-				qs := &survey.MultiSelect{
-					PageSize: len(fileNameList),
-					Message:  "select files to delete:",
-					Options:  fileNameList,
-				}
-
-				selected := []string{}
-				if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+				selected, err := tui.MultipleChoice("select files to delete: ", fileNameList)
+				if err != nil {
 					return err
 				}
 
@@ -105,11 +98,11 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 					return errors.New("No files were selected for deletion")
 				}
 				for _, s := range selected {
-					if err := a.DeleteFile(ctx, s); err != nil {
+					if err := a.DeleteFile(ctx, fileNameList[s]); err != nil {
 						errs = multierror.Append(err, errs)
 						continue
 					}
-					fmt.Fprintf(opts.Out, "%s: deleted\n", s)
+					fmt.Fprintf(opts.Out, "%s: deleted\n", fileNameList[s])
 				}
 
 				return errs
