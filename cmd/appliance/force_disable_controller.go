@@ -11,7 +11,6 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
@@ -168,25 +167,26 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			preSelected = append(preSelected, selectableString)
 		}
 		sort.SliceStable(selectable, func(i, j int) bool { return selectable[i] < selectable[j] })
-		qs := &survey.MultiSelect{
-			PageSize: len(selectable),
-			Message:  "Select Controllers to force disable",
-			Options:  selectable,
-			Default:  preSelected,
-		}
-		selected := []string{}
-		if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+		selected, err := tui.MultipleChoice("Select Controllers to force disable: ", selectable)
+		if err != nil {
 			return err
 		}
+
 		if len(selected) <= 0 {
 			return errors.New("No Controllers selected to disable")
 		}
+
+		selectedstr := make([]string, len(selected))
+		for i, v := range selected {
+			selectedstr[i] = selectable[v]
+		}
+
 		for _, s := range selectable {
-			if !util.InSlice(s, selected) && strings.Contains(s, "[OFFLINE]") {
+			if !util.InSlice(s, selectedstr) && strings.Contains(s, "[OFFLINE]") {
 				unselectedOffline = append(unselectedOffline, s)
 			}
 		}
-		for _, s := range selected {
+		for _, s := range selectedstr {
 			for _, ctrl := range controllers {
 				if strings.Contains(s, ctrl.GetName()) {
 					args = append(args, ctrl.GetHostname())
