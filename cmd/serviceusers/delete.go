@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -59,18 +58,13 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 					for _, u := range userList {
 						userNames = append(userNames, u.Name)
 					}
-					qs := &survey.MultiSelect{
-						Message:  "select service users to delete:",
-						Options:  userNames,
-						PageSize: len(userNames),
-					}
-					var selected []string
-					if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+					selected, err := tui.MultipleChoice("select service users to delete: ",userNames)
+					if err != nil {
 						return err
 					}
 					for _, sel := range selected {
 						for _, u := range userList {
-							if sel == u.Name {
+							if userNames[sel] == u.Name {
 								ids = append(ids, u.GetId())
 							}
 						}
