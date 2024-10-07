@@ -9,13 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/keyring"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/pkg/browser"
 	"github.com/spf13/viper"
 )
@@ -172,13 +171,11 @@ func Signin(f *factory.Factory) error {
 	}
 
 	if promptProvider {
-		qs := &survey.Select{
-			Message: "Choose a provider:",
-			Options: providerNames,
-		}
-		if err := prompt.SurveyAskOne(qs, &loginOpts.ProviderName); err != nil {
+		i, err := tui.Choice("Choose a provider: ", providerNames)
+		if err != nil {
 			return err
 		}
+		loginOpts.ProviderName = providerNames[i]
 	}
 	selectedProvider, ok := providerMap[loginOpts.ProviderName]
 	if !ok {
@@ -288,11 +285,8 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string, toke
 			return nil, err
 		}
 		testOTP := func() (*openapi.LoginResponse, error) {
-			var answer string
-			optKey := &survey.Password{
-				Message: "Please enter your one-time password:",
-			}
-			if err := prompt.SurveyAskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
+			answer, err := tui.Password("Please enter your one-time password:")
+			if err != nil {
 				return nil, err
 			}
 			return authenticator.PushOTP(ctx, answer, authToken)
