@@ -11,7 +11,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/filesystem"
-	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
@@ -403,7 +402,6 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 	}
 	selectedEntries, err := tui.MultipleChoice("select appliances to backup: ", names)
 
-	var selectedEntries []string
 	if err != nil {
 		return nil, err
 	}

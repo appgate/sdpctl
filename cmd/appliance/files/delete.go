@@ -7,9 +7,9 @@ import (
 
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
+	"github.com/appgate/sdpctl/pkg/tui"
 )
 
 func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
