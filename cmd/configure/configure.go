@@ -8,13 +8,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -57,15 +56,14 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 				if noInteractive || !opts.CanPrompt {
 					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure company.controller.com'")
 				}
-				q := &survey.Input{
-					Message: "Enter the url for the Controller API (example https://controller.company.com:8443)",
-					Default: opts.Config.URL,
-				}
-
-				err := prompt.SurveyAskOne(q, &opts.URL, survey.WithValidator(survey.Required))
+				q, err := tui.Input(
+					"Enter the url for the Controller API (example: https://controller.company.com:8443): ",
+					opts.Config.URL,
+				)
 				if err != nil {
 					return err
 				}
+				opts.URL = q
 			case 1:
 				opts.URL = args[0]
 			default:

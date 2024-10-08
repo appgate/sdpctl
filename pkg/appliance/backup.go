@@ -5,6 +5,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdpctl/pkg/api"
+	"github.com/appgate/sdpctl/pkg/appliance/backup"
+	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/tui"
+	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/hashicorp/go-multierror"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 	"html/template"
 	"io"
 	"net/http"
@@ -14,22 +27,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
-	"github.com/appgate/sdpctl/pkg/api"
-	"github.com/appgate/sdpctl/pkg/appliance/backup"
-	"github.com/appgate/sdpctl/pkg/cmdutil"
-	"github.com/appgate/sdpctl/pkg/configuration"
-	"github.com/appgate/sdpctl/pkg/filesystem"
-	"github.com/appgate/sdpctl/pkg/prompt"
-	"github.com/appgate/sdpctl/pkg/tui"
-	"github.com/appgate/sdpctl/pkg/util"
-	"github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp/go-multierror"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -403,20 +400,14 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 		}
 		names = append(names, selectorName)
 	}
+	selectedEntries, err := tui.MultipleChoice("select appliances to backup: ", names)
 
-	qs := &survey.MultiSelect{
-		PageSize: len(appliances),
-		Message:  "select appliances to backup:",
-		Options:  names,
-		Default:  preSelectNames,
-	}
-	var selectedEntries []string
-	if err := prompt.SurveyAskOne(qs, &selectedEntries); err != nil {
+	if err != nil {
 		return nil, err
 	}
 	selected := []string{}
-	for _, selectorName := range selectedEntries {
-		selected = append(selected, selectorNameMap[selectorName])
+	for _, v := range selectedEntries {
+		selected = append(selected, selectorNameMap[names[v]])
 	}
 	log.WithField("appliances", selected).Info("selected appliances for backup")
 
@@ -443,18 +434,13 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
 		log.Warn("Backup API is disabled on the appliance")
-		var shouldEnable bool
-		q := &survey.Confirm{
-			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",
-			Default: true,
-		}
-		if err := prompt.SurveyAskOne(q, &shouldEnable, survey.WithValidator(survey.Required)); err != nil {
-			return false, err
-		}
+		shouldEnable := tui.YesNo(
+			"Backup API is disabled on the appliance. Do you want to enable it now?",
+			true)
 
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
-			password, err := prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
+			password, err := tui.Password("The passphrase to encrypt the appliance backups when the Backup API is used:")
 			if err != nil {
 				return false, err
 			}

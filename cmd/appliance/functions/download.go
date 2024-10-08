@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -18,8 +17,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
-	"github.com/appgate/sdpctl/pkg/prompt"
-	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
@@ -145,11 +142,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if _, err := os.Stat(opts.destination); err != nil {
 				createDir := true
 				if f.CanPrompt() {
-					if err := prompt.SurveyAskOne(&survey.Confirm{
-						Message: fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination),
-					}, &createDir); err != nil {
-						return err
-					}
+					createDir = tui.YesNo(fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination), true)
 				} else {
 					fmt.Fprintf(opts.out, "Directory '%s' does not exist\n", opts.destination)
 				}
@@ -171,8 +164,6 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			terminal.Lock()
-			defer terminal.Unlock()
 			client, err := f.HTTPClient()
 			if err != nil {
 				return err

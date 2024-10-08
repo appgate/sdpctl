@@ -3,10 +3,9 @@ package profile
 import (
 	"fmt"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/profiles"
-	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -53,18 +52,8 @@ func setRun(cmd *cobra.Command, args []string, opts *commandOpts) error {
 			return fmt.Errorf("Profile %s not found in %v", q, list)
 		}
 	} else {
-		qs := &survey.Select{
-			PageSize: length,
-			Message:  "select profile:",
-			Options:  list,
-		}
-		if p.CurrentExists() {
-			current, err := p.CurrentProfile()
-			if err == nil {
-				qs.Default = current.Name
-			}
-		}
-		if err := prompt.SurveyAskOne(qs, &index, survey.WithValidator(survey.Required)); err != nil {
+		index, err = tui.Choice("select profile: ", list)
+		if err != nil {
 			return err
 		}
 	}

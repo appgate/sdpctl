@@ -4,3 +4,7 @@ dist/
 cover.out
 .idea/
 .release-env
+sdpctl
+sdpctl.exe
+.kdev4/
+sdpctl.kdev4
