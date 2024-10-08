@@ -14,7 +14,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/cmdappliance"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
-	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	log "github.com/sirupsen/logrus"
@@ -69,8 +68,6 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 }
 
 func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
-	terminal.Lock()
-	defer terminal.Unlock()
 	client, err := opts.HTTPClient()
 	if err != nil {
 		return fmt.Errorf("Could not resolve a HTTP client based on your current config %s", err)
