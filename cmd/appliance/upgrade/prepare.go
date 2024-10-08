@@ -408,7 +408,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 	}
 	fmt.Fprintf(opts.Out, "\n%s\n", msg)
 	if !opts.NoInteractive {
-		if err := prompt.AskConfirmation(); err != nil {
+		if err := prompt.AskConfirmation("Proceed?"); err != nil {
 			return err
 		}
 	}
