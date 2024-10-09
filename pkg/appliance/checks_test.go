@@ -708,3 +708,57 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckApplianceVersionsDisallowed(t *testing.T) {
+	type args struct {
+		currentVersion string
+		targetVersion  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test 6.3.5->6.4.0 test",
+			args: args{
+				currentVersion: "6.3.5",
+				targetVersion:  "6.4.0",
+			},
+			wantErr: true,
+		},
+		{
+			name: "test 6.3.6->6.4.0",
+			args: args{
+				currentVersion: "6.3.6",
+				targetVersion:  "6.4.0",
+			},
+			wantErr: true,
+		},
+		{
+			name: "test 6.3.4->6.4.0",
+			args: args{
+				currentVersion: "6.3.4",
+				targetVersion:  "6.4.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test 6.3.5->6.4.1",
+			args: args{
+				currentVersion: "6.3.5",
+				targetVersion:  "6.4.1",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			currentVersion, _ := version.NewVersion(tt.args.currentVersion)
+			targetVersion, _ := version.NewVersion(tt.args.targetVersion)
+			if err := CheckApplianceVersionsDisallowed(currentVersion, targetVersion); (err != nil) != tt.wantErr {
+				t.Errorf("CheckApplianceVersionsDisallowed() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
