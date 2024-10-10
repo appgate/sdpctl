@@ -33,7 +33,7 @@ var (
 	ErrSkipReasonInactive               = errors.New("appliance is inactive")
 	ErrSkipReasonFiltered               = errors.New("filtered using the '--include' and/or '--exclude' flag")
 	ErrSkipReasonAlreadyPrepared        = errors.New("appliance is already prepared for upgrade with a higher or equal version")
-	ErrSkipReasonUnsupportedUpgradePath = errors.New("Upgrading from version 6.0.0 to version 6.2.x is unsupported. Version 6.0.1 or later is required.")
+	ErrSkipReasonUnsupportedUpgradePath = errors.New("unsupported upgrade path")
 	ErrSkipReasonAlreadySameVersion     = errors.New("appliance is already running a version higher or equal to the prepare version")
 	ErrNoApplianceStats                 = errors.New("failed to find appliance stats")
 	ErrVersionParse                     = errors.New("failed to parse current appliance version")
