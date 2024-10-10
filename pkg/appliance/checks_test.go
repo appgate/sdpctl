@@ -720,7 +720,15 @@ func TestCheckApplianceVersionsDisallowed(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test 6.3.5->6.4.0 test",
+			name: "test 6.0.0->6.2.0",
+			args: args{
+				currentVersion: "6.0.0",
+				targetVersion:  "6.2.0",
+			},
+			wantErr: true,
+		},
+		{
+			name: "test 6.3.5->6.4.0",
 			args: args{
 				currentVersion: "6.3.5",
 				targetVersion:  "6.4.0",

@@ -165,13 +165,11 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					continue
 				}
 
-				// Check version 6.0.0 -> 6.2.x upgrade, since it will fail
-				v600, _ := version.NewVersion("6.0.0")
-				v62, _ := version.NewVersion("6.2.0")
-				if statV.Equal(v600) && v.GreaterThanOrEqual(v62) {
+				// Check specific version constraints on upgrades we know will break
+				if err := CheckApplianceVersionsDisallowed(statV, v); err != nil {
 					skip = append(skip, SkipUpgrade{
 						Appliance: appliance,
-						Reason:    ErrSkipReasonUnsupportedUpgradePath,
+						Reason:    fmt.Errorf("%s: %w", ErrSkipReasonUnsupportedUpgradePath, err),
 					})
 					continue
 				}
@@ -475,6 +473,7 @@ func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult,
 }
 
 var disallowedVersionUpgrades map[string][]string = map[string][]string{
+	"6.0.0+estimated":   {"6.2.0+estimated"},
 	">=6.3.5+estimated": {"6.4.0+estimated"},
 }
 
