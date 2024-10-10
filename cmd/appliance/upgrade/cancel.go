@@ -15,7 +15,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
-	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
@@ -70,8 +69,6 @@ func NewUpgradeCancelCmd(f *factory.Factory) *cobra.Command {
 }
 
 func upgradeCancelRun(cmd *cobra.Command, opts *upgradeCancelOptions) error {
-	terminal.Lock()
-	defer terminal.Unlock()
 	cfg := opts.Config
 	a, err := opts.Appliance(cfg)
 	if err != nil {
