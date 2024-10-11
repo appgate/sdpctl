@@ -1,10 +1,14 @@
 package backup
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
@@ -20,6 +24,7 @@ type apiOptions struct {
 	Out           io.Writer
 	In            io.ReadCloser
 	APIClient     func(c *configuration.Config) (*openapi.APIClient, error)
+	CustomClient  func() (*http.Client, error)
 	debug         bool
 	disable       bool
 	NoInteractive bool
@@ -28,11 +33,12 @@ type apiOptions struct {
 // NewBackupAPICmd return a new Backup API command
 func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 	opts := apiOptions{
-		Config:    f.Config,
-		APIClient: f.APIClient,
-		debug:     f.Config.Debug,
-		Out:       f.IOOutWriter,
-		In:        f.Stdin,
+		Config:       f.Config,
+		APIClient:    f.APIClient,
+		CustomClient: f.HTTPClient,
+		debug:        f.Config.Debug,
+		Out:          f.IOOutWriter,
+		In:           f.Stdin,
 	}
 	var cmd = &cobra.Command{
 		Use:     "api",
@@ -56,7 +62,7 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 }
 
 func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
-	client, err := opts.APIClient(opts.Config)
+	apiClient, err := opts.APIClient(opts.Config)
 	if err != nil {
 		return err
 	}
@@ -65,7 +71,7 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 	if err != nil {
 		return err
 	}
-	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(t).Execute()
+	settings, response, err := apiClient.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(t).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
@@ -92,10 +98,44 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		message = "The Backup API and the passphrase have been updated"
 	}
 
-	response, err = client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(t).Execute()
+	cfg := apiClient.GetConfig()
+	url, err := cfg.ServerURLWithContext(ctx, "GlobalSettingsApiService.GlobalSettingsPut")
+	if err != nil {
+		return err
+	}
+	customGlobalSettings := GlobalSettings(*settings)
+	b, err := JSONEncode(customGlobalSettings)
+	if err != nil {
+		return err
+	}
+	body := bytes.NewBuffer(b)
+	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url+"/global-settings", body)
+	if err != nil {
+		return err
+	}
+	customClient, err := opts.CustomClient()
+	if err != nil {
+		return err
+	}
+
+	response, err = customClient.Do(req)
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
 	fmt.Fprintln(opts.Out, message)
 	return nil
+}
+
+type GlobalSettings openapi.GlobalSettings
+
+// JSONEncode is needed so that '<', '>' and '&' does not get replaced by escape characters
+// in passwords, which the default json.Marshal will do
+func JSONEncode(v interface{}) ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(v)
+	result := strings.TrimSpace(buffer.String())
+	return []byte(result), err
 }
