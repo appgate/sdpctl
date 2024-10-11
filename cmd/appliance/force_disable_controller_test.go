@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/Netflix/go-expect"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -15,9 +16,11 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	pseudotty "github.com/creack/pty"
 	"github.com/foxcpp/go-mockdns"
 	"github.com/google/shlex"
 	"github.com/google/uuid"
+	"github.com/hinshun/vt10x"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,12 +35,13 @@ func TestForceDisableControllerCMD(t *testing.T) {
 	}{
 		{
 			name:       "no arguments, no interactive",
+			cli:        "--no-interactive",
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`No arguments provided while running in no-interactive mode`),
 		},
 		{
 			name: "disable one controller",
-			cli:  "cryptzone.com",
+			cli:  "cryptzone.com --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/admin/appliances",
@@ -91,7 +95,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 		},
 		{
 			name: "disable two controller",
-			cli:  "cryptzone.com ctrl3.cryptzone.com",
+			cli:  "cryptzone.com ctrl3.cryptzone.com --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/admin/appliances",
@@ -131,7 +135,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 		},
 		{
 			name: "disable two controllers using ID",
-			cli:  "ed95fac8-9098-472b-b9f0-fe741881e2ca ctrl3.cryptzone.com",
+			cli:  "ed95fac8-9098-472b-b9f0-fe741881e2ca ctrl3.cryptzone.com --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/admin/appliances",
@@ -171,7 +175,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 		},
 		{
 			name: "disable offline controller",
-			cli:  "ctrl4.cryptzone.com",
+			cli:  "ctrl4.cryptzone.com --no-interactive",
 			httpStubs: []httpmock.Stub{
 				{
 					URL:       "/admin/appliances",
@@ -238,8 +242,51 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			},
 		},
 		{
+			name: "disable when name and hostnames are similar",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list_similar.json"),
+				},
+				{
+					URL:       "/admin/stats/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_similar.json"),
+				},
+				{
+					URL: "/admin/appliances/force-disable-controllers",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Change-ID", "ba86a668-a965-44bb-a6b0-07df8f449c01")
+					},
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/ba86a668-a965-44bb-a6b0-07df8f449c01",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.Write([]byte(`{"id": "ba86a668-a965-44bb-a6b0-07df8f449c01", "result": "success", "status": "completed", "details": ""}`))
+					},
+				},
+				{
+					URL: "/admin/appliances/repartition-ip-allocations",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Change-ID", "1012ad03-f4ac-4760-ab21-b9bfc2c769d7")
+					},
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/1012ad03-f4ac-4760-ab21-b9bfc2c769d7",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.Write([]byte(`{"id": "1012ad03-f4ac-4760-ab21-b9bfc2c769d7", "result": "success", "status": "completed", "details": ""}`))
+					},
+				},
+			},
+			askStubs: func(as *prompt.AskStubber) {
+				as.StubPrompt("Select Controllers to force disable").AnswerWith([]string{"controller-site1 DR (ctrl.appgate.test)"})
+				as.StubOne(true)
+			},
+		},
+		{
 			name:       "disable non existing hostname",
-			cli:        "foobar",
+			cli:        "foobar --no-interactive",
 			wantErr:    true,
 			wantErrOut: regexp.MustCompile(`No Controllers selected to disable`),
 			httpStubs: []httpmock.Stub{
@@ -264,18 +311,27 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			}
 			defer registry.Teardown()
 			registry.Serve()
+
+			pty, tty, err := pseudotty.Open()
+			if err != nil {
+				t.Fatalf("failed to open pseudotty: %v", err)
+			}
+			term := vt10x.New(vt10x.WithWriter(tty))
+			c, err := expect.NewConsole(expect.WithStdin(pty), expect.WithStdout(term), expect.WithCloser(pty, tty))
+			if err != nil {
+				t.Fatalf("failed to create console: %v", err)
+			}
+
+			defer c.Close()
 			stdout := &bytes.Buffer{}
-			stdin := &bytes.Buffer{}
-			stderr := &bytes.Buffer{}
-			in := io.NopCloser(stdin)
 			f := &factory.Factory{
 				Config: &configuration.Config{
 					Debug: false,
 					URL:   fmt.Sprintf("https://appgate.test:%d", registry.Port),
 				},
 				IOOutWriter: stdout,
-				Stdin:       in,
-				StdErr:      stderr,
+				Stdin:       pty,
+				StdErr:      pty,
 				APIClient:   func(c *configuration.Config) (*openapi.APIClient, error) { return registry.Client, nil },
 			}
 			f.Appliance = func(c *configuration.Config) (*appliance.Appliance, error) {
