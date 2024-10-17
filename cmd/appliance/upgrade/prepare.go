@@ -124,7 +124,11 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
 
 			// allow remote addr for image, such as aws s3 bucket
-			if util.IsValidURL(opts.image) {
+			err = util.IsValidURL(opts.image)
+			if err != nil && errors.Is(err, util.ErrMalformedURL) {
+				return err
+			}
+			if err == nil {
 				opts.remoteImage = true
 				// if the file is a remote image URL, derive the filename from
 				// standard lib 'path' instead of 'filepath' to avoid trailing URI elements

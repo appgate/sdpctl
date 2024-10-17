@@ -70,18 +70,24 @@ func IsJSON(str string) bool {
 	return json.Unmarshal([]byte(str), &js) == nil
 }
 
+var ErrMalformedURL error = errors.New("malformed url")
+
 // IsValidURL tests a string to determine if it is a well-structured url or not.
-func IsValidURL(addr string) bool {
+func IsValidURL(addr string) error {
 	_, err := url.ParseRequestURI(addr)
 	if err != nil {
-		return false
+		return err
+	}
+
+	if r := regexp.MustCompile(`https?://`); len(r.FindAllString(addr, -1)) > 1 {
+		return fmt.Errorf("%w: '%s'", ErrMalformedURL, addr)
 	}
 
 	u, err := url.Parse(addr)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
 func NormalizeURL(u string) (*url.URL, error) {
