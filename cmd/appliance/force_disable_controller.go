@@ -155,6 +155,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	sort.SliceStable(offline, func(i, j int) bool { return offline[i].GetName() < offline[j].GetName() })
 	sort.SliceStable(statData, func(i, j int) bool { return statData[i].GetName() < statData[j].GetName() })
 
+	idList := []string{}
 	unselectedOffline := []string{}
 	if len(args) <= 0 {
 		selectable := []string{}
@@ -189,29 +190,28 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		for _, s := range selected {
 			for _, ctrl := range controllers {
 				if strings.Contains(s, ctrl.GetName()) {
-					args = append(args, ctrl.GetHostname())
+					idList = append(idList, ctrl.GetId())
 				}
 			}
 			for _, ctrl := range offline {
 				if strings.Contains(s, ctrl.GetName()) {
-					args = append(args, ctrl.GetHostname())
+					idList = append(idList, ctrl.GetId())
 				}
 			}
 		}
 	} else {
-		hostnameArgs := []string{}
 	ARG_LOOP:
 		for _, arg := range args {
 			if util.IsUUID(arg) {
 				for _, ctrl := range controllers {
 					if arg == ctrl.GetId() {
-						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+						idList = append(idList, ctrl.GetId())
 						continue ARG_LOOP
 					}
 				}
 				for _, ctrl := range offline {
 					if arg == ctrl.GetId() {
-						hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+						idList = append(idList, ctrl.GetId())
 						continue ARG_LOOP
 					}
 				}
@@ -220,27 +220,26 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			}
 			for _, ctrl := range controllers {
 				if arg == ctrl.GetHostname() {
-					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					idList = append(idList, ctrl.GetId())
 					continue ARG_LOOP
 				}
 			}
 			for _, ctrl := range offline {
 				if arg == ctrl.GetHostname() {
-					hostnameArgs = append(hostnameArgs, ctrl.GetHostname())
+					idList = append(idList, ctrl.GetId())
 					continue ARG_LOOP
 				}
 			}
 			log.WithField("arg", arg).Info("No Controller found with provided hostname")
 		}
 		// automatically add offline controllers to disable list, but only if the user has actively selected a valid controller first
-		if len(hostnameArgs) > 0 {
+		if len(idList) > 0 {
 			for _, ctrl := range offline {
-				hostnameArgs = util.AppendIfMissing(hostnameArgs, ctrl.GetHostname())
+				idList = util.AppendIfMissing(idList, ctrl.GetId())
 			}
 		}
-		args = hostnameArgs
 	}
-	if len(args) <= 0 {
+	if len(idList) <= 0 {
 		return errors.New("No Controllers selected to disable")
 	}
 	if len(unselectedOffline) > 0 {
@@ -251,14 +250,14 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 	disableList := []openapi.Appliance{}
 	announceList := []openapi.Appliance{}
 	for _, ctrl := range controllers {
-		if util.InSlice(ctrl.GetHostname(), args) {
+		if util.InSlice(ctrl.GetId(), idList) {
 			disableList = append(disableList, ctrl)
 		} else {
 			announceList = append(announceList, ctrl)
 		}
 	}
 	for _, ctrl := range offline {
-		if util.InSlice(ctrl.GetHostname(), args) {
+		if util.InSlice(ctrl.GetHostname(), idList) {
 			disableList = append(disableList, ctrl)
 		}
 	}
