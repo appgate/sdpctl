@@ -12,36 +12,50 @@ func TestIsValidURL(t *testing.T) {
 		addr string
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{
 			name: "valid url",
 			args: args{
 				addr: "https://appgate.com",
 			},
-			want: true,
+			wantErr: false,
 		},
 		{
 			name: "invalid url",
 			args: args{
 				addr: "appgate.test",
 			},
-			want: false,
+			wantErr: true,
 		},
 		{
 			name: "empty string",
 			args: args{
 				addr: "",
 			},
-			want: false,
+			wantErr: true,
+		},
+		{
+			name: "url with credentials",
+			args: args{
+				addr: "https://username:password@appgate.test",
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid url with credentials",
+			args: args{
+				addr: "https://username:password@https://appgate.test",
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := IsValidURL(tt.args.addr); got != tt.want {
-				t.Errorf("IsValidURL() = %v, want %v", got, tt.want)
+			if err := IsValidURL(tt.args.addr); (err != nil) != tt.wantErr {
+				t.Errorf("IsValidURL() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
