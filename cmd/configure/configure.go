@@ -145,8 +145,8 @@ func argValidation(cmd *cobra.Command, args []string) error {
 		if !strings.HasPrefix(arg, "https://") || !strings.HasPrefix(arg, "http://") {
 			arg = "https://" + arg
 		}
-		if !util.IsValidURL(arg) {
-			return fmt.Errorf("'%s' is not a valid URL", arg)
+		if err := util.IsValidURL(arg); err != nil {
+			return err
 		}
 	}
 	return nil
