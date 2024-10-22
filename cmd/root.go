@@ -263,8 +263,19 @@ func logOutput(cmd *cobra.Command, f *factory.Factory) io.Writer {
 		TimestampFormat: time.RFC3339,
 		PadLevelText:    true,
 	})
-	noTTY := !cmdutil.IsTTY(os.Stdout) && !cmdutil.IsTTY(os.Stderr)
-	if v, err := cmd.Flags().GetBool("ci-mode"); (err == nil && v) || noTTY {
+
+	if !f.CanPrompt() {
+		f.SetSpinnerOutput(io.Discard)
+		if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
+			return f.StdErr
+		}
+		if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
+			return f.StdErr
+		}
+		return f.StdErr
+	}
+
+	if v, err := cmd.Flags().GetBool("ci-mode"); err == nil && v {
 		return f.StdErr
 	}
 
@@ -304,17 +315,6 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		}
 		if cfg.Debug {
 			log.SetLevel(log.DebugLevel)
-		}
-
-		if !f.CanPrompt() {
-			if err := cmd.Flags().Set("no-interactive", "true"); err != nil {
-				return err
-			}
-			if err := cmd.Flags().Set("ci-mode", "true"); err != nil {
-				return err
-			}
-			f.SetSpinnerOutput(io.Discard)
-			log.Debug("Output is not TTY. Using no-interactive and ci-mode")
 		}
 
 		log.SetOutput(logOutput(cmd, f))
