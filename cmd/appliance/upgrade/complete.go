@@ -427,11 +427,22 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 				defer cancel()
 				logEntry := log.WithField("appliance", i.GetName())
-				logEntry.Info("checking if ready")
 				var t *tui.Tracker
 				if !opts.ciMode {
 					t = p.AddTracker(i.GetName(), "waiting", "upgraded")
 					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
+				}
+				logEntry.Info("checking if ready")
+				status, err := a.UpgradeStatus(ctx, i.GetId())
+				if err != nil {
+					return err
+				}
+				if status.GetStatus() != appliancepkg.UpgradeStatusReady {
+					errMsg := fmt.Sprintf("appliance is not ready for upgrade: ID: %s, Status: '%s'", i.GetId(), status.GetStatus())
+					if t != nil {
+						t.Fail(errMsg)
+					}
+					return fmt.Errorf(errMsg)
 				}
 				if !SwitchPartition {
 					err := backoff.Retry(func() error {
