@@ -33,11 +33,19 @@ const (
 	TestApplianceGatewayC2                = "gatewayC2"
 	TestApplianceLogForwarderA1           = "logforwarderA1"
 	TestApplianceLogForwarderA2           = "logforwarderA2"
+	TestApplianceLogForwarderB1           = "logforwarderB1"
+	TestApplianceLogForwarderB2           = "logforwarderB2"
+	TestApplianceLogForwarderC1           = "logforwarderC1"
+	TestApplianceLogForwarderC2           = "logforwarderC2"
 	TestAppliancePortalA1                 = "portalA1"
 	TestApplianceConnectorA1              = "connectorA1"
 	TestApplianceLogServer                = "logserver"
 	TestApplianceControllerGatewayA1      = "controller-gatewayA1"
 	TestApplianceControllerGatewayB1      = "controller-gatewayB1"
+
+	TestSiteA = "SiteA"
+	TestSiteB = "SiteB"
+	TestSiteC = "SiteC"
 )
 
 var (
@@ -65,11 +73,11 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 	}
 
 	siteA := uuid.NewString()
-	siteNameA := "SiteA"
+	siteNameA := TestSiteA
 	siteB := uuid.NewString()
-	siteNameB := "SiteB"
+	siteNameB := TestSiteB
 	siteC := uuid.NewString()
-	siteNameC := "SiteC"
+	siteNameC := TestSiteC
 
 	for _, n := range appliances {
 		switch n {
@@ -95,7 +103,7 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
 		case TestApplianceGatewayC1, TestApplianceGatewayC2:
 			res.addAppliance(n, "", siteC, siteNameC, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
-		case TestApplianceLogForwarderA1, TestApplianceLogForwarderA2:
+		case TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestApplianceLogForwarderB1, TestApplianceLogForwarderB2, TestApplianceLogForwarderC1, TestApplianceLogForwarderC2:
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogForwarder})
 		case TestAppliancePortalA1:
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
