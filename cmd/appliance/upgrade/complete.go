@@ -23,7 +23,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/filesystem"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
-	"github.com/appgate/sdpctl/pkg/terminal"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/cenkalti/backoff/v4"
@@ -118,8 +117,6 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 
 func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeCompleteOptions) error {
 	fmt.Fprintf(opts.Out, "sdpctl_version: %s\n\n", cmd.Root().Version)
-	terminal.Lock()
-	defer terminal.Unlock()
 	var err error
 	if opts.NoInteractive, err = cmd.Flags().GetBool("no-interactive"); err != nil {
 		return err
