@@ -417,22 +417,30 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		}
 		for _, appliance := range appliances {
 			i := appliance
+			logger := log.WithFields(log.Fields{
+				"appliance": i.GetName(),
+				"id":        i.GetId(),
+			})
 			var initialVolume float32
 			for _, appData := range initialStats.GetData() {
 				if i.GetId() == appData.GetId() {
 					initialVolume = appData.GetVolumeNumber()
 				}
 			}
+			logger.WithField("volume", initialVolume).Info("registered initial volume number")
 			g.Go(func() error {
 				ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 				defer cancel()
-				logEntry := log.WithField("appliance", i.GetName())
+				logger := log.WithFields(log.Fields{
+					"appliance": i.GetName(),
+					"id":        i.GetId(),
+				})
 				var t *tui.Tracker
 				if !opts.ciMode {
 					t = p.AddTracker(i.GetName(), "waiting", "upgraded")
 					go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 				}
-				logEntry.Info("checking if ready")
+				logger.Info("checking if ready")
 				status, err := a.UpgradeStatus(ctx, i.GetId())
 				if err != nil {
 					return err
@@ -448,16 +456,16 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					err := backoff.Retry(func() error {
 						err := a.UpgradeComplete(ctx, i.GetId(), SwitchPartition)
 						if err != nil {
-							logEntry.Warnf("Attempting to run upgrade complete %s", err)
+							logger.WithError(err).Warn("upgrade complete API call failed")
 							return err
 						}
 						return nil
 					}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 					if err != nil {
-						return fmt.Errorf("Could not complete upgrade on %s %w", i.GetName(), err)
+						return fmt.Errorf("upgrade complete failed on %s: %w", i.GetName(), err)
 					}
 				}
-				logEntry.Info("Install the downloaded upgrade image to the other partition")
+				logger.Info("Install the downloaded upgrade image to the other partition")
 				if !SwitchPartition {
 					if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusSuccess}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 						return fmt.Errorf("%s %w", i.GetName(), err)
@@ -467,10 +475,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					if status.GetStatus() == appliancepkg.UpgradeStatusSuccess {
+						logger.Info("switching partition")
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
 							return fmt.Errorf("%s %w", i.GetName(), err)
 						}
-						log.WithField("appliance", i.GetName()).Info("Switching partition")
 					}
 				}
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
@@ -487,8 +495,9 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 				// Check if partition has been switched
 				for _, appData := range s.GetData() {
+					logger.WithField("new volume", appData.GetVolumeNumber()).Info("new volume recieved")
 					if i.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
-						return fmt.Errorf("Upgrade failed on %s: never switched partition", i.GetName())
+						return fmt.Errorf("upgrade complete failed on %s: never switched partition", i.GetName())
 					}
 				}
 
@@ -522,9 +531,21 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 		fmt.Fprintf(opts.Out, "\n[%s] Upgrading additional Controllers:\n", time.Now().Format(time.RFC3339))
 
 		upgradeAdditionalController := func(ctx context.Context, controller openapi.Appliance, p *tui.Progress) error {
-			log.Infof("Upgrading the Controller %s", controller.GetName())
+			logger := log.WithFields(log.Fields{
+				"appliance": controller.GetName(),
+				"id":        controller.GetId(),
+			})
 			ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 			defer cancel()
+
+			logger.Info("checking if ready")
+			upgradeStatus, err := a.UpgradeStatus(ctx, controller.GetId())
+			if err != nil {
+				return err
+			}
+			if status := upgradeStatus.GetStatus(); status != appliancepkg.UpgradeStatusReady {
+				return fmt.Errorf("appliance %s is not ready for upgrade: %s", controller.GetName(), status)
+			}
 
 			var initialVolume float32
 			for _, appData := range initialStats.GetData() {
@@ -532,13 +553,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					initialVolume = appData.GetVolumeNumber()
 				}
 			}
+			logger.WithField("volume", initialVolume).Info("initial volume registered")
 
 			var t *tui.Tracker
 			if !opts.ciMode && p != nil {
 				t = p.AddTracker(controller.GetName(), "waiting", "upgraded")
 				go t.Watch(appliancepkg.StatReady, []string{appliancepkg.UpgradeStatusFailed})
 			}
-			err := backoff.Retry(func() error {
+			err = backoff.Retry(func() error {
 				return a.UpgradeComplete(ctx, controller.GetId(), true)
 			}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 			if err != nil {
@@ -552,6 +574,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
 					return err
 				}
+				logger.Info("disabling maintenance mode")
 				changeID, err := a.DisableMaintenanceMode(ctx, controller.GetId())
 				if err != nil {
 					return err
@@ -559,7 +582,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if _, err = ac.RetryUntilCompleted(ctx, changeID, controller.GetId()); err != nil {
 					return err
 				}
-				log.WithField("appliance", controller.GetName()).Info("Disabled the maintenance mode")
+				logger.Info("maintenance mode disabled")
 				if err := a.ApplianceStats.WaitForApplianceStatus(ctx, controller, appliancepkg.StatusNotBusy, t); err != nil {
 					return err
 				}
@@ -581,7 +604,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				}
 			}
 
-			log.Infof("Upgraded the Controller %s", controller.GetName())
+			logger.Info("upgrade completed successfully")
 			return nil
 		}
 		for _, ctrl := range plan.Controllers {
@@ -597,7 +620,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				additionalControllerBars.Wait()
 			}
 		}
-		log.Info("Done waiting for the additional Controllers upgrade")
 	}
 
 	if len(plan.LogForwardersAndServers) > 0 {
