@@ -2,6 +2,7 @@ package appliance
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
@@ -18,12 +19,13 @@ func TestMakeUpgradePlan(t *testing.T) {
 	primaryWithGateway := coll.Appliances["controller-gateway-primary"]
 
 	type args struct {
-		appliances   []openapi.Appliance
-		stats        *openapi.StatsAppliancesList
-		ctrlHostname string
-		filter       map[string]map[string]string
-		orderBy      []string
-		descending   bool
+		appliances     []openapi.Appliance
+		stats          *openapi.StatsAppliancesList
+		ctrlHostname   string
+		filter         map[string]map[string]string
+		orderBy        []string
+		descending     bool
+		maxUnavailable int
 	}
 	tests := []struct {
 		name    string
@@ -50,19 +52,55 @@ func TestMakeUpgradePlan(t *testing.T) {
 					coll.Appliances["connectorA1"],
 					coll.Appliances["logserver"],
 				},
-				stats:        coll.Stats,
-				ctrlHostname: hostname,
-				filter:       DefaultCommandFilter,
-				orderBy:      nil,
-				descending:   false,
+				stats:          coll.Stats,
+				ctrlHostname:   hostname,
+				filter:         DefaultCommandFilter,
+				orderBy:        nil,
+				descending:     false,
+				maxUnavailable: 1,
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primary,
 				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
 				Batches: [][]openapi.Appliance{
-					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC1"], coll.Appliances["logforwarderA1"]},
-					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
-					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
+					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA1"]},
+					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["logforwarderA2"], coll.Appliances["connectorA1"]},
+					{coll.Appliances["gatewayA3"], coll.Appliances["gatewayC1"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
+				},
+			},
+		},
+		{
+			name: "grouping with max unavailable 2",
+			args: args{
+				appliances: []openapi.Appliance{
+					coll.Appliances["primary"],
+					coll.Appliances["secondary"],
+					coll.Appliances["gatewayA1"],
+					coll.Appliances["gatewayA2"],
+					coll.Appliances["gatewayA3"],
+					coll.Appliances["gatewayB1"],
+					coll.Appliances["gatewayB2"],
+					coll.Appliances["gatewayC1"],
+					coll.Appliances["gatewayC2"],
+					coll.Appliances["logforwarderA1"],
+					coll.Appliances["logforwarderA2"],
+					coll.Appliances["portalA1"],
+					coll.Appliances["connectorA1"],
+					coll.Appliances["logserver"],
+				},
+				stats:          coll.Stats,
+				ctrlHostname:   hostname,
+				filter:         DefaultCommandFilter,
+				orderBy:        nil,
+				descending:     false,
+				maxUnavailable: 2,
+			},
+			want: &UpgradePlan{
+				PrimaryController: &primary,
+				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
+				Batches: [][]openapi.Appliance{
+					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayA2"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayB2"], coll.Appliances["logforwarderA1"], coll.Appliances["logforwarderA2"]},
+					{coll.Appliances["gatewayA3"], coll.Appliances["gatewayC1"], coll.Appliances["gatewayC2"], coll.Appliances["connectorA1"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
 			},
 		},
@@ -85,19 +123,20 @@ func TestMakeUpgradePlan(t *testing.T) {
 					coll.Appliances["portalA1"],
 					coll.Appliances["logforwarderA1"],
 				},
-				stats:        coll.Stats,
-				ctrlHostname: hostname,
-				filter:       DefaultCommandFilter,
-				orderBy:      nil,
-				descending:   false,
+				stats:          coll.Stats,
+				ctrlHostname:   hostname,
+				filter:         DefaultCommandFilter,
+				orderBy:        nil,
+				descending:     false,
+				maxUnavailable: 1,
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primary,
 				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
 				Batches: [][]openapi.Appliance{
-					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC1"], coll.Appliances["logforwarderA1"]},
-					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA2"]},
-					{coll.Appliances["connectorA1"], coll.Appliances["gatewayA3"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
+					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA1"]},
+					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["logforwarderA2"], coll.Appliances["connectorA1"]},
+					{coll.Appliances["gatewayA3"], coll.Appliances["gatewayC1"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
 				},
 			},
 		},
@@ -109,11 +148,12 @@ func TestMakeUpgradePlan(t *testing.T) {
 					coll.Appliances["controller-gatewayB1"],
 					coll.Appliances["logserver"],
 				},
-				stats:        coll.Stats,
-				ctrlHostname: hostname,
-				filter:       DefaultCommandFilter,
-				orderBy:      nil,
-				descending:   false,
+				stats:          coll.Stats,
+				ctrlHostname:   hostname,
+				filter:         DefaultCommandFilter,
+				orderBy:        nil,
+				descending:     false,
+				maxUnavailable: 1,
 			},
 			want: &UpgradePlan{
 				PrimaryController: &primaryWithGateway,
@@ -138,7 +178,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 					}
 				}
 			}
-			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, upgradeStatusMap, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending)
+			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, upgradeStatusMap, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending, tt.args.maxUnavailable)
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
@@ -225,7 +265,7 @@ Upgrade will be completed in steps:
     ---------         ----     ---------------    ----------------    ------
     gatewayA1         SiteA    6.2.0              6.3.0               ⨯
     gatewayB1         SiteB    6.2.0              6.3.0               ⨯
-    gatewayC1         SiteC    6.2.0              6.3.0               ⨯
+    gatewayC2         SiteC    6.2.0              6.3.0               ⨯
     logforwarderA1    SiteA    6.2.0              6.3.0               ⨯
 
     Batch #2:
@@ -234,17 +274,17 @@ Upgrade will be completed in steps:
     ---------         ----     ---------------    ----------------    ------
     gatewayA2         SiteA    6.2.0              6.3.0               ⨯
     gatewayB2         SiteB    6.2.0              6.3.0               ⨯
-    gatewayC2         SiteC    6.2.0              6.3.0               ⨯
     logforwarderA2    SiteA    6.2.0              6.3.0               ⨯
+    connectorA1       SiteA    6.2.0              6.3.0               ⨯
 
     Batch #3:
 
-    Appliance      Site     Current version    Prepared version    Backup
-    ---------      ----     ---------------    ----------------    ------
-    connectorA1    SiteA    6.2.0              6.3.0               ⨯
-    gatewayA3      SiteA    6.2.0              6.3.0               ⨯
-    logserver      SiteA    6.2.0              6.3.0               ⨯
-    portalA1       SiteA    6.2.0              6.3.0               ⨯
+    Appliance    Site     Current version    Prepared version    Backup
+    ---------    ----     ---------------    ----------------    ------
+    gatewayA3    SiteA    6.2.0              6.3.0               ⨯
+    gatewayC1    SiteC    6.2.0              6.3.0               ⨯
+    logserver    SiteA    6.2.0              6.3.0               ⨯
+    portalA1     SiteA    6.2.0              6.3.0               ⨯
 
 
 `,
@@ -336,7 +376,7 @@ Appliances that will be skipped:
 				}
 				appliances = append(appliances, appliance)
 			}
-			up, err := NewUpgradePlan(appliances, coll.Stats, upgradeStatusMap, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending)
+			up, err := NewUpgradePlan(appliances, coll.Stats, upgradeStatusMap, tt.in.hostname, tt.in.filter, tt.in.orderBy, tt.in.descending, 1)
 			if err != nil {
 				t.Fatalf("internal test error: %v", err)
 			}
@@ -427,7 +467,7 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 				}
 				appliances = append(appliances, a)
 			}
-			up, err := NewUpgradePlan(appliances, coll.Stats, upgradeStatusMap, hostname, DefaultCommandFilter, nil, false)
+			up, err := NewUpgradePlan(appliances, coll.Stats, upgradeStatusMap, hostname, DefaultCommandFilter, nil, false, 1)
 			if err != nil {
 				t.Fatalf("PrintPostCompleteSummary() - internal test error: %v", err)
 				return
@@ -439,6 +479,285 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 			}
 			if !assert.Contains(t, buf.String(), tt.expect) {
 				assert.Equal(t, tt.expect, buf.String())
+			}
+		})
+	}
+}
+
+func Test_calculateBatches(t *testing.T) {
+	type args struct {
+		appliances     []string
+		maxUnavailable int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "basic test",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayB1,
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "two batches",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+				},
+			},
+			want: 2,
+		},
+		{
+			name: "only other",
+			args: args{
+				appliances: []string{
+					TestAppliancePortalA1,
+				},
+			},
+			want: 1,
+		},
+		{
+			name: "three sites",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+					TestApplianceGatewayC1,
+					TestApplianceGatewayC2,
+				},
+			},
+			want: 3,
+		},
+		{
+			name: "with max unavailable default",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+					TestApplianceGatewayC1,
+					TestApplianceGatewayC2,
+				},
+				maxUnavailable: 1,
+			},
+			want: 3,
+		},
+		{
+			name: "with max unavailable 3",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+					TestApplianceGatewayC1,
+					TestApplianceGatewayC2,
+				},
+				maxUnavailable: 3,
+			},
+			want: 1,
+		},
+		{
+			name: "with max unavailable 2",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+					TestApplianceGatewayC1,
+					TestApplianceGatewayC2,
+				},
+				maxUnavailable: 2,
+			},
+			want: 2,
+		},
+		{
+			name: "with max unavailable 2 on two sites",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+				},
+				maxUnavailable: 2,
+			},
+			want: 2,
+		},
+		{
+			name: "with max unavailable 2 on three sites",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayC1,
+					TestApplianceGatewayC2,
+				},
+				maxUnavailable: 2,
+			},
+			want: 1,
+		},
+		{
+			name: "with max unavailable 2, three appliances per site",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+				},
+				maxUnavailable: 2,
+			},
+			want: 2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			coll := GenerateCollective(t, "appgate.test", "6.3.5", "6.4.1", tt.args.appliances)
+
+			gatewaysBySite := map[string][]openapi.Appliance{}
+			logForwardersBySite := map[string][]openapi.Appliance{}
+			other := []openapi.Appliance{}
+			for k, a := range coll.Appliances {
+				if strings.Contains(k, "gateway") && (!strings.Contains(k, "controller") || !strings.Contains(k, "primary")) {
+					apps, ok := gatewaysBySite[a.GetSiteName()]
+					if !ok {
+						apps = []openapi.Appliance{}
+					}
+					gatewaysBySite[a.GetSiteName()] = append(apps, a)
+					continue
+				}
+				if strings.Contains(k, "logforwarder") {
+					apps, ok := gatewaysBySite[a.GetSiteName()]
+					if !ok {
+						apps = []openapi.Appliance{}
+					}
+					logForwardersBySite[a.GetSiteName()] = append(apps, a)
+					continue
+				}
+				other = append(other, a)
+			}
+
+			if got := calculateBatches(gatewaysBySite, logForwardersBySite, other, tt.args.maxUnavailable); got != tt.want {
+				t.Errorf("calculateBatches() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_divideByMaxUnavailable(t *testing.T) {
+	type args struct {
+		appliances     map[string][]string
+		maxUnavailable int
+	}
+	tests := []struct {
+		name string
+		args args
+		want [][]string
+	}{
+		{
+			name: "basic test",
+			args: args{
+				appliances: map[string][]string{
+					"SiteA": {TestApplianceGatewayA1},
+				},
+				maxUnavailable: 1,
+			},
+			want: [][]string{
+				{TestApplianceGatewayA1},
+			},
+		},
+		{
+			name: "three groups",
+			args: args{
+				appliances: map[string][]string{
+					"SiteA": {TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3},
+				},
+				maxUnavailable: 1,
+			},
+			want: [][]string{
+				{TestApplianceGatewayA1},
+				{TestApplianceGatewayA2},
+				{TestApplianceGatewayA3},
+			},
+		},
+		{
+			name: "two groups",
+			args: args{
+				appliances: map[string][]string{
+					"SiteA": {TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3},
+				},
+				maxUnavailable: 2,
+			},
+			want: [][]string{
+				{TestApplianceGatewayA1, TestApplianceGatewayA2},
+				{TestApplianceGatewayA3},
+			},
+		},
+		{
+			name: "one group",
+			args: args{
+				appliances: map[string][]string{
+					"SiteA": {TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3},
+				},
+				maxUnavailable: 3,
+			},
+			want: [][]string{
+				{TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			applianceList := make([]string, 0, len(tt.args.appliances))
+			for _, a := range tt.args.appliances {
+				applianceList = append(applianceList, a...)
+			}
+			coll := GenerateCollective(t, "appgate.test", "6.3.5", "6.4.1", applianceList)
+			applianceMap := make(map[string][]openapi.Appliance)
+			for key, list := range tt.args.appliances {
+				l := make([]openapi.Appliance, 0, len(list))
+				for _, item := range list {
+					a := coll.Appliances[item]
+					l = append(l, a)
+				}
+				applianceMap[key] = append(applianceMap[key], l...)
+			}
+			want := make([][]openapi.Appliance, 0)
+			for _, group := range tt.want {
+				apps := make([]openapi.Appliance, 0, len(group))
+				for _, item := range group {
+					apps = append(apps, coll.Appliances[item])
+				}
+				want = append(want, apps)
+			}
+			if got := divideByMaxUnavailable(applianceMap, tt.args.maxUnavailable); !assert.EqualValues(t, want, got) {
+				t.Errorf("divideByMaxUnavailable() = %v, want %v", got, tt.want)
 			}
 		})
 	}

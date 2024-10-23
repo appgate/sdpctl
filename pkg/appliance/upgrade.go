@@ -180,13 +180,16 @@ func NewUpgradePlan(
 			return plan.LogForwardersAndServers[i].GetName() < plan.LogForwardersAndServers[j].GetName()
 		})
 	}
-	// Determine how many batches we will do
-	// using the amount of gateways and logforwarders per site
-	batches := calculateBatches(gatewaysGroupedBySite, logforwardersGroupedBySite, other, maxUnavailable)
 
-	// Equally distribute gateways to batches
-	// Each batch should contain only one gateway per site
-	plan.Batches = createBatches(batches, maxUnavailable, gatewaysGroupedBySite, logforwardersGroupedBySite, other)
+	if len(gatewaysGroupedBySite) > 0 || len(logforwardersGroupedBySite) > 0 || len(other) > 0 {
+		// Determine how many batches we will do
+		// using the amount of gateways and logforwarders per site
+		batches := calculateBatches(gatewaysGroupedBySite, logforwardersGroupedBySite, other, maxUnavailable)
+
+		// Equally distribute gateways to batches
+		// Each batch should contain only one gateway per site
+		plan.Batches = createBatches(batches, maxUnavailable, gatewaysGroupedBySite, logforwardersGroupedBySite, other)
+	}
 
 	return &plan, nil
 }
@@ -220,6 +223,10 @@ func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[s
 }
 
 func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavailable int) [][]openapi.Appliance {
+	// for safety, if maxUnavailable is 0, set it to 1
+	if maxUnavailable <= 0 {
+		maxUnavailable = 1
+	}
 	// sort input
 	for _, g := range appliances {
 		sort.SliceStable(g, func(i, j int) bool {
@@ -227,8 +234,10 @@ func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavai
 		})
 	}
 
-	groupCount := len(appliances) / maxUnavailable
-	if len(appliances)%maxUnavailable > 0 {
+	biggestGroupKey := biggestGroupKey(appliances)
+	biggestGroupLength := len(appliances[biggestGroupKey])
+	groupCount := biggestGroupLength / maxUnavailable
+	if biggestGroupLength%maxUnavailable > 0 {
 		groupCount++
 	}
 	groups := make([][]openapi.Appliance, groupCount)
@@ -251,7 +260,31 @@ func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavai
 		}
 	}
 
+	// sort output
+	for _, g := range groups {
+		sort.SliceStable(g, func(i, j int) bool {
+			return g[i].GetName() < g[j].GetName()
+		})
+	}
+
 	return groups
+}
+
+func biggestGroupKey(groups map[string][]openapi.Appliance) string {
+	var res string
+	var biggest int
+	for i, g := range groups {
+		count := len(g)
+		if biggest == 0 {
+			biggest = count
+			res = i
+		}
+		if count > biggest {
+			biggest = count
+			res = i
+		}
+	}
+	return res
 }
 
 func (up *UpgradePlan) AddBackups(applianceIds []string) error {
