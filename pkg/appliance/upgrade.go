@@ -213,6 +213,10 @@ func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[s
 		resultIndex++
 	}
 
+	sort.SliceStable(other, func(i, j int) bool {
+		return other[i].GetName() < other[j].GetName()
+	})
+
 	// distribute other appliances and even out the groups
 	for _, o := range other {
 		resultIndex = util.SmallestGroupIndex(result)
