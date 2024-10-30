@@ -2,10 +2,11 @@ package appliance
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -88,9 +89,7 @@ func NewUpgradePlan(
 	}
 
 	// Sort input group first
-	sort.SliceStable(finalApplianceList, func(i, j int) bool {
-		return finalApplianceList[i].GetName() < finalApplianceList[j].GetName()
-	})
+	slices.SortStableFunc(finalApplianceList, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 
 	gatewaysGroupedBySite := map[string][]openapi.Appliance{}
 	logforwardersGroupedBySite := map[string][]openapi.Appliance{}
@@ -145,7 +144,7 @@ func NewUpgradePlan(
 		}
 		if gw, ok := a.GetGatewayOk(); ok {
 			if gw.GetEnabled() {
-				site := a.GetSite()
+				site := a.GetSiteName()
 				gatewaysGroupedBySite[site] = append(gatewaysGroupedBySite[site], a)
 				continue
 			}
@@ -166,7 +165,8 @@ func NewUpgradePlan(
 		} else {
 			if lf, ok := a.GetLogForwarderOk(); ok {
 				if lf.GetEnabled() {
-					logforwardersGroupedBySite[a.GetSite()] = append(logforwardersGroupedBySite[a.GetSite()], a)
+					site := a.GetSiteName()
+					logforwardersGroupedBySite[site] = append(logforwardersGroupedBySite[site], a)
 					continue
 				}
 			}
@@ -176,9 +176,7 @@ func NewUpgradePlan(
 
 	// Sort the output in the upgrade plan
 	if len(plan.LogForwardersAndServers) > 0 {
-		sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
-			return plan.LogForwardersAndServers[i].GetName() < plan.LogForwardersAndServers[j].GetName()
-		})
+		slices.SortStableFunc(plan.LogForwardersAndServers, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 	}
 
 	if len(gatewaysGroupedBySite) > 0 || len(logforwardersGroupedBySite) > 0 || len(other) > 0 {
@@ -203,39 +201,54 @@ func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[s
 	// distribute gateways and logforwarders to groups
 	resultIndex := 0
 	result[resultIndex] = []openapi.Appliance{}
-	for _, gw := range gatewayGroups {
-		result[resultIndex] = append(result[resultIndex], gw...)
+	for i := 0; i < len(gatewayGroups); i++ {
+		result[resultIndex] = append(result[resultIndex], gatewayGroups[i]...)
 		resultIndex++
 	}
 	resultIndex = 0
-	for _, lf := range logForwarderGroups {
-		result[resultIndex] = append(result[resultIndex], lf...)
+	for i := 0; i < len(logForwarderGroups); i++ {
+		result[resultIndex] = append(result[resultIndex], logForwarderGroups[i]...)
 		resultIndex++
 	}
 
-	sort.SliceStable(other, func(i, j int) bool {
-		return other[i].GetName() < other[j].GetName()
-	})
-
 	// distribute other appliances and even out the groups
+	slices.SortStableFunc(other, func(i, y openapi.Appliance) int { return cmp.Compare(i.GetName(), y.GetName()) })
 	for _, o := range other {
 		resultIndex = util.SmallestGroupIndex(result)
 		result[resultIndex] = append(result[resultIndex], o)
 	}
 
+	// sort the resulting groups
+	for i := 0; i < len(result); i++ {
+		slices.SortStableFunc(result[i], func(x, y openapi.Appliance) int { return cmp.Compare(x.GetName(), y.GetName()) })
+	}
+	slices.SortStableFunc(result, func(i, j []openapi.Appliance) int { return cmp.Compare(i[0].GetSiteName(), j[0].GetSiteName()) })
+
 	return result
 }
 
 func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavailable int) [][]openapi.Appliance {
+	totalCount := 0
+	for _, group := range appliances {
+		totalCount += len(group)
+	}
+	if totalCount <= 0 {
+		return nil
+	}
+
 	// for safety, if maxUnavailable is 0, set it to 1
 	if maxUnavailable <= 0 {
 		maxUnavailable = 1
 	}
-	// sort input
-	for _, g := range appliances {
-		sort.SliceStable(g, func(i, j int) bool {
-			return g[i].GetName() < g[j].GetName()
-		})
+
+	keys := []string{}
+	for k := range appliances {
+		keys = append(keys, k)
+	}
+	slices.SortStableFunc(keys, func(i, j string) int { return cmp.Compare(i, j) })
+
+	for _, group := range appliances {
+		slices.SortStableFunc(group, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 	}
 
 	biggestGroupKey := biggestGroupKey(appliances)
@@ -250,8 +263,8 @@ func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavai
 	}
 
 	groupIndex := 0
-	for _, ag := range appliances {
-		remaining := ag
+	for _, k := range keys {
+		remaining := appliances[k]
 		for len(remaining) > 0 {
 			var picked []openapi.Appliance
 			picked, remaining = util.SliceTake(remaining, maxUnavailable)
@@ -266,9 +279,7 @@ func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavai
 
 	// sort output
 	for _, g := range groups {
-		sort.SliceStable(g, func(i, j int) bool {
-			return g[i].GetName() < g[j].GetName()
-		})
+		slices.SortStableFunc(g, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 	}
 
 	return groups
@@ -450,9 +461,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 
 	if len(up.Skipping) > 0 {
 		stub.Skipped = up.Skipping
-		sort.Slice(stub.Skipped, func(i, j int) bool {
-			return stub.Skipped[i].Appliance.GetName() < stub.Skipped[j].Appliance.GetName()
-		})
+		slices.SortStableFunc(stub.Skipped, func(i, j SkipUpgrade) int { return cmp.Compare(i.Appliance.GetName(), j.Appliance.GetName()) })
 	}
 
 	t := template.Must(template.New("").Funcs(util.TPLFuncMap).Parse(upgradeSummaryTpl))
@@ -480,7 +489,7 @@ func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.S
 	for k := range applianceVersions {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	type tplStub struct {
 		VersionTable string
