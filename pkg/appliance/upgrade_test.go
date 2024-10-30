@@ -9,180 +9,166 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMakeUpgradePlan(t *testing.T) {
-	hostname := "appgate.test"
-	v62 := "6.2"
-	v63 := "6.3"
+type testUpgradePlan struct {
+	PrimaryController string
+	Controllers       []string
+	Batches           [][]string
+	input             []string
+}
 
-	coll := GenerateCollective(t, hostname, v62, v63, PreSetApplianceNames)
-	primary := coll.Appliances["primary"]
-	primaryWithGateway := coll.Appliances["controller-gateway-primary"]
+func (tup *testUpgradePlan) allApplianceNames() []string {
+	names := []string{}
+	if tup.PrimaryController != "" {
+		names = append(names, tup.PrimaryController)
+	}
+	names = append(names, tup.Controllers...)
+	names = append(names, tup.input...)
+	return names
+}
+
+func (tup *testUpgradePlan) getUpgradePlan(t *testing.T, collective *CollectiveTestStruct) *UpgradePlan {
+	t.Helper()
+	ug := &UpgradePlan{
+		PrimaryController: collective.GetAppliance(tup.PrimaryController),
+		Controllers:       []openapi.Appliance{},
+		Batches:           make([][]openapi.Appliance, len(tup.Batches)),
+	}
+
+	for _, v := range tup.Controllers {
+		ug.Controllers = append(ug.Controllers, *collective.GetAppliance(v))
+	}
+	for i, batch := range tup.Batches {
+		ug.Batches[i] = make([]openapi.Appliance, 0, len(batch))
+		for _, name := range batch {
+			a := collective.GetAppliance(name)
+			ug.Batches[i] = append(ug.Batches[i], *a)
+		}
+	}
+
+	return ug
+}
+
+func TestMakeUpgradePlan(t *testing.T) {
 
 	type args struct {
-		appliances     []openapi.Appliance
-		stats          *openapi.StatsAppliancesList
-		ctrlHostname   string
-		filter         map[string]map[string]string
-		orderBy        []string
-		descending     bool
 		maxUnavailable int
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *UpgradePlan
+		want    testUpgradePlan
 		wantErr bool
 	}{
 		{
 			name: "grouping test",
 			args: args{
-				appliances: []openapi.Appliance{
-					coll.Appliances["primary"],
-					coll.Appliances["secondary"],
-					coll.Appliances["gatewayA1"],
-					coll.Appliances["gatewayA2"],
-					coll.Appliances["gatewayA3"],
-					coll.Appliances["gatewayB1"],
-					coll.Appliances["gatewayB2"],
-					coll.Appliances["gatewayC1"],
-					coll.Appliances["gatewayC2"],
-					coll.Appliances["logforwarderA1"],
-					coll.Appliances["logforwarderA2"],
-					coll.Appliances["portalA1"],
-					coll.Appliances["connectorA1"],
-					coll.Appliances["logserver"],
-				},
-				stats:          coll.Stats,
-				ctrlHostname:   hostname,
-				filter:         DefaultCommandFilter,
-				orderBy:        nil,
-				descending:     false,
 				maxUnavailable: 1,
 			},
-			want: &UpgradePlan{
-				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
-				Batches: [][]openapi.Appliance{
-					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA1"]},
-					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["logforwarderA2"], coll.Appliances["connectorA1"]},
-					{coll.Appliances["gatewayA3"], coll.Appliances["gatewayC1"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"gatewayA1", "gatewayB1", "gatewayC2", "logforwarderA1"},
+					{"connectorA1", "gatewayA2", "gatewayB2", "logforwarderA2"},
+					{"gatewayA3", "gatewayC1", "logserver", "portalA1"},
+				},
+				input: []string{"gatewayA1",
+					"gatewayA2",
+					"gatewayA3",
+					"gatewayB1",
+					"gatewayB2",
+					"gatewayC1",
+					"gatewayC2",
+					"logforwarderA1",
+					"logforwarderA2",
+					"portalA1",
+					"connectorA1",
+					"logserver",
 				},
 			},
 		},
 		{
 			name: "grouping with max unavailable 2",
 			args: args{
-				appliances: []openapi.Appliance{
-					coll.Appliances["primary"],
-					coll.Appliances["secondary"],
-					coll.Appliances["gatewayA1"],
-					coll.Appliances["gatewayA2"],
-					coll.Appliances["gatewayA3"],
-					coll.Appliances["gatewayB1"],
-					coll.Appliances["gatewayB2"],
-					coll.Appliances["gatewayC1"],
-					coll.Appliances["gatewayC2"],
-					coll.Appliances["logforwarderA1"],
-					coll.Appliances["logforwarderA2"],
-					coll.Appliances["portalA1"],
-					coll.Appliances["connectorA1"],
-					coll.Appliances["logserver"],
-				},
-				stats:          coll.Stats,
-				ctrlHostname:   hostname,
-				filter:         DefaultCommandFilter,
-				orderBy:        nil,
-				descending:     false,
 				maxUnavailable: 2,
 			},
-			want: &UpgradePlan{
-				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
-				Batches: [][]openapi.Appliance{
-					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayA2"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayB2"], coll.Appliances["logforwarderA1"], coll.Appliances["logforwarderA2"]},
-					{coll.Appliances["gatewayA3"], coll.Appliances["gatewayC1"], coll.Appliances["gatewayC2"], coll.Appliances["connectorA1"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"gatewayA1", "gatewayA2", "gatewayB1", "gatewayB2", "logforwarderA1", "logforwarderA2"},
+					{"connectorA1", "gatewayA3", "gatewayC1", "gatewayC2", "logserver", "portalA1"},
+				},
+				input: []string{"gatewayA1",
+					"gatewayA2",
+					"gatewayA3",
+					"gatewayB1",
+					"gatewayB2",
+					"gatewayC1",
+					"gatewayC2",
+					"logforwarderA1",
+					"logforwarderA2",
+					"portalA1",
+					"connectorA1",
+					"logserver",
 				},
 			},
 		},
 		{
 			name: "test grouping from unordered",
 			args: args{
-				appliances: []openapi.Appliance{
-					coll.Appliances["primary"],
-					coll.Appliances["gatewayA1"],
-					coll.Appliances["gatewayB2"],
-					coll.Appliances["gatewayA2"],
-					coll.Appliances["logserver"],
-					coll.Appliances["logforwarderA2"],
-					coll.Appliances["gatewayB1"],
-					coll.Appliances["connectorA1"],
-					coll.Appliances["gatewayC1"],
-					coll.Appliances["secondary"],
-					coll.Appliances["gatewayA3"],
-					coll.Appliances["gatewayC2"],
-					coll.Appliances["portalA1"],
-					coll.Appliances["logforwarderA1"],
-				},
-				stats:          coll.Stats,
-				ctrlHostname:   hostname,
-				filter:         DefaultCommandFilter,
-				orderBy:        nil,
-				descending:     false,
 				maxUnavailable: 1,
 			},
-			want: &UpgradePlan{
-				PrimaryController: &primary,
-				Controllers:       []openapi.Appliance{coll.Appliances["secondary"]},
-				Batches: [][]openapi.Appliance{
-					{coll.Appliances["gatewayA1"], coll.Appliances["gatewayB1"], coll.Appliances["gatewayC2"], coll.Appliances["logforwarderA1"]},
-					{coll.Appliances["gatewayA2"], coll.Appliances["gatewayB2"], coll.Appliances["logforwarderA2"], coll.Appliances["connectorA1"]},
-					{coll.Appliances["gatewayA3"], coll.Appliances["gatewayC1"], coll.Appliances["logserver"], coll.Appliances["portalA1"]},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"gatewayA1", "gatewayB1", "gatewayC2", "logforwarderA1"},
+					{"connectorA1", "gatewayA2", "gatewayB2", "logforwarderA2"},
+					{"gatewayA3", "gatewayC1", "logserver", "portalA1"},
+				},
+				input: []string{
+					"gatewayA1",
+					"gatewayB2",
+					"gatewayA2",
+					"logserver",
+					"logforwarderA2",
+					"gatewayB1",
+					"connectorA1",
+					"gatewayC1",
+					"secondary",
+					"gatewayA3",
+					"gatewayC2",
+					"portalA1",
+					"logforwarderA1",
 				},
 			},
 		},
 		{
 			name: "test grouping with no other batches",
 			args: args{
-				appliances: []openapi.Appliance{
-					coll.Appliances["controller-gateway-primary"],
-					coll.Appliances["controller-gatewayB1"],
-					coll.Appliances["logserver"],
-				},
-				stats:          coll.Stats,
-				ctrlHostname:   hostname,
-				filter:         DefaultCommandFilter,
-				orderBy:        nil,
-				descending:     false,
 				maxUnavailable: 1,
 			},
-			want: &UpgradePlan{
-				PrimaryController: &primaryWithGateway,
-				Controllers:       []openapi.Appliance{coll.Appliances["controller-gatewayB1"]},
-				Batches:           [][]openapi.Appliance{{coll.Appliances["logserver"]}},
+			want: testUpgradePlan{
+				PrimaryController: TestApplianceControllerGatewayPrimary,
+				Controllers:       []string{"controller-gatewayB1"},
+				Batches:           [][]string{{"logserver"}},
+				input: []string{
+					"logserver",
+				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			upgradeStatusMap := map[string]UpgradeStatusResult{}
-			for _, a := range tt.args.appliances {
-				for _, s := range tt.args.stats.GetData() {
-					if a.GetId() != s.GetId() {
-						continue
-					}
-					us := s.GetUpgrade()
-					upgradeStatusMap[a.GetId()] = UpgradeStatusResult{
-						Name:    a.GetName(),
-						Status:  us.GetStatus(),
-						Details: us.GetDetails(),
-					}
-				}
-			}
-			got, err := NewUpgradePlan(tt.args.appliances, tt.args.stats, upgradeStatusMap, tt.args.ctrlHostname, tt.args.filter, tt.args.orderBy, tt.args.descending, tt.args.maxUnavailable)
+			hostname := "appgate.test"
+			coll := GenerateCollective(t, hostname, "6.3.5", "6.4.1", tt.want.allApplianceNames())
+			got, err := NewUpgradePlan(coll.GetAppliances(), coll.Stats, coll.GetUpgradeStatusMap(), hostname, nil, nil, false, tt.args.maxUnavailable)
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
-			assert.EqualExportedValues(t, tt.want, got)
+			want := tt.want.getUpgradePlan(t, coll)
+			assert.EqualExportedValues(t, want, got)
 		})
 	}
 }
@@ -272,10 +258,10 @@ Upgrade will be completed in steps:
 
     Appliance         Site     Current version    Prepared version    Backup
     ---------         ----     ---------------    ----------------    ------
+    connectorA1       SiteA    6.2.0              6.3.0               ⨯
     gatewayA2         SiteA    6.2.0              6.3.0               ⨯
     gatewayB2         SiteB    6.2.0              6.3.0               ⨯
     logforwarderA2    SiteA    6.2.0              6.3.0               ⨯
-    connectorA1       SiteA    6.2.0              6.3.0               ⨯
 
     Batch #3:
 

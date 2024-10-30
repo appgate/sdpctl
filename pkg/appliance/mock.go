@@ -186,12 +186,39 @@ var (
 	}
 )
 
+func (cts *CollectiveTestStruct) GetAppliance(name string) *openapi.Appliance {
+	for _, a := range cts.Appliances {
+		if a.GetName() == name {
+			return &a
+		}
+	}
+	return nil
+}
+
 func (cts *CollectiveTestStruct) GetAppliances() []openapi.Appliance {
 	a := make([]openapi.Appliance, 0, len(cts.Appliances))
 	for _, app := range cts.Appliances {
 		a = append(a, app)
 	}
 	return a
+}
+
+func (cts *CollectiveTestStruct) GetUpgradeStatusMap() map[string]UpgradeStatusResult {
+	upgradeStatusMap := map[string]UpgradeStatusResult{}
+	for _, a := range cts.GetAppliances() {
+		for _, s := range cts.Stats.GetData() {
+			if a.GetId() != s.GetId() {
+				continue
+			}
+			us := s.GetUpgrade()
+			upgradeStatusMap[a.GetId()] = UpgradeStatusResult{
+				Name:    a.GetName(),
+				Status:  us.GetStatus(),
+				Details: us.GetDetails(),
+			}
+		}
+	}
+	return upgradeStatusMap
 }
 
 func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, stats, upgradedStats openapi.StatsAppliancesList) []httpmock.Stub {
