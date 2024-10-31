@@ -196,6 +196,19 @@ func CompareVersionsAndBuildNumber(x, y *version.Version) (int, error) {
 	if x == nil || y == nil {
 		return 0, fmt.Errorf("Failed to compare versions, got nil version - x=%v, y=%v", x, y)
 	}
+	var err error
+	if len(x.Prerelease()) > 0 {
+		x, err = ParseVersionString(x.String())
+		if err != nil {
+			return 0, err
+		}
+	}
+	if len(y.Prerelease()) > 0 {
+		y, err = ParseVersionString(y.String())
+		if err != nil {
+			return 0, err
+		}
+	}
 	res := y.Compare(x)
 
 	// if res is 0, we also compare build number
