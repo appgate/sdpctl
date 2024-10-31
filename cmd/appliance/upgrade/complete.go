@@ -431,10 +431,6 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			g.Go(func() error {
 				ctx, cancel := context.WithTimeout(ctx, opts.Timeout)
 				defer cancel()
-				logger := log.WithFields(log.Fields{
-					"appliance": i.GetName(),
-					"id":        i.GetId(),
-				})
 				var t *tui.Tracker
 				if !opts.ciMode {
 					t = p.AddTracker(i.GetName(), "waiting", "upgraded")
