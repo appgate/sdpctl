@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +36,7 @@ func NewBackupAPICmd(f *factory.Factory) *cobra.Command {
 	opts := apiOptions{
 		Config:       f.Config,
 		APIClient:    f.APIClient,
-		CustomClient: f.HTTPClient,
+		CustomClient: f.CustomHTTPClient,
 		debug:        f.Config.Debug,
 		Out:          f.IOOutWriter,
 		In:           f.Stdin,
@@ -109,11 +110,12 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 		return err
 	}
 	body := bytes.NewBuffer(b)
-	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+json", opts.Config.Version))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url+"/global-settings", body)
 	if err != nil {
 		return err
 	}
+	req.Header.Add("Content-Type", "application/json")
 	customClient, err := opts.CustomClient()
 	if err != nil {
 		return err
@@ -122,6 +124,9 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 	response, err = customClient.Do(req)
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
+	}
+	if response.StatusCode >= 400 {
+		return api.HTTPErrorResponse(response, errors.New("response does not indicate success"))
 	}
 	fmt.Fprintln(opts.Out, message)
 	return nil
