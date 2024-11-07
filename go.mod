@@ -1,11 +1,14 @@
 module github.com/appgate/sdpctl
 
-go 1.22
+go 1.22.6
+
+toolchain go1.23.2
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/adrg/xdg v0.5.3
+	github.com/appgate/journaldreader/journaldreader v0.0.0-20241107084131-61a82a70d839
 	github.com/appgate/sdp-api-client-go v1.2.8
 	github.com/billgraziano/dpapi v0.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0
@@ -40,7 +43,6 @@ require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/appgate/journaldreader/journaldreader v0.0.0-20241107084131-61a82a70d839 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
