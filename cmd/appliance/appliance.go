@@ -41,6 +41,7 @@ func NewApplianceCmd(f *factory.Factory) *cobra.Command {
 		NewResolveNameCmd(f),
 		NewResolveNameStatusCmd(f),
 		NewLogsCmd(f),
+		NewExtractLogsCmd(f),
 		files.NewFilesCmd(f),
 		maintenance.NewMaintenanceCmd(f),
 		NewSeedCmd(f),
