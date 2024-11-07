@@ -20,7 +20,7 @@ import (
 
 type logextractOpts struct {
 	cmdappliance.AppliancCmdOpts
-	Path       string
+	Path string
 }
 
 func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
@@ -123,18 +123,18 @@ func process_journal_file(file string, path string) error {
 				// We just move to the next log file in case of error
 				break
 			}
-			if ! hasnext {
+			if !hasnext {
 				break
 			}
 
 			identifier, exists := entry["SYSLOG_IDENTIFIER"]
-			if ! exists {
+			if !exists {
 				identifier = "uncategorised_entries"
 			}
 
 			logfile, exists := textlogs[identifier]
-			if ! exists {
-				logfile, err := os.Create(filepath.Join(path, identifier + ".log"))
+			if !exists {
+				logfile, err := os.Create(filepath.Join(path, identifier+".log"))
 				if err != nil {
 					return nil
 				}
@@ -159,27 +159,27 @@ func process_journal_file(file string, path string) error {
  */
 func format_entry(entry map[string]string) string {
 	timestamp, exists := entry["SYSLOG_TIMESTAMP"]
-	if ! exists {
+	if !exists {
 		timestamp = ""
 	}
 
 	hostname, exists := entry["_HOSTNAME"]
-	if ! exists {
+	if !exists {
 		hostname = ""
 	}
 
 	identifier, exists := entry["SYSLOG_IDENTIFIER"]
-	if ! exists {
+	if !exists {
 		identifier = ""
 	}
 
 	pid, exists := entry["_PID"]
-	if ! exists {
+	if !exists {
 		pid = ""
 	}
 
 	message, exists := entry["MESSAGE"]
-	if ! exists {
+	if !exists {
 		message = ""
 	}
 	return fmt.Sprintf("%s %s %s[%s]: %s\n", timestamp, hostname, identifier, pid, message)
