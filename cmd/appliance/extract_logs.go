@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/appgate/sdpctl/pkg/cmdappliance"
@@ -61,6 +60,7 @@ func logsExtractRun(cmd *cobra.Command, args []string, opts *logextractOpts) err
 	return nil
 }
 
+
 func processJournalFile(file string, path string) error {
 	r, err := zip.OpenReader(file)
 	if err != nil {
@@ -100,7 +100,7 @@ func processJournalFile(file string, path string) error {
 	}
 
 	// Sort the extracted journald files
-	sort.Strings(extractedFiles)
+	extractedFiles = journaldreader.SortJournalFiles(extractedFiles)
 
 	log.Infof("Extracting journal files complete. Processing...")
 
@@ -114,7 +114,7 @@ func processJournalFile(file string, path string) error {
 
 		err := j.Open(journalfile)
 		if err != nil {
-			log.Fatal(err)
+			continue
 		}
 
 		for {
