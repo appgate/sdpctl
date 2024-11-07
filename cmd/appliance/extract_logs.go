@@ -52,7 +52,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 
 func logsExtractRun(cmd *cobra.Command, args []string, opts *logextractOpts) error {
 	for i := 0; i < len(args); i++ {
-		fmt.Println("Starting processing %s", args[i])
+		log.Infof("Starting processing %s", args[i])
 		err := process_journal_file(args[i], opts.Path)
 		if err != nil {
 			return err
@@ -74,7 +74,7 @@ func process_journal_file(file string, path string) error {
 	// printing some of their contents.
 	for _, f := range r.File {
 		if strings.HasSuffix(f.Name, ".journal") {
-			fmt.Println("Extracting journal file %s", f.Name)
+			log.Infof("Extracting journal file %s", f.Name)
 
 			rc, err := f.Open()
 			if err != nil {
@@ -102,7 +102,7 @@ func process_journal_file(file string, path string) error {
 	// Sort the extracted journald files
 	sort.Strings(extracted_files)
 
-	fmt.Println("Extracting journal files complete. Processing...")
+	log.Infof("Extracting journal files complete. Processing...")
 
 	textlogs := make(map[string]*os.File)
 
@@ -110,7 +110,7 @@ func process_journal_file(file string, path string) error {
 	for _, journalfile := range extracted_files {
 		j := journaldreader.SdjournalReader{}
 
-		fmt.Println("Processing %s...", journalfile)
+		log.Infof("Processing %s...", journalfile)
 
 		err := j.Open(journalfile)
 		if err != nil {
