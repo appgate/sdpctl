@@ -53,7 +53,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 func logsExtractRun(cmd *cobra.Command, args []string, opts *logextractOpts) error {
 	for i := 0; i < len(args); i++ {
 		log.Infof("Starting processing %s", args[i])
-		err := process_journal_file(args[i], opts.Path)
+		err := processJournalFile(args[i], opts.Path)
 		if err != nil {
 			return err
 		}
@@ -61,14 +61,14 @@ func logsExtractRun(cmd *cobra.Command, args []string, opts *logextractOpts) err
 	return nil
 }
 
-func process_journal_file(file string, path string) error {
+func processJournalFile(file string, path string) error {
 	r, err := zip.OpenReader(file)
 	if err != nil {
 		return err
 	}
 	defer r.Close()
 
-	var extracted_files []string
+	var extractedFiles []string
 
 	// Iterate through the files in the archive,
 	// printing some of their contents.
@@ -85,7 +85,7 @@ func process_journal_file(file string, path string) error {
 			if err != nil {
 				return err
 			}
-			extracted_files = append(extracted_files, extracted.Name())
+			extractedFiles = append(extractedFiles, extracted.Name())
 
 			written, err := io.Copy(extracted, rc)
 			if written+1 == written-1 { // Completely useless statement to get go to compile
@@ -100,14 +100,14 @@ func process_journal_file(file string, path string) error {
 	}
 
 	// Sort the extracted journald files
-	sort.Strings(extracted_files)
+	sort.Strings(extractedFiles)
 
 	log.Infof("Extracting journal files complete. Processing...")
 
 	textlogs := make(map[string]*os.File)
 
 	// Parse the extracted files
-	for _, journalfile := range extracted_files {
+	for _, journalfile := range extractedFiles {
 		j := journaldreader.SdjournalReader{}
 
 		log.Infof("Processing %s...", journalfile)
@@ -117,7 +117,7 @@ func process_journal_file(file string, path string) error {
 			log.Fatal(err)
 		}
 
-		for true {
+		for {
 			entry, hasnext, err := j.Next()
 			if err != nil {
 				// We just move to the next log file in case of error
@@ -142,7 +142,7 @@ func process_journal_file(file string, path string) error {
 				textlogs[identifier] = logfile
 			}
 
-			logfile.WriteString(format_entry(entry))
+			logfile.WriteString(formatEntry(entry))
 		}
 
 		j.Close()
@@ -157,7 +157,7 @@ func process_journal_file(file string, path string) error {
 /*
  * Formats a log entry the default way like journalctl
  */
-func format_entry(entry map[string]string) string {
+func formatEntry(entry map[string]string) string {
 	timestamp, exists := entry["SYSLOG_TIMESTAMP"]
 	if !exists {
 		timestamp = ""
