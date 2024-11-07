@@ -2,8 +2,6 @@ module github.com/appgate/sdpctl
 
 go 1.22.6
 
-toolchain go1.23.2
-
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
