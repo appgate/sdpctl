@@ -22,24 +22,14 @@ var (
 // where 5.4.4 is the semver of the appliance.
 func ParseVersionString(input string) (*version.Version, error) {
 	m := versionRegex.FindStringSubmatch(input)
-	var pre string
 	var meta string
 	if len(m) > 0 {
 		input = m[1]
 		if _, err := strconv.ParseInt(m[3], 10, 64); err == nil {
 			meta = m[3]
-			if len(m[4]) > 0 {
-				pre = m[4]
-			}
 		}
 		if _, err := strconv.ParseInt(m[4], 10, 64); err == nil {
 			meta = m[4]
-			if len(m[3]) > 0 {
-				pre = m[3]
-			}
-		}
-		if len(pre) > 0 && pre != "release" {
-			input = fmt.Sprintf("%s-%s", input, pre)
 		}
 		if len(meta) > 0 {
 			input = fmt.Sprintf("%s+%s", input, meta)
