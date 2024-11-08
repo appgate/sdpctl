@@ -60,7 +60,6 @@ func logsExtractRun(cmd *cobra.Command, args []string, opts *logextractOpts) err
 	return nil
 }
 
-
 func processJournalFile(file string, path string) error {
 	r, err := zip.OpenReader(file)
 	if err != nil {
