@@ -35,9 +35,9 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "extract-logs",
-		Short:   docs.ApplianceLogsDoc.Short,
-		Long:    docs.ApplianceLogsDoc.Short,
-		Example: docs.ApplianceLogsDoc.ExampleString(),
+		Short:   docs.ApplianceExtractLogsDoc.Short,
+		Long:    docs.ApplianceExtractLogsDoc.Short,
+		Example: docs.ApplianceExtractLogsDoc.ExampleString(),
 		// PreRunE: func(cmd *cobra.Command, args []string) error {
 		// 	return cmdappliance.ArgsSelectAppliance(cmd, args, &opts.AppliancCmdOpts)
 		// },
@@ -135,7 +135,7 @@ func processJournalFile(file string, path string) error {
 			if !exists {
 				logfile, err := os.Create(filepath.Join(path, identifier+".log"))
 				if err != nil {
-					return nil
+					return err
 				}
 				defer logfile.Close()
 				textlogs[identifier] = logfile
