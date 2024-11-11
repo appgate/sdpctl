@@ -91,7 +91,7 @@ func processJournalFile(file string, path string) error {
 				log.Fatal(written)
 			}
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			rc.Close()
 			extracted.Close()
