@@ -405,7 +405,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	batchUpgrade := func(ctx context.Context, appliances []openapi.Appliance, SwitchPartition bool) error {
-		g, ctx := errgroup.WithContext(ctx)
+		g := errgroup.Group{}
 		upgradeChan := make(chan openapi.Appliance, len(appliances))
 		var p *tui.Progress
 		if !opts.ciMode {
@@ -455,7 +455,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 						return nil
 					}, backoff.WithContext(backoff.NewExponentialBackOff(), ctx))
 					if err != nil {
-						return fmt.Errorf("upgrade complete failed on %s: %w", i.GetName(), err)
+						if !opts.ciMode {
+							t.Update(appliancepkg.UpgradeStatusFailed)
+							t.Fail(err.Error())
+						}
+						return fmt.Errorf("Could not complete upgrade on %s %w", i.GetName(), err)
 					}
 				}
 				logger.Info("Install the downloaded upgrade image to the other partition")
@@ -465,11 +469,19 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					}
 					status, err := a.UpgradeStatusRetry(ctx, i.GetId())
 					if err != nil {
+						if !opts.ciMode {
+							t.Update(appliancepkg.UpgradeStatusFailed)
+							t.Fail(err.Error())
+						}
 						return fmt.Errorf("%s %w", i.GetName(), err)
 					}
 					if status.GetStatus() == appliancepkg.UpgradeStatusSuccess {
 						logger.Info("switching partition")
 						if err := a.UpgradeSwitchPartition(ctx, i.GetId()); err != nil {
+							if !opts.ciMode {
+								t.Update(appliancepkg.UpgradeStatusFailed)
+								t.Fail(err.Error())
+							}
 							return fmt.Errorf("%s %w", i.GetName(), err)
 						}
 					}
@@ -477,12 +489,13 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				if err := a.UpgradeStatusWorker.WaitForUpgradeStatus(ctx, i, []string{appliancepkg.UpgradeStatusIdle}, []string{appliancepkg.UpgradeStatusFailed}, t); err != nil {
 					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
-				if err := a.ApplianceStats.WaitForApplianceState(ctx, i, appliancepkg.StatReady, t); err != nil {
-					return fmt.Errorf("%s %w", i.GetName(), err)
-				}
 
 				s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
 				if err != nil {
+					if !opts.ciMode {
+						t.Update(appliancepkg.UpgradeStatusFailed)
+						t.Fail(err.Error())
+					}
 					return err
 				}
 
@@ -492,6 +505,18 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					if i.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
 						return fmt.Errorf("upgrade complete failed on %s: never switched partition", i.GetName())
 					}
+					if i.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
+						err := errors.New("never switched partition")
+						if !opts.ciMode {
+							t.Update(appliancepkg.UpgradeStatusFailed)
+							t.Fail(err.Error())
+						}
+						return fmt.Errorf("Upgrade failed on %s: %w", i.GetName(), err)
+					}
+				}
+
+				if err := a.ApplianceStats.WaitForApplianceState(ctx, i, appliancepkg.StatReady, t); err != nil {
+					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
 				select {
