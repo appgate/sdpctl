@@ -86,10 +86,7 @@ func processJournalFile(file string, path string) error {
 			}
 			extractedFiles = append(extractedFiles, extracted.Name())
 
-			written, err := io.Copy(extracted, rc)
-			if written+1 == written-1 { // Completely useless statement to get go to compile
-				log.Fatal(written)
-			}
+			_, err = io.Copy(extracted, rc)
 			if err != nil {
 				return err
 			}
