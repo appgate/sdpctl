@@ -46,7 +46,7 @@ type upgradeCompleteOptions struct {
 	actualHostname    string
 	defaultFilter     map[string]map[string]string
 	ciMode            bool
-	batchSize         int
+	maxUnavailable    int
 }
 
 // NewUpgradeCompleteCmd return a new upgrade status command
@@ -111,7 +111,7 @@ func NewUpgradeCompleteCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVarP(&opts.backup, "backup", "b", opts.backup, "Backup primary Controller before completing the upgrade")
 	flags.StringVar(&opts.backupDestination, "backup-destination", "$HOME/Downloads/appgate/backup", "Specify path to download backup")
 	flags.StringVar(&opts.actualHostname, "actual-hostname", "", "If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname")
-	flags.IntVar(&opts.batchSize, "batch-size", 2, "Number of batch groups")
+	flags.IntVar(&opts.maxUnavailable, "max-unavailable", 1, "Defines how many gateways and logforwarders that are allowed to be upgraded per site at once. Setting this to a higher number will calculate batches according to the value set in this flag. Setting this to a higher value would make the upgrade process shorter at the cost of collective performance for users.")
 	return upgradeCompleteCmd
 }
 
@@ -205,7 +205,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if err != nil {
 		return err
 	}
-	plan, err := appliancepkg.NewUpgradePlan(active, initialStats, upgradeStatusMap, controlHost, filter, orderBy, descending)
+	plan, err := appliancepkg.NewUpgradePlan(active, initialStats, upgradeStatusMap, controlHost, filter, orderBy, descending, opts.maxUnavailable)
 	if err != nil {
 		return err
 	}

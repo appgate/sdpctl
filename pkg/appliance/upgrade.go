@@ -2,10 +2,11 @@ package appliance
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
-	"sort"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -54,7 +55,15 @@ type UpgradePlan struct {
 	allAppliances           []openapi.Appliance
 }
 
-func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, adminHostname string, filter map[string]map[string]string, orderBy []string, descending bool) (*UpgradePlan, error) {
+func NewUpgradePlan(
+	appliances []openapi.Appliance, stats *openapi.StatsAppliancesList,
+	upgradeStatusMap map[string]UpgradeStatusResult,
+	adminHostname string,
+	filter map[string]map[string]string,
+	orderBy []string,
+	descending bool,
+	maxUnavailable int,
+) (*UpgradePlan, error) {
 	plan := UpgradePlan{
 		adminHostname:    adminHostname,
 		stats:            stats,
@@ -80,9 +89,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 	}
 
 	// Sort input group first
-	sort.SliceStable(finalApplianceList, func(i, j int) bool {
-		return finalApplianceList[i].GetName() < finalApplianceList[j].GetName()
-	})
+	slices.SortStableFunc(finalApplianceList, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 
 	gatewaysGroupedBySite := map[string][]openapi.Appliance{}
 	logforwardersGroupedBySite := map[string][]openapi.Appliance{}
@@ -137,7 +144,7 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		}
 		if gw, ok := a.GetGatewayOk(); ok {
 			if gw.GetEnabled() {
-				site := a.GetSite()
+				site := a.GetSiteName()
 				gatewaysGroupedBySite[site] = append(gatewaysGroupedBySite[site], a)
 				continue
 			}
@@ -158,7 +165,8 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		} else {
 			if lf, ok := a.GetLogForwarderOk(); ok {
 				if lf.GetEnabled() {
-					logforwardersGroupedBySite[a.GetSite()] = append(logforwardersGroupedBySite[a.GetSite()], a)
+					site := a.GetSiteName()
+					logforwardersGroupedBySite[site] = append(logforwardersGroupedBySite[site], a)
 					continue
 				}
 			}
@@ -166,92 +174,132 @@ func NewUpgradePlan(appliances []openapi.Appliance, stats *openapi.StatsApplianc
 		other = append(other, a)
 	}
 
-	// Determine how many batches we will do
-	// using the amount of gateways and logforwarders per site
-	batchSize := 0
-	for _, g := range gatewaysGroupedBySite {
-		if len(g) > batchSize {
-			batchSize = len(g)
-		}
-	}
-	for _, lf := range logforwardersGroupedBySite {
-		if len(lf) > batchSize {
-			batchSize = len(lf)
-		}
-	}
-	// batchSize needs to min 1 if there are any other appliances prepared
-	if len(other) > 0 && batchSize == 0 {
-		batchSize = 1
-	}
-
-	// Equally distribute gateways to batches
-	// Each batch should contain only one gateway per site
-	plan.Batches = make([][]openapi.Appliance, batchSize)
-	for _, appliances := range gatewaysGroupedBySite {
-		batchIndex := 0
-		for _, a := range appliances {
-			batch := plan.Batches[batchIndex]
-			batch = append(batch, a)
-			plan.Batches[batchIndex] = batch
-			if batchIndex == batchSize-1 {
-				batchIndex = 0
-				continue
-			}
-			batchIndex++
-		}
-	}
-
-	// Equally distribute logforwarders to batches
-	// Each batch should contain only one logforwarder per site
-	for _, appliances := range logforwardersGroupedBySite {
-		batchIndex := 0
-		for _, a := range appliances {
-			batch := plan.Batches[batchIndex]
-			batch = append(batch, a)
-			plan.Batches[batchIndex] = batch
-			if batchIndex == batchSize-1 {
-				batchIndex = 0
-				continue
-			}
-			batchIndex++
-		}
-	}
-
-	// Distribute the rest of the appliances into the batches
-	// Strategy is to balance the batches so they are of roughly equal size
-	batchIndex := 0
-	for _, a := range other {
-		// Get the index of the batch with the least amount of appliances in
-		var minBatch *int
-		for i, b := range plan.Batches {
-			if minBatch == nil {
-				minBatch = openapi.PtrInt(len(b))
-				batchIndex = i
-				continue
-			}
-			if len(b) < *minBatch {
-				minBatch = openapi.PtrInt(len(b))
-				batchIndex = i
-			}
-		}
-
-		// Append appliance to the batch with index found above
-		plan.Batches[batchIndex] = append(plan.Batches[batchIndex], a)
-	}
-
 	// Sort the output in the upgrade plan
 	if len(plan.LogForwardersAndServers) > 0 {
-		sort.SliceStable(plan.LogForwardersAndServers, func(i, j int) bool {
-			return plan.LogForwardersAndServers[i].GetName() < plan.LogForwardersAndServers[j].GetName()
-		})
+		slices.SortStableFunc(plan.LogForwardersAndServers, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 	}
-	for i := 0; i < len(plan.Batches); i++ {
-		sort.SliceStable(plan.Batches[i], func(ix, jx int) bool {
-			return plan.Batches[i][ix].GetName() < plan.Batches[i][jx].GetName()
-		})
+
+	if len(gatewaysGroupedBySite) > 0 || len(logforwardersGroupedBySite) > 0 || len(other) > 0 {
+		// Determine how many batches we will do
+		// using the amount of gateways and logforwarders per site
+		batches := calculateBatches(gatewaysGroupedBySite, logforwardersGroupedBySite, other, maxUnavailable)
+
+		// Equally distribute gateways to batches
+		// Each batch should contain only one gateway per site
+		plan.Batches = createBatches(batches, maxUnavailable, gatewaysGroupedBySite, logforwardersGroupedBySite, other)
 	}
 
 	return &plan, nil
+}
+
+func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[string][]openapi.Appliance, other []openapi.Appliance) [][]openapi.Appliance {
+	result := make([][]openapi.Appliance, batchCount)
+
+	gatewayGroups := divideByMaxUnavailable(gateways, maxUnavailable)
+	logForwarderGroups := divideByMaxUnavailable(logforwarders, maxUnavailable)
+
+	// distribute gateways and logforwarders to groups
+	resultIndex := 0
+	result[resultIndex] = []openapi.Appliance{}
+	for i := 0; i < len(gatewayGroups); i++ {
+		result[resultIndex] = append(result[resultIndex], gatewayGroups[i]...)
+		resultIndex++
+	}
+	resultIndex = 0
+	for i := 0; i < len(logForwarderGroups); i++ {
+		result[resultIndex] = append(result[resultIndex], logForwarderGroups[i]...)
+		resultIndex++
+	}
+
+	// distribute other appliances and even out the groups
+	slices.SortStableFunc(other, func(i, y openapi.Appliance) int { return cmp.Compare(i.GetName(), y.GetName()) })
+	for _, o := range other {
+		resultIndex = util.SmallestGroupIndex(result)
+		result[resultIndex] = append(result[resultIndex], o)
+	}
+
+	// sort the resulting groups
+	for i := 0; i < len(result); i++ {
+		slices.SortStableFunc(result[i], func(x, y openapi.Appliance) int { return cmp.Compare(x.GetName(), y.GetName()) })
+	}
+	slices.SortStableFunc(result, func(i, j []openapi.Appliance) int { return cmp.Compare(i[0].GetSiteName(), j[0].GetSiteName()) })
+
+	return result
+}
+
+func divideByMaxUnavailable(appliances map[string][]openapi.Appliance, maxUnavailable int) [][]openapi.Appliance {
+	totalCount := 0
+	for _, group := range appliances {
+		totalCount += len(group)
+	}
+	if totalCount <= 0 {
+		return nil
+	}
+
+	// for safety, if maxUnavailable is 0, set it to 1
+	if maxUnavailable <= 0 {
+		maxUnavailable = 1
+	}
+
+	keys := []string{}
+	for k := range appliances {
+		keys = append(keys, k)
+	}
+	slices.SortStableFunc(keys, func(i, j string) int { return cmp.Compare(i, j) })
+
+	for _, group := range appliances {
+		slices.SortStableFunc(group, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
+	}
+
+	biggestGroupKey := biggestGroupKey(appliances)
+	biggestGroupLength := len(appliances[biggestGroupKey])
+	groupCount := biggestGroupLength / maxUnavailable
+	if biggestGroupLength%maxUnavailable > 0 {
+		groupCount++
+	}
+	groups := make([][]openapi.Appliance, groupCount)
+	for i := 0; i < groupCount; i++ {
+		groups[i] = make([]openapi.Appliance, 0, maxUnavailable)
+	}
+
+	groupIndex := 0
+	for _, k := range keys {
+		remaining := appliances[k]
+		for len(remaining) > 0 {
+			var picked []openapi.Appliance
+			picked, remaining = util.SliceTake(remaining, maxUnavailable)
+			groups[groupIndex] = append(groups[groupIndex], picked...)
+			if groupIndex == len(groups)-1 {
+				groupIndex = 0
+				continue
+			}
+			groupIndex++
+		}
+	}
+
+	// sort output
+	for _, g := range groups {
+		slices.SortStableFunc(g, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
+	}
+
+	return groups
+}
+
+func biggestGroupKey(groups map[string][]openapi.Appliance) string {
+	var res string
+	var biggest int
+	for i, g := range groups {
+		count := len(g)
+		if biggest == 0 {
+			biggest = count
+			res = i
+		}
+		if count > biggest {
+			biggest = count
+			res = i
+		}
+	}
+	return res
 }
 
 func (up *UpgradePlan) AddBackups(applianceIds []string) error {
@@ -413,9 +461,7 @@ func (up *UpgradePlan) PrintPreCompleteSummary(out io.Writer) error {
 
 	if len(up.Skipping) > 0 {
 		stub.Skipped = up.Skipping
-		sort.Slice(stub.Skipped, func(i, j int) bool {
-			return stub.Skipped[i].Appliance.GetName() < stub.Skipped[j].Appliance.GetName()
-		})
+		slices.SortStableFunc(stub.Skipped, func(i, j SkipUpgrade) int { return cmp.Compare(i.Appliance.GetName(), j.Appliance.GetName()) })
 	}
 
 	t := template.Must(template.New("").Funcs(util.TPLFuncMap).Parse(upgradeSummaryTpl))
@@ -443,7 +489,7 @@ func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.S
 	for k := range applianceVersions {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	type tplStub struct {
 		VersionTable string
@@ -522,3 +568,37 @@ var (
 		"Some of the additional appliances may need to be rebooted for the upgrade to take effect",
 	}
 )
+
+func calculateBatches(gatewaysBySite, logForwardersBySite map[string][]openapi.Appliance, other []openapi.Appliance, maxUnavailable int) int {
+	batches := 0
+	for _, g := range gatewaysBySite {
+		if len(g) > batches {
+			batches = len(g)
+		}
+	}
+	for _, lf := range logForwardersBySite {
+		if len(lf) > batches {
+			batches = len(lf)
+		}
+	}
+
+	// batchSize needs to min 1 if there are any other appliances prepared
+	if len(other) > 0 && batches == 0 {
+		batches = 1
+	}
+
+	// apply maxUnavailable option before returning
+	if maxUnavailable <= 0 {
+		maxUnavailable = 1
+	}
+	if maxUnavailable > 1 {
+		if batches == maxUnavailable {
+			return 1
+		}
+		for batches%maxUnavailable != 0 {
+			batches--
+		}
+	}
+
+	return batches
+}
