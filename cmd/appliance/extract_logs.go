@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/appgate/sdpctl/pkg/cmdappliance"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	log "github.com/sirupsen/logrus"
@@ -18,29 +17,19 @@ import (
 )
 
 type logextractOpts struct {
-	cmdappliance.AppliancCmdOpts
 	Path string
 }
 
 func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
-	aopts := cmdappliance.AppliancCmdOpts{
-		Appliance: f.Appliance,
-		Config:    f.Config,
-		CanPrompt: f.CanPrompt(),
-	}
 
 	opts := logextractOpts{
-		aopts,
-		"",
+		".",
 	}
 	cmd := &cobra.Command{
 		Use:     "extract-logs",
 		Short:   docs.ApplianceExtractLogsDoc.Short,
 		Long:    docs.ApplianceExtractLogsDoc.Short,
 		Example: docs.ApplianceExtractLogsDoc.ExampleString(),
-		// PreRunE: func(cmd *cobra.Command, args []string) error {
-		// 	return cmdappliance.ArgsSelectAppliance(cmd, args, &opts.AppliancCmdOpts)
-		// },
 		RunE: func(c *cobra.Command, args []string) error {
 			return logsExtractRun(c, args, &opts)
 		},
