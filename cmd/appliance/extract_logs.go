@@ -3,15 +3,15 @@ package appliance
 import (
 	"archive/zip"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-
+	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/appgate/journaldreader/journaldreader"
 )
@@ -32,6 +32,9 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 		Example: docs.ApplianceExtractLogsDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return logsExtractRun(c, args, &opts)
+		},
+		Annotations: map[string]string{
+			configuration.SkipAuthCheck: "true",
 		},
 	}
 	cmd.Flags().StringVarP(&opts.Path, "path", "", "", "Optional path to write to")
