@@ -23,10 +23,7 @@ type logextractOpts struct {
 }
 
 func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
-
-	opts := logextractOpts{
-		".",
-	}
+	opts := logextractOpts{}
 	cmd := &cobra.Command{
 		Use:     "extract-logs",
 		Short:   docs.ApplianceExtractLogsDoc.Short,
@@ -39,7 +36,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 			configuration.SkipAuthCheck: "true",
 		},
 	}
-	cmd.Flags().StringVarP(&opts.Path, "path", "", "", "Optional path to write to")
+	cmd.Flags().StringVar(&opts.Path, "path", ".", "Optional path to write to")
 	return cmd
 }
 
