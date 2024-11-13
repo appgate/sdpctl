@@ -28,7 +28,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "extract-logs",
 		Short:   docs.ApplianceExtractLogsDoc.Short,
-		Long:    docs.ApplianceExtractLogsDoc.Short,
+		Long:    docs.ApplianceExtractLogsDoc.Long,
 		Example: docs.ApplianceExtractLogsDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
 			return logsExtractRun(c, args, &opts)
