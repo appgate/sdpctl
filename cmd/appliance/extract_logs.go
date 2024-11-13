@@ -134,7 +134,8 @@ func processJournalFile(file string, path string) error {
 		}
 
 		j.Close()
-		if os.Remove(journalfile) != nil {
+		err = os.Remove(journalfile)
+		if err != nil {
 			return err
 		}
 	}
