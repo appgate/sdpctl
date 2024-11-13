@@ -301,6 +301,21 @@ NOTE: Although the '--include' and '--exclude' flags are provided as options her
 		},
 	}
 
+	ApplianceExtractLogsDoc = CommandDoc{
+		Short: "Unpacks binary log files from a log bundle",
+		Long:  `Unpacks journald binary log files from a log bundle .zip file, creating log files grouped by daemon`,
+		Examples: []ExampleDoc{
+			{
+				Description: "Extract logs command",
+				Command:     "sdpctl extract-logs controller.zip",
+			},
+			{
+				Description: "Extract logs to specific path",
+				Command:     "sdpctl extract-logs controller.zip --path /tmp",
+			},
+		},
+	}
+
 	ApplianceSeedDocs = CommandDoc{
 		Short: "Export seed for an inactive Appliance",
 		Long: `Generate a seed file in JSON (or iso format)
