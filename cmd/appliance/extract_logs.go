@@ -3,15 +3,17 @@ package appliance
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/appgate/sdpctl/pkg/configuration"
-	"github.com/appgate/sdpctl/pkg/docs"
-	"github.com/appgate/sdpctl/pkg/factory"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/docs"
+	"github.com/appgate/sdpctl/pkg/factory"
+	"github.com/hashicorp/go-multierror"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/appgate/journaldreader/journaldreader"
 )
@@ -31,7 +33,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 		Long:    docs.ApplianceExtractLogsDoc.Long,
 		Example: docs.ApplianceExtractLogsDoc.ExampleString(),
 		RunE: func(c *cobra.Command, args []string) error {
-			return logsExtractRun(c, args, &opts)
+			return logsExtractRun(args, &opts)
 		},
 		Annotations: map[string]string{
 			configuration.SkipAuthCheck: "true",
@@ -41,15 +43,15 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 	return cmd
 }
 
-func logsExtractRun(cmd *cobra.Command, args []string, opts *logextractOpts) error {
+func logsExtractRun(args []string, opts *logextractOpts) error {
+	var errs *multierror.Error
 	for i := 0; i < len(args); i++ {
 		log.Infof("Starting processing %s", args[i])
-		err := processJournalFile(args[i], opts.Path)
-		if err != nil {
-			return err
+		if err := processJournalFile(args[i], opts.Path); err != nil {
+			errs = multierror.Append(errs, err)
 		}
 	}
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func processJournalFile(file string, path string) error {
