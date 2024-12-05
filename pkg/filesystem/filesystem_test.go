@@ -11,6 +11,13 @@ import (
 
 func TestConfigDir(t *testing.T) {
 	tempDir := t.TempDir()
+	noXdgHomePath := func() string {
+		if runtime.GOOS == "darwin" {
+			return filepath.Join(tempDir, "Library", "Application Support", "sdpctl")
+		} else {
+			return filepath.Join(tempDir, ".config", "sdpctl")
+		}
+	}()
 
 	tests := []struct {
 		name        string
@@ -49,7 +56,7 @@ func TestConfigDir(t *testing.T) {
 			env: map[string]string{
 				"HOME": tempDir,
 			},
-			output: filepath.Join(tempDir, ".config", "sdpctl"),
+			output: noXdgHomePath,
 		},
 	}
 
