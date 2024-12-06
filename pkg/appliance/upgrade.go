@@ -592,7 +592,7 @@ func calculateBatches(gatewaysBySite, logForwardersBySite map[string][]openapi.A
 		maxUnavailable = 1
 	}
 	if maxUnavailable > 1 {
-		if batches == maxUnavailable {
+		if batches == maxUnavailable || batches < maxUnavailable {
 			return 1
 		}
 		for batches%maxUnavailable != 0 {
