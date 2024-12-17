@@ -172,13 +172,14 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			wantErrOut: regexp.MustCompile("never switched partition"),
 		},
 		{
+			// Allow some controllers to be unprepared. Proceed only upgrade-completing the
+			// prepared controllers
 			name:       "controller major-minor guard unprepared controller",
 			cli:        "upgrade complete --backup=false --no-interactive",
 			appliances: []string{appliancepkg.TestAppliancePrimary, appliancepkg.TestApplianceControllerNotPrepared},
 			from:       "6.2.0",
 			to:         "6.3.0",
-			wantErr:    true,
-			wantErrOut: regexp.MustCompile(appliancepkg.ErrNeedsAllControllerUpgrade.Error()),
+			wantErr:    false,
 		},
 		{
 			name:       "controller major-minor guard mismatch version",
