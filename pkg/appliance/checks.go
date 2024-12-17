@@ -436,9 +436,10 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 		return mismatchControllers, ErrControllerVersionMismatch
 	}
 
-	// we return a list of the controllers that need to be prepared along with an error
+	// we will only upgrade-complete the prepared controllers
+	// return the unprepared controllers without error
 	if isMajorOrMinor && len(unpreparedControllers) > 0 {
-		return unpreparedControllers, ErrNeedsAllControllerUpgrade
+		return unpreparedControllers, nil
 	}
 
 	return nil, nil
