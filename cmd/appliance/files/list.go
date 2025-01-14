@@ -1,8 +1,6 @@
 package files
 
 import (
-	"context"
-
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -41,7 +39,7 @@ func NewFilesListCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(a.Token)
 			files, err := a.ListFiles(ctx, opts.OrderBy, opts.Descending)
 			if err != nil {
 				return err

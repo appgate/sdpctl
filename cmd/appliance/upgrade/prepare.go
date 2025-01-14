@@ -17,7 +17,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
@@ -97,11 +97,13 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
+
 			if flagTimeout < minTimeout {
 				fmt.Printf("WARNING: timeout is less than the allowed minimum. Using default timeout instead: %s", opts.timeout)
 			} else {
 				opts.timeout = flagTimeout
 			}
+
 			var errs *multierr.Error
 			opts.filename = filepath.Base(opts.image)
 			if err := checkImageFilename(opts.filename); err != nil {
@@ -121,7 +123,6 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			log.WithField("URL", opts.dockerRegistry).Debug("found docker registry address")
-
 			// allow remote addr for image, such as aws s3 bucket
 			err = util.IsValidURL(opts.image)
 			if err != nil && errors.Is(err, util.ErrMalformedURL) {
@@ -237,7 +238,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 		return err
 	}
 	spinnerOut := opts.SpinnerOut()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(util.BaseAuthContext(a.Token))
 	defer cancel()
 	ctx = context.WithValue(ctx, appliancepkg.Caller, cmd.CalledAs())
 	if a.UpgradeStatusWorker == nil {

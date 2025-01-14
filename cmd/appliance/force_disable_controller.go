@@ -12,7 +12,7 @@ import (
 	"text/template"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -102,7 +102,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		Token:     a.Token,
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(util.BaseAuthContext(a.Token))
 	defer cancel()
 
 	appliances, err := a.List(ctx, nil, []string{"name"}, false)
