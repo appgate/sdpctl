@@ -1,7 +1,6 @@
 package serviceusers
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -13,7 +12,9 @@ import (
 )
 
 func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
+	token, _ := f.Config.GetBearTokenHeaderValue()
 	opts := ServiceUsersOptions{
+		Token:  token,
 		API:    f.ServiceUsers,
 		Config: f.Config,
 		Out:    f.IOOutWriter,
@@ -34,7 +35,7 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			return errs.ErrorOrNil()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(opts.Token)
 			api, err := opts.API(opts.Config)
 			if err != nil {
 				return err

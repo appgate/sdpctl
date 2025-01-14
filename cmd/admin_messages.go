@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"io"
 	"text/template"
 
@@ -58,8 +57,8 @@ func adminMessagesRun(opts *adminMessageOpts) error {
 		return err
 	}
 	adminMessagesAPI := client.AdminMessagesApi
-	ctx := context.Background()
-	list, response, err := adminMessagesAPI.AdminMessagesSummarizeGet(ctx).Authorization(token).Execute()
+	ctx := util.BaseAuthContext(token)
+	list, response, err := adminMessagesAPI.AdminMessagesSummarizeGet(ctx).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}

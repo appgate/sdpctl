@@ -8,7 +8,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -91,7 +91,7 @@ func upgradeCancelRun(cmd *cobra.Command, opts *upgradeCancelOptions) error {
 	}
 	opts.ciMode = ciFlag
 
-	ctx := context.WithValue(context.Background(), appliancepkg.Caller, cmd.CalledAs())
+	ctx := context.WithValue(util.BaseAuthContext(a.Token), appliancepkg.Caller, cmd.CalledAs())
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
 	stats, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 	if err != nil {
@@ -199,7 +199,7 @@ func upgradeCancelRun(cmd *cobra.Command, opts *upgradeCancelOptions) error {
 	}
 
 	if opts.delete {
-		files, err := a.ListFiles(context.Background(), nil, false)
+		files, err := a.ListFiles(util.BaseAuthContext(a.Token), nil, false)
 		if err != nil {
 			return err
 		}

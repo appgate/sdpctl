@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io"
 
@@ -49,9 +48,9 @@ func privilegeRun(opts *privilegeOption) error {
 	if err != nil {
 		return err
 	}
+	ctx := util.BaseAuthContext(token)
 	authenticator := auth.NewAuth(client)
-
-	response, err := authenticator.Authorization(context.Background(), token)
+	response, err := authenticator.Authorization(ctx)
 	if err != nil {
 		return err
 	}

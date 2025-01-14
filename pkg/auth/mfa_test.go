@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/google/go-cmp/cmp"
@@ -311,7 +311,8 @@ func TestAuthAuthorization(t *testing.T) {
 			a := &Auth{
 				APIClient: registry.Client,
 			}
-			got, err := a.Authorization(context.TODO(), "abc123")
+			ctx := context.WithValue(context.Background(), openapi.ContextAccessToken, "abc123")
+			got, err := a.Authorization(ctx)
 			if (err != nil) != tt.wantErr {
 				if !errors.Is(err, ErrPreConditionFailed) {
 					t.Fatalf("Expected ErrPreConditionFailed, got %s", err)
@@ -397,7 +398,8 @@ func TestAuthInitializeOTP(t *testing.T) {
 			a := &Auth{
 				APIClient: registry.Client,
 			}
-			got, err := a.InitializeOTP(context.TODO(), openapi.PtrString("password"), "token")
+			ctx := context.WithValue(context.Background(), openapi.ContextAccessToken, "token")
+			got, err := a.InitializeOTP(ctx, openapi.PtrString("password"))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Auth.InitializeOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -475,7 +477,8 @@ func TestAuthPushOTP(t *testing.T) {
 			a := &Auth{
 				APIClient: registry.Client,
 			}
-			got, err := a.PushOTP(context.TODO(), "987654", "token")
+			ctx := context.WithValue(context.Background(), openapi.ContextAccessToken, "token")
+			got, err := a.PushOTP(ctx, "987654")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Auth.PushOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -1,8 +1,6 @@
 package device
 
 import (
-	"context"
-
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -39,11 +37,11 @@ func NewDeviceListCmd(opts *DeviceOptions) *cobra.Command {
 }
 
 func deviceListRun(opts *DeviceOptions) error {
-	ctx := context.Background()
 	t, err := opts.Device(opts.Config)
 	if err != nil {
 		return err
 	}
+	ctx := util.BaseAuthContext(t.Token)
 
 	distinguishedNames, err := t.ListDistinguishedNames(ctx, opts.orderBy, opts.descending)
 	if err != nil {

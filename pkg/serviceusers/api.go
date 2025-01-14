@@ -3,7 +3,7 @@ package serviceusers
 import (
 	"context"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 )
 
@@ -20,7 +20,7 @@ func NewServiceUsersAPI(client *openapi.ServiceUsersApiService, token string) *S
 }
 
 func (su *ServiceUsersAPI) List(ctx context.Context) ([]openapi.ServiceUser, error) {
-	list, response, err := su.client.ServiceUsersGet(ctx).Authorization(su.token).Execute()
+	list, response, err := su.client.ServiceUsersGet(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -28,7 +28,7 @@ func (su *ServiceUsersAPI) List(ctx context.Context) ([]openapi.ServiceUser, err
 }
 
 func (su *ServiceUsersAPI) Create(ctx context.Context, userData openapi.ServiceUsersGetRequest) (*openapi.ServiceUser, error) {
-	result, response, err := su.client.ServiceUsersPost(ctx).ServiceUsersGetRequest(userData).Authorization(su.token).Execute()
+	result, response, err := su.client.ServiceUsersPost(ctx).ServiceUsersGetRequest(userData).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -36,7 +36,7 @@ func (su *ServiceUsersAPI) Create(ctx context.Context, userData openapi.ServiceU
 }
 
 func (su *ServiceUsersAPI) Read(ctx context.Context, id string) (*openapi.ServiceUser, error) {
-	user, response, err := su.client.ServiceUsersIdGet(ctx, id).Authorization(su.token).Execute()
+	user, response, err := su.client.ServiceUsersIdGet(ctx, id).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -44,7 +44,7 @@ func (su *ServiceUsersAPI) Read(ctx context.Context, id string) (*openapi.Servic
 }
 
 func (su *ServiceUsersAPI) Update(ctx context.Context, userData openapi.ServiceUser) (*openapi.ServiceUser, error) {
-	user, response, err := su.client.ServiceUsersIdPut(ctx, userData.GetId()).ServiceUser(userData).Authorization(su.token).Execute()
+	user, response, err := su.client.ServiceUsersIdPut(ctx, userData.GetId()).ServiceUser(userData).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -52,7 +52,7 @@ func (su *ServiceUsersAPI) Update(ctx context.Context, userData openapi.ServiceU
 }
 
 func (su *ServiceUsersAPI) Delete(ctx context.Context, id string) error {
-	response, err := su.client.ServiceUsersIdDelete(ctx, id).Authorization(su.token).Execute()
+	response, err := su.client.ServiceUsersIdDelete(ctx, id).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}

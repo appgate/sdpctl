@@ -1,7 +1,6 @@
 package appliance
 
 import (
-	"context"
 	"io"
 
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -50,7 +49,7 @@ func listRun(cmd *cobra.Command, args []string, opts *listOptions) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(a.Token)
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	allAppliances, err := a.List(ctx, filter, orderBy, descending)
 	if err != nil {

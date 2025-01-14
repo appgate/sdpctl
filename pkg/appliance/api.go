@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/sirupsen/logrus"
@@ -28,7 +28,7 @@ type Appliance struct {
 // List from the Collective
 // Filter is applied in app after getting all the appliances because the auto generated API screws up the 'filterBy' command
 func (a *Appliance) List(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.Appliance, error) {
-	appliances, response, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Authorization(a.Token).Execute()
+	appliances, response, err := a.APIClient.AppliancesApi.AppliancesGet(ctx).OrderBy("name").Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -41,7 +41,7 @@ func (a *Appliance) List(ctx context.Context, filter map[string]map[string]strin
 
 // Get return a single appliance based on applianceID
 func (a *Appliance) Get(ctx context.Context, applianceID string) (*openapi.Appliance, error) {
-	appliance, response, err := a.APIClient.AppliancesApi.AppliancesIdGet(ctx, applianceID).Authorization(a.Token).Execute()
+	appliance, response, err := a.APIClient.AppliancesApi.AppliancesIdGet(ctx, applianceID).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -64,7 +64,7 @@ const (
 )
 
 func (a *Appliance) UpgradeStatus(ctx context.Context, applianceID string) (*openapi.AppliancesIdUpgradeDelete200Response, error) {
-	status, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Authorization(a.Token).Execute()
+	status, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeGet(ctx, applianceID).Execute()
 	if err != nil {
 		return status, api.HTTPErrorResponse(response, err)
 	}
@@ -134,7 +134,7 @@ func (a *Appliance) UpgradeStatusMap(ctx context.Context, appliances []openapi.A
 }
 
 func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error {
-	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeDelete(ctx, applianceID).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
@@ -142,7 +142,7 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 }
 
 func (a *Appliance) ApplianceStatus(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.ApplianceWithStatusList, *http.Response, error) {
-	status, response, err := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Authorization(a.Token).Execute()
+	status, response, err := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Execute()
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}
@@ -162,7 +162,7 @@ func (a *Appliance) ApplianceStatus(ctx context.Context, filter map[string]map[s
 func (a *Appliance) FileStatus(ctx context.Context, filename string) (*openapi.File, error) {
 	log := logrus.WithField("file", filename)
 	log.Info("checking file status")
-	f, r, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameGet(ctx, filename).Authorization(a.Token).Execute()
+	f, r, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameGet(ctx, filename).Execute()
 	defer log.WithField("status", f.GetStatus()).Info("got file status")
 	if err != nil {
 		if r.StatusCode == http.StatusNotFound {
@@ -216,7 +216,7 @@ func (a *Appliance) UploadFile(ctx context.Context, r io.Reader, headers map[str
 }
 
 func (a *Appliance) UploadToController(ctx context.Context, url, filename string) error {
-	response, err := a.APIClient.ApplianceUpgradeApi.FilesPost(ctx).Authorization(a.Token).FilesGetRequest1(openapi.FilesGetRequest1{
+	response, err := a.APIClient.ApplianceUpgradeApi.FilesPost(ctx).FilesGetRequest1(openapi.FilesGetRequest1{
 		Url:      url,
 		Filename: filename,
 	}).Execute()
@@ -234,7 +234,7 @@ func (a *Appliance) UploadToController(ctx context.Context, url, filename string
 }
 
 func (a *Appliance) ListFiles(ctx context.Context, orderBy []string, descending bool) ([]openapi.File, error) {
-	list, response, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Authorization(a.Token).Execute()
+	list, response, err := a.APIClient.ApplianceUpgradeApi.FilesGet(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -245,7 +245,7 @@ func (a *Appliance) ListFiles(ctx context.Context, orderBy []string, descending 
 func (a *Appliance) DeleteFile(ctx context.Context, filename string) error {
 	log := logrus.WithField("file", filename)
 	log.Info("Deleting file from repository")
-	response, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Authorization(a.Token).Execute()
+	response, err := a.APIClient.ApplianceUpgradeApi.FilesFilenameDelete(ctx, filename).Execute()
 	if err != nil {
 		log.WithError(err).Error("failed to delete file")
 		log.WithField("response", response).Debug("got response from server")
@@ -264,7 +264,7 @@ func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devK
 		// will prevent errors with older api-version that don't support dev-keyring
 		u.DevKeyring = openapi.PtrBool(devKeyring)
 	}
-	change, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Authorization(a.Token).Execute()
+	change, r, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradePreparePost(ctx, id).ApplianceUpgrade(u).Execute()
 	if err != nil {
 		if r == nil {
 			return "", fmt.Errorf("No response during prepare %w", err)
@@ -279,7 +279,7 @@ func (a *Appliance) PrepareFileOn(ctx context.Context, filename, id string, devK
 }
 
 func (a *Appliance) UpdateAppliance(ctx context.Context, id string, appliance openapi.Appliance) error {
-	_, response, err := a.APIClient.AppliancesApi.AppliancesIdPut(ctx, id).Appliance(appliance).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.AppliancesApi.AppliancesIdPut(ctx, id).Appliance(appliance).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
@@ -302,7 +302,7 @@ func (a *Appliance) UpdateMaintenanceMode(ctx context.Context, id string, value 
 	o := openapi.AppliancesIdMaintenancePostRequest{
 		Enabled: value,
 	}
-	m, response, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).AppliancesIdMaintenancePostRequest(o).Authorization(a.Token).Execute()
+	m, response, err := a.APIClient.ApplianceMaintenanceApi.AppliancesIdMaintenancePost(ctx, id).AppliancesIdMaintenancePostRequest(o).Execute()
 	if err != nil {
 		return "", api.HTTPErrorResponse(response, err)
 	}
@@ -321,7 +321,7 @@ func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartit
 	o := openapi.AppliancesIdUpgradeCompletePostRequest{
 		SwitchPartition: openapi.PtrBool(SwitchPartition),
 	}
-	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeCompletePost(ctx, id).AppliancesIdUpgradeCompletePostRequest(o).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeCompletePost(ctx, id).AppliancesIdUpgradeCompletePostRequest(o).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
@@ -329,7 +329,7 @@ func (a *Appliance) UpgradeComplete(ctx context.Context, id string, SwitchPartit
 }
 
 func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error {
-	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeSwitchPartitionPost(ctx, id).Authorization(a.Token).Execute()
+	_, response, err := a.APIClient.ApplianceUpgradeApi.AppliancesIdUpgradeSwitchPartitionPost(ctx, id).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
@@ -337,7 +337,7 @@ func (a *Appliance) UpgradeSwitchPartition(ctx context.Context, id string) error
 }
 
 func (a *Appliance) ApplianceSwitchPartition(ctx context.Context, id string) error {
-	req := a.APIClient.ApplianceApi.AppliancesIdSwitchPartitionPost(ctx, id).Authorization(a.Token)
+	req := a.APIClient.ApplianceApi.AppliancesIdSwitchPartitionPost(ctx, id)
 	_, _, err := req.Execute()
 	if err != nil {
 		return err
@@ -354,7 +354,7 @@ func (a *Appliance) ForceDisableControllers(ctx context.Context, disable []opena
 	postBody := openapi.AppliancesForceDisableControllersPostRequest{
 		ApplianceIds: ids,
 	}
-	result, response, err := a.APIClient.AppliancesApi.AppliancesForceDisableControllersPost(ctx).AppliancesForceDisableControllersPostRequest(postBody).Authorization(a.Token).Execute()
+	result, response, err := a.APIClient.AppliancesApi.AppliancesForceDisableControllersPost(ctx).AppliancesForceDisableControllersPostRequest(postBody).Execute()
 	if err != nil {
 		return nil, "", api.HTTPErrorResponse(response, err)
 	}
@@ -367,7 +367,7 @@ func (a *Appliance) ForceDisableControllers(ctx context.Context, disable []opena
 }
 
 func (a *Appliance) RepartitionIPAllocations(ctx context.Context) (string, error) {
-	_, resp, err := a.APIClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Authorization(a.Token).Execute()
+	_, resp, err := a.APIClient.AppliancesApi.AppliancesRepartitionIpAllocationsPost(ctx).Execute()
 	if err != nil {
 		return "", api.HTTPErrorResponse(resp, err)
 	}
@@ -380,7 +380,7 @@ func (a *Appliance) RepartitionIPAllocations(ctx context.Context) (string, error
 }
 
 func (a *Appliance) ZTPStatus(ctx context.Context) (*openapi.ZtpStatus, error) {
-	result, response, err := a.APIClient.ZTPApi.ZtpGet(ctx).Authorization(a.Token).Execute()
+	result, response, err := a.APIClient.ZTPApi.ZtpGet(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -391,7 +391,7 @@ func (a *Appliance) ZTPStatus(ctx context.Context) (*openapi.ZtpStatus, error) {
 }
 
 func (a *Appliance) ZTPUpdateNotify(ctx context.Context) (*openapi.ZtpVersionStatus, error) {
-	result, response, err := a.APIClient.ZTPApi.ZtpServicesVersionPost(ctx).Authorization(a.Token).Execute()
+	result, response, err := a.APIClient.ZTPApi.ZtpServicesVersionPost(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 )
 
@@ -63,8 +63,8 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 }
 
 // Authorization HTTP GET /authorization
-func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginResponse, error) {
-	loginResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Authorization(token).Execute()
+func (a *Auth) Authorization(ctx context.Context) (*openapi.LoginResponse, error) {
+	loginResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusPreconditionFailed {
 			return loginResponse, ErrPreConditionFailed
@@ -75,9 +75,9 @@ func (a *Auth) Authorization(ctx context.Context, token string) (*openapi.LoginR
 }
 
 // InitializeOTP HTTP POST /authentication/otp/initialize
-func (a *Auth) InitializeOTP(ctx context.Context, password *string, token string) (*openapi.AuthenticationOtpInitializePost200Response, error) {
+func (a *Auth) InitializeOTP(ctx context.Context, password *string) (*openapi.AuthenticationOtpInitializePost200Response, error) {
 	o := openapi.AuthenticationOtpInitializePostRequest{UserPassword: password}
-	r, response, err := a.APIClient.LoginApi.AuthenticationOtpInitializePost(ctx).Authorization(token).AuthenticationOtpInitializePostRequest(o).Execute()
+	r, response, err := a.APIClient.LoginApi.AuthenticationOtpInitializePost(ctx).AuthenticationOtpInitializePostRequest(o).Execute()
 	if err != nil {
 		return r, api.HTTPErrorResponse(response, err)
 	}
@@ -87,11 +87,11 @@ func (a *Auth) InitializeOTP(ctx context.Context, password *string, token string
 var ErrInvalidOneTimePassword = errors.New("Invalid one-time password")
 
 // PushOTP HTTP POST /authentication/otp
-func (a *Auth) PushOTP(ctx context.Context, answer, token string) (*openapi.LoginResponse, error) {
+func (a *Auth) PushOTP(ctx context.Context, answer string) (*openapi.LoginResponse, error) {
 	o := openapi.AuthenticationOtpPostRequest{
 		Otp: answer,
 	}
-	newToken, response, err := a.APIClient.LoginApi.AuthenticationOtpPost(ctx).AuthenticationOtpPostRequest(o).Authorization(token).Execute()
+	newToken, response, err := a.APIClient.LoginApi.AuthenticationOtpPost(ctx).AuthenticationOtpPostRequest(o).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusUnauthorized {
 			return newToken, ErrInvalidOneTimePassword
