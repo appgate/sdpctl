@@ -2,12 +2,11 @@ package appliance
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"text/template"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -75,7 +74,7 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 			}
 			opts.api = api
 
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(api.Token)
 			if opts.id == nil {
 				id, err := appliancepkg.PromptSelect(ctx, api, nil, nil, false)
 				if err != nil {
@@ -127,8 +126,8 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 }
 
 func switchPartitionRunE(opts *options) error {
-	ctx := context.Background()
 	api := opts.api
+	ctx := util.BaseAuthContext(opts.api.Token)
 	if api.ApplianceStats == nil {
 		api.ApplianceStats = &appliancepkg.ApplianceStatus{
 			Appliance: api,

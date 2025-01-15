@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
@@ -20,7 +20,7 @@ type Token struct {
 }
 
 func (t *Token) ListDistinguishedNames(ctx context.Context, orderBy []string, descending bool) ([]openapi.DistinguishedName, error) {
-	dn, response, err := t.APIClient.ActiveDevicesApi.TokenRecordsDnGet(ctx).Authorization(t.Token).Execute()
+	dn, response, err := t.APIClient.ActiveDevicesApi.TokenRecordsDnGet(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -28,7 +28,7 @@ func (t *Token) ListDistinguishedNames(ctx context.Context, orderBy []string, de
 }
 
 func (t *Token) RevokeByDistinguishedName(request openapi.ApiTokenRecordsRevokedByDnDistinguishedNamePutRequest, body openapi.TokenRevocationRequest) (*http.Response, error) {
-	_, response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
+	_, response, err := request.TokenRevocationRequest(body).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -36,7 +36,7 @@ func (t *Token) RevokeByDistinguishedName(request openapi.ApiTokenRecordsRevoked
 }
 
 func (t *Token) RevokeByTokenType(request openapi.ApiTokenRecordsRevokedByTypeTokenTypePutRequest, body openapi.TokenRevocationRequest) (*http.Response, error) {
-	_, response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
+	_, response, err := request.TokenRevocationRequest(body).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -44,7 +44,7 @@ func (t *Token) RevokeByTokenType(request openapi.ApiTokenRecordsRevokedByTypeTo
 }
 
 func (t *Token) ReevaluateByDistinguishedName(ctx context.Context, dn string) ([]string, error) {
-	reevaluatedDn, response, err := t.APIClient.ActiveDevicesApi.TokenRecordsReevalByDnDistinguishedNamePost(ctx, dn).Authorization(t.Token).Execute()
+	reevaluatedDn, response, err := t.APIClient.ActiveDevicesApi.TokenRecordsReevalByDnDistinguishedNamePost(ctx, dn).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

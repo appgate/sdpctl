@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/prompt"
 )
 
