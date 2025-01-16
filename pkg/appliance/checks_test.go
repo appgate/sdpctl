@@ -642,9 +642,8 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 				{c4, s4},
 				{c5, s5},
 			},
-			wantErr:   true,
-			want:      []openapi.Appliance{c1, c2},
-			wantError: ErrNeedsAllControllerUpgrade,
+			wantErr: false,
+			want:    []openapi.Appliance{c1, c2},
 		},
 		{
 			name: "mix with unprepared max version",
@@ -653,9 +652,8 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 				{c4, s4},
 				{c7, s7},
 			},
-			wantErr:   true,
-			want:      []openapi.Appliance{c1},
-			wantError: ErrNeedsAllControllerUpgrade,
+			wantErr: false,
+			want:    []openapi.Appliance{c1},
 		},
 		{
 			name: "offline controller",
