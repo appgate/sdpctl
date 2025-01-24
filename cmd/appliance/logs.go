@@ -93,11 +93,11 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	if opts.Version < 22 {
 		requestURL = fmt.Sprintf("%s/appliances/%s/logs", opts.BaseURL, opts.ApplianceID)
 	} else {
-		processed_str := "false"
+		processedStr := "false"
 		if opts.processed {
-			processed_str = "true"
+			processedStr = "true"
 		}
-		requestURL = fmt.Sprintf("%s/appliances/%s/logs?since=%d&journalctl_processed=%s", opts.BaseURL, opts.ApplianceID, opts.since, processed_str)
+		requestURL = fmt.Sprintf("%s/appliances/%s/logs?since=%d&journalctl_processed=%s", opts.BaseURL, opts.ApplianceID, opts.since, processedStr)
 	}
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
