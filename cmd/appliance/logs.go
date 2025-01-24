@@ -68,6 +68,8 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&opts.Path, "path", "", "", "Optional path to write to")
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	cmd.Flags().BoolVar(&opts.processed, "process-logs", false, "Process the logs server side. Smaller download but very heavy to generate")
+	cmd.Flags().IntVar(&opts.since, "since", 7, "Number of days of logs to process")
 	return cmd
 }
 
