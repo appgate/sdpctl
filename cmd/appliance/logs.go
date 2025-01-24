@@ -85,6 +85,9 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	if len(opts.Path) > 0 {
 		path = opts.Path
 	}
+	if opts.since <= 0 {
+		return errors.New("Invalid since")
+	}
 
 	requestURL := ""
 	if opts.Version < 22 {
