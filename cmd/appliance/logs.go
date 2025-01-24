@@ -31,6 +31,8 @@ type logOpts struct {
 	Version    int
 	Path       string
 	json       bool
+	since int
+	processed bool
 }
 
 func NewLogsCmd(f *factory.Factory) *cobra.Command {
@@ -48,6 +50,8 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		f.GetSpinnerOutput(),
 		f.Config.Version,
 		"",
+		false,
+		7,
 		false,
 	}
 	cmd := &cobra.Command{
@@ -84,8 +88,11 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	if opts.Version < 22 {
 		requestURL = fmt.Sprintf("%s/appliances/%s/logs", opts.BaseURL, opts.ApplianceID)
 	} else {
-		requestURL = fmt.Sprintf("%s/appliances/%s/logs?since=1&journalctl_processed=false", opts.BaseURL, opts.ApplianceID)
-		fmt.Println(requestURL)
+		processed_str := "false"
+		if opts.processed {
+			processed_str = "true"
+		}
+		requestURL = fmt.Sprintf("%s/appliances/%s/logs?since=%d&journalctl_processed=%s", opts.BaseURL, opts.ApplianceID, opts.since, processed_str)
 	}
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
