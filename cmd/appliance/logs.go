@@ -31,6 +31,8 @@ type logOpts struct {
 	Version    int
 	Path       string
 	json       bool
+	since      int
+	processed  bool
 }
 
 func NewLogsCmd(f *factory.Factory) *cobra.Command {
@@ -49,6 +51,8 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 		f.Config.Version,
 		"",
 		false,
+		7,
+		false,
 	}
 	cmd := &cobra.Command{
 		Use:     "logs",
@@ -64,6 +68,8 @@ func NewLogsCmd(f *factory.Factory) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&opts.Path, "path", "", "", "Optional path to write to")
 	cmd.Flags().BoolVar(&opts.json, "json", false, "Display in JSON format")
+	cmd.Flags().BoolVar(&opts.processed, "process-logs", false, "Process the logs server side. Smaller download but very heavy to generate")
+	cmd.Flags().IntVar(&opts.since, "since", 7, "Number of days of logs to process")
 	return cmd
 }
 
@@ -79,8 +85,20 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 	if len(opts.Path) > 0 {
 		path = opts.Path
 	}
+	if opts.since <= 0 {
+		return errors.New("Invalid since")
+	}
 
-	requestURL := fmt.Sprintf("%s/appliances/%s/logs", opts.BaseURL, opts.ApplianceID)
+	requestURL := ""
+	if opts.Version < 22 {
+		requestURL = fmt.Sprintf("%s/appliances/%s/logs", opts.BaseURL, opts.ApplianceID)
+	} else {
+		processedStr := "false"
+		if opts.processed {
+			processedStr = "true"
+		}
+		requestURL = fmt.Sprintf("%s/appliances/%s/logs?since=%d&journalctl_processed=%s", opts.BaseURL, opts.ApplianceID, opts.since, processedStr)
+	}
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		return err
