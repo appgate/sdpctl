@@ -80,7 +80,13 @@ func logsRun(cmd *cobra.Command, args []string, opts *logOpts) error {
 		path = opts.Path
 	}
 
-	requestURL := fmt.Sprintf("%s/appliances/%s/logs", opts.BaseURL, opts.ApplianceID)
+	requestURL := ""
+	if opts.Version < 22 {
+		requestURL = fmt.Sprintf("%s/appliances/%s/logs", opts.BaseURL, opts.ApplianceID)
+	} else {
+		requestURL = fmt.Sprintf("%s/appliances/%s/logs?since=1&journalctl_processed=false", opts.BaseURL, opts.ApplianceID)
+		fmt.Println(requestURL)
+	}
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		return err
