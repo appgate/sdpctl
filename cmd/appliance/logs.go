@@ -31,8 +31,8 @@ type logOpts struct {
 	Version    int
 	Path       string
 	json       bool
-	since int
-	processed bool
+	since      int
+	processed  bool
 }
 
 func NewLogsCmd(f *factory.Factory) *cobra.Command {
