@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -115,11 +115,11 @@ func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 }
 
 func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
-	ctx := context.Background()
 	t, err := opts.TokenOptions.Token(opts.TokenOptions.Config)
 	if err != nil {
 		return err
 	}
+	ctx := util.BaseAuthContext(t.Token)
 
 	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByDnDistinguishedNamePut(ctx, args[0])
 
