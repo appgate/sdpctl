@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/klauspost/compress/zstd"
 
 	"github.com/appgate/journaldreader/journaldreader"
 )
@@ -57,6 +58,11 @@ func processJournalFile(file string, path string) error {
 		return err
 	}
 	defer r.Close()
+
+	r.RegisterDecompressor(93, func(in io.Reader) io.ReadCloser {
+		dec, _ := zstd.NewReader(in)
+		return io.NopCloser(dec)
+	})
 
 	var extractedFiles []string
 
