@@ -12,9 +12,9 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/hashicorp/go-multierror"
+	"github.com/klauspost/compress/zstd"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/klauspost/compress/zstd"
 
 	"github.com/appgate/journaldreader/journaldreader"
 )
