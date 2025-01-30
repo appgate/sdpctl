@@ -53,14 +53,14 @@ func logsExtractRun(args []string, opts *logextractOpts) error {
 }
 
 func processJournalFile(file string, path string) error {
-	const ZIPFILE_ZSTANDARD uint16 = 93 // Magic number for zstd in zip format
+	const zipfileZstandard uint16 = 93 // Magic number for zstd in zip format
 	r, err := zip.OpenReader(file)
 	if err != nil {
 		return err
 	}
 	defer r.Close()
 
-	r.RegisterDecompressor(ZIPFILE_ZSTANDARD, func(in io.Reader) io.ReadCloser {
+	r.RegisterDecompressor(zipfileZstandard, func(in io.Reader) io.ReadCloser {
 		dec, _ := zstd.NewReader(in)
 		return io.NopCloser(dec)
 	})
