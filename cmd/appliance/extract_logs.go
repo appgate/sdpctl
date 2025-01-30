@@ -12,6 +12,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/hashicorp/go-multierror"
+	"github.com/klauspost/compress/zstd"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -52,11 +53,17 @@ func logsExtractRun(args []string, opts *logextractOpts) error {
 }
 
 func processJournalFile(file string, path string) error {
+	const zipfileZstandard uint16 = 93 // Magic number for zstd in zip format
 	r, err := zip.OpenReader(file)
 	if err != nil {
 		return err
 	}
 	defer r.Close()
+
+	r.RegisterDecompressor(zipfileZstandard, func(in io.Reader) io.ReadCloser {
+		dec, _ := zstd.NewReader(in)
+		return io.NopCloser(dec)
+	})
 
 	var extractedFiles []string
 
