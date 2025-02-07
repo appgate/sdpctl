@@ -30,9 +30,11 @@
   &gt; sdpctl appliance logs a68c1f69-534d-4060-a052-b223d42bac2c --path /tmp
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>  -h, --help          help for logs
-      --json          Display in JSON format
-      --path string   Optional path to write to
+<pre class="code-editor margin-bottom"><code>  -h, --help           help for logs
+      --json           Display in JSON format
+      --path string    Optional path to write to
+      --process-logs   Process the logs server side. Smaller download but very heavy to generate
+      --since int      Number of days of logs to process (default 7)
 </code></pre>
 <hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
 <pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
