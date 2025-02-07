@@ -40,7 +40,8 @@ builds:
       - CGO_ENABLED=1
     hooks:
       post:
-        - "{{ .Env.HOOK_PATH }}/sign-macos.sh '{{ .Path }}'"
+        - cmd: "{{ .Env.HOOK_PATH }}/sign-macos.sh '{{ .Path }}'"
+          output: true
 
   - <<: *build_defaults
     id: windows
@@ -50,7 +51,8 @@ builds:
       - CGO_ENABLED=0
     hooks:
       post:
-        - "{{ .Env.HOOK_PATH }}/sign-windows.sh '{{ .Path }}'"
+        - cmd: "{{ .Env.HOOK_PATH }}/sign-windows.sh '{{ .Path }}'"
+          output: true
 
 universal_binaries:
   - replace: false
