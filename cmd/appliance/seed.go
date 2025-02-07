@@ -1,7 +1,6 @@
 package appliance
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -79,7 +78,7 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(a.Token)
 			filter := map[string]map[string]string{
 				"include": {
 					"activated": "false",
@@ -194,11 +193,11 @@ func seedRun(cmd *cobra.Command, args []string, opts *seedOpts) error {
 	if err != nil {
 		return err
 	}
-	token, err := opts.Config.GetBearTokenHeaderValue()
+	_, err = opts.Config.GetBearTokenHeaderValue()
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(a.Token)
 	appliance, err := a.Get(ctx, opts.applianceID)
 	if err != nil {
 		return err
@@ -244,14 +243,14 @@ func seedRun(cmd *cobra.Command, args []string, opts *seedOpts) error {
 		ext  string
 	)
 	if opts.iso {
-		seed, response, err := a.APIClient.AppliancesApi.AppliancesIdExportIsoPost(ctx, appliance.GetId()).SSHConfig(*sshConfig).Authorization(token).Execute()
+		seed, response, err := a.APIClient.AppliancesApi.AppliancesIdExportIsoPost(ctx, appliance.GetId()).SSHConfig(*sshConfig).Execute()
 		if err != nil {
 			return api.HTTPErrorResponse(response, err)
 		}
 		data = []byte(seed.GetIso())
 		ext = "iso"
 	} else {
-		seed, response, err := a.APIClient.AppliancesApi.AppliancesIdExportPost(ctx, appliance.GetId()).SSHConfig(*sshConfig).Authorization(token).Execute()
+		seed, response, err := a.APIClient.AppliancesApi.AppliancesIdExportPost(ctx, appliance.GetId()).SSHConfig(*sshConfig).Execute()
 		if err != nil {
 			return api.HTTPErrorResponse(response, err)
 		}

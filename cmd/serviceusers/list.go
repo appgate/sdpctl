@@ -1,7 +1,6 @@
 package serviceusers
 
 import (
-	"context"
 	"strings"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -11,7 +10,9 @@ import (
 )
 
 func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
+	token, _ := f.Config.GetBearTokenHeaderValue()
 	opts := ServiceUsersOptions{
+		Token:  token,
 		Config: f.Config,
 		API:    f.ServiceUsers,
 		Out:    f.IOOutWriter,
@@ -27,7 +28,7 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(opts.Token)
 
 			users, err := api.List(ctx)
 			if err != nil {
