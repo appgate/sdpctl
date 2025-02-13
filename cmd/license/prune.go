@@ -24,6 +24,7 @@ func NewPruneCmd(opts *licenseOpts) *cobra.Command {
 		RunE: func(c *cobra.Command, args []string) error {
 			return pruneRun(c, args, opts)
 		},
+		Hidden: true,
 	}
 }
 
