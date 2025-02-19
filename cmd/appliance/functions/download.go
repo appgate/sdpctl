@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -106,7 +106,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 				if err != nil {
 					return err
 				}
-				ctx := context.Background()
+				ctx := util.BaseAuthContext(api.Token)
 				appliances, err := api.List(ctx, appliancepkg.DefaultCommandFilter, []string{"name"}, false)
 				if err != nil {
 					return err
@@ -174,10 +174,13 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
+			api, err := f.Appliance(f.Config)
+			if err != nil {
+				return err
+			}
 			var wg sync.WaitGroup
 			errChan := make(chan error)
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(api.Token)
 			var p *tui.Progress
 			if !opts.ciMode {
 				p = tui.New(ctx, f.SpinnerOut)
