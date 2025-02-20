@@ -97,6 +97,22 @@ func processJournalFile(file string, path string) error {
 				return err
 			}
 
+			// Create the subdirectory tree
+			if strings.Contains(f.Name, "/") {
+				parts := strings.Split(f.Name, "/")
+				parts = parts[:len(parts)-1]
+				prevpath := path
+
+				for i, part := range parts {
+					fmt.Printf("Part %d: %s\n", i, part)
+					dirpath := filepath.Join(prevpath, part)
+
+					err = os.Mkdir(dirpath, os.ModePerm)
+					if err != nil && !os.IsExist(err) {
+						return err
+					}
+				}
+			}
 			extracted, err := os.Create(filepath.Join(path, f.Name))
 			if err != nil {
 				return err
