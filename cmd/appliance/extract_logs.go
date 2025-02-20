@@ -90,6 +90,24 @@ func processJournalFile(file string, path string) error {
 			}
 			rc.Close()
 			extracted.Close()
+		} else {
+			log.Infof("Extracting file %s", f.Name)
+			rc, err := f.Open()
+			if err != nil {
+				return err
+			}
+
+			extracted, err := os.Create(filepath.Join(path, f.Name))
+			if err != nil {
+				return err
+			}
+
+			_, err = io.Copy(extracted, rc)
+			if err != nil {
+				return err
+			}
+			rc.Close()
+			extracted.Close()
 		}
 	}
 
