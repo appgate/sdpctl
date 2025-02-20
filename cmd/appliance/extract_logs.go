@@ -106,7 +106,6 @@ func processJournalFile(file string, path string, unzipOnly bool) error {
 				prevpath := path
 
 				for i, part := range parts {
-					fmt.Printf("Part %d: %s\n", i, part)
 					dirpath := filepath.Join(prevpath, part)
 
 					err = os.Mkdir(dirpath, os.ModePerm)
