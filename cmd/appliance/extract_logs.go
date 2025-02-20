@@ -131,7 +131,7 @@ func processJournalFile(file string, path string, unzipOnly bool) error {
 	// Sort the extracted journald files
 	extractedFiles = journaldreader.SortJournalFiles(extractedFiles)
 
-	log.Infof("Extracting journal files complete. Processing...")
+	log.Infof("Decompressing complete. Processing...")
 
 	textlogs := make(map[string]*os.File)
 
