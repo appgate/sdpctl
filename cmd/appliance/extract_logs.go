@@ -20,7 +20,8 @@ import (
 )
 
 type logextractOpts struct {
-	Path string
+	Path      string
+	UnzipOnly bool
 }
 
 func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
@@ -38,6 +39,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.Path, "path", ".", "Optional path to write to")
+	cmd.Flags().BoolVar(&opts.UnzipOnly, "unzip-only", false, "Unzip the archive without processing the journal files")
 	return cmd
 }
 
@@ -45,14 +47,14 @@ func logsExtractRun(args []string, opts *logextractOpts) error {
 	var errs *multierror.Error
 	for i := 0; i < len(args); i++ {
 		log.Infof("Starting processing %s", args[i])
-		if err := processJournalFile(args[i], opts.Path); err != nil {
+		if err := processJournalFile(args[i], opts.Path, opts.UnzipOnly); err != nil {
 			errs = multierror.Append(errs, err)
 		}
 	}
 	return errs.ErrorOrNil()
 }
 
-func processJournalFile(file string, path string) error {
+func processJournalFile(file string, path string, unzipOnly bool) error {
 	const zipfileZstandard uint16 = 93 // Magic number for zstd in zip format
 	r, err := zip.OpenReader(file)
 	if err != nil {
@@ -70,7 +72,7 @@ func processJournalFile(file string, path string) error {
 	// Iterate through the files in the archive,
 	// printing some of their contents.
 	for _, f := range r.File {
-		if strings.HasSuffix(f.Name, ".journal") {
+		if strings.HasSuffix(f.Name, ".journal") && !unzipOnly {
 			log.Infof("Extracting journal file %s", f.Name)
 
 			rc, err := f.Open()
