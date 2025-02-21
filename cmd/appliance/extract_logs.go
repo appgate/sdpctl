@@ -20,7 +20,8 @@ import (
 )
 
 type logextractOpts struct {
-	Path string
+	Path      string
+	UnzipOnly bool
 }
 
 func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
@@ -38,6 +39,7 @@ func NewExtractLogsCmd(f *factory.Factory) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&opts.Path, "path", ".", "Optional path to write to")
+	cmd.Flags().BoolVar(&opts.UnzipOnly, "unzip-only", false, "Unzip the archive without processing the journal files")
 	return cmd
 }
 
@@ -45,14 +47,14 @@ func logsExtractRun(args []string, opts *logextractOpts) error {
 	var errs *multierror.Error
 	for i := 0; i < len(args); i++ {
 		log.Infof("Starting processing %s", args[i])
-		if err := processJournalFile(args[i], opts.Path); err != nil {
+		if err := processJournalFile(args[i], opts.Path, opts.UnzipOnly); err != nil {
 			errs = multierror.Append(errs, err)
 		}
 	}
 	return errs.ErrorOrNil()
 }
 
-func processJournalFile(file string, path string) error {
+func processJournalFile(file string, path string, unzipOnly bool) error {
 	const zipfileZstandard uint16 = 93 // Magic number for zstd in zip format
 	r, err := zip.OpenReader(file)
 	if err != nil {
@@ -70,7 +72,7 @@ func processJournalFile(file string, path string) error {
 	// Iterate through the files in the archive,
 	// printing some of their contents.
 	for _, f := range r.File {
-		if strings.HasSuffix(f.Name, ".journal") {
+		if strings.HasSuffix(f.Name, ".journal") && !unzipOnly {
 			log.Infof("Extracting journal file %s", f.Name)
 
 			rc, err := f.Open()
@@ -90,13 +92,46 @@ func processJournalFile(file string, path string) error {
 			}
 			rc.Close()
 			extracted.Close()
+		} else {
+			log.Infof("Extracting file %s", f.Name)
+			rc, err := f.Open()
+			if err != nil {
+				return err
+			}
+
+			// Create the subdirectory tree
+			if strings.Contains(f.Name, "/") {
+				parts := strings.Split(f.Name, "/")
+				parts = parts[:len(parts)-1]
+				prevpath := path
+
+				for _, part := range parts {
+					dirpath := filepath.Join(prevpath, part)
+
+					err = os.Mkdir(dirpath, os.ModePerm)
+					if err != nil && !os.IsExist(err) {
+						return err
+					}
+				}
+			}
+			extracted, err := os.Create(filepath.Join(path, f.Name))
+			if err != nil {
+				return err
+			}
+
+			_, err = io.Copy(extracted, rc)
+			if err != nil {
+				return err
+			}
+			rc.Close()
+			extracted.Close()
 		}
 	}
 
 	// Sort the extracted journald files
 	extractedFiles = journaldreader.SortJournalFiles(extractedFiles)
 
-	log.Infof("Extracting journal files complete. Processing...")
+	log.Infof("Decompressing complete. Processing...")
 
 	textlogs := make(map[string]*os.File)
 
