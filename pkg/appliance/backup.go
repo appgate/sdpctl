@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -72,7 +72,6 @@ func PrepareBackup(opts *BackupOpts) error {
 func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	spinnerOut := opts.SpinnerOut()
 	backupIDs := make(map[string]string)
-	ctx := context.Background()
 
 	var err error
 	opts.CiMode, err = cmd.Flags().GetBool("ci-mode")
@@ -87,6 +86,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	if err != nil {
 		return backupIDs, err
 	}
+	ctx := util.BaseAuthContext(app.Token)
 	token, err := opts.Config.GetBearTokenHeaderValue()
 	if err != nil {
 		return backupIDs, err
@@ -225,7 +225,6 @@ NO_ENABLE_CHECK:
 	defer progressBars.Wait()
 
 	wg.Add(count)
-
 	retryStatus := func(ctx context.Context, applianceID, backupID string, tracker *tui.Tracker) error {
 		bo := backoff.NewExponentialBackOff()
 		bo.MaxElapsedTime = 0
@@ -346,11 +345,11 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 	if err != nil {
 		return err
 	}
-	token, err := opts.Config.GetBearTokenHeaderValue()
+	_, err = opts.Config.GetBearTokenHeaderValue()
 	if err != nil {
 		return err
 	}
-	ctxWithGPGAccept := context.WithValue(context.Background(), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
+	ctxWithGPGAccept := context.WithValue(util.BaseAuthContext(app.Token), openapi.ContextAcceptHeader, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", opts.Config.Version))
 	g, ctx := errgroup.WithContext(ctxWithGPGAccept)
 	for appID, bckID := range IDs {
 		ID := appID
@@ -358,7 +357,7 @@ func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
 		logger := log.WithFields(log.Fields{"appliance_id": appID, "backup_id": bckID})
 		logger.Info("cleaning up")
 		g.Go(func() error {
-			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Authorization(token).Execute()
+			res, err := app.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdDelete(ctx, ID, backupID).Execute()
 			if err != nil {
 				logger.WithError(err).Error("cleanup failed")
 				return api.HTTPErrorResponse(res, err)
@@ -433,7 +432,7 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 }
 
 func backupEnabled(ctx context.Context, client *openapi.APIClient, token string, noInteraction bool) (bool, error) {
-	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
+	settings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusForbidden {
 			return false, api.ForbiddenErr
@@ -459,11 +458,11 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 				return false, err
 			}
 			settings.SetBackupPassphrase(password)
-			result, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Authorization(token).Execute()
+			result, err := client.GlobalSettingsApi.GlobalSettingsPut(ctx).GlobalSettings(*settings).Execute()
 			if err != nil {
 				return false, api.HTTPErrorResponse(result, err)
 			}
-			newSettings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(token).Execute()
+			newSettings, response, err := client.GlobalSettingsApi.GlobalSettingsGet(ctx).Execute()
 			if err != nil {
 				return false, api.HTTPErrorResponse(response, err)
 			}

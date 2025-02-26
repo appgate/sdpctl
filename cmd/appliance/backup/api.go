@@ -11,12 +11,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -67,12 +68,12 @@ func backupAPIrun(cmd *cobra.Command, args []string, opts *apiOptions) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
-	t, err := opts.Config.GetBearTokenHeaderValue()
+	token, err := opts.Config.GetBearTokenHeaderValue()
 	if err != nil {
 		return err
 	}
-	settings, response, err := apiClient.GlobalSettingsApi.GlobalSettingsGet(ctx).Authorization(t).Execute()
+	ctx := util.BaseAuthContext(token)
+	settings, response, err := apiClient.GlobalSettingsApi.GlobalSettingsGet(ctx).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}

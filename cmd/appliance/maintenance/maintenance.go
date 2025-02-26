@@ -1,7 +1,6 @@
 package maintenance
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -72,7 +71,7 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(a.Token)
 	primaryControllerHostname, err := opts.Config.GetHost()
 	if err != nil {
 		return err
@@ -111,7 +110,7 @@ func toggleRun(cmd *cobra.Command, args []string, opts *toggleOptions) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(a.Token)
 
 	if !opts.noInteractive {
 		fmt.Fprintf(opts.Out, "\n%s\n\n", `A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.

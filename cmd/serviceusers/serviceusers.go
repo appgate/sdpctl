@@ -11,6 +11,7 @@ import (
 )
 
 type ServiceUsersOptions struct {
+	Token  string
 	Config *configuration.Config
 	API    func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
 	In     io.ReadCloser

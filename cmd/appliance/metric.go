@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -42,11 +42,11 @@ func NewMetricCmd(f *factory.Factory) *cobra.Command {
 		Example: docs.ApplianceMetricsDoc.ExampleString(),
 		Aliases: []string{"metrics"},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
 			a, err := opts.Appliance(opts.Config)
 			if err != nil {
 				return err
 			}
+			ctx := util.BaseAuthContext(a.Token)
 
 			orderBy, err := cmd.Flags().GetStringSlice("order-by")
 			if err != nil {
@@ -99,24 +99,29 @@ func metricRun(cmd *cobra.Command, args []string, opts *metricOptions) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.WithValue(
-		context.Background(),
+	a, err := opts.Appliance(opts.Config)
+	if err != nil {
+		return err
+	}
+	ctx := util.BaseAuthContext(a.Token)
+	ctx = context.WithValue(
+		ctx,
 		openapi.ContextAcceptHeader,
 		fmt.Sprintf("application/vnd.appgate.peer-v%d+text", opts.Config.Version),
 	)
-	t, err := opts.Config.GetBearTokenHeaderValue()
+	_, err = opts.Config.GetBearTokenHeaderValue()
 	if err != nil {
 		return err
 	}
 	if len(opts.metric) > 0 {
-		data, response, err := client.ApplianceMetricsApi.AppliancesIdMetricsNameGet(ctx, opts.applianceID, opts.metric).Authorization(t).Execute()
+		data, response, err := client.ApplianceMetricsApi.AppliancesIdMetricsNameGet(ctx, opts.applianceID, opts.metric).Execute()
 		if err != nil {
 			return api.HTTPErrorResponse(response, err)
 		}
 		fmt.Fprintln(opts.Out, data)
 		return nil
 	}
-	data, response, err := client.ApplianceMetricsApi.AppliancesIdMetricsGet(ctx, opts.applianceID).Authorization(t).Execute()
+	data, response, err := client.ApplianceMetricsApi.AppliancesIdMetricsGet(ctx, opts.applianceID).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}

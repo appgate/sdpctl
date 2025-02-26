@@ -163,7 +163,7 @@ func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	// if the bearer token is in the config, we assume the current environment does not support a keyring, so we will use it.
 	// this will also include if the environment variable SDPCTL_BEARER is being used.
 	if c.BearerToken != nil && len(*c.BearerToken) > 10 {
-		return fmt.Sprintf("Bearer %s", *c.BearerToken), nil
+		return *c.BearerToken, nil
 	}
 	prefix, err := c.KeyringPrefix()
 	if err != nil {
@@ -173,7 +173,7 @@ func (c *Config) GetBearTokenHeaderValue() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Bearer %s", v), nil
+	return v, nil
 }
 
 // DefaultDeviceID return a unique ID in UUID format.

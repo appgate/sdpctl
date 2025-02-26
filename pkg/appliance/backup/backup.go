@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/cenkalti/backoff/v4"
@@ -40,7 +40,7 @@ func (b *Backup) Initiate(ctx context.Context, applianceID string, logs, audit b
 		Logs:  &logs,
 		Audit: &audit,
 	}
-	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, applianceID).Authorization(b.Token).AppliancesIdBackupPostRequest(o).Execute()
+	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupPost(ctx, applianceID).AppliancesIdBackupPostRequest(o).Execute()
 	if err != nil {
 		if response.StatusCode == http.StatusServiceUnavailable {
 			return "", api.UnavailableErr
@@ -105,8 +105,8 @@ func (b *Backup) Download(ctx context.Context, applianceID, backupID, destinatio
 	}
 	url = fmt.Sprintf("%s/appliances/%s/backup/%s", url, applianceID, backupID)
 	ctx = context.WithValue(ctx, api.ContextAcceptValue, fmt.Sprintf("application/vnd.appgate.peer-v%d+gpg", b.Version))
-
 	headReq, err := http.NewRequestWithContext(ctx, http.MethodHead, url, http.NoBody)
+
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,6 @@ func retryDownload(ctx context.Context, client *http.Client, f *os.File, url str
 			return backoff.Permanent(err)
 		}
 		req.Header.Set("Range", fmt.Sprintf("bytes=%d-", start))
-
 		log := logrus.WithField("request", req)
 		res, err := client.Do(req)
 		if err != nil {
@@ -163,7 +162,7 @@ const (
 func (b *Backup) Status(ctx context.Context, applianceID, backupID string) (*openapi.AppliancesIdBackupBackupIdStatusGet200Response, error) {
 	timeoutCTX, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(timeoutCTX, applianceID, backupID).Authorization(b.Token).Execute()
+	status, response, err := b.APIClient.ApplianceBackupApi.AppliancesIdBackupBackupIdStatusGet(timeoutCTX, applianceID, backupID).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

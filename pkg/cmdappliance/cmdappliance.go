@@ -1,7 +1,6 @@
 package cmdappliance
 
 import (
-	"context"
 	"errors"
 
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -47,7 +46,7 @@ func ArgsSelectAppliance(cmd *cobra.Command, args []string, opts *AppliancCmdOpt
 		if err != nil {
 			return err
 		}
-		applianceID, err := appliancepkg.PromptSelect(context.Background(), a, opts.Filter, orderBy, descending)
+		applianceID, err := appliancepkg.PromptSelect(util.BaseAuthContext(a.Token), a, opts.Filter, orderBy, descending)
 		if err != nil {
 			return err
 		}
