@@ -55,9 +55,27 @@ func tokenListRun(opts *TokenOptions) error {
 	}
 
 	p := util.NewPrinter(opts.Out, 4)
-	p.AddHeader("Distinguished Name", "Device ID", "Last Token Issued At", "Provider Name", "Username")
-	for _, dn := range distinguishedNames {
-		p.AddLine(dn.GetDistinguishedName(), dn.GetDeviceId(), dn.GetLastTokenIssuedAt(), dn.GetProviderName(), dn.GetUsername())
+	p.AddHeader(
+		"Distinguished Name",
+		"Device ID",
+		"Username",
+		"Provider Name",
+		"Device Type",
+		"Hostname",
+		"Onboarded At",
+		"Last Seen At",
+	)
+	for _, t := range distinguishedNames {
+		p.AddLine(
+			t.GetDistinguishedName(),
+			t.GetDeviceId(),
+			t.GetUsername(),
+			t.GetProviderName(),
+			t.GetDeviceType(),
+			t.GetHostname(),
+			t.GetOnBoardedAt(),
+			t.GetLastSeenAt(),
+		)
 	}
 	p.Print()
 	return nil

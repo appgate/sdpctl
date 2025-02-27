@@ -19,24 +19,16 @@ type Token struct {
 	Token      string
 }
 
-func (t *Token) ListDistinguishedNames(ctx context.Context, orderBy []string, descending bool) ([]openapi.DistinguishedName, error) {
-	dn, response, err := t.APIClient.ActiveDevicesApi.TokenRecordsDnGet(ctx).Authorization(t.Token).Execute()
+func (t *Token) ListDistinguishedNames(ctx context.Context, orderBy []string, descending bool) ([]openapi.OnBoardedDevice, error) {
+	dn, response, err := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesGet(ctx).Authorization(t.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
 	return orderTokenList(dn.GetData(), orderBy, descending)
 }
 
-func (t *Token) RevokeByDistinguishedName(request openapi.ApiTokenRecordsRevokedByDnDistinguishedNamePutRequest, body openapi.TokenRevocationRequest) (*http.Response, error) {
-	_, response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
-	if err != nil {
-		return nil, api.HTTPErrorResponse(response, err)
-	}
-	return response, nil
-}
-
-func (t *Token) RevokeByTokenType(request openapi.ApiTokenRecordsRevokedByTypeTokenTypePutRequest, body openapi.TokenRevocationRequest) (*http.Response, error) {
-	_, response, err := request.Authorization(t.Token).TokenRevocationRequest(body).Execute()
+func (t *Token) RevokeByDistinguishedName(request openapi.ApiOnBoardedDevicesRevokeTokensPostRequest, body openapi.DeviceRevocationRequest) (*http.Response, error) {
+	_, response, err := request.Authorization(t.Token).DeviceRevocationRequest(body).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -44,14 +36,14 @@ func (t *Token) RevokeByTokenType(request openapi.ApiTokenRecordsRevokedByTypeTo
 }
 
 func (t *Token) ReevaluateByDistinguishedName(ctx context.Context, dn string) ([]string, error) {
-	reevaluatedDn, response, err := t.APIClient.ActiveDevicesApi.TokenRecordsReevalByDnDistinguishedNamePost(ctx, dn).Authorization(t.Token).Execute()
+	reevaluatedDn, response, err := t.APIClient.ActiveDevicesApi.OnBoardedDevicesReevaluateDistinguishedNamePost(ctx, dn).Authorization(t.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
 	return reevaluatedDn.GetReevaluatedDistinguishedNames(), nil
 }
 
-func orderTokenList(tokens []openapi.DistinguishedName, orderBy []string, descending bool) ([]openapi.DistinguishedName, error) {
+func orderTokenList(tokens []openapi.OnBoardedDevice, orderBy []string, descending bool) ([]openapi.OnBoardedDevice, error) {
 	var errs *multierror.Error
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
@@ -66,7 +58,7 @@ func orderTokenList(tokens []openapi.DistinguishedName, orderBy []string, descen
 		case "device-id", "device":
 			sort.SliceStable(tokens, func(i, j int) bool { return tokens[i].GetDeviceId() < tokens[j].GetDeviceId() })
 		case "last-issued":
-			sort.SliceStable(tokens, func(i, j int) bool { return tokens[i].GetLastTokenIssuedAt() < tokens[j].GetLastTokenIssuedAt() })
+			sort.SliceStable(tokens, func(i, j int) bool { return tokens[i].GetLastSeenAt().Before(tokens[j].GetLastSeenAt()) })
 		default:
 			errs = multierror.Append(errs, fmt.Errorf("keyword not sortable: %s", orderBy[i]))
 		}

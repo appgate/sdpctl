@@ -94,10 +94,6 @@ func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if opts.ByTokenType != "" {
-				return revokeByTokenTypeRun(args, opts)
-			}
-
 			return revokeByDistinguishedNameRun(args, opts)
 		},
 	}
@@ -121,19 +117,24 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByDnDistinguishedNamePut(ctx, args[0])
+	request := t.APIClient.ActiveDevicesApi.OnBoardedDevicesRevokeTokensPost(ctx)
+
+	body := openapi.DeviceRevocationRequest{
+		DistinguishedNameFilter: "",
+		DevicesPerSecond:        &opts.TokensPerSecond,
+		DelayMinutes:            &opts.DelayMinutes,
+	}
+
+	if len(args) > 0 {
+		body.DistinguishedNameFilter = args[0]
+	}
 
 	if opts.TokenType != "" {
-		request = request.TokenType(opts.TokenType)
+		body.TokenType = &opts.TokenType
 	}
 
 	if opts.SiteID != "" {
-		request = request.SiteId(opts.SiteID)
-	}
-
-	body := openapi.TokenRevocationRequest{
-		TokensPerSecond: &opts.TokensPerSecond,
-		DelayMinutes:    &opts.DelayMinutes,
+		body.SiteId = &opts.SiteID
 	}
 
 	if opts.RevocationReason != "" {
@@ -157,51 +158,12 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	return nil
 }
 
-func revokeByTokenTypeRun(args []string, opts *RevokeOptions) error {
-	ctx := context.Background()
-	t, err := opts.TokenOptions.Token(opts.TokenOptions.Config)
-	if err != nil {
-		return err
-	}
-
-	request := t.APIClient.ActiveDevicesApi.TokenRecordsRevokedByTypeTokenTypePut(ctx, opts.ByTokenType)
-
-	if opts.SiteID != "" {
-		request = request.SiteId(opts.SiteID)
-	}
-
-	body := openapi.TokenRevocationRequest{
-		TokensPerSecond: &opts.TokensPerSecond,
-		DelayMinutes:    &opts.DelayMinutes,
-	}
-
-	if opts.RevocationReason != "" {
-		body.RevocationReason = &opts.RevocationReason
-	}
-
-	if len(opts.SpecificDistinguishedNames) > 0 {
-		body.SpecificDistinguishedNames = opts.SpecificDistinguishedNames
-	}
-
-	response, err := t.RevokeByTokenType(request, body)
-	if err != nil {
-		return err
-	}
-
-	err = PrintRevokedTokens(response, opts.TokenOptions.Out, opts.TokenOptions.useJSON)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) error {
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
-	result := &openapi.TokenRevocationResponse{}
+	result := &openapi.OnBoardedDeviceList{}
 	err = json.Unmarshal(responseBody, result)
 	if err != nil {
 		return err
@@ -213,22 +175,26 @@ func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) 
 
 	if len(result.GetData()) > 0 {
 		p := util.NewPrinter(out, 2)
-		p.AddHeader("ID", "Type", "Distinguished Name", "Issued", "Expires", "Revoked", "Site ID", "Site Name", "Revocation Time", "Device ID", "Username", "Provider Name", "Controller Hostname")
+		p.AddHeader(
+			"Distinguished Name",
+			"Device ID",
+			"Username",
+			"Provider Name",
+			"Device Type",
+			"Hostname",
+			"Onboarded At",
+			"Last Seen At",
+		)
 		for _, t := range result.GetData() {
 			p.AddLine(
-				t.GetTokenId(),
-				t.GetTokenType(),
 				t.GetDistinguishedName(),
-				t.GetIssued(),
-				t.GetExpires(),
-				t.GetRevoked(),
-				t.GetSiteId(),
-				t.GetSiteName(),
-				t.GetRevocationTime(),
 				t.GetDeviceId(),
 				t.GetUsername(),
 				t.GetProviderName(),
-				t.GetControllerHostname(),
+				t.GetDeviceType(),
+				t.GetHostname(),
+				t.GetOnBoardedAt(),
+				t.GetLastSeenAt(),
 			)
 		}
 		p.Print()
