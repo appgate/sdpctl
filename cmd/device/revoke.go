@@ -1,4 +1,4 @@
-package token
+package device
 
 import (
 	"context"
@@ -54,7 +54,7 @@ func tokenType(t string) TokenType {
 }
 
 type RevokeOptions struct {
-	TokenOptions               *TokenOptions
+	DeviceOptions              *DeviceOptions
 	SiteID                     string
 	RevocationReason           string
 	DelayMinutes               int32
@@ -64,16 +64,16 @@ type RevokeOptions struct {
 	TokenType                  string
 }
 
-func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
+func NewDeviceRevokeCmd(parentOpts *DeviceOptions) *cobra.Command {
 	opts := &RevokeOptions{
-		TokenOptions: parentOpts,
+		DeviceOptions: parentOpts,
 	}
 
 	var revokeCmd = &cobra.Command{
 		Use:     "revoke [<distinguished-name> | --by-token-type <type>]",
-		Short:   docs.TokenRevokeDoc.Short,
-		Long:    docs.TokenRevokeDoc.Long,
-		Example: docs.TokenRevokeDoc.ExampleString(),
+		Short:   docs.DeviceRevokeDoc.Short,
+		Long:    docs.DeviceRevokeDoc.Long,
+		Example: docs.DeviceRevokeDoc.ExampleString(),
 		Args: func(cmd *cobra.Command, args []string) error {
 			if (len(args) != 0 && len(args) != 1) || (len(args) == 0 && opts.ByTokenType == "") {
 				return errors.New("Must set either <distinghuished-name> or --by-token-type <type>")
@@ -112,7 +112,7 @@ func NewTokenRevokeCmd(parentOpts *TokenOptions) *cobra.Command {
 
 func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	ctx := context.Background()
-	t, err := opts.TokenOptions.Token(opts.TokenOptions.Config)
+	t, err := opts.DeviceOptions.Device(opts.DeviceOptions.Config)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	err = PrintRevokedTokens(response, opts.TokenOptions.Out, opts.TokenOptions.useJSON)
+	err = PrintRevokedDevices(response, opts.DeviceOptions.Out, opts.DeviceOptions.useJSON)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 	return nil
 }
 
-func PrintRevokedTokens(response *http.Response, out io.Writer, printJSON bool) error {
+func PrintRevokedDevices(response *http.Response, out io.Writer, printJSON bool) error {
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
-package token
+package device
 
 import (
 	"bytes"
@@ -8,17 +8,17 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/device"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
-	"github.com/appgate/sdpctl/pkg/token"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTokenListTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
+func setupDeviceListTest(t *testing.T) (*httpmock.Registry, *DeviceOptions, *bytes.Buffer) {
 	t.Helper()
 	registry := httpmock.NewRegistry(t)
-	registry.Register("/admin/on-boarded-devices", httpmock.JSONResponse("../../pkg/token/fixtures/token_list.json"))
+	registry.Register("/admin/on-boarded-devices", httpmock.JSONResponse("../../pkg/device/fixtures/device_list.json"))
 	registry.Serve()
 
 	stdout := &bytes.Buffer{}
@@ -38,30 +38,30 @@ func setupTokenListTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
 	}
-	f.Token = func(c *configuration.Config) (*token.Token, error) {
+	f.Device = func(c *configuration.Config) (*device.Device, error) {
 		api, _ := f.APIClient(c)
-		token := &token.Token{
+		device := &device.Device{
 			APIClient:  api,
 			HTTPClient: api.GetConfig().HTTPClient,
 			Token:      "",
 		}
-		return token, nil
+		return device, nil
 	}
 
-	opts := &TokenOptions{
+	opts := &DeviceOptions{
 		Config: f.Config,
 		Out:    f.IOOutWriter,
-		Token:  f.Token,
+		Device: f.Device,
 	}
 
 	return registry, opts, stdout
 }
 
-func TestTokenList(t *testing.T) {
-	registry, opts, out := setupTokenListTest(t)
+func TestDeviceList(t *testing.T) {
+	registry, opts, out := setupDeviceListTest(t)
 	defer registry.Teardown()
 
-	cmd := NewTokenListCmd(opts)
+	cmd := NewDeviceListCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
@@ -94,13 +94,13 @@ CN=f7e1d6fec2344b49b1d65a107025e795,CN=bob,OU=local      f7e1d6fe-c234-4b49-b1d6
 	assert.Equal(t, expected, string(actual))
 }
 
-func TestTokenListJSON(t *testing.T) {
-	registry, opts, out := setupTokenListTest(t)
+func TestDeviceListJSON(t *testing.T) {
+	registry, opts, out := setupDeviceListTest(t)
 	defer registry.Teardown()
 
 	opts.useJSON = true
 
-	cmd := NewTokenListCmd(opts)
+	cmd := NewDeviceListCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 

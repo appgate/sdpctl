@@ -1,4 +1,4 @@
-package token
+package device
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/configuration"
+	"github.com/appgate/sdpctl/pkg/device"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
-	"github.com/appgate/sdpctl/pkg/token"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func setupTokenRevokeTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *bytes.Buffer) {
+func setupDeviceRevokeTest(t *testing.T) (*httpmock.Registry, *DeviceOptions, *bytes.Buffer) {
 	registry := httpmock.NewRegistry(t)
 
 	stdout := &bytes.Buffer{}
@@ -35,33 +35,33 @@ func setupTokenRevokeTest(t *testing.T) (*httpmock.Registry, *TokenOptions, *byt
 	f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 		return registry.Client, nil
 	}
-	f.Token = func(c *configuration.Config) (*token.Token, error) {
+	f.Device = func(c *configuration.Config) (*device.Device, error) {
 		api, _ := f.APIClient(c)
-		token := &token.Token{
+		device := &device.Device{
 			APIClient:  api,
 			HTTPClient: api.GetConfig().HTTPClient,
 			Token:      "",
 		}
-		return token, nil
+		return device, nil
 	}
 
-	opts := &TokenOptions{
+	opts := &DeviceOptions{
 		Config: f.Config,
 		Out:    f.IOOutWriter,
-		Token:  f.Token,
+		Device: f.Device,
 		Debug:  f.Config.Debug,
 	}
 
 	return registry, opts, stdout
 }
 
-func TestTokenRevokeByTokenType(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
+func TestDeviceRevokeByTokenType(t *testing.T) {
+	registry, opts, stdout := setupDeviceRevokeTest(t)
+	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/device/fixtures/token_revoke_by_type.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
-	cmd := NewTokenRevokeCmd(opts)
+	cmd := NewDeviceRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"--by-token-type", "administration"})
@@ -87,14 +87,14 @@ CN=f7e1d6fec2344b49b1d65a107025e795,CN=bob,OU=local  f7e1d6fe-c234-4b49-b1d6-5a1
 	assert.Equal(t, expected, string(actual))
 }
 
-func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_type.json"))
+func TestDeviceRevokeByTokenTypeJSON(t *testing.T) {
+	registry, opts, stdout := setupDeviceRevokeTest(t)
+	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/device/fixtures/token_revoke_by_type.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
 	opts.useJSON = true
-	cmd := NewTokenRevokeCmd(opts)
+	cmd := NewDeviceRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"--by-token-type", "administration"})
@@ -112,13 +112,13 @@ func TestTokenRevokeByTokenTypeJSON(t *testing.T) {
 	assert.True(t, util.IsJSON(string(actual)))
 }
 
-func TestTokenRevokeByDistinguishedName(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+func TestDeviceRevokeByDistinguishedName(t *testing.T) {
+	registry, opts, stdout := setupDeviceRevokeTest(t)
+	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/device/fixtures/token_revoke_by_dn.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
-	cmd := NewTokenRevokeCmd(opts)
+	cmd := NewDeviceRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local"})
@@ -141,14 +141,14 @@ CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local  70e07680-1c4b-5bdc-87b4-a
 	assert.Equal(t, expected, string(actual))
 }
 
-func TestTokenRevokeByDistinguishedNameJSON(t *testing.T) {
-	registry, opts, stdout := setupTokenRevokeTest(t)
-	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/token/fixtures/token_revoke_by_dn.json"))
+func TestDeviceRevokeByDistinguishedNameJSON(t *testing.T) {
+	registry, opts, stdout := setupDeviceRevokeTest(t)
+	registry.Register("/admin/on-boarded-devices/revoke-tokens", httpmock.JSONResponse("../../pkg/device/fixtures/token_revoke_by_dn.json"))
 	registry.Serve()
 	defer registry.Teardown()
 
 	opts.useJSON = true
-	cmd := NewTokenRevokeCmd(opts)
+	cmd := NewDeviceRevokeCmd(opts)
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 	cmd.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local"})
@@ -167,31 +167,31 @@ func TestTokenRevokeByDistinguishedNameJSON(t *testing.T) {
 }
 
 func TestInvalidArgumentsAndOptions(t *testing.T) {
-	registry, opts, _ := setupTokenRevokeTest(t)
+	registry, opts, _ := setupDeviceRevokeTest(t)
 	defer registry.Teardown()
 
-	cmd1 := NewTokenRevokeCmd(opts)
+	cmd1 := NewDeviceRevokeCmd(opts)
 	cmd1.SetOut(io.Discard)
 	cmd1.SetErr(io.Discard)
 	cmd1.SetArgs([]string{"CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local", "--by-token-type", "administration"})
 	_, err1 := cmd1.ExecuteC()
 	assert.Equal(t, "Cannot set both <distinguished-name> and --by-token-type", err1.Error())
 
-	cmd2 := NewTokenRevokeCmd(opts)
+	cmd2 := NewDeviceRevokeCmd(opts)
 	cmd2.SetOut(io.Discard)
 	cmd2.SetErr(io.Discard)
 	cmd2.SetArgs([]string{})
 	_, err2 := cmd2.ExecuteC()
 	assert.Equal(t, "Must set either <distinghuished-name> or --by-token-type <type>", err2.Error())
 
-	cmd3 := NewTokenRevokeCmd(opts)
+	cmd3 := NewDeviceRevokeCmd(opts)
 	cmd3.SetOut(io.Discard)
 	cmd3.SetErr(io.Discard)
 	cmd3.SetArgs([]string{"--by-token-type", "foo"})
 	_, err3 := cmd3.ExecuteC()
 	assert.Equal(t, "Unknown token type foo. valid types are { administration, adminclaims, entitlements, claims }", err3.Error())
 
-	cmd4 := NewTokenRevokeCmd(opts)
+	cmd4 := NewDeviceRevokeCmd(opts)
 	cmd4.SetOut(io.Discard)
 	cmd4.SetErr(io.Discard)
 	cmd4.SetArgs([]string{"--by-token-type", "foo", "--token-type", "foo"})

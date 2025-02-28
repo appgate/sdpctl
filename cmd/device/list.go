@@ -1,4 +1,4 @@
-package token
+package device
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewTokenListCmd(opts *TokenOptions) *cobra.Command {
+func NewDeviceListCmd(opts *DeviceOptions) *cobra.Command {
 	var listCmd = &cobra.Command{
 		Use:     "list",
-		Short:   docs.TokenListDoc.Short,
-		Long:    docs.TokenListDoc.Long,
-		Example: docs.TokenListDoc.ExampleString(),
+		Short:   docs.DeviceListDoc.Short,
+		Long:    docs.DeviceListDoc.Long,
+		Example: docs.DeviceListDoc.ExampleString(),
 		Aliases: []string{"ls"},
 		Args: func(cmd *cobra.Command, args []string) error {
 			var err error
@@ -28,19 +28,19 @@ func NewTokenListCmd(opts *TokenOptions) *cobra.Command {
 			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
-			return tokenListRun(opts)
+			return deviceListRun(opts)
 		},
 	}
 
-	listCmd.Flags().StringSlice("order-by", []string{"distinguished-name"}, "Order tokens list by keyword. Available keywords are 'distinguished-name', 'hostname', 'username', 'provider-name', 'device-id' and 'username'")
-	listCmd.Flags().Bool("descending", false, "Reverses the order of the token list")
+	listCmd.Flags().StringSlice("order-by", []string{"distinguished-name"}, "Order devices list by keyword. Available keywords are 'distinguished-name', 'hostname', 'username', 'provider-name', 'device-id' and 'username'")
+	listCmd.Flags().Bool("descending", false, "Reverses the order of the device list")
 
 	return listCmd
 }
 
-func tokenListRun(opts *TokenOptions) error {
+func deviceListRun(opts *DeviceOptions) error {
 	ctx := context.Background()
-	t, err := opts.Token(opts.Config)
+	t, err := opts.Device(opts.Config)
 	if err != nil {
 		return err
 	}
