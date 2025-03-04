@@ -13,10 +13,10 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"github.com/appgate/sdpctl/cmd/device"
 	"github.com/appgate/sdpctl/cmd/license"
 	cmdprofile "github.com/appgate/sdpctl/cmd/profile"
 	"github.com/appgate/sdpctl/cmd/sites"
-	"github.com/appgate/sdpctl/cmd/token"
 	"github.com/hashicorp/go-multierror"
 
 	appliancecmd "github.com/appgate/sdpctl/cmd/appliance"
@@ -198,7 +198,7 @@ func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 	rootCmd.AddCommand(
 		cfgcmd.NewCmdConfigure(f),
 		appliancecmd.NewApplianceCmd(f),
-		token.NewTokenCmd(f),
+		device.NewDeviceCmd(f),
 		NewCmdCompletion(),
 		NewHelpCmd(f),
 		NewOpenCmd(f),

@@ -1,0 +1,36 @@
+{
+    "data": [
+        {
+            "distinguishedName": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+            "onBoardedAt": "2021-12-21T00:27:00.223996Z",
+            "lastSeenAt": "2021-12-22T00:27:00.186850Z",
+            "deviceId": "70e07680-1c4b-5bdc-87b4-afc71540e720",
+            "username": "admin",
+            "providerName": "local",
+            "device_type": "Client"
+        },
+        {
+            "distinguishedName": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+            "onBoardedAt": "2021-12-21T00:27:00.186924Z",
+            "lastSeenAt": "2021-12-22T00:27:00.186850Z",
+            "deviceId": "70e07680-1c4b-5bdc-87b4-afc71540e720",
+            "username": "admin",
+            "providerName": "local",
+            "device_type": "Client"
+        },
+        {
+            "distinguishedName": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+            "onBoardedAt": "2021-12-21T00:24:01.465525Z",
+            "lastSeenAt": "2021-12-22T00:24:01.465446Z",
+            "deviceId": "70e07680-1c4b-5bdc-87b4-afc71540e720",
+            "username": "admin",
+            "providerName": "local",
+            "device_type": "Client"
+        }
+    ],
+    "query": "CN=70e076801c4b5bdc87b4afc71540e720,CN=admin,OU=local",
+    "range": "0-3/3",
+    "orderBy": "onBoardedAt",
+    "descending": true,
+    "filterBy": []
+}

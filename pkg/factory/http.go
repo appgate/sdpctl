@@ -12,8 +12,8 @@ import (
 
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/appgate/sdpctl/pkg/device"
 	"github.com/appgate/sdpctl/pkg/serviceusers"
-	"github.com/appgate/sdpctl/pkg/token"
 	"golang.org/x/net/http/httpproxy"
 
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
@@ -35,7 +35,7 @@ type Factory struct {
 	// APIClient is the generated api client based on the openapi-generator https://github.com/appgate/sdp-api-client-go
 	APIClient      func(c *configuration.Config) (*openapi.APIClient, error)
 	Appliance      func(c *configuration.Config) (*appliance.Appliance, error)
-	Token          func(c *configuration.Config) (*token.Token, error)
+	Device         func(c *configuration.Config) (*device.Device, error)
 	ServiceUsers   func(c *configuration.Config) (*serviceusers.ServiceUsersAPI, error)
 	DockerRegistry func(s string) (*url.URL, error)
 	BaseURL        func() string
@@ -60,7 +60,7 @@ func New(appVersion string, config *configuration.Config) *Factory {
 	f.CustomHTTPClient = customHTTPClient(f) // depends on config
 	f.APIClient = apiClientFunc(f)           // depends on config
 	f.Appliance = applianceFunc(f)           // depends on config
-	f.Token = tokenFunc(f)                   // depends on config
+	f.Device = deviceFunc(f)                 // depends on config
 	f.ServiceUsers = serviceUsersFunc(f)     // depends on config
 	f.BaseURL = BaseURL(f)
 	f.IOOutWriter = os.Stdout
@@ -280,8 +280,8 @@ func applianceFunc(f *Factory) func(c *configuration.Config) (*appliance.Applian
 	}
 }
 
-func tokenFunc(f *Factory) func(c *configuration.Config) (*token.Token, error) {
-	return func(cfg *configuration.Config) (*token.Token, error) {
+func deviceFunc(f *Factory) func(c *configuration.Config) (*device.Device, error) {
+	return func(cfg *configuration.Config) (*device.Device, error) {
 		httpClient, apiClient, err := getClients(f, cfg)
 		if err != nil {
 			return nil, err
@@ -290,7 +290,7 @@ func tokenFunc(f *Factory) func(c *configuration.Config) (*token.Token, error) {
 		if err != nil {
 			return nil, err
 		}
-		t := &token.Token{
+		t := &device.Device{
 			HTTPClient: httpClient,
 			APIClient:  apiClient,
 			Token:      bearerToken,

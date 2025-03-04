@@ -1,25 +1,25 @@
 package docs
 
 var (
-	TokenDoc = CommandDoc{
-		Short: "Perform actions on Admin, Claims and Entitlement tokens",
-		Long:  `The token command allows you to renew or revoke tokens used in the Collective.`,
+	DeviceDoc = CommandDoc{
+		Short: "Perform actions on registered devices",
+		Long:  `The device command allows you to renew or revoke tokens used in the Collective.`,
 	}
-	TokenListDoc = CommandDoc{
+	DeviceListDoc = CommandDoc{
 		Short: "List distinguished names of active devices",
-		Long:  "List distinguished names of active tokens, either in table format or JSON format using the '--json' flag",
+		Long:  "List distinguished names of active devices, either in table format or JSON format using the '--json' flag",
 		Examples: []ExampleDoc{
 			{
 				Description: "default list command",
-				Command:     "sdpctl token list",
+				Command:     "sdpctl device list",
 			},
 			{
 				Description: "print list in JSON format",
-				Command:     "sdpctl token list --json",
+				Command:     "sdpctl device list --json",
 			},
 		},
 	}
-	TokenRevokeDoc = CommandDoc{
+	DeviceRevokeDoc = CommandDoc{
 		Short: "Revoke entitlement tokens by distinguished name or token-type",
 		Long: `Revoke tokens by distinguished name or token type.
 
@@ -31,11 +31,11 @@ Valid token types are:
 		Examples: []ExampleDoc{
 			{
 				Description: "revoke by distinguished name",
-				Command:     "sdpctl token revoke <distinguished-name>",
+				Command:     "sdpctl device revoke <distinguished-name>",
 			},
 			{
 				Description: "revoke by token type",
-				Command:     "sdpctl token revoke --token-type=claims",
+				Command:     "sdpctl device revoke --token-type=claims",
 			},
 		},
 	}
