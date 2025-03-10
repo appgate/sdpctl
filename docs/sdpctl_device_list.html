@@ -8,44 +8,34 @@
   <script type="text/javascript" src="./assets/guide.js"></script>
   <script>document.addEventListener("DOMContentLoaded", () => initManPage());</script>
 </head>
-
 <body>
   <main class="page text-center">
     <div class="box">
-      <object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-      <h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
       <hr />
-      <div id="breadcrumb" class="breadcrumb">
-        <a href="index.html">Quick Start Guide</a>
-        <span class="breadcrumb-seperator">/</span>
-      </div>
-      <hr />
+			<div id="breadcrumb" class="breadcrumb">
+				<a href="index.html">Quick Start Guide</a>
+				<span class="breadcrumb-seperator">/</span>
+			</div>
+			<hr />
       <div class="content text-left">
-        <h2 class="text-left margin-bottom">sdpctl device list</h2>
-        <p>List distinguished names of active devices</p>
-        <hr class="margin-bottom">
-        <h3 class="emphasize text-left margin-bottom-small">Synopsis</h3>
-        <p>List distinguished names of active devices, either in table format or JSON format using the
-          &lsquo;&ndash;json&rsquo; flag</p>
-        <pre class="code-editor margin-bottom"><code>sdpctl device list [flags]
+      <h2 class="text-left margin-bottom">sdpctl device list</h2><p>List distinguished names of active devices</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>List distinguished names of active devices, either in table format or JSON format using the &lsquo;&ndash;json&rsquo; flag</p><pre class="code-editor margin-bottom"><code>sdpctl device list [flags]
 </code></pre>
-        <hr class="margin-bottom">
-        <h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-        <pre class="code-editor margin-bottom"><code>  # default list command
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
+<pre class="code-editor margin-bottom"><code>  # default list command
   &gt; sdpctl device list
 
   # print list in JSON format
   &gt; sdpctl device list --json
 </code></pre>
-        <hr class="margin-bottom">
-        <h3 class="emphasize text-left margin-bottom-small">Options</h3>
-        <pre class="code-editor margin-bottom"><code>      --descending         Reverses the order of the device list
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
+<pre class="code-editor margin-bottom"><code>      --descending         Reverses the order of the device list
   -h, --help               help for list
       --order-by strings   Order devices list by keyword. Available keywords are 'distinguished-name', 'hostname', 'username', 'provider-name', 'device-id' and 'username' (default [distinguished-name])
 </code></pre>
-        <hr class="margin-bottom">
-        <h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
-        <pre class="code-editor margin-bottom"><code>      --api-version int      Peer API version override
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
+<pre class="code-editor margin-bottom"><code>      --api-version int      Peer API version override
       --ci-mode              Log to stderr instead of file and disable progress-bars
       --debug                Enable debug logging
       --events-path string   send logs to unix domain socket path
@@ -54,17 +44,13 @@
       --no-verify            Don't verify TLS on for the given command, overriding settings from config file
   -p, --profile string       Profile configuration to use
 </code></pre>
-        <hr class="margin-bottom">
-        <h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
-        <ul>
-          <li>
-            <p><a href="sdpctl_device.html">sdpctl device</a> - Perform actions on registered devices</p>
-          </li>
-        </ul>
+<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<ul>
+<li><p><a href="sdpctl_device.html">sdpctl device</a>	 - Perform actions on registered devices and their tokens</p></li>
+</ul>
 
       </div>
     </div>
   </main>
 </body>
-
 </html>

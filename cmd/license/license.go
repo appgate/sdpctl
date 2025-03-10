@@ -22,6 +22,7 @@ func NewLicenseCmd(f *factory.Factory) *cobra.Command {
 		TraverseChildren: true,
 		Short:            docs.LicenseRootDoc.Short,
 		Long:             docs.LicenseRootDoc.Long,
+		Hidden:           true,
 	}
 
 	opts := &licenseOpts{
