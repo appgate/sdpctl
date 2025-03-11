@@ -719,8 +719,6 @@ func applianceFunctionsToString(functions []openapi.ApplianceFunction) string {
 	return strings.Join(functionStrings, ",")
 }
 
-const na = "n/a"
-
 func ApplianceActiveFunctions(s openapi.ApplianceWithStatus) string {
 	functions := make([]string, 0)
 	if v, ok := s.GetLogServerOk(); ok {

@@ -317,7 +317,7 @@ var (
 )
 
 func countControllers(stats *openapi.ApplianceWithStatusList) int {
-	var controllers int = 0
+	controllers := 0
 	for _, stat := range stats.GetData() {
 		if controller, ok := stat.GetControllerOk(); ok {
 			if controller.GetEnabled() {
