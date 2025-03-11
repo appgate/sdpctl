@@ -121,7 +121,7 @@ func GetActiveFunctions(appliance openapi.Appliance) []string {
 }
 
 // FilterAvailable return lists of online, offline, errors that will be used during upgrade
-func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) ([]openapi.Appliance, []openapi.Appliance, error) {
+func FilterAvailable(appliances []openapi.Appliance, stats []openapi.ApplianceWithStatus) ([]openapi.Appliance, []openapi.Appliance, error) {
 	result := make([]openapi.Appliance, 0)
 	offline := make([]openapi.Appliance, 0)
 	var err error
@@ -180,13 +180,13 @@ func FilterActivated(appliances []openapi.Appliance) (active []openapi.Appliance
 	return
 }
 
-func GetApplianceVersion(appliance openapi.Appliance, stats openapi.StatsAppliancesList) (*version.Version, error) {
+func GetApplianceVersion(appliance openapi.Appliance, stats openapi.ApplianceWithStatusList) (*version.Version, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == appliance.GetId() {
 			if !StatsIsOnline(s) {
 				return nil, fmt.Errorf("can't get current version of %s, the appliance is offline", appliance.GetName())
 			}
-			return ParseVersionString(s.GetVersion())
+			return ParseVersionString(s.GetApplianceVersion())
 		}
 	}
 	return nil, fmt.Errorf("Could not determine appliance version %s", appliance.GetName())
@@ -381,8 +381,8 @@ func AppendUniqueAppliance(appliances []openapi.Appliance, appliance openapi.App
 	return filteredAppliances
 }
 
-func AppendUniqueApplianceStats(stats []openapi.StatsAppliancesListAllOfData, stat openapi.StatsAppliancesListAllOfData) []openapi.StatsAppliancesListAllOfData {
-	filtered := make([]openapi.StatsAppliancesListAllOfData, len(stats))
+func AppendUniqueApplianceStats(stats []openapi.ApplianceWithStatus, stat openapi.ApplianceWithStatus) []openapi.ApplianceWithStatus {
+	filtered := make([]openapi.ApplianceWithStatus, len(stats))
 	copy(filtered, stats)
 
 	appID := stat.GetId()
@@ -532,14 +532,14 @@ func orderAppliances(appliances []openapi.Appliance, orderBy []string, descendin
 	return appliances, errs.ErrorOrNil()
 }
 
-func FilterApplianceStats(stats []openapi.StatsAppliancesListAllOfData, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, []openapi.StatsAppliancesListAllOfData, error) {
-	include := make([]openapi.StatsAppliancesListAllOfData, len(stats))
+func FilterApplianceStats(stats []openapi.ApplianceWithStatus, filter map[string]map[string]string, orderBy []string, descending bool) ([]openapi.ApplianceWithStatus, []openapi.ApplianceWithStatus, error) {
+	include := make([]openapi.ApplianceWithStatus, len(stats))
 	copy(include, stats)
 	var errs *multierror.Error
 	var err error
 
 	// Keep track of which appliances are filtered at the different steps
-	notInclude := make(map[string]openapi.StatsAppliancesListAllOfData, len(stats))
+	notInclude := make(map[string]openapi.ApplianceWithStatus, len(stats))
 	for _, a := range stats {
 		notInclude[a.GetId()] = a
 	}
@@ -586,8 +586,8 @@ func FilterApplianceStats(stats []openapi.StatsAppliancesListAllOfData, filter m
 	return include, exclude, errs.ErrorOrNil()
 }
 
-func applyApplianceStatsFilter(stats []openapi.StatsAppliancesListAllOfData, filter map[string]string) ([]openapi.StatsAppliancesListAllOfData, error) {
-	var filtered []openapi.StatsAppliancesListAllOfData
+func applyApplianceStatsFilter(stats []openapi.ApplianceWithStatus, filter map[string]string) ([]openapi.ApplianceWithStatus, error) {
+	var filtered []openapi.ApplianceWithStatus
 	var warnings []string
 
 	for _, s := range stats {
@@ -640,7 +640,7 @@ func applyApplianceStatsFilter(stats []openapi.StatsAppliancesListAllOfData, fil
 			case "function":
 				functionList := strings.Split(v, FilterDelimiter)
 				for _, function := range functionList {
-					active := strings.Split(StatsActiveFunctions(s), ",")
+					active := strings.Split(ApplianceActiveFunctions(s), ",")
 					if util.InSlice(function, active) {
 						filtered = append(filtered, s)
 					}
@@ -663,7 +663,7 @@ func applyApplianceStatsFilter(stats []openapi.StatsAppliancesListAllOfData, fil
 	return filtered, nil
 }
 
-func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy []string, descending bool) ([]openapi.StatsAppliancesListAllOfData, error) {
+func orderApplianceStats(stats []openapi.ApplianceWithStatus, orderBy []string, descending bool) ([]openapi.ApplianceWithStatus, error) {
 	var errs *multierror.Error
 	for i := len(orderBy) - 1; i >= 0; i-- {
 		switch strings.ToLower(orderBy[i]) {
@@ -679,22 +679,24 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetVersion() < stats[j].GetVersion() })
 		case "net-in":
 			sort.SliceStable(stats, func(i, j int) bool {
-				inet := stats[i].GetNetwork()
-				jnet := stats[j].GetNetwork()
+				inet := stats[i].GetDetails().Network.GetDetails()[stats[i].GetDetails().Network.GetBusiestNic()]
+				jnet := stats[j].GetDetails().Network.GetDetails()[stats[j].GetDetails().Network.GetBusiestNic()]
 				irx := inet.GetRxSpeed()
 				jrx := jnet.GetRxSpeed()
 				return irx < jrx
 			})
 		case "net-out":
 			sort.SliceStable(stats, func(i, j int) bool {
-				inet := stats[i].GetNetwork()
-				jnet := stats[j].GetNetwork()
+				inet := stats[i].GetDetails().Network.GetDetails()[stats[i].GetDetails().Network.GetBusiestNic()]
+				jnet := stats[j].GetDetails().Network.GetDetails()[stats[j].GetDetails().Network.GetBusiestNic()]
 				itx := inet.GetTxSpeed()
 				jtx := jnet.GetTxSpeed()
 				return itx < jtx
 			})
 		case "function":
-			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetFunction() < stats[j].GetFunction() })
+			sort.SliceStable(stats, func(i, j int) bool {
+				return applianceFunctionsToString(stats[i].GetFunctions()) < applianceFunctionsToString(stats[j].GetFunctions())
+			})
 		case "status":
 			sort.SliceStable(stats, func(i, j int) bool { return stats[i].GetStatus() < stats[j].GetStatus() })
 		case "sessions":
@@ -709,37 +711,45 @@ func orderApplianceStats(stats []openapi.StatsAppliancesListAllOfData, orderBy [
 	return stats, errs.ErrorOrNil()
 }
 
+func applianceFunctionsToString(functions []openapi.ApplianceFunction) string {
+	var functionStrings []string
+	for _, function := range functions {
+		functionStrings = append(functionStrings, string(function))
+	}
+	return strings.Join(functionStrings, ",")
+}
+
 const na = "n/a"
 
-func StatsActiveFunctions(s openapi.StatsAppliancesListAllOfData) string {
+func ApplianceActiveFunctions(s openapi.ApplianceWithStatus) string {
 	functions := make([]string, 0)
 	if v, ok := s.GetLogServerOk(); ok {
-		if v.GetStatus() != na {
+		if v.GetEnabled() {
 			functions = append(functions, FunctionLogServer)
 		}
 	}
 	if v, ok := s.GetLogForwarderOk(); ok {
-		if v.GetStatus() != na {
+		if v.GetEnabled() {
 			functions = append(functions, FunctionLogForwarder)
 		}
 	}
 	if v, ok := s.GetControllerOk(); ok {
-		if v.GetStatus() != na {
+		if v.GetEnabled() {
 			functions = append(functions, FunctionController)
 		}
 	}
 	if v, ok := s.GetConnectorOk(); ok {
-		if v.GetStatus() != na {
+		if v.GetEnabled() {
 			functions = append(functions, FunctionConnector)
 		}
 	}
 	if v, ok := s.GetGatewayOk(); ok {
-		if v.GetStatus() != na {
+		if v.GetEnabled() {
 			functions = append(functions, FunctionGateway)
 		}
 	}
 	if v, ok := s.GetPortalOk(); ok {
-		if v.GetStatus() != na {
+		if v.GetEnabled() {
 			functions = append(functions, FunctionPortal)
 		}
 	}
@@ -811,12 +821,8 @@ var StatusNotBusy = []string{
 }
 
 // StatsIsOnline will return true if the Controller reports the appliance to be online in a valid status
-func StatsIsOnline(s openapi.StatsAppliancesListAllOfData) bool {
+func StatsIsOnline(s openapi.ApplianceWithStatus) bool {
 	// from appliance 6.0, 'online' field has been removed in favour for status
-	// we will keep GetOnline() for backwards compatibility.
-	if s.Online != nil && s.GetOnline() {
-		return true
-	}
 	if util.InSlice(s.GetStatus(), []string{statusNotAvailable, statusOffline}) {
 		return false
 	}

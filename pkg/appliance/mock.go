@@ -49,22 +49,22 @@ const (
 )
 
 var (
-	PreSetApplianceNames                              = []string{TestAppliancePrimary, TestApplianceSecondary, TestApplianceController3, TestApplianceControllerOffline, TestApplianceControllerNotPrepared, TestApplianceController2NotPrepared, TestApplianceControllerMismatch, TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3, TestApplianceGatewayC1, TestApplianceGatewayC2, TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestAppliancePortalA1, TestApplianceConnectorA1, TestApplianceLogServer, TestApplianceControllerGatewayA1, TestApplianceControllerGatewayB1, TestApplianceControllerGatewayPrimary}
-	InitialTestStats     *openapi.StatsAppliancesList = openapi.NewStatsAppliancesListWithDefaults()
-	UpgradedTestStats    *openapi.StatsAppliancesList = openapi.NewStatsAppliancesListWithDefaults()
+	PreSetApplianceNames                                  = []string{TestAppliancePrimary, TestApplianceSecondary, TestApplianceController3, TestApplianceControllerOffline, TestApplianceControllerNotPrepared, TestApplianceController2NotPrepared, TestApplianceControllerMismatch, TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3, TestApplianceGatewayC1, TestApplianceGatewayC2, TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestAppliancePortalA1, TestApplianceConnectorA1, TestApplianceLogServer, TestApplianceControllerGatewayA1, TestApplianceControllerGatewayB1, TestApplianceControllerGatewayPrimary}
+	InitialTestStats     *openapi.ApplianceWithStatusList = openapi.NewApplianceWithStatusListWithDefaults()
+	UpgradedTestStats    *openapi.ApplianceWithStatusList = openapi.NewApplianceWithStatusListWithDefaults()
 )
 
 type CollectiveTestStruct struct {
 	Appliances    map[string]openapi.Appliance
-	Stats         *openapi.StatsAppliancesList
-	UpgradedStats *openapi.StatsAppliancesList
+	Stats         *openapi.ApplianceWithStatusList
+	UpgradedStats *openapi.ApplianceWithStatusList
 }
 
 func GenerateCollective(t *testing.T, hostname, from, to string, appliances []string) *CollectiveTestStruct {
 	t.Helper()
 	defer t.Cleanup(func() {
-		InitialTestStats = openapi.NewStatsAppliancesListWithDefaults()
-		UpgradedTestStats = openapi.NewStatsAppliancesListWithDefaults()
+		InitialTestStats = openapi.NewApplianceWithStatusListWithDefaults()
+		UpgradedTestStats = openapi.NewApplianceWithStatusListWithDefaults()
 	})
 	res := CollectiveTestStruct{
 		Stats:         InitialTestStats,
@@ -124,34 +124,6 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 
 func (cts *CollectiveTestStruct) addAppliance(name, hostname, site, siteName, fromVersion, toVersion, status, upgradeStatus string, online bool, functions []string) {
 	a, s, u := GenerateApplianceWithStats(functions, name, hostname, fromVersion, toVersion, status, upgradeStatus, online, site, siteName)
-	for _, f := range functions {
-		switch f {
-		case FunctionController:
-			count := cts.Stats.GetControllerCount() + 1
-			cts.Stats.SetControllerCount(count)
-			cts.UpgradedStats.SetControllerCount(count)
-		case FunctionGateway:
-			count := cts.Stats.GetGatewayCount() + 1
-			cts.Stats.SetGatewayCount(count)
-			cts.UpgradedStats.SetGatewayCount(count)
-		case FunctionLogServer:
-			count := cts.Stats.GetLogServerCount() + 1
-			cts.Stats.SetLogServerCount(count)
-			cts.UpgradedStats.SetLogServerCount(count)
-		case FunctionLogForwarder:
-			count := cts.Stats.GetLogForwarderCount() + 1
-			cts.Stats.SetLogForwarderCount(count)
-			cts.UpgradedStats.SetLogForwarderCount(count)
-		case FunctionPortal:
-			count := cts.Stats.GetPortalCount() + 1
-			cts.Stats.SetPortalCount(count)
-			cts.UpgradedStats.SetPortalCount(count)
-		case FunctionConnector:
-			count := cts.Stats.GetConnectorCount() + 1
-			cts.Stats.SetConnectorCount(count)
-			cts.UpgradedStats.SetConnectorCount(count)
-		}
-	}
 	cts.Appliances[a.GetName()] = a
 	cts.Stats.Data = append(cts.Stats.Data, s)
 	cts.UpgradedStats.Data = append(cts.UpgradedStats.Data, u)
@@ -210,7 +182,7 @@ func (cts *CollectiveTestStruct) GetUpgradeStatusMap() map[string]UpgradeStatusR
 			if a.GetId() != s.GetId() {
 				continue
 			}
-			us := s.GetUpgrade()
+			us := s.GetDetails().Upgrade
 			upgradeStatusMap[a.GetId()] = UpgradeStatusResult{
 				Name:    a.GetName(),
 				Status:  us.GetStatus(),
@@ -221,7 +193,7 @@ func (cts *CollectiveTestStruct) GetUpgradeStatusMap() map[string]UpgradeStatusR
 	return upgradeStatusMap
 }
 
-func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, stats, upgradedStats openapi.StatsAppliancesList) []httpmock.Stub {
+func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, stats, upgradedStats openapi.ApplianceWithStatusList) []httpmock.Stub {
 	stubs := []httpmock.Stub{}
 
 	// appliance list applianceListStub
@@ -245,7 +217,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 
 	// appliance stats stub
 	statsStub := httpmock.Stub{
-		URL: "/admin/stats/appliances",
+		URL: "/admin/appliances/status",
 		Responder: mutatingResponder(func(count int) ([]byte, error) {
 			if count > 0 {
 				return json.Marshal(upgradedStats)
@@ -263,7 +235,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 				if s.GetId() != id {
 					continue
 				}
-				us := s.GetUpgrade()
+				us := s.GetDetails().Upgrade
 				if us.GetStatus() != UpgradeStatusIdle && count <= 0 {
 					us.SetStatus(UpgradeStatusReady)
 				} else if count == 1 {
@@ -368,7 +340,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 	return stubs
 }
 
-func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site, siteName string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData, openapi.StatsAppliancesListAllOfData) {
+func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site, siteName string) (openapi.Appliance, openapi.ApplianceWithStatus, openapi.ApplianceWithStatus) {
 	id := uuid.NewString()
 	now := time.Now()
 	ctrl := &openapi.ApplianceAllOfController{}
@@ -430,28 +402,28 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 		RsyslogDestinations: []openapi.ApplianceAllOfRsyslogDestinations{},
 		HostnameAliases:     []string{},
 	}
-	currentStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
+	currentStatsData := *openapi.NewApplianceWithStatusWithDefaults()
 	currentStatsData.SetId(app.GetId())
 	currentStatsData.SetName(app.GetName())
 	currentStatsData.SetSiteName(siteName)
 	currentStatsData.SetStatus(status)
-	currentStatsData.SetVersion(currentVersion)
-	currentStatsData.SetOnline(online)
-	currentStatsData.SetVolumeNumber(0)
-	currentStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
+	currentStatsData.SetApplianceVersion(currentVersion)
+	currentStatsData.Details = openapi.NewApplianceWithStatusAllOfDetails()
+	currentStatsData.Details.SetVolumeNumber(0)
+	currentStatsData.Details.SetUpgrade(openapi.ApplianceWithStatusAllOfDetailsUpgrade{
 		Status:  openapi.PtrString(upgradeStatus),
 		Details: openapi.PtrString(targetVersion),
 	})
 
-	upgradedStatsData := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
+	upgradedStatsData := *openapi.NewApplianceWithStatusWithDefaults()
 	upgradedStatsData.SetId(app.GetId())
 	upgradedStatsData.SetName(app.GetName())
 	upgradedStatsData.SetSiteName(siteName)
 	upgradedStatsData.SetStatus(status)
-	upgradedStatsData.SetOnline(online)
-	upgradedStatsData.SetVersion(targetVersion)
-	upgradedStatsData.SetVolumeNumber(1)
-	upgradedStatsData.SetUpgrade(openapi.StatsAppliancesListAllOfUpgrade{
+	upgradedStatsData.SetApplianceVersion(targetVersion)
+	upgradedStatsData.Details = openapi.NewApplianceWithStatusAllOfDetails()
+	upgradedStatsData.Details.SetVolumeNumber(1)
+	upgradedStatsData.Details.SetUpgrade(openapi.ApplianceWithStatusAllOfDetailsUpgrade{
 		Status: openapi.PtrString(UpgradeStatusIdle),
 	})
 

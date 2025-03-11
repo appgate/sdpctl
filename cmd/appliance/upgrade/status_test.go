@@ -29,7 +29,7 @@ func TestUpgradeStatusCommandJSON(t *testing.T) {
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registry.Register(
-		"/admin/stats/appliances",
+		"/admin/appliances/status",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()
@@ -109,7 +109,7 @@ func TestUpgradeStatusCommandTable(t *testing.T) {
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_upgrade_status_idle.json"),
 	)
 	registry.Register(
-		"/admin/stats/appliances",
+		"/admin/appliances/status",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()

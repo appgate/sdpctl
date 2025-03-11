@@ -91,7 +91,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
@@ -173,7 +173,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
@@ -257,7 +257,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
@@ -345,7 +345,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
@@ -394,7 +394,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_6.2.2.json"),
 				},
 				{
@@ -429,7 +429,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_6.2.2.json"),
 				},
 				{
@@ -648,7 +648,7 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 		f                             string
 		appliance                     []openapi.Appliance
 		skip                          []appliancepkg.SkipUpgrade
-		stats                         []openapi.StatsAppliancesListAllOfData
+		stats                         []openapi.ApplianceWithStatus
 		multiControllerUpgradeWarning bool
 		dockerBundleDownload          bool
 	}
@@ -676,36 +676,36 @@ func Test_showPrepareUpgradeMessage(t *testing.T) {
 						Name: "gateway",
 					},
 				},
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
-						Name:    openapi.PtrString("controller1"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:             "controller1",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
-						Name:    openapi.PtrString("controller2"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:             "controller2",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
-						Name:    openapi.PtrString("gateway"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:             "gateway",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),
-						Name:    openapi.PtrString("controller3"),
-						Online:  openapi.PtrBool(false),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("92a8ceed-a364-4e99-a2eb-0a8546bab48f"),
+						Name:             "controller3",
+						Status:           openapi.PtrString("offline"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("57a06ae4-8204-4780-a7c2-a9cdf03e5a0f"),
-						Name:    openapi.PtrString("gateway2"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("6.0.0+29426"),
+						Id:               openapi.PtrString("57a06ae4-8204-4780-a7c2-a9cdf03e5a0f"),
+						Name:             "gateway2",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("6.0.0+29426"),
 					},
 				},
 				skip: []appliancepkg.SkipUpgrade{
@@ -764,24 +764,24 @@ The following appliances will be skipped:
 						Name: "gateway",
 					},
 				},
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
-						Name:    openapi.PtrString("controller1"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:             "controller1",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
-						Name:    openapi.PtrString("controller2"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:             "controller2",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
-						Name:    openapi.PtrString("gateway"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:             "gateway",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 				},
 			},
@@ -817,24 +817,24 @@ The following appliances will be skipped:
 						Name: "gateway",
 					},
 				},
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
-						Name:    openapi.PtrString("controller1"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:             "controller1",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
-						Name:    openapi.PtrString("controller2"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:             "controller2",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 					{
-						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
-						Name:    openapi.PtrString("gateway"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("5.5.7+28767"),
+						Id:               openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:             "gateway",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("5.5.7+28767"),
 					},
 				},
 			},
@@ -879,30 +879,30 @@ controllers are prepared for upgrade when running 'upgrade complete'.
 						Name: "logserver",
 					},
 				},
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Id:      openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
-						Name:    openapi.PtrString("controller1"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("6.1.0+56789"),
+						Id:               openapi.PtrString("d4dc0b97-ef59-4431-871b-6b214099797a"),
+						Name:             "controller1",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("6.1.0+56789"),
 					},
 					{
-						Id:      openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
-						Name:    openapi.PtrString("controller2"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("6.1.0+56789"),
+						Id:               openapi.PtrString("3f6f9e42-33c3-446c-9e0d-855c7d5b933b"),
+						Name:             "controller2",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("6.1.0+56789"),
 					},
 					{
-						Id:      openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
-						Name:    openapi.PtrString("gateway"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("6.1.0+56789"),
+						Id:               openapi.PtrString("8a064b81-c692-46ae-b0fa-c4661a018f24"),
+						Name:             "gateway",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("6.1.0+56789"),
 					},
 					{
-						Id:      openapi.PtrString("3ab2caf1-2a6a-4e2c-a848-268d402492a1"),
-						Name:    openapi.PtrString("logserver"),
-						Online:  openapi.PtrBool(true),
-						Version: openapi.PtrString("6.1.0+56789"),
+						Id:               openapi.PtrString("3ab2caf1-2a6a-4e2c-a848-268d402492a1"),
+						Name:             "logserver",
+						Status:           openapi.PtrString("healthy"),
+						ApplianceVersion: openapi.PtrString("6.1.0+56789"),
 					},
 				},
 			},

@@ -93,7 +93,7 @@ func upgradeCancelRun(cmd *cobra.Command, opts *upgradeCancelOptions) error {
 
 	ctx := context.WithValue(context.Background(), appliancepkg.Caller, cmd.CalledAs())
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultfilter)
-	stats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+	stats, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}

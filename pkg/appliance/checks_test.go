@@ -16,7 +16,7 @@ import (
 
 func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 	type args struct {
-		stats      []openapi.StatsAppliancesListAllOfData
+		stats      []openapi.ApplianceWithStatus
 		apiVersion int
 	}
 	tests := []struct {
@@ -27,16 +27,16 @@ func TestPrintDiskSpaceWarningMessage(t *testing.T) {
 		{
 			name: "warning version < 18",
 			args: args{
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Name:    openapi.PtrString("controller"),
-						Disk:    openapi.PtrFloat32(90),
-						Version: openapi.PtrString("5.5.4"),
+						Name:             "controller",
+						Disk:             openapi.PtrFloat32(90),
+						ApplianceVersion: openapi.PtrString("5.5.4"),
 					},
 					{
-						Name:    openapi.PtrString("controller2"),
-						Disk:    openapi.PtrFloat32(75),
-						Version: openapi.PtrString("5.5.4"),
+						Name:             "controller2",
+						Disk:             openapi.PtrFloat32(75),
+						ApplianceVersion: openapi.PtrString("5.5.4"),
 					},
 				},
 				apiVersion: 17,
@@ -57,25 +57,29 @@ increase the space on those appliances.
 		{
 			name: "warning version >= 18",
 			args: args{
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Name:    openapi.PtrString("controller"),
-						Disk:    openapi.PtrFloat32(90),
-						Version: openapi.PtrString("5.5.4"),
-						DiskInfo: &openapi.StatsAppliancesListAllOfDiskInfo{
-							Total: openapi.PtrFloat32(100000000000),
-							Used:  openapi.PtrFloat32(90000000000),
-							Free:  openapi.PtrFloat32(10000000000),
+						Name:             "controller",
+						Disk:             openapi.PtrFloat32(90),
+						ApplianceVersion: openapi.PtrString("5.5.4"),
+						Details: &openapi.ApplianceWithStatusAllOfDetails{
+							Disk: &openapi.SystemInfo{
+								Total: openapi.PtrInt64(int64(100000000000)),
+								Used:  openapi.PtrInt64(int64(90000000000)),
+								Free:  openapi.PtrInt64(int64(10000000000)),
+							},
 						},
 					},
 					{
-						Name:    openapi.PtrString("controller2"),
-						Disk:    openapi.PtrFloat32(75),
-						Version: openapi.PtrString("5.5.4"),
-						DiskInfo: &openapi.StatsAppliancesListAllOfDiskInfo{
-							Total: openapi.PtrFloat32(100000000000),
-							Used:  openapi.PtrFloat32(75000000000),
-							Free:  openapi.PtrFloat32(25000000000),
+						Name:             "controller2",
+						Disk:             openapi.PtrFloat32(75),
+						ApplianceVersion: openapi.PtrString("5.5.4"),
+						Details: &openapi.ApplianceWithStatusAllOfDetails{
+							Disk: &openapi.SystemInfo{
+								Total: openapi.PtrInt64(int64(100000000000)),
+								Used:  openapi.PtrInt64(int64(75000000000)),
+								Free:  openapi.PtrInt64(int64(25000000000)),
+							},
 						},
 					},
 				},
@@ -108,30 +112,30 @@ increase the space on those appliances.
 
 func TestHasLowDiskSpace(t *testing.T) {
 	type args struct {
-		stats []openapi.StatsAppliancesListAllOfData
+		stats []openapi.ApplianceWithStatus
 	}
 	tests := []struct {
 		name string
 		args args
-		want []openapi.StatsAppliancesListAllOfData
+		want []openapi.ApplianceWithStatus
 	}{
 		{
 			name: "with low disk space",
 			args: args{
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Name: openapi.PtrString("controller"),
+						Name: "controller",
 						Disk: openapi.PtrFloat32(75),
 					},
 					{
-						Name: openapi.PtrString("gateway"),
+						Name: "gateway",
 						Disk: openapi.PtrFloat32(1),
 					},
 				},
 			},
-			want: []openapi.StatsAppliancesListAllOfData{
+			want: []openapi.ApplianceWithStatus{
 				{
-					Name: openapi.PtrString("controller"),
+					Name: "controller",
 					Disk: openapi.PtrFloat32(75),
 				},
 			},
@@ -139,18 +143,18 @@ func TestHasLowDiskSpace(t *testing.T) {
 		{
 			name: "no low disk space",
 			args: args{
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
-						Name: openapi.PtrString("controller"),
+						Name: "controller",
 						Disk: openapi.PtrFloat32(2),
 					},
 					{
-						Name: openapi.PtrString("gateway"),
+						Name: "gateway",
 						Disk: openapi.PtrFloat32(1),
 					},
 				},
 			},
-			want: []openapi.StatsAppliancesListAllOfData{},
+			want: []openapi.ApplianceWithStatus{},
 		},
 	}
 	for _, tt := range tests {
@@ -605,11 +609,11 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 	c11, s11, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller11", "", "6.3.1", "", statusHealthy, UpgradeStatusIdle, true, "default", "default")
 
 	// offline
-	c8, s8, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller8", "", "6.2.0", "", statusHealthy, UpgradeStatusIdle, false, "default", "default")
+	c8, s8, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller8", "", "6.2.0", "", statusOffline, UpgradeStatusIdle, false, "default", "default")
 
 	type inData struct {
 		appliance openapi.Appliance
-		stat      openapi.StatsAppliancesListAllOfData
+		stat      openapi.ApplianceWithStatus
 	}
 	tests := []struct {
 		name      string
@@ -674,11 +678,7 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			count := float32(len(tt.in))
-			stats := openapi.StatsAppliancesList{
-				ControllerCount: openapi.PtrFloat32(count),
-				ApplianceCount:  openapi.PtrFloat32(count),
-			}
+			stats := openapi.ApplianceWithStatusList{}
 			argAppliances := make([]openapi.Appliance, 0, len(tt.in))
 			for _, d := range tt.in {
 				stats.Data = append(stats.Data, d.stat)
@@ -686,7 +686,7 @@ func TestCheckNeedsMultiControllerUpgrade(t *testing.T) {
 			}
 			upgradeStatusMap := map[string]UpgradeStatusResult{}
 			for _, s := range stats.GetData() {
-				us := s.GetUpgrade()
+				us := s.GetDetails().Upgrade
 				upgradeStatusMap[s.GetId()] = UpgradeStatusResult{
 					Status:  us.GetStatus(),
 					Details: us.GetDetails(),

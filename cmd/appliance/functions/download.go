@@ -120,16 +120,16 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 					return err
 				}
 				logrus.WithField("primary-controller", primary.GetName()).Debug("found primary controller")
-				stats, response, err := api.DeprecatedStats(ctx, nil, []string{"name"}, false)
+				stats, response, err := api.ApplianceStatus(ctx, nil, []string{"name"}, false)
 				if err != nil {
 					return apipkg.HTTPErrorResponse(response, err)
 				}
-				primStats, err := util.Find(stats.GetData(), func(s openapi.StatsAppliancesListAllOfData) bool { return s.GetId() == primary.GetId() })
+				primStats, err := util.Find(stats.GetData(), func(s openapi.ApplianceWithStatus) bool { return s.GetId() == primary.GetId() })
 				if err != nil {
 					return err
 				}
 				logrus.WithField("stats", primStats).Debug("found primary controller stats")
-				primVersion, err := appliancepkg.ParseVersionString(primStats.GetVersion())
+				primVersion, err := appliancepkg.ParseVersionString(primStats.GetApplianceVersion())
 				if err != nil {
 					return err
 				}

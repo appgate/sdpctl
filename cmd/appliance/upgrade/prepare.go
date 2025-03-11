@@ -279,7 +279,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 		return err
 	}
 
-	initialStats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+	initialStats, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -791,7 +791,7 @@ A partial major or minor controller upgrade is not supported. The upgrade will f
 controllers are prepared for upgrade when running 'upgrade complete'.{{ end }}
 `
 
-func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.StatsAppliancesListAllOfData, multiControllerUpgradeWarning, dockerBundleDownload bool) (string, error) {
+func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, appliance []openapi.Appliance, skip []appliancepkg.SkipUpgrade, stats []openapi.ApplianceWithStatus, multiControllerUpgradeWarning, dockerBundleDownload bool) (string, error) {
 	type stub struct {
 		Filepath                      string
 		ApplianceTable                string
@@ -812,7 +812,7 @@ func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, applia
 		for _, stat := range stats {
 			if a.GetId() == stat.GetId() {
 				var v string
-				version, err := appliancepkg.ParseVersionString(stat.GetVersion())
+				version, err := appliancepkg.ParseVersionString(stat.GetApplianceVersion())
 				if err != nil {
 					v = "N/A"
 				} else if version != nil {
@@ -837,14 +837,14 @@ func showPrepareUpgradeMessage(f string, prepareVersion *version.Version, applia
 			for _, stat := range stats {
 				if s.Appliance.GetId() == stat.GetId() {
 					var v string
-					version, err := appliancepkg.ParseVersionString(stat.GetVersion())
+					version, err := appliancepkg.ParseVersionString(stat.GetApplianceVersion())
 					if err != nil {
 						v = "N/A"
 					} else if version != nil {
 						v = version.String()
 					}
 					online := tui.No
-					if stat.GetOnline() {
+					if appliancepkg.StatsIsOnline(stat) {
 						online = tui.Yes
 					}
 					bt.AddLine(s.Appliance.GetName(), online, v, s.Reason)

@@ -156,7 +156,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			appliances: []string{appliancepkg.TestAppliancePrimary},
 			customStubs: []httpmock.Stub{
 				{
-					URL: "/admin/stats/appliances",
+					URL: "/admin/appliances/status",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
 						b, err := json.Marshal(appliancepkg.InitialTestStats)
 						if err != nil {

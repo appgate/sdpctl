@@ -191,7 +191,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if len(opts.actualHostname) > 0 {
 		controlHost = opts.actualHostname
 	}
-	initialStats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+	initialStats, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -333,10 +333,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	if plan.PrimaryController != nil {
 		fmt.Fprintf(opts.Out, "\n[%s] Upgrading the primary Controller:\n", time.Now().Format(time.RFC3339))
 		upgradeReadyPrimary := func(ctx context.Context, controller openapi.Appliance) error {
-			var initialVolume float32
+			var initialVolume int32
 			for _, appData := range initialStats.GetData() {
 				if controller.GetId() == appData.GetId() {
-					initialVolume = appData.GetVolumeNumber()
+					initialVolume = *appData.GetDetails().VolumeNumber
 					break
 				}
 			}
@@ -384,14 +384,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			if err := a.ApplianceStats.WaitForApplianceState(ctx, controller, appliancepkg.StatReady, t); err != nil {
 				return err
 			}
-			s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+			s, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 			if err != nil {
 				return err
 			}
 
 			// Check if partition has been switched
 			for _, appData := range s.GetData() {
-				if controller.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
+				if controller.GetId() == appData.GetId() && *appData.GetDetails().VolumeNumber == initialVolume {
 					return fmt.Errorf("Upgrade failed on %s: never switched partition", controller.GetName())
 				}
 			}
@@ -418,10 +418,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				"appliance": i.GetName(),
 				"id":        i.GetId(),
 			})
-			var initialVolume float32
+			var initialVolume int32
 			for _, appData := range initialStats.GetData() {
 				if i.GetId() == appData.GetId() {
-					initialVolume = appData.GetVolumeNumber()
+					initialVolume = *appData.GetDetails().VolumeNumber
 				}
 			}
 			logger.WithField("volume", initialVolume).Info("registered initial volume number")
@@ -490,7 +490,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return fmt.Errorf("%s %w", i.GetName(), err)
 				}
 
-				s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+				s, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 				if err != nil {
 					if !opts.ciMode {
 						t.Update(appliancepkg.UpgradeStatusFailed)
@@ -501,11 +501,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 				// Check if partition has been switched
 				for _, appData := range s.GetData() {
-					logger.WithField("new volume", appData.GetVolumeNumber()).Info("new volume recieved")
-					if i.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
+					logger.WithField("new volume", *appData.GetDetails().VolumeNumber).Info("new volume recieved")
+					if i.GetId() == appData.GetId() && *appData.GetDetails().VolumeNumber == initialVolume {
 						return fmt.Errorf("upgrade complete failed on %s: never switched partition", i.GetName())
 					}
-					if i.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
+					if i.GetId() == appData.GetId() && *appData.GetDetails().VolumeNumber == initialVolume {
 						err := errors.New("never switched partition")
 						if !opts.ciMode {
 							t.Update(appliancepkg.UpgradeStatusFailed)
@@ -565,10 +565,10 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				return fmt.Errorf("appliance %s is not ready for upgrade: %s", controller.GetName(), status)
 			}
 
-			var initialVolume float32
+			var initialVolume int32
 			for _, appData := range initialStats.GetData() {
 				if controller.GetId() == appData.GetId() {
-					initialVolume = appData.GetVolumeNumber()
+					initialVolume = *appData.GetDetails().VolumeNumber
 				}
 			}
 			logger.WithField("volume", initialVolume).Info("initial volume registered")
@@ -610,14 +610,14 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					return err
 				}
 			}
-			s, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+			s, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 			if err != nil {
 				return err
 			}
 
 			// Check if partition has been switched
 			for _, appData := range s.GetData() {
-				if controller.GetId() == appData.GetId() && appData.GetVolumeNumber() == initialVolume {
+				if controller.GetId() == appData.GetId() && *appData.GetDetails().VolumeNumber == initialVolume {
 					return fmt.Errorf("Upgrade failed on %s: never switched partition", controller.GetName())
 				}
 			}
@@ -688,7 +688,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	}
 
 	// Get new stats for post complete summary
-	newStats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+	newStats, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 	if err != nil {
 		return err
 	}

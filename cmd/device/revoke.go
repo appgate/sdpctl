@@ -117,7 +117,7 @@ func revokeByDistinguishedNameRun(args []string, opts *RevokeOptions) error {
 		return err
 	}
 
-	request := t.APIClient.ActiveDevicesApi.OnBoardedDevicesRevokeTokensPost(ctx)
+	request := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesRevokeTokensPost(ctx)
 
 	body := openapi.DeviceRevocationRequest{
 		DistinguishedNameFilter: "",

@@ -48,7 +48,7 @@ type UpgradePlan struct {
 	Batches                 [][]openapi.Appliance
 	Skipping                []SkipUpgrade
 	BackupIds               []string
-	stats                   *openapi.StatsAppliancesList
+	stats                   *openapi.ApplianceWithStatusList
 	upgradeStatusMap        map[string]UpgradeStatusResult
 	adminHostname           string
 	primary                 *openapi.Appliance
@@ -56,7 +56,7 @@ type UpgradePlan struct {
 }
 
 func NewUpgradePlan(
-	appliances []openapi.Appliance, stats *openapi.StatsAppliancesList,
+	appliances []openapi.Appliance, stats *openapi.ApplianceWithStatusList,
 	upgradeStatusMap map[string]UpgradeStatusResult,
 	adminHostname string,
 	filter map[string]map[string]string,
@@ -108,7 +108,7 @@ func NewUpgradePlan(
 			plan.addSkip(a, ErrNoApplianceStats)
 			continue
 		}
-		currentVersion, err := ParseVersionString(stats.GetVersion())
+		currentVersion, err := ParseVersionString(stats.GetApplianceVersion())
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			plan.addSkip(a, ErrVersionParse)
@@ -345,11 +345,11 @@ func (up *UpgradePlan) Validate() error {
 	return nil
 }
 
-func (up *UpgradePlan) HasDiffVersions(newStats []openapi.StatsAppliancesListAllOfData) (bool, map[string]string) {
+func (up *UpgradePlan) HasDiffVersions(newStats []openapi.ApplianceWithStatus) (bool, map[string]string) {
 	res := map[string]string{}
 	versionList := []string{}
 	for _, stat := range newStats {
-		statVersionString := stat.GetVersion()
+		statVersionString := stat.GetApplianceVersion()
 		if statVersionString != unknownStat {
 			v, err := ParseVersionString(statVersionString)
 			if err != nil {
@@ -483,7 +483,7 @@ UPGRADE COMPLETE
 {{ if .HasDiff }}WARNING: Upgrade was completed, but not all appliances are running the same version.{{ end }}
 `
 
-func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.StatsAppliancesListAllOfData) error {
+func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.ApplianceWithStatus) error {
 	hasDiff, applianceVersions := up.HasDiffVersions(stats)
 	keys := make([]string, 0, len(applianceVersions))
 	for k := range applianceVersions {
@@ -512,15 +512,15 @@ func (up *UpgradePlan) PrintPostCompleteSummary(out io.Writer, stats []openapi.S
 	return t.Execute(out, tplData)
 }
 
-func applianceVersions(a openapi.Appliance, s openapi.StatsAppliancesList) (currentVersion *version.Version, targetVersion *version.Version) {
+func applianceVersions(a openapi.Appliance, s openapi.ApplianceWithStatusList) (currentVersion *version.Version, targetVersion *version.Version) {
 	stats, _ := ApplianceStats(&a, &s)
-	currentVersion, _ = ParseVersionString(stats.GetVersion())
-	us := stats.GetUpgrade()
+	currentVersion, _ = ParseVersionString(stats.GetApplianceVersion())
+	us := stats.GetDetails().Upgrade
 	targetVersion, _ = ParseVersionString(us.GetDetails())
 	return
 }
 
-func ApplianceStats(a *openapi.Appliance, stats *openapi.StatsAppliancesList) (*openapi.StatsAppliancesListAllOfData, error) {
+func ApplianceStats(a *openapi.Appliance, stats *openapi.ApplianceWithStatusList) (*openapi.ApplianceWithStatus, error) {
 	for _, s := range stats.GetData() {
 		if s.GetId() == a.GetId() {
 			return &s, nil

@@ -57,7 +57,7 @@ func TestSwitchPartition(t *testing.T) {
 		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 		// 		},
 		// 		{
-		// 			URL:       "/admin/stats/appliances",
+		// 			URL:       "/admin/appliances/status",
 		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
 		// 		},
 		// 		{
@@ -79,7 +79,7 @@ func TestSwitchPartition(t *testing.T) {
 		// 	args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
 		// 	apiStubs: []httpmock.Stub{
 		// 		{
-		// 			URL:       "/admin/stats/appliances",
+		// 			URL:       "/admin/appliances/status",
 		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
 		// 		},
 		// 		{
@@ -117,7 +117,7 @@ func TestSwitchPartition(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
 				},
 			},
@@ -134,7 +134,7 @@ func TestSwitchPartition(t *testing.T) {
 		// 	args: []string{"4c07bc67-57ea-42dd-b702-c2d6c45419fc"},
 		// 	apiStubs: []httpmock.Stub{
 		// 		{
-		// 			URL:       "/admin/stats/appliances",
+		// 			URL:       "/admin/appliances/status",
 		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
 		// 		},
 		// 		{
@@ -156,7 +156,7 @@ func TestSwitchPartition(t *testing.T) {
 		// 	tty:  true,
 		// 	apiStubs: []httpmock.Stub{
 		// 		{
-		// 			URL:       "/admin/stats/appliances",
+		// 			URL:       "/admin/appliances/status",
 		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json"),
 		// 		},
 		// 		{

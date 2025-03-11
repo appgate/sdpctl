@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliancesListAllOfData, apiVersion int) {
+func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.ApplianceWithStatus, apiVersion int) {
 	p := util.NewPrinter(out, 4)
 	diskHeader := "Disk Usage"
 	if apiVersion >= 18 {
@@ -27,10 +27,10 @@ func PrintDiskSpaceWarningMessage(out io.Writer, stats []openapi.StatsAppliances
 	p.AddHeader("Name", diskHeader)
 	for _, a := range stats {
 		diskUsage := fmt.Sprintf("%v%%", a.GetDisk())
-		if v, ok := a.GetDiskInfoOk(); ok {
-			diskInfo := *v
+		if v, ok := a.GetDetailsOk(); ok {
+			diskInfo := *v.Disk
 			used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
-			percentUsed := (used / total) * 100
+			percentUsed := (float32(used) / float32(total)) * 100
 			diskUsage = fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, PrettyBytes(float64(used)), PrettyBytes(float64(total)))
 		}
 		p.AddLine(a.GetName(), diskUsage)
@@ -44,8 +44,8 @@ To avoid problems during the upgrade process it's recommended to
 increase the space on those appliances.`)
 }
 
-func HasLowDiskSpace(stats []openapi.StatsAppliancesListAllOfData) []openapi.StatsAppliancesListAllOfData {
-	result := []openapi.StatsAppliancesListAllOfData{}
+func HasLowDiskSpace(stats []openapi.ApplianceWithStatus) []openapi.ApplianceWithStatus {
+	result := []openapi.ApplianceWithStatus{}
 	for _, s := range stats {
 		if s.GetDisk() >= 75 {
 			result = append(result, s)
@@ -127,14 +127,14 @@ func ShowAutoscalingWarningMessage(templateAppliance *openapi.Appliance, gateway
 
 // CheckVersions will check if appliance versions are equal to the version being uploaded on all appliances
 // Returns a slice of appliances that are not equal, a slice of appliances that have the same version and an error
-func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipUpgrade) {
+func CheckVersions(ctx context.Context, stats openapi.ApplianceWithStatusList, appliances []openapi.Appliance, v *version.Version) ([]openapi.Appliance, []SkipUpgrade) {
 	skip := []SkipUpgrade{}
 	keep := []openapi.Appliance{}
 
 	for _, appliance := range appliances {
 		for _, stat := range stats.GetData() {
 			if stat.GetId() == appliance.GetId() {
-				statV, err := ParseVersionString(stat.GetVersion())
+				statV, err := ParseVersionString(stat.GetApplianceVersion())
 				if err != nil {
 					log.Warn("failed to parse version from stats")
 					skip = append(skip, SkipUpgrade{
@@ -153,7 +153,7 @@ func CheckVersions(ctx context.Context, stats openapi.StatsAppliancesList, appli
 					continue
 				}
 				if res < 1 {
-					us := stat.GetUpgrade()
+					us := stat.GetDetails().Upgrade
 					reason := ErrSkipReasonAlreadyPrepared
 					if us.GetStatus() != UpgradeStatusReady {
 						reason = ErrSkipReasonAlreadySameVersion
@@ -316,7 +316,19 @@ var (
 	ErrControllerVersionMismatch = errors.New("all controllers need to be prepared with the same version when doing a major or minor version upgrade.")
 )
 
-func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgradeStatusMap map[string]UpgradeStatusResult, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
+func countControllers(stats *openapi.ApplianceWithStatusList) int {
+	var controllers int = 0
+	for _, stat := range stats.GetData() {
+		if controller, ok := stat.GetControllerOk(); ok {
+			if controller.GetEnabled() {
+				controllers++
+			}
+		}
+	}
+	return controllers
+}
+
+func CheckNeedsMultiControllerUpgrade(stats *openapi.ApplianceWithStatusList, upgradeStatusMap map[string]UpgradeStatusResult, appliances []openapi.Appliance) ([]openapi.Appliance, error) {
 	var (
 		errs                   *multierror.Error
 		preparedControllers    []openapi.Appliance
@@ -325,7 +337,7 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 		mismatchControllers    []openapi.Appliance
 		isMajorOrMinor         bool
 		offlineControllers     []openapi.Appliance
-		totalControllers       = int(stats.GetControllerCount())
+		totalControllers       = countControllers(stats)
 		highestPreparedVersion = version.Must(version.NewVersion("0.0.0"))
 		highestCurrentVersion  = version.Must(version.NewVersion("0.0.0"))
 	)
@@ -335,14 +347,12 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 			if as.GetId() != app.GetId() {
 				continue
 			}
-			if online, ok := as.GetOnlineOk(); ok {
-				if !*online {
-					offlineControllers = append(offlineControllers, app)
-					continue
-				}
+			if online := StatsIsOnline(as); !online {
+				offlineControllers = append(offlineControllers, app)
+				continue
 			}
 			if ctrl, ok := app.GetControllerOk(); ok && ctrl.GetEnabled() {
-				current, err := ParseVersionString(as.GetVersion())
+				current, err := ParseVersionString(as.GetApplianceVersion())
 				if err != nil {
 					errs = multierror.Append(errs, err)
 					continue
@@ -372,7 +382,6 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 			}
 		}
 	}
-
 	// check if prepared controllers has mismatching version
 	preparedClone := slices.Clone(preparedControllers)
 	for i, a := range preparedClone {
@@ -401,7 +410,7 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 				continue
 			}
 
-			currentVersion, err := ParseVersionString(s.GetVersion())
+			currentVersion, err := ParseVersionString(s.GetApplianceVersion())
 			if err != nil {
 				errs = multierror.Append(errs, err)
 				continue
@@ -445,7 +454,7 @@ func CheckNeedsMultiControllerUpgrade(stats *openapi.StatsAppliancesList, upgrad
 	return nil, nil
 }
 
-func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, initialStatData []openapi.StatsAppliancesListAllOfData, all, preparing []openapi.Appliance, majorOrMinor bool) (bool, error) {
+func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult, initialStatData []openapi.ApplianceWithStatus, all, preparing []openapi.Appliance, majorOrMinor bool) (bool, error) {
 	controllerCount := controllerCount(all)
 	controllerPrepareCount := 0
 	alreadySameVersion := 0
@@ -467,7 +476,7 @@ func NeedsMultiControllerUpgrade(upgradeStatuses map[string]UpgradeStatusResult,
 					if data.GetId() != a.GetId() {
 						continue
 					}
-					currentVersion, err := ParseVersionString(data.GetVersion())
+					currentVersion, err := ParseVersionString(data.GetApplianceVersion())
 					if err != nil {
 						return false, err
 					}
