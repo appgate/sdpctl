@@ -148,7 +148,7 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.ApplianceWi
 	return result, offline, err
 }
 
-func FilterOnline(appliances []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) ([]openapi.Appliance, []openapi.Appliance, error) {
+func FilterOnline(appliances []openapi.Appliance, stats []openapi.ApplianceWithStatus) ([]openapi.Appliance, []openapi.Appliance, error) {
 	result := make([]openapi.Appliance, 0)
 	offline := make([]openapi.Appliance, 0)
 	var err error

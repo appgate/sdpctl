@@ -61,8 +61,6 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 	ctx := context.Background()
 
-	// request := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Authorization(a.Token).FilterBy(filter).OrderBy(orderBy).Descending(descending)
-	// stats, _, err := request.Execute()
 	stats, _, err := a.ApplianceStatus(ctx, filter, orderBy, descending)
 	if err != nil {
 		return err
