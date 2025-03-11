@@ -20,7 +20,7 @@ func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[strin
 	if err != nil {
 		return "", err
 	}
-	appliances, _, err = FilterAvailable(appliances, stats.GetData())
+	appliances, _, err = FilterOnline(appliances, stats.GetData())
 	if err != nil {
 		return "", err
 	}
