@@ -148,6 +148,25 @@ func FilterAvailable(appliances []openapi.Appliance, stats []openapi.StatsApplia
 	return result, offline, err
 }
 
+func FilterOnline(appliances []openapi.Appliance, stats []openapi.StatsAppliancesListAllOfData) ([]openapi.Appliance, []openapi.Appliance, error) {
+	result := make([]openapi.Appliance, 0)
+	offline := make([]openapi.Appliance, 0)
+	var err error
+	// filter out offline appliances
+	for _, a := range appliances {
+		for _, stat := range stats {
+			if a.GetId() == stat.GetId() {
+				if StatsIsOnline(stat) {
+					result = append(result, a)
+				} else {
+					offline = append(offline, a)
+				}
+			}
+		}
+	}
+	return result, offline, err
+}
+
 func FilterActivated(appliances []openapi.Appliance) (active []openapi.Appliance, inactive []openapi.Appliance) {
 	inactive = []openapi.Appliance{}
 	active = []openapi.Appliance{}
