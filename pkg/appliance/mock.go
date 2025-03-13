@@ -82,39 +82,39 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 	for _, n := range appliances {
 		switch n {
 		case TestAppliancePrimary:
-			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController})
 		case TestApplianceUnpreparedPrimary:
-			res.addAppliance(n, hostname, siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
+			res.addAppliance(n, hostname, siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, []string{FunctionController})
 		case TestApplianceSecondary:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController})
 		case TestApplianceController3:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusIdle, []string{FunctionController})
 		case TestApplianceControllerOffline:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusOffline, UpgradeStatusIdle, false, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusOffline, UpgradeStatusIdle, []string{FunctionController})
 		case TestApplianceControllerNotPrepared, TestApplianceController2NotPrepared:
-			res.addAppliance(n, "", siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, from, from, statusHealthy, UpgradeStatusIdle, []string{FunctionController})
 		case TestApplianceControllerMismatch:
-			res.addAppliance(n, "", siteA, siteNameA, "6.1", from, statusHealthy, UpgradeStatusReady, true, []string{FunctionController})
+			res.addAppliance(n, "", siteA, siteNameA, "6.1", from, statusHealthy, UpgradeStatusReady, []string{FunctionController})
 		case TestApplianceControllerGatewayPrimary:
-			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController, FunctionGateway})
+			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController, FunctionGateway})
 		case TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionGateway})
 		case TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3:
-			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
+			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionGateway})
 		case TestApplianceGatewayC1, TestApplianceGatewayC2:
-			res.addAppliance(n, "", siteC, siteNameC, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionGateway})
+			res.addAppliance(n, "", siteC, siteNameC, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionGateway})
 		case TestApplianceLogForwarderA1, TestApplianceLogForwarderA2, TestApplianceLogForwarderB1, TestApplianceLogForwarderB2, TestApplianceLogForwarderC1, TestApplianceLogForwarderC2:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogForwarder})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionLogForwarder})
 		case TestAppliancePortalA1:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionPortal})
 		case TestApplianceConnectorA1:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionPortal})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionPortal})
 		case TestApplianceLogServer:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionLogServer})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionLogServer})
 		case TestApplianceControllerGatewayA1:
-			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController, FunctionGateway})
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController, FunctionGateway})
 		case TestApplianceControllerGatewayB1:
-			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, true, []string{FunctionController, FunctionGateway})
+			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController, FunctionGateway})
 		default:
 		}
 	}
@@ -122,8 +122,8 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 	return &res
 }
 
-func (cts *CollectiveTestStruct) addAppliance(name, hostname, site, siteName, fromVersion, toVersion, status, upgradeStatus string, online bool, functions []string) {
-	a, s, u := GenerateApplianceWithStats(functions, name, hostname, fromVersion, toVersion, status, upgradeStatus, online, site, siteName)
+func (cts *CollectiveTestStruct) addAppliance(name, hostname, site, siteName, fromVersion, toVersion, status, upgradeStatus string, functions []string) {
+	a, s, u := GenerateApplianceWithStats(functions, name, hostname, fromVersion, toVersion, status, upgradeStatus, site, siteName)
 	cts.Appliances[a.GetName()] = a
 	cts.Stats.Data = append(cts.Stats.Data, s)
 	cts.UpgradedStats.Data = append(cts.UpgradedStats.Data, u)
@@ -340,7 +340,7 @@ func (cts *CollectiveTestStruct) GenerateStubs(appliances []openapi.Appliance, s
 	return stubs
 }
 
-func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, online bool, site, siteName string) (openapi.Appliance, openapi.ApplianceWithStatus, openapi.ApplianceWithStatus) {
+func GenerateApplianceWithStats(activeFunctions []string, name, hostname, currentVersion, targetVersion, status, upgradeStatus string, site, siteName string) (openapi.Appliance, openapi.ApplianceWithStatus, openapi.ApplianceWithStatus) {
 	id := uuid.NewString()
 	now := time.Now()
 	ctrl := &openapi.ApplianceAllOfController{}
