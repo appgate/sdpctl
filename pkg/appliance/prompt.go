@@ -16,7 +16,7 @@ func PromptSelect(ctx context.Context, a *Appliance, filter map[string]map[strin
 	if err != nil {
 		return "", err
 	}
-	stats, _, err := a.DeprecatedStats(ctx, nil, orderBy, descending)
+	stats, _, err := a.ApplianceStatus(ctx, nil, orderBy, descending)
 	if err != nil {
 		return "", err
 	}

@@ -48,7 +48,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
@@ -102,7 +102,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
@@ -142,7 +142,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
@@ -182,7 +182,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 				{
@@ -249,7 +249,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list_similar.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/stats_appliance_similar.json"),
 				},
 				{
@@ -295,7 +295,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_appliance_list.json"),
 				},
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/ha_stats_appliance_one_offline.json"),
 				},
 			},
@@ -381,10 +381,10 @@ func Test_printSummary(t *testing.T) {
 	app1, app1data := generateApplianceWithStats("appliance1", "appliance1.example.com", "6.1.1-12345", "healthy")
 	app2, app2data := generateApplianceWithStats("appliance2", "appliance2.example.com", "6.1.1-12345", "healthy")
 	app3, app3data := generateApplianceWithStats("appliance3", "appliance3.example.com", "unknown", "offline")
-	stats := openapi.NewStatsAppliancesListAllOf()
+	stats := openapi.NewApplianceWithStatusList()
 	stats.Data = append(stats.Data, app1data, app2data, app3data)
 	type args struct {
-		stats   []openapi.StatsAppliancesListAllOfData
+		stats   []openapi.ApplianceWithStatus
 		disable []openapi.Appliance
 	}
 	tests := []struct {
@@ -476,15 +476,15 @@ appliance3    appliance3.example.com    offline    unknown
 	}
 }
 
-func generateApplianceWithStats(name, hostname, version, status string) (openapi.Appliance, openapi.StatsAppliancesListAllOfData) {
+func generateApplianceWithStats(name, hostname, version, status string) (openapi.Appliance, openapi.ApplianceWithStatus) {
 	app := openapi.NewApplianceWithDefaults()
 	id := uuid.NewString()
 	app.SetId(id)
 	app.SetName(name)
 	app.SetHostname(hostname)
-	appstatdata := *openapi.NewStatsAppliancesListAllOfDataWithDefaults()
+	appstatdata := *openapi.NewApplianceWithStatusWithDefaults()
 	appstatdata.SetId(app.GetId())
 	appstatdata.SetStatus(status)
-	appstatdata.SetVersion(version)
+	appstatdata.SetApplianceVersion(version)
 	return *app, appstatdata
 }

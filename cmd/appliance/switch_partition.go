@@ -30,7 +30,7 @@ type options struct {
 	spinnerOut     func() io.Writer
 	canPrompt      bool
 	ciMode         bool
-	applianceStats *openapi.StatsAppliancesListAllOfData
+	applianceStats *openapi.ApplianceWithStatus
 }
 
 func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
@@ -92,7 +92,7 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 				return fmt.Errorf("failed to switch partition: no appliance identifier provided")
 			}
 
-			stats, _, err := api.DeprecatedStats(ctx, nil, nil, false)
+			stats, _, err := api.ApplianceStatus(ctx, nil, nil, false)
 			if err != nil {
 				return err
 			}
@@ -104,7 +104,7 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 			}
 
 			minVersion, _ := version.NewVersion("6.2.10-0")
-			currentVersion, err := version.NewVersion(opts.applianceStats.GetVersion())
+			currentVersion, err := version.NewVersion(opts.applianceStats.GetApplianceVersion())
 			if err != nil {
 				return err
 			}
@@ -140,7 +140,7 @@ func switchPartitionRunE(opts *options) error {
 		return fmt.Errorf("failed to get appliance: %w", err)
 	}
 
-	volume := opts.applianceStats.GetVolumeNumber()
+	volume := *opts.applianceStats.GetDetails().VolumeNumber
 	log := logrus.WithFields(logrus.Fields{
 		"id":     opts.id.String(),
 		"volume": volume,
@@ -199,14 +199,14 @@ func switchPartitionRunE(opts *options) error {
 	}
 
 	// verify partition switch
-	stats, _, err := api.DeprecatedStats(ctx, nil, nil, false)
+	stats, _, err := api.ApplianceStatus(ctx, nil, nil, false)
 	if err != nil {
 		return fmt.Errorf("partition switch failed: %w", err)
 	}
-	var newVolume float32
+	var newVolume int32
 	for _, a := range stats.GetData() {
 		if a.GetId() == appliance.GetId() {
-			newVolume = a.GetVolumeNumber()
+			newVolume = *a.GetDetails().VolumeNumber
 		}
 	}
 	log.WithField("new_volume", newVolume).Info("new stats after partition switch")

@@ -17,7 +17,7 @@ import (
 func TestMaintenanceStatusCommandTable(t *testing.T) {
 	registry := httpmock.NewRegistry(t)
 	registry.Register(
-		"/admin/stats/appliances",
+		"/admin/appliances/status",
 		httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 	)
 	defer registry.Teardown()

@@ -6,119 +6,1008 @@
         {
             "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
             "name": "controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1",
-            "online": true,
-            "version": "6.2.1",
-            "state": "single_controller_ready",
-            "volumeNumber": 2,
+            "applianceVersion": "6.2.1",
             "status": "healthy",
             "numberOfSessions": 0,
-            "controller": {
-                "status": "healthy",
-                "details": "Database size is 12 MB"
+            "created": "2019-08-24T14:15:22Z",
+            "updated": "2019-08-24T14:15:22Z",
+            "tags": [
+                "developer",
+                "api-created"
+            ],
+            "activated": true,
+            "pendingCertificateRenewal": false,
+            "version": 9,
+            "hostname": "appgate.company.com",
+            "site": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "siteName": "Default Site",
+            "customization": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "clientInterface": {},
+            "adminInterface": {
+                "hostname": "appgate.company.com",
+                "httpsPort": 8443,
+                "httpsCiphers": [
+                    "TLS13-AES256-GCM-SHA384",
+                    "ECDHE-RSA-AES256-GCM-SHA384",
+                    "ECDHE-RSA-AES128-GCM-SHA256"
+                ],
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ],
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                }
+            },
+            "networking": {
+                "hosts": [
+                    {
+                        "hostname": "internal.service.company.com",
+                        "address": "10.10.10.10"
+                    }
+                ],
+                "nics": [
+                    {
+                        "enabled": true,
+                        "name": "eth0",
+                        "ipv4": {
+                            "dhcp": {
+                                "enabled": true,
+                                "dns": true,
+                                "routers": true,
+                                "ntp": true,
+                                "mtu": true
+                            },
+                            "static": [
+                                {
+                                    "address": "10.10.10.1",
+                                    "netmask": 24,
+                                    "snat": true
+                                }
+                            ],
+                            "virtualIp": "10.10.10.24"
+                        },
+                        "ipv6": {
+                            "dhcp": {
+                                "enabled": true,
+                                "dns": true,
+                                "ntp": true,
+                                "mtu": true
+                            },
+                            "static": [
+                                {
+                                    "address": "2001:db8:0:0:0:ff00:42:8329",
+                                    "netmask": 24,
+                                    "snat": true
+                                }
+                            ],
+                            "virtualIp": "2001:db8:0:0:0:ff00:42:8400"
+                        },
+                        "mtu": 1500
+                    }
+                ],
+                "dnsServers": [
+                    "172.17.18.19",
+                    "192.100.111.31"
+                ],
+                "dnsDomains": [
+                    "internal.company.com"
+                ],
+                "routes": [
+                    {
+                        "address": "10.0.0.0",
+                        "netmask": 24,
+                        "gateway": "10.0.0.254",
+                        "nic": "eth0"
+                    }
+                ]
+            },
+            "ntp": {
+                "servers": [
+                    {
+                        "hostname": "0.ubuntu.pool.ntp.org",
+                        "keyType": "MD5",
+                        "keyNo": 0
+                    }
+                ]
+            },
+            "sshServer": {
+                "enabled": false,
+                "port": 22,
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ],
+                "passwordAuthentication": true
+            },
+            "snmpServer": {
+                "enabled": false,
+                "tcpPort": 161,
+                "udpPort": 161,
+                "snmpd.conf": "string",
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "healthcheckServer": {
+                "enabled": false,
+                "port": 5555,
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "prometheusExporter": {
+                "enabled": false,
+                "port": 5556,
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ],
+                "useHTTPS": false,
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                },
+                "basicAuth": false,
+                "allowedUsers": [
+                    {
+                        "username": "prometheus"
+                    }
+                ],
+                "labelsDisabled": [
+                    "collective_id"
+                ]
+            },
+            "ping": {
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ]
             },
             "logServer": {
-                "status": "healthy",
-                "details": "100% of shards are active."
+                "enabled": true,
+                "retentionDays": 30
             },
-            "logForwarder": {
-                "status": "n/a"
+            "controller": {
+                "enabled": true
             },
             "gateway": {
-                "status": "n/a",
-                "numberOfSessions": 0
-            },
-            "connector": {
-                "status": "n/a"
-            },
-            "portal": {
-                "status": "n/a",
-                "numberOfSessions": 0
-            },
-            "appliance": {
-                "status": "healthy"
-            },
-            "cpu": 0.8,
-            "memory": 48.8,
-            "disk": 1.2,
-            "network": {
-                "busiestNic": "eth0",
-                "dropin": 0,
-                "dropout": 0,
-                "rxSpeed": "0.26 Kbps",
-                "txSpeed": "0.26 Kbps",
-                "ips": {
-                    "eth0": [
-                        "10.97.144.2"
+                "enabled": false,
+                "suspended": false,
+                "vpn": {
+                    "weight": 100,
+                    "localWeight": 0,
+                    "allowDestinations": [
+                        {
+                            "address": "192.168.111.0",
+                            "netmask": 24,
+                            "nic": "eth1"
+                        }
                     ]
                 }
             },
-            "upgrade": {
-                "status": "ready",
-                "details": "6.2.2"
-            }
+            "logForwarder": {
+                "enabled": false,
+                "elasticsearch": {
+                    "awsId": "string",
+                    "awsRegion": "eu-west-2",
+                    "useInstanceCredentials": true,
+                    "url": "https://aws.com/elasticsearch/instance/asdaxllkmda64",
+                    "retentionDays": 30,
+                    "compatibilityMode": 6,
+                    "authentication": {
+                        "type": "Basic"
+                    }
+                },
+                "tcpClients": [
+                    {
+                        "name": "Company SIEM",
+                        "host": "siem.company.com",
+                        "port": 8888,
+                        "format": "json",
+                        "useTLS": true,
+                        "filter": "event_type=='authentication_succeeded'"
+                    }
+                ],
+                "awsKineses": [
+                    {
+                        "awsId": "string",
+                        "awsRegion": "eu-west-2",
+                        "useInstanceCredentials": true,
+                        "type": "Stream",
+                        "streamName": "Appgate_SDP_audit",
+                        "batchSize": 400,
+                        "numberOfPartitionKeys": 10,
+                        "filter": "event_type=='authentication_succeeded'"
+                    }
+                ],
+                "sumoLogicClients": [
+                    {
+                        "url": "https://hostname.com/collector/677a49eb-da20-4143-ab61-cfd8aec64647"
+                    }
+                ],
+                "splunkClients": [
+                    {
+                        "url": "https://hec.hostname.com:443/services/collector/event"
+                    }
+                ],
+                "azureMonitors": [
+                    {
+                        "appId": "string",
+                        "tokenRequestUrl": "https://hostname.com/token",
+                        "logDestinationUrl": "https://hostname.com/logs",
+                        "scope": "https://monitor.azure.com/.default"
+                    }
+                ],
+                "falconLogScales": [
+                    {
+                        "collectorUrl": "https://api.humio.com",
+                        "index": "string",
+                        "sourceType": "string",
+                        "source": "string"
+                    }
+                ],
+                "datadogs": [
+                    {
+                        "site": "https://http-intake.logs.datadoghq.com",
+                        "source": "appgate",
+                        "tags": [
+                            "appgate",
+                            "appgate-sdp"
+                        ]
+                    }
+                ],
+                "coralogixs": [
+                    {
+                        "url": "https://api.coralogix.com/api/v1/logs",
+                        "uuid": "12345678-1234-1234-1234-123456789012",
+                        "applicationName": "appgate",
+                        "subsystemName": "appgate-sdp"
+                    }
+                ],
+                "sites": [
+                    "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                ]
+            },
+            "metricsAggregator": {
+                "enabled": false,
+                "prometheusExporter": {
+                    "enabled": false,
+                    "port": 5556,
+                    "allowSources": [
+                        {
+                            "address": "::",
+                            "netmask": 0
+                        },
+                        {
+                            "address": "0.0.0.0",
+                            "netmask": 0
+                        }
+                    ],
+                    "useHTTPS": false,
+                    "httpsP12": {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "subjectName": "string"
+                    },
+                    "basicAuth": false,
+                    "allowedUsers": [
+                        {
+                            "username": "prometheus"
+                        }
+                    ],
+                    "labelsDisabled": [
+                        "collective_id"
+                    ]
+                },
+                "sites": [
+                    "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                ]
+            },
+            "connector": {
+                "enabled": false,
+                "expressClients": [
+                    {
+                        "name": "Printers",
+                        "deviceId": "12699e27-b584-464a-81ee-5b4784b6d425",
+                        "allowResources": [
+                            {
+                                "address": "0.0.0.0",
+                                "netmask": 32
+                            }
+                        ],
+                        "snatToResources": true,
+                        "dnatToResource": false
+                    }
+                ],
+                "advancedClients": [
+                    {
+                        "name": "Printers",
+                        "deviceId": "12699e27-b584-464a-81ee-5b4784b6d425",
+                        "allowResources": [
+                            {
+                                "address": "::",
+                                "netmask": 0
+                            },
+                            {
+                                "address": "0.0.0.0",
+                                "netmask": 0
+                            }
+                        ],
+                        "snatToTunnel": true,
+                        "snatToResources": true,
+                        "dnatToResource": false,
+                        "defaultGateway": false,
+                        "dhcpRelay": {
+                            "servers": [
+                                "string"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "portal": {
+                "enabled": false,
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                },
+                "httpRedirect": true,
+                "proxyPorts": [
+                    443
+                ],
+                "proxyP12s": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "subjectName": "string",
+                        "verifyUpstream": true
+                    }
+                ],
+                "profiles": [
+                    "Portal Users"
+                ],
+                "externalProfiles": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "hostname": "appgate.company.com",
+                        "profileName": "Main Profile"
+                    }
+                ],
+                "signInCustomization": {
+                    "backgroundColor": "#123456",
+                    "backgroundImage": "string",
+                    "logo": "string",
+                    "text": "string",
+                    "textColor": "#123456",
+                    "autoRedirect": true
+                }
+            },
+            "rsyslogDestinations": [
+                {
+                    "selector": ":msg, contains, \"[AUDIT]\"",
+                    "template": "%msg:9:$%\n",
+                    "destination": "@@10.10.10.2"
+                }
+            ],
+            "hostnameAliases": [
+                "appgatealias.company.com",
+                "alias2.appgate.company.com"
+            ],
+            "functions": [
+                "Controller",
+                "LogServer"
+            ],
+            "details": {
+                "version": "6.3.0",
+                "cpu": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "memory": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "network": {
+                    "busiestNic": "eth0",
+                    "details": {
+                        "eth0": {
+                            "dropin": 0,
+                            "dropout": 0,
+                            "rxSpeed": "0.26 Kbps",
+                            "txSpeed": "0.26 Kbps",
+                            "ips": [
+                                "10.97.144.2"
+                            ]
+                        }
+                    }
+                },
+                "roles": {
+                    "controller": {
+                        "status": "healthy",
+                        "maintenanceMode": false,
+                        "details": "Database size is 12 MB"
+                    },
+                    "logServer": {
+                        "status": "healthy",
+                        "details": "100% of shards are active."
+                    },
+                    "logForwarder": {
+                        "status": "n/a"
+                    },
+                    "gateway": {
+                        "status": "n/a",
+                        "numberOfSessions": 0
+                    },
+                    "connector": {
+                        "status": "n/a"
+                    },
+                    "portal": {
+                        "status": "n/a",
+                        "numberOfSessions": 0
+                    },
+                    "appliance": {
+                        "status": "healthy"
+                    },
+                    "state": "single_controller_ready",
+                    "volumeNumber": 2,
+                    "upgrade": {
+                        "status": "ready",
+                        "details": "6.2.2"
+                    }
+                }
+            },
+            "cpu": 0.8,
+            "memory": 48.8,
+            "disk": 1.2
         },
         {
             "id": "ee639d70-e075-4f01-596b-930d5f24f569",
             "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
             "online": true,
-            "version": "6.2.1",
+            "applianceVersion": "6.2.1",
             "state": "appliance_ready",
-            "volumeNumber": 1,
             "status": "healthy",
             "numberOfSessions": 5,
-            "controller": {
-                "status": "n/a"
-            },
-            "logServer": {
-                "status": "n/a"
-            },
-            "logForwarder": {
-                "status": "n/a"
-            },
-            "gateway": {
-                "status": "healthy",
-                "numberOfSessions": 5
-            },
-            "connector": {
-                "status": "n/a"
-            },
-            "portal": {
-                "status": "n/a",
-                "numberOfSessions": 0
-            },
-            "appliance": {
-                "status": "healthy",
-                "details": "cz-ffwd: forwarding logs to envy-10-97-144-2.devops:443"
-            },
             "cpu": 0.7,
             "memory": 7.8,
             "disk": 4.9,
-            "network": {
-                "busiestNic": "eth0",
-                "dropin": 27,
-                "dropout": 0,
-                "rxSpeed": "96.0 bps",
-                "txSpeed": "76.8 bps",
-                "ips": {
-                    "eth0": [
-                        "10.97.144.3"
-                    ],
-                    "eth1": [
-                        "10.97.205.66"
+            "version": 9,
+            "hostname": "appgate.company.com",
+            "site": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "siteName": "Default Site",
+            "customization": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "clientInterface": {},
+            "adminInterface": {
+                "hostname": "appgate.company.com",
+                "httpsPort": 8443,
+                "httpsCiphers": [
+                    "TLS13-AES256-GCM-SHA384",
+                    "ECDHE-RSA-AES256-GCM-SHA384",
+                    "ECDHE-RSA-AES128-GCM-SHA256"
+                ],
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ],
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                }
+            },
+            "networking": {
+                "hosts": [
+                    {
+                        "hostname": "internal.service.company.com",
+                        "address": "10.10.10.10"
+                    }
+                ],
+                "nics": [
+                    {
+                        "enabled": true,
+                        "name": "eth0",
+                        "ipv4": {
+                            "dhcp": {
+                                "enabled": true,
+                                "dns": true,
+                                "routers": true,
+                                "ntp": true,
+                                "mtu": true
+                            },
+                            "static": [
+                                {
+                                    "address": "10.10.10.1",
+                                    "netmask": 24,
+                                    "snat": true
+                                }
+                            ],
+                            "virtualIp": "10.10.10.24"
+                        },
+                        "ipv6": {
+                            "dhcp": {
+                                "enabled": true,
+                                "dns": true,
+                                "ntp": true,
+                                "mtu": true
+                            },
+                            "static": [
+                                {
+                                    "address": "2001:db8:0:0:0:ff00:42:8329",
+                                    "netmask": 24,
+                                    "snat": true
+                                }
+                            ],
+                            "virtualIp": "2001:db8:0:0:0:ff00:42:8400"
+                        },
+                        "mtu": 1500
+                    }
+                ],
+                "dnsServers": [
+                    "172.17.18.19",
+                    "192.100.111.31"
+                ],
+                "dnsDomains": [
+                    "internal.company.com"
+                ],
+                "routes": [
+                    {
+                        "address": "10.0.0.0",
+                        "netmask": 24,
+                        "gateway": "10.0.0.254",
+                        "nic": "eth0"
+                    }
+                ]
+            },
+            "ntp": {
+                "servers": [
+                    {
+                        "hostname": "0.ubuntu.pool.ntp.org",
+                        "keyType": "MD5",
+                        "keyNo": 0
+                    }
+                ]
+            },
+            "sshServer": {
+                "enabled": false,
+                "port": 22,
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ],
+                "passwordAuthentication": true
+            },
+            "snmpServer": {
+                "enabled": false,
+                "tcpPort": 161,
+                "udpPort": 161,
+                "snmpd.conf": "string",
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "healthcheckServer": {
+                "enabled": false,
+                "port": 5555,
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "prometheusExporter": {
+                "enabled": false,
+                "port": 5556,
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ],
+                "useHTTPS": false,
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                },
+                "basicAuth": false,
+                "allowedUsers": [
+                    {
+                        "username": "prometheus"
+                    }
+                ],
+                "labelsDisabled": [
+                    "collective_id"
+                ]
+            },
+            "ping": {
+                "allowSources": [
+                    {
+                        "address": "::",
+                        "netmask": 0
+                    },
+                    {
+                        "address": "0.0.0.0",
+                        "netmask": 0
+                    }
+                ]
+            },
+            "logServer": {
+                "enabled": false,
+                "retentionDays": 30
+            },
+            "controller": {
+                "enabled": false
+            },
+            "gateway": {
+                "enabled": true,
+                "suspended": false,
+                "vpn": {
+                    "weight": 100,
+                    "localWeight": 0,
+                    "allowDestinations": [
+                        {
+                            "address": "192.168.111.0",
+                            "netmask": 24,
+                            "nic": "eth1"
+                        }
                     ]
                 }
             },
-            "upgrade": {
-                "status": "ready",
-                "details": "6.2.2"
+            "logForwarder": {
+                "enabled": false,
+                "elasticsearch": {
+                    "awsId": "string",
+                    "awsRegion": "eu-west-2",
+                    "useInstanceCredentials": true,
+                    "url": "https://aws.com/elasticsearch/instance/asdaxllkmda64",
+                    "retentionDays": 30,
+                    "compatibilityMode": 6,
+                    "authentication": {
+                        "type": "Basic"
+                    }
+                },
+                "tcpClients": [
+                    {
+                        "name": "Company SIEM",
+                        "host": "siem.company.com",
+                        "port": 8888,
+                        "format": "json",
+                        "useTLS": true,
+                        "filter": "event_type=='authentication_succeeded'"
+                    }
+                ],
+                "awsKineses": [
+                    {
+                        "awsId": "string",
+                        "awsRegion": "eu-west-2",
+                        "useInstanceCredentials": true,
+                        "type": "Stream",
+                        "streamName": "Appgate_SDP_audit",
+                        "batchSize": 400,
+                        "numberOfPartitionKeys": 10,
+                        "filter": "event_type=='authentication_succeeded'"
+                    }
+                ],
+                "sumoLogicClients": [
+                    {
+                        "url": "https://hostname.com/collector/677a49eb-da20-4143-ab61-cfd8aec64647"
+                    }
+                ],
+                "splunkClients": [
+                    {
+                        "url": "https://hec.hostname.com:443/services/collector/event"
+                    }
+                ],
+                "azureMonitors": [
+                    {
+                        "appId": "string",
+                        "tokenRequestUrl": "https://hostname.com/token",
+                        "logDestinationUrl": "https://hostname.com/logs",
+                        "scope": "https://monitor.azure.com/.default"
+                    }
+                ],
+                "falconLogScales": [
+                    {
+                        "collectorUrl": "https://api.humio.com",
+                        "index": "string",
+                        "sourceType": "string",
+                        "source": "string"
+                    }
+                ],
+                "datadogs": [
+                    {
+                        "site": "https://http-intake.logs.datadoghq.com",
+                        "source": "appgate",
+                        "tags": [
+                            "appgate",
+                            "appgate-sdp"
+                        ]
+                    }
+                ],
+                "coralogixs": [
+                    {
+                        "url": "https://api.coralogix.com/api/v1/logs",
+                        "uuid": "12345678-1234-1234-1234-123456789012",
+                        "applicationName": "appgate",
+                        "subsystemName": "appgate-sdp"
+                    }
+                ],
+                "sites": [
+                    "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                ]
+            },
+            "metricsAggregator": {
+                "enabled": false,
+                "prometheusExporter": {
+                    "enabled": false,
+                    "port": 5556,
+                    "allowSources": [
+                        {
+                            "address": "::",
+                            "netmask": 0
+                        },
+                        {
+                            "address": "0.0.0.0",
+                            "netmask": 0
+                        }
+                    ],
+                    "useHTTPS": false,
+                    "httpsP12": {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "subjectName": "string"
+                    },
+                    "basicAuth": false,
+                    "allowedUsers": [
+                        {
+                            "username": "prometheus"
+                        }
+                    ],
+                    "labelsDisabled": [
+                        "collective_id"
+                    ]
+                },
+                "sites": [
+                    "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                ]
+            },
+            "connector": {
+                "enabled": false,
+                "expressClients": [
+                    {
+                        "name": "Printers",
+                        "deviceId": "12699e27-b584-464a-81ee-5b4784b6d425",
+                        "allowResources": [
+                            {
+                                "address": "0.0.0.0",
+                                "netmask": 32
+                            }
+                        ],
+                        "snatToResources": true,
+                        "dnatToResource": false
+                    }
+                ],
+                "advancedClients": [
+                    {
+                        "name": "Printers",
+                        "deviceId": "12699e27-b584-464a-81ee-5b4784b6d425",
+                        "allowResources": [
+                            {
+                                "address": "::",
+                                "netmask": 0
+                            },
+                            {
+                                "address": "0.0.0.0",
+                                "netmask": 0
+                            }
+                        ],
+                        "snatToTunnel": true,
+                        "snatToResources": true,
+                        "dnatToResource": false,
+                        "defaultGateway": false,
+                        "dhcpRelay": {
+                            "servers": [
+                                "string"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "portal": {
+                "enabled": false,
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                },
+                "httpRedirect": true,
+                "proxyPorts": [
+                    443
+                ],
+                "proxyP12s": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "subjectName": "string",
+                        "verifyUpstream": true
+                    }
+                ],
+                "profiles": [
+                    "Portal Users"
+                ],
+                "externalProfiles": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "hostname": "appgate.company.com",
+                        "profileName": "Main Profile"
+                    }
+                ],
+                "signInCustomization": {
+                    "backgroundColor": "#123456",
+                    "backgroundImage": "string",
+                    "logo": "string",
+                    "text": "string",
+                    "textColor": "#123456",
+                    "autoRedirect": true
+                }
+            },
+            "rsyslogDestinations": [
+                {
+                    "selector": ":msg, contains, \"[AUDIT]\"",
+                    "template": "%msg:9:$%\n",
+                    "destination": "@@10.10.10.2"
+                }
+            ],
+            "hostnameAliases": [
+                "appgatealias.company.com",
+                "alias2.appgate.company.com"
+            ],
+            "functions": [
+                "Gateway"
+            ],
+            "details": {
+                "version": "6.3.0",
+                "cpu": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "memory": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "network": {
+                    "busiestNic": "eth0",
+                    "details": {
+                        "eth0": {
+                            "dropin": 27,
+                            "dropout": 0,
+                            "rxSpeed": "96.0 bps",
+                            "txSpeed": "76.8 bps",
+                            "ips": [
+                                "10.97.144.3"
+                            ]
+                        },
+                        "eth1": {
+                            "dropin": 0,
+                            "dropout": 0,
+                            "rxSpeed": "0.0 bps",
+                            "txSpeed": "0.0 bps",
+                            "ips": [
+                                "10.97.205.66"
+                            ]
+                        }
+                    }
+                },
+                "roles": {
+                    "controller": {
+                        "status": "n/a",
+                        "maintenanceMode": false
+                    },
+                    "logServer": {
+                        "status": "n/a"
+                    },
+                    "logForwarder": {
+                        "status": "n/a"
+                    },
+                    "gateway": {
+                        "status": "healthy",
+                        "numberOfSessions": 5
+                    },
+                    "connector": {
+                        "status": "n/a"
+                    },
+                    "portal": {
+                        "status": "n/a",
+                        "numberOfSessions": 0
+                    },
+                    "appliance": {
+                        "status": "healthy",
+                        "details": "cz-ffwd: forwarding logs to envy-10-97-144-2.devops:443"
+                    }
+                },
+                "volumeNumber": 1,
+                "upgrade": {
+                    "status": "ready",
+                    "details": "6.2.2"
+                }
             }
         }
-    ],
-    "controllerCount": 1,
-    "gatewayCount": 1,
-    "applianceCount": 2,
-    "logServerCount": 1,
-    "logForwarderCount": 0,
-    "connectorCount": 0,
-    "portalCount": 0
+    ]
 }

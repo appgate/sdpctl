@@ -141,8 +141,8 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 	return nil
 }
 
-func (a *Appliance) DeprecatedStats(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.StatsAppliancesList, *http.Response, error) {
-	status, response, err := a.APIClient.ApplianceStatsDeprecatedApi.StatsAppliancesGet(ctx).Authorization(a.Token).Execute()
+func (a *Appliance) ApplianceStatus(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.ApplianceWithStatusList, *http.Response, error) {
+	status, response, err := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Authorization(a.Token).Execute()
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}

@@ -6,117 +6,393 @@
         {
             "id": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
             "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
-            "online": true,
-            "version": "6.2.6-12345",
-            "state": "single_controller_ready",
-            "volumeNumber": 2,
-            "status": "healthy",
-            "controller": {
-                "status": "healthy",
-                "details": "Database size is 12 MB"
-            },
+            "notes": "This object has been created for test purposes.",
+            "created": "2019-08-24T14:15:22Z",
+            "updated": "2019-08-24T14:15:22Z",
+            "tags": [
+                "developer",
+                "api-created"
+            ],
+            "activated": true,
+            "pendingCertificateRenewal": false,
+            "version": 9,
+            "hostname": "appgate.company.com",
+            "site": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "siteName": "Default Site",
+            "customization": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "clientInterface": {},
+            "adminInterface": {},
+            "networking": {},
+            "ntp": {},
+            "sshServer": {},
+            "snmpServer": {},
+            "healthcheckServer": {},
+            "prometheusExporter": {},
+            "ping": {},
             "logServer": {
-                "status": "healthy",
-                "details": "100% of shards are active."
+                "enabled": true,
+                "retentionDays": 30
             },
-            "logForwarder": {
-                "status": "n/a"
+            "controller": {
+                "enabled": true
             },
             "gateway": {
-                "status": "n/a",
-                "numberOfSessions": 0
+                "enabled": false,
+                "suspended": false
+            },
+            "logForwarder": {
+                "enabled": false,
+                "tcpClients": [],
+                "awsKineses": [],
+                "sumoLogicClients": [],
+                "splunkClients": [],
+                "azureMonitors": [],
+                "falconLogScales": [],
+                "datadogs": [],
+                "coralogixs": [],
+                "sites": []
+            },
+            "metricsAggregator": {
+                "enabled": false,
+                "sites": [
+                    "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                ]
             },
             "connector": {
-                "status": "n/a"
+                "enabled": false
             },
             "portal": {
-                "status": "n/a",
-                "numberOfSessions": 0
+                "enabled": false,
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                },
+                "httpRedirect": true,
+                "proxyPorts": [
+                    443
+                ],
+                "proxyP12s": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "subjectName": "string",
+                        "verifyUpstream": true
+                    }
+                ],
+                "profiles": [
+                    "Portal Users"
+                ],
+                "externalProfiles": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "hostname": "appgate.company.com",
+                        "profileName": "Main Profile"
+                    }
+                ],
+                "signInCustomization": {
+                    "backgroundColor": "#123456",
+                    "backgroundImage": "string",
+                    "logo": "string",
+                    "text": "string",
+                    "textColor": "#123456",
+                    "autoRedirect": true
+                }
             },
-            "appliance": {
-                "status": "healthy"
-            },
+            "rsyslogDestinations": [
+                {
+                    "selector": ":msg, contains, \"[AUDIT]\"",
+                    "template": "%msg:9:$%\n",
+                    "destination": "@@10.10.10.2"
+                }
+            ],
+            "hostnameAliases": [
+                "appgatealias.company.com",
+                "alias2.appgate.company.com"
+            ],
+            "state": "string",
+            "functions": [
+                "Controller",
+                "LogServer"
+            ],
+            "status": "healthy",
+            "customizationName": "string",
             "cpu": 0.8,
             "memory": 48.8,
             "disk": 1.2,
-            "network": {
-                "busiestNic": "eth0",
-                "dropin": 0,
-                "dropout": 0,
-                "rxSpeed": "0.26 Kbps",
-                "txSpeed": "0.26 Kbps",
-                "ips": {
-                    "eth0": [
-                        "10.97.144.2"
-                    ]
+            "numberOfSessions": 0,
+            "applianceVersion": "6.2.6-12345",
+            "details": {
+                "version": "6.3.0",
+                "cpu": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "memory": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "disk": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "network": {
+                    "busiestNic": "eth0",
+                    "dropin": 0,
+                    "dropout": 0,
+                    "rxSpeed": "0.26 Kbps",
+                    "txSpeed": "0.26 Kbps",
+                    "ips": {
+                        "eth0": [
+                            "10.97.144.2"
+                        ]
+                    }
+                },
+                "status": "error",
+                "roles": {
+                    "controller": {
+                        "status": "healthy",
+                        "details": "Database size is 12 MB"
+                    },
+                    "logServer": {
+                        "status": "healthy",
+                        "details": "100% of shards are active."
+                    },
+                    "logForwarder": {
+                        "status": "n/a"
+                    },
+                    "metricsAggregator": {
+                        "status": "n/a",
+                        "details": "Cannot reach appliance. Please check Controller logs."
+                    },
+                    "gateway": {
+                        "status": "n/a",
+                        "numberOfSessions": 0
+                    },
+                    "connector": {
+                        "status": "n/a"
+                    },
+                    "portal": {
+                        "status": "n/a",
+                        "numberOfSessions": 0
+                    },
+                    "appliance": {
+                        "status": "healthy"
+                    }
+                },
+                "state": "string",
+                "volumeNumber": 0,
+                "upgrade": {
+                    "status": "idle",
+                    "details": "string"
                 }
-            },
-            "upgrade": {
-                "status": "ready",
-                "details": "6.2.7"
             }
         },
         {
             "id": "ee639d70-e075-4f01-596b-930d5f24f569",
             "name": "gateway-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
-            "online": true,
-            "version": "6.2.6-12345",
-            "state": "appliance_ready",
-            "volumeNumber": 1,
-            "status": "healthy",
-            "controller": {
-                "status": "n/a"
-            },
+            "notes": "This object has been created for test purposes.",
+            "created": "2019-08-24T14:15:22Z",
+            "updated": "2019-08-24T14:15:22Z",
+            "tags": [
+                "developer",
+                "api-created"
+            ],
+            "activated": true,
+            "pendingCertificateRenewal": false,
+            "version": 9,
+            "hostname": "appgate.company.com",
+            "site": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "siteName": "Default Site",
+            "customization": "4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+            "clientInterface": {},
+            "adminInterface": {},
+            "networking": {},
+            "ntp": {},
+            "sshServer": {},
+            "snmpServer": {},
+            "healthcheckServer": {},
+            "prometheusExporter": {},
+            "ping": {},
             "logServer": {
-                "status": "n/a"
+                "enabled": false,
+                "retentionDays": 30
             },
-            "logForwarder": {
-                "status": "n/a"
+            "controller": {
+                "enabled": false
             },
             "gateway": {
-                "status": "healthy",
-                "numberOfSessions": 0
+                "enabled": true,
+                "suspended": false
+            },
+            "logForwarder": {
+                "enabled": false,
+                "tcpClients": [],
+                "awsKineses": [],
+                "sumoLogicClients": [],
+                "splunkClients": [],
+                "azureMonitors": [],
+                "falconLogScales": [],
+                "datadogs": [],
+                "coralogixs": [],
+                "sites": []
+            },
+            "metricsAggregator": {
+                "enabled": false,
+                "sites": [
+                    "497f6eca-6276-4993-bfeb-53cbbbba6f08"
+                ]
             },
             "connector": {
-                "status": "n/a"
+                "enabled": false
             },
             "portal": {
-                "status": "n/a",
-                "numberOfSessions": 0
+                "enabled": false,
+                "httpsP12": {
+                    "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                    "subjectName": "string"
+                },
+                "httpRedirect": true,
+                "proxyPorts": [
+                    443
+                ],
+                "proxyP12s": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "subjectName": "string",
+                        "verifyUpstream": true
+                    }
+                ],
+                "profiles": [
+                    "Portal Users"
+                ],
+                "externalProfiles": [
+                    {
+                        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+                        "hostname": "appgate.company.com",
+                        "profileName": "Main Profile"
+                    }
+                ],
+                "signInCustomization": {
+                    "backgroundColor": "#123456",
+                    "backgroundImage": "string",
+                    "logo": "string",
+                    "text": "string",
+                    "textColor": "#123456",
+                    "autoRedirect": true
+                }
             },
-            "appliance": {
-                "status": "healthy",
-                "details": "cz-ffwd: forwarding logs to envy-10-97-144-2.devops:443"
-            },
+            "rsyslogDestinations": [
+                {
+                    "selector": ":msg, contains, \"[AUDIT]\"",
+                    "template": "%msg:9:$%\n",
+                    "destination": "@@10.10.10.2"
+                }
+            ],
+            "hostnameAliases": [
+                "appgatealias.company.com",
+                "alias2.appgate.company.com"
+            ],
+            "state": "string",
+            "functions": [
+                "Gateway"
+            ],
+            "status": "healthy",
+            "customizationName": "string",
             "cpu": 0.7,
             "memory": 7.8,
             "disk": 4.9,
-            "network": {
-                "busiestNic": "eth0",
-                "dropin": 27,
-                "dropout": 0,
-                "rxSpeed": "96.0 bps",
-                "txSpeed": "76.8 bps",
-                "ips": {
-                    "eth0": [
-                        "10.97.144.3"
-                    ],
-                    "eth1": [
-                        "10.97.205.66"
-                    ]
+            "numberOfSessions": 0,
+            "applianceVersion": "6.2.6-12345",
+            "details": {
+                "version": "6.3.0",
+                "cpu": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "memory": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "disk": {
+                    "total": 0,
+                    "used": 0,
+                    "free": 0,
+                    "percent": 0,
+                    "details": "string",
+                    "available": 0
+                },
+                "network": {
+                    "busiestNic": "eth0",
+                    "dropin": 27,
+                    "dropout": 0,
+                    "rxSpeed": "96.0 bps",
+                    "txSpeed": "76.8 bps",
+                    "ips": {
+                        "eth0": [
+                            "10.97.144.3"
+                        ],
+                        "eth1": [
+                            "10.97.205.66"
+                        ]
+                    }
+                },
+                "status": "error",
+                "roles": {
+                    "controller": {
+                        "status": "n/a"
+                    },
+                    "logServer": {
+                        "status": "n/a"
+                    },
+                    "logForwarder": {
+                        "status": "n/a"
+                    },
+                    "metricsAggregator": {
+                        "status": "n/a",
+                        "details": "Cannot reach appliance. Please check Controller logs."
+                    },
+                    "gateway": {
+                        "status": "healthy",
+                        "numberOfSessions": 0
+                    },
+                    "connector": {
+                        "status": "n/a"
+                    },
+                    "portal": {
+                        "status": "n/a",
+                        "numberOfSessions": 0
+                    },
+                    "appliance": {
+                        "status": "healthy",
+                        "details": "cz-ffwd: forwarding logs to envy-10-97-144-2.devops:443"
+                    }
+                },
+                "state": "string",
+                "volumeNumber": 0,
+                "upgrade": {
+                    "status": "idle",
+                    "details": "string"
                 }
-            },
-            "upgrade": {
-                "status": "ready",
-                "details": "6.2.7"
             }
         }
-    ],
-    "controllerCount": 1,
-    "gatewayCount": 1,
-    "applianceCount": 2,
-    "logServerCount": 1,
-    "logForwarderCount": 0,
-    "connectorCount": 0,
-    "portalCount": 0
+    ]
 }

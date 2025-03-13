@@ -141,7 +141,7 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 		return fmt.Errorf("No controllers to disable")
 	}
 
-	stats, _, err := a.DeprecatedStats(ctx, nil, nil, false)
+	stats, _, err := a.ApplianceStatus(ctx, nil, nil, false)
 	if err != nil {
 		return err
 	}
@@ -374,7 +374,7 @@ This will force disable the selected controllers and announce it to the remainin
 {{ .DisableTable }}
 `
 
-func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable []openapi.Appliance) (string, error) {
+func printSummary(stats []openapi.ApplianceWithStatus, disable []openapi.Appliance) (string, error) {
 	type stub struct {
 		DisableTable string
 	}
@@ -386,7 +386,7 @@ func printSummary(stats []openapi.StatsAppliancesListAllOfData, disable []openap
 	for _, s := range stats {
 		for _, a := range disable {
 			if s.GetId() == a.GetId() {
-				dt.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetVersion())
+				dt.AddLine(a.GetName(), a.GetHostname(), s.GetStatus(), s.GetApplianceVersion())
 			}
 		}
 	}

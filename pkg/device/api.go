@@ -36,7 +36,7 @@ func (t *Device) RevokeByDistinguishedName(request openapi.ApiOnBoardedDevicesRe
 }
 
 func (t *Device) ReevaluateByDistinguishedName(ctx context.Context, dn string) ([]string, error) {
-	reevaluatedDn, response, err := t.APIClient.ActiveDevicesApi.OnBoardedDevicesReevaluateDistinguishedNamePost(ctx, dn).Authorization(t.Token).Execute()
+	reevaluatedDn, response, err := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesReevaluateDistinguishedNamePost(ctx, dn).Authorization(t.Token).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

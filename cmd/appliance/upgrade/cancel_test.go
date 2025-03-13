@@ -29,7 +29,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			name: "test cancel multiple appliances",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
@@ -54,7 +54,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			name: "test cancel multiple appliances no acceptance",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{
@@ -68,7 +68,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			name: "Test no appliance idle upgrade status",
 			httpStubs: []httpmock.Stub{
 				{
-					URL:       "/admin/stats/appliances",
+					URL:       "/admin/appliances/status",
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
 				},
 				{

@@ -60,7 +60,8 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	}
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 	ctx := context.Background()
-	stats, _, err := a.DeprecatedStats(ctx, filter, orderBy, descending)
+
+	stats, _, err := a.ApplianceStatus(ctx, filter, orderBy, descending)
 	if err != nil {
 		return err
 	}
@@ -79,17 +80,17 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	}
 	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", diskHeader, "Version", "Sessions")
 	for _, s := range stats.GetData() {
-		version := s.GetVersion()
+		version := s.GetApplianceVersion()
 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
 			version = v.String()
 		}
 		w.AddLine(
 			s.GetName(),
 			s.GetStatus(),
-			appliancepkg.StatsActiveFunctions(s),
+			appliancepkg.ApplianceActiveFunctions(s),
 			fmt.Sprintf("%g%%", s.GetCpu()),
 			fmt.Sprintf("%g%%", s.GetMemory()),
-			statsNetworkPrettyPrint(s.GetNetwork()),
+			statsNetworkPrettyPrint(s.GetDetails().Network),
 			statsDiskUsage(s),
 			version,
 			s.GetNumberOfSessions(),
@@ -99,15 +100,16 @@ func statsRun(cmd *cobra.Command, args []string, opts *statsOptions) error {
 	return nil
 }
 
-func statsNetworkPrettyPrint(n openapi.StatsAppliancesListAllOfNetwork) string {
-	return fmt.Sprintf("%s / %s", n.GetTxSpeed(), n.GetRxSpeed())
+func statsNetworkPrettyPrint(n *openapi.NetworkInfo) string {
+	busiestNic := n.GetBusiestNic()
+	nicDetails := n.GetDetails()[busiestNic]
+	return fmt.Sprintf("%s / %s", nicDetails.GetTxSpeed(), nicDetails.GetRxSpeed())
 }
 
-func statsDiskUsage(stats openapi.StatsAppliancesListAllOfData) string {
-	if v, ok := stats.GetDiskInfoOk(); ok {
-		diskInfo := *v
+func statsDiskUsage(stats openapi.ApplianceWithStatus) string {
+	if diskInfo := stats.GetDetails().Disk; diskInfo != nil {
 		used, total := diskInfo.GetUsed(), diskInfo.GetTotal()
-		percentUsed := (used / total) * 100
+		percentUsed := (float32(used) / float32(total)) * 100
 		return fmt.Sprintf("%.2f%% (%s / %s)", percentUsed, appliancepkg.PrettyBytes(float64(used)), appliancepkg.PrettyBytes(float64(total)))
 	}
 	return fmt.Sprintf("%g%%", stats.GetDisk())

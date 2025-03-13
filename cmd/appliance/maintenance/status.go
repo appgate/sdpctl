@@ -53,17 +53,16 @@ func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 		return err
 	}
 	ctx := context.Background()
-	stats, _, err := a.DeprecatedStats(ctx, nil, nil, false)
+	stats, _, err := a.ApplianceStatus(ctx, nil, nil, false)
 	if err != nil {
 		return err
 	}
 
 	// filter out the only the Controller stats
-	controllers := make([]openapi.StatsAppliancesListAllOfData, 0)
-	notController := "n/a"
+	controllers := make([]openapi.ApplianceWithStatus, 0)
 	for _, s := range stats.GetData() {
 		ctrl := s.GetController()
-		if ctrl.GetStatus() != notController {
+		if ctrl.GetEnabled() {
 			controllers = append(controllers, s)
 		}
 	}
@@ -79,11 +78,10 @@ func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 	removeNewLine := regexp.MustCompile(`\r?\n`)
 	w.AddHeader("Name", "Maintenance mode", "Details")
 	for _, s := range controllers {
-		ctrl := s.GetController()
 		w.AddLine(
 			s.GetName(),
-			ctrl.GetMaintenanceMode(),
-			removeNewLine.ReplaceAllString(ctrl.GetDetails(), " "),
+			*s.GetDetails().Roles.Controller.MaintenanceMode,
+			removeNewLine.ReplaceAllString(*s.GetDetails().Roles.Controller.Details, " "),
 		)
 
 	}

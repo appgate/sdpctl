@@ -18,7 +18,7 @@ import (
 func TestFilterAvailable(t *testing.T) {
 	type args struct {
 		appliances []openapi.Appliance
-		stats      []openapi.StatsAppliancesListAllOfData
+		stats      []openapi.ApplianceWithStatus
 	}
 	tests := []struct {
 		name        string
@@ -46,14 +46,14 @@ func TestFilterAvailable(t *testing.T) {
 						},
 					},
 				},
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
 						Id:     openapi.PtrString("one"),
-						Online: openapi.PtrBool(true),
+						Status: openapi.PtrString("healthy"),
 					},
 					{
 						Id:     openapi.PtrString("two"),
-						Online: openapi.PtrBool(false),
+						Status: openapi.PtrString("offline"),
 					},
 				},
 			},
@@ -99,14 +99,14 @@ func TestFilterAvailable(t *testing.T) {
 						},
 					},
 				},
-				stats: []openapi.StatsAppliancesListAllOfData{
+				stats: []openapi.ApplianceWithStatus{
 					{
 						Id:     openapi.PtrString("one"),
-						Online: openapi.PtrBool(true),
+						Status: openapi.PtrString("healthy"),
 					},
 					{
 						Id:     openapi.PtrString("two"),
-						Online: openapi.PtrBool(false),
+						Status: openapi.PtrString("offline"),
 					},
 				},
 			},
@@ -702,7 +702,7 @@ func TestValidateHostname(t *testing.T) {
 
 func TestStatsIsOnline(t *testing.T) {
 	type args struct {
-		s openapi.StatsAppliancesListAllOfData
+		s openapi.ApplianceWithStatus
 	}
 	tests := []struct {
 		name string
@@ -710,36 +710,9 @@ func TestStatsIsOnline(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "pre 6.0 online",
-			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
-					Online: openapi.PtrBool(true),
-				},
-			},
-			want: true,
-		},
-		{
-			name: "online nil value",
-			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
-					Online: nil,
-				},
-			},
-			want: false,
-		},
-		{
-			name: "pre 6.0 offline",
-			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
-					Online: openapi.PtrBool(false),
-				},
-			},
-			want: false,
-		},
-		{
 			name: "status nil",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: nil,
 				},
 			},
@@ -748,7 +721,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status offline",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("offline"),
 				},
 			},
@@ -757,7 +730,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status healthy",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("healthy"),
 				},
 			},
@@ -766,7 +739,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status warning",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("warning"),
 				},
 			},
@@ -775,7 +748,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status busy",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("busy"),
 				},
 			},
@@ -784,7 +757,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status error",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("error"),
 				},
 			},
@@ -793,7 +766,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status not available",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("n/a"),
 				},
 			},
@@ -802,7 +775,7 @@ func TestStatsIsOnline(t *testing.T) {
 		{
 			name: "status unknown",
 			args: args{
-				s: openapi.StatsAppliancesListAllOfData{
+				s: openapi.ApplianceWithStatus{
 					Status: openapi.PtrString("abc123"),
 				},
 			},
@@ -822,7 +795,7 @@ func TestGetApplianceVersion(t *testing.T) {
 	v61, _ := version.NewVersion("6.1.0")
 	type args struct {
 		appliance openapi.Appliance
-		stats     openapi.StatsAppliancesList
+		stats     openapi.ApplianceWithStatusList
 	}
 	tests := []struct {
 		name    string
@@ -837,12 +810,12 @@ func TestGetApplianceVersion(t *testing.T) {
 					Name: "controller one",
 					Id:   openapi.PtrString("one"),
 				},
-				stats: openapi.StatsAppliancesList{
-					Data: []openapi.StatsAppliancesListAllOfData{
+				stats: openapi.ApplianceWithStatusList{
+					Data: []openapi.ApplianceWithStatus{
 						{
-							Id:      openapi.PtrString("one"),
-							Status:  openapi.PtrString("warning"),
-							Version: openapi.PtrString(v61.String()),
+							Id:               openapi.PtrString("one"),
+							Status:           openapi.PtrString("warning"),
+							ApplianceVersion: openapi.PtrString(v61.String()),
 						},
 					},
 				},
@@ -857,8 +830,8 @@ func TestGetApplianceVersion(t *testing.T) {
 					Name: "controller two",
 					Id:   openapi.PtrString("two"),
 				},
-				stats: openapi.StatsAppliancesList{
-					Data: []openapi.StatsAppliancesListAllOfData{
+				stats: openapi.ApplianceWithStatusList{
+					Data: []openapi.ApplianceWithStatus{
 						{
 							Id: openapi.PtrString("two"),
 						},
@@ -891,11 +864,11 @@ func Test_orderAppliances(t *testing.T) {
 	}
 
 	// Generate appliances
-	app1, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default", "default")
-	app2, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default", "default")
-	app3, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default", "default")
-	app4, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default", "default")
-	app5, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, true, "Default", "default")
+	app1, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller1", "primary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, "Default", "default")
+	app2, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller2", "secondary.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, "Default", "default")
+	app3, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller3", "backup1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, "Default", "default")
+	app4, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller4", "backup2.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, "Default", "default")
+	app5, _, _ := GenerateApplianceWithStats([]string{FunctionController}, "controller5", "balance1.appgate.com", "6.1.1-12345", "6.2.1-12345", "healthy", UpgradeStatusReady, "Default", "default")
 
 	// Modify appliances for tests
 	app3.SetActivated(false)

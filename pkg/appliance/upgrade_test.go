@@ -353,7 +353,7 @@ Appliances that will be skipped:
 					if stat.GetId() != appliance.GetId() {
 						continue
 					}
-					us := stat.GetUpgrade()
+					us := stat.GetDetails().Upgrade
 					upgradeStatusMap[appliance.GetId()] = UpgradeStatusResult{
 						Name:    appliance.GetName(),
 						Status:  us.GetStatus(),
@@ -444,7 +444,7 @@ WARNING: Upgrade was completed, but not all appliances are running the same vers
 					if s.GetId() != a.GetId() {
 						continue
 					}
-					us := s.GetUpgrade()
+					us := s.GetDetails().Upgrade
 					upgradeStatusMap[a.GetId()] = UpgradeStatusResult{
 						Name:    a.GetName(),
 						Status:  us.GetStatus(),
