@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -37,21 +38,22 @@ var (
 )
 
 type BackupOpts struct {
-	Config        *configuration.Config
-	Appliance     func(*configuration.Config) (*Appliance, error)
-	Out           io.Writer
-	SpinnerOut    func() io.Writer
-	Destination   string
-	With          []string
-	AllFlag       bool
-	PrimaryFlag   bool
-	CurrentFlag   bool
-	NoInteractive bool
-	FilterFlag    map[string]map[string]string
-	OrderBy       []string
-	Descending    bool
-	Quiet         bool
-	CiMode        bool
+	Config            *configuration.Config
+	Appliance         func(*configuration.Config) (*Appliance, error)
+	Out               io.Writer
+	SpinnerOut        func() io.Writer
+	Destination       string
+	With              []string
+	AllFlag           bool
+	PrimaryFlag       bool
+	CurrentFlag       bool
+	NoInteractive     bool
+	FilterFlag        map[string]map[string]string
+	OrderBy           []string
+	Descending        bool
+	Quiet             bool
+	CiMode            bool
+	CleanupCancelFunc context.CancelFunc
 }
 
 func PrepareBackup(opts *BackupOpts) error {
@@ -73,6 +75,8 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 	spinnerOut := opts.SpinnerOut()
 	backupIDs := make(map[string]string)
 	ctx := context.Background()
+
+	opts.CleanupCancelFunc = CleanupBackupOnExit(opts, backupIDs)
 
 	var err error
 	opts.CiMode, err = cmd.Flags().GetBool("ci-mode")
@@ -336,6 +340,27 @@ NO_ENABLE_CHECK:
 	}
 
 	return backupIDs, result.ErrorOrNil()
+}
+
+func CleanupBackupOnExit(opts *BackupOpts, IDs map[string]string) context.CancelFunc {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	exitChan := make(chan bool, 1)
+	newStop := func() {
+		exitChan <- false
+		stop()
+	}
+	go func() {
+		<-ctx.Done()
+		select {
+		case <-exitChan:
+			// Do nothing since stop function was called
+		default:
+			err := CleanupBackup(opts, IDs)
+			log.WithError(err).Error("backup cleanup failed")
+			os.Exit(1)
+		}
+	}()
+	return newStop
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
