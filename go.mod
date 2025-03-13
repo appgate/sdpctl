@@ -1,6 +1,7 @@
 module github.com/appgate/sdpctl
 
 go 1.22.6
+toolchain go1.23.7
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
@@ -35,7 +36,7 @@ require (
 	github.com/vbauerster/mpb/v8 v8.8.3
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/net v0.35.0
-	golang.org/x/sync v0.11.0
+	golang.org/x/sync v0.12.0
 )
 
 require (
