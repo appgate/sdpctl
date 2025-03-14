@@ -277,6 +277,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 			log.WithError(err).Error("backup cleanup failed")
 			return err
 		}
+		bOpts.CleanupCancelFunc()
 	}
 
 	fmt.Fprintf(opts.Out, "\n[%s] Initializing upgrade:\n", time.Now().Format(time.RFC3339))

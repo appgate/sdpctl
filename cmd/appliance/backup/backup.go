@@ -12,11 +12,12 @@ import (
 func NewCmdBackup(f *factory.Factory) *cobra.Command {
 	var backupIDs map[string]string
 	opts := appliance.BackupOpts{
-		Config:      f.Config,
-		Out:         f.IOOutWriter,
-		SpinnerOut:  f.GetSpinnerOutput(),
-		Appliance:   f.Appliance,
-		Destination: appliance.DefaultBackupDestination,
+		Config:            f.Config,
+		Out:               f.IOOutWriter,
+		SpinnerOut:        f.GetSpinnerOutput(),
+		Appliance:         f.Appliance,
+		Destination:       appliance.DefaultBackupDestination,
+		CleanupCancelFunc: nil,
 	}
 	cmd := &cobra.Command{
 		Use:     "backup",
@@ -42,6 +43,7 @@ func NewCmdBackup(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		PostRunE: func(cmd *cobra.Command, args []string) error {
+			defer opts.CleanupCancelFunc()
 			return appliance.CleanupBackup(&opts, backupIDs)
 		},
 	}
