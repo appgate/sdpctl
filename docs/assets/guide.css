@@ -5,20 +5,21 @@
   --color-bg-page: #f0f0f0;
   --color-bg-box: #ffffff;
   --color-bg-editor: #f6f8fa;
-  --color-link: #074D9C;
-  --color-comment: #005C00;
+  --color-link: #074d9c;
+  --color-comment: #005c00;
   --color-command: #0550ae;
   --spacing-default: 1.25rem;
+  --spacing-half: calc(var(--spacing-default) / 2);
   --spacing-page-hor: calc(var(--spacing-default) * 8);
   --spacing-page-ver: calc(var(--spacing-default) * 2);
   --spacing-box-hor: calc(var(--spacing-default) * 4);
   --spacing-box-ver: calc(var(--spacing-default) * 2);
-  --border-radius: 3px;
+  --border-radius: 4px;
   --height-button: 2.5rem;
   --spacing-column: 0.75rem;
   --drop-shadow: 0 0 0.5rem #dcdcdc;
   --button-shadow: 0 0 0.5rem #dcdcdc;
-  --font-body: "Helvetica Neue", "Arial";
+  --font-body: system-ui, "Helvetica Neue", sans-serif;
 }
 
 @media all and (max-width: 1690px) {
@@ -64,7 +65,7 @@ main {
 }
 
 body {
-  font-size: 1rem;
+  font-size: 16px;
   font-family: var(--font-body);
   font-weight: normal;
   font-style: normal;
@@ -73,22 +74,26 @@ body {
 
 h1 {
   font-size: 2rem;
-  font-weight: normal
+  font-weight: normal;
+  margin: var(--spacing-default) 0;
 }
 
 h2 {
   font-size: 1.5rem;
   font-weight: normal;
+  margin: var(--spacing-default) 0;
 }
 
 h3 {
   font-size: 1rem;
   font-weight: bold;
+  margin: var(--spacing-half) 0;
 }
 
 p {
   font-size: 1rem;
   line-height: 1.75rem;
+  margin: var(--spacing-half) 0;
 }
 
 li {
@@ -161,7 +166,7 @@ tbody tr:not(:last-child) td {
   border: none;
   display: block;
   height: 2px;
-  margin: var(--spacing-box-ver) calc(var(--spacing-box-hor) / 2 * -1);
+  margin: var(--spacing-box-ver) 0;
 }
 
 .columns {
@@ -215,23 +220,23 @@ tbody tr:not(:last-child) td {
 
 .appgate-logo {
   max-width: 8rem;
-}
-
-code {
-  color: var(--color-ag-dark);
-  font-family: Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+  margin: var(--spacing-half) 0;
 }
 
 .code-editor {
-  color: var(--color-ag-dark);
-  font-family: Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
-  font-size: 0.9rem;
   text-align: left;
   padding: var(--spacing-default);
   overflow-x: scroll;
   background-color: var(--color-bg-editor);
   border: 1px solid var(--color-bg-page);
   border-radius: var(--border-radius);
+}
+
+.code-editor code {
+  color: var(--color-ag-dark);
+  font-family: Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .code-command {
@@ -245,7 +250,8 @@ code {
 
 .tag {
   background-color: var(--color-bg-page);
-  padding: 0.2rem 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-size: smaller;
   border-radius: var(--border-radius);
 }
 
@@ -316,20 +322,43 @@ code {
   user-select: none;
 }
 
-details .code-editor {
+.details {
+  text-align: left;
+}
+
+.details+.details {
+  margin-top: var(--spacing-half);
+}
+
+.details .code-editor {
   border-top: 0;
   border-top-right-radius: 0;
   border-top-left-radius: 0;
 }
+
+.breadcrumb {
+  width: 100%;
+  text-align: left;
+}
+
+.breadcrumb .bc-crumb {
+  white-space: nowrap;
+}
+
+.breadcrumb .bc-seperator {
+  margin: 0 0.25rem;
+  word-break: break-all;
+}
+
 
 @media (prefers-color-scheme: dark) {
   :root {
     --color-bg-page: #000000;
     --color-bg-box: #181818;
     --color-bg-editor: #0f0f0f;
-    --color-link: #5EA6F8;
-    --color-comment: #00B800;
-    --color-command: #58A0F9;
+    --color-link: #5ea6f8;
+    --color-comment: #00b800;
+    --color-command: #58a0f9;
     --drop-shadow: 0 0 0.5rem #232323;
     --button-shadow: 0 0 0.5rem #232323;
   }
@@ -356,28 +385,11 @@ details .code-editor {
     border: 1px solid var(--color-ag-light);
   }
 
-
-  .code-editor,
-  code {
+  .code-editor code {
     color: var(--color-ag-light);
   }
 
   .code-command {
     color: #0e76f8;
   }
-}
-
-.breadcrumb {
-  width: 100%;
-  text-align: left;
-  margin: calc(var(--spacing-box-ver) * -0.5) 0;
-}
-
-.breadcrumb .bc-crumb {
-  white-space: nowrap;
-}
-
-.breadcrumb .bc-seperator {
-  margin: 0 0.25rem;
-  word-break: break-all;
 }

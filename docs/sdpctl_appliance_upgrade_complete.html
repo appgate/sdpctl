@@ -11,8 +11,8 @@
 <body>
   <main class="page text-center">
     <div class="box">
-			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1>sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
 				<a href="index.html">Quick Start Guide</a>
@@ -20,12 +20,12 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl appliance upgrade complete</h2><p>Complete the upgrade on prepared appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Complete a prepared upgrade.
+      <h2>sdpctl appliance upgrade complete</h2><p>Complete the upgrade on prepared appliances</p><hr /><h3>Synopsis</h3><p>Complete a prepared upgrade.
 Install a prepared upgrade on the secondary partition
-and perform a reboot to make the second partition the primary.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade complete [flags]
+and perform a reboot to make the second partition the primary.</p><pre class="code-editor"><code>sdpctl appliance upgrade complete [flags]
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-<pre class="code-editor margin-bottom"><code>  # complete all pending upgrades
+<hr /><h3>Examples</h3>
+<pre class="code-editor"><code>  # complete all pending upgrades
   &gt; sdpctl appliance upgrade complete
 
   # backup the primary Controller before completing
@@ -34,15 +34,15 @@ and perform a reboot to make the second partition the primary.</p><pre class="co
   # backup to custom directory when completing pending upgrade
   &gt; sdpctl appliance upgrade complete --backup --backup-destination=/path/to/custom/destination
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>      --actual-hostname string      If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname
+<hr /><h3>Options</h3>
+<pre class="code-editor"><code>      --actual-hostname string      If the actual hostname is different from that which you are connecting to the appliance admin API, this flag can be used for setting the actual hostname
   -b, --backup                      Backup primary Controller before completing the upgrade (default true)
       --backup-destination string   Specify path to download backup (default &quot;$HOME/Downloads/appgate/backup&quot;)
   -h, --help                        help for complete
       --max-unavailable int         Defines how many gateways and logforwarders that are allowed to be upgraded per site at once. Setting this to a higher number will calculate batches according to the value set in this flag. Setting this to a higher value would make the upgrade process shorter at the cost of collective performance for users. (default 1)
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
-<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+<hr /><h3>Options inherited from parent commands</h3>
+<pre class="code-editor"><code>      --api-version int          Peer API version override
       --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
       --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.
@@ -56,7 +56,7 @@ and perform a reboot to make the second partition the primary.</p><pre class="co
   -p, --profile string           Profile configuration to use
   -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<hr /><h3>SEE ALSO</h3>
 <ul>
 <li><p><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
 </ul>
