@@ -11,8 +11,8 @@
 <body>
   <main class="page text-center">
     <div class="box">
-			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1>sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
 				<a href="index.html">Quick Start Guide</a>
@@ -20,7 +20,7 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl appliance upgrade status</h2><p>Display the upgrade status of Appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Display the upgrade status of Appliances in either table or json format.
+      <h2>sdpctl appliance upgrade status</h2><p>Display the upgrade status of Appliances</p><hr /><h3>Synopsis</h3><p>Display the upgrade status of Appliances in either table or json format.
 Upgrade statuses:</p><ul>
 <li><p>idle:         No upgrade is initiated</p></li>
 <li><p>started:      Upgrade process has started</p></li>
@@ -32,10 +32,10 @@ Upgrade statuses:</p><ul>
 <li><p>failed:       Upgrade failed for some reason during the process</p></li>
 </ul>
 
-<pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade status [flags]
+<pre class="code-editor"><code>sdpctl appliance upgrade status [flags]
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-<pre class="code-editor margin-bottom"><code>  # view in table format
+<hr /><h3>Examples</h3>
+<pre class="code-editor"><code>  # view in table format
   &gt; sdpctl appliance upgrade status
 
   # view in JSON format
@@ -44,12 +44,12 @@ Upgrade statuses:</p><ul>
   # filtered appliance status list
   &gt; sdpctl appliance upgrade status --include=name=controller
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>  -h, --help   help for status
+<hr /><h3>Options</h3>
+<pre class="code-editor"><code>  -h, --help   help for status
       --json   Display in JSON format
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
-<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+<hr /><h3>Options inherited from parent commands</h3>
+<pre class="code-editor"><code>      --api-version int          Peer API version override
       --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
       --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.
@@ -63,7 +63,7 @@ Upgrade statuses:</p><ul>
   -p, --profile string           Profile configuration to use
   -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<hr /><h3>SEE ALSO</h3>
 <ul>
 <li><p><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
 </ul>

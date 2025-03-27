@@ -11,8 +11,8 @@
 <body>
   <main class="page text-center">
     <div class="box">
-			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1>sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
 				<a href="index.html">Quick Start Guide</a>
@@ -20,10 +20,10 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl service-users delete</h2><p>Delete one or more service user(s)</p><pre class="code-editor margin-bottom"><code>sdpctl service-users delete [id...] [flags]
+      <h2>sdpctl service-users delete</h2><p>Delete one or more service user(s)</p><pre class="code-editor"><code>sdpctl service-users delete [id...] [flags]
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-<pre class="code-editor margin-bottom"><code>  # delete a service user with the id of &lt;id&gt;
+<hr /><h3>Examples</h3>
+<pre class="code-editor"><code>  # delete a service user with the id of &lt;id&gt;
   &gt; sdpctl service-users delete &lt;id&gt;
 
   # delete multiple service users by providing multiple id:s
@@ -32,11 +32,11 @@
   # delete service user(s) using prompt
   &gt; sdpctl service-users delete
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>  -h, --help   help for delete
+<hr /><h3>Options</h3>
+<pre class="code-editor"><code>  -h, --help   help for delete
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
-<pre class="code-editor margin-bottom"><code>      --api-version int      Peer API version override
+<hr /><h3>Options inherited from parent commands</h3>
+<pre class="code-editor"><code>      --api-version int      Peer API version override
       --ci-mode              Log to stderr instead of file and disable progress-bars
       --debug                Enable debug logging
       --events-path string   send logs to unix domain socket path
@@ -45,7 +45,7 @@
       --no-verify            Don't verify TLS on for the given command, overriding settings from config file
   -p, --profile string       Profile configuration to use
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<hr /><h3>SEE ALSO</h3>
 <ul>
 <li><p><a href="sdpctl_service-users.html">sdpctl service-users</a>	 - Manage Service Users</p></li>
 </ul>
