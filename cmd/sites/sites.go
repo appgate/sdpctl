@@ -54,6 +54,7 @@ func NewSitesCmd(f *factory.Factory) *cobra.Command {
 
 	cmd.AddCommand(
 		NewSitesListCmd(&opts),
+		NewResourceNamesCmd(&opts),
 	)
 
 	return cmd
