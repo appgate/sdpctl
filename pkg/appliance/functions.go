@@ -1053,7 +1053,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 	}
 	manifestRes, err := requestRetry(args.client, manifestReq)
 	if err != nil {
-		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image manifest: %w", err)}
+		args.fileEntryChan <- fileEntry{err: fmt.Errorf("failed to fetch image manifest: %w\nURL was: %q", err, manifestURL)}
 		return
 	}
 	defer manifestRes.Body.Close()
