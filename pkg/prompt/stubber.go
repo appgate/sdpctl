@@ -3,11 +3,7 @@ package prompt
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
-
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/AlecAivazis/survey/v2/core"
 )
 
 type QuestionStub struct {
@@ -29,14 +25,6 @@ func (s *QuestionStub) AnswerDefault() *QuestionStub {
 	return s
 }
 
-type PromptStub struct {
-	Value   interface{}
-	Default bool
-}
-type AskStubber struct {
-	stubs []*QuestionStub
-}
-
 func compareOptions(expected, got []string) error {
 	if len(expected) != len(got) {
 		return fmt.Errorf("Expected %v, got %v (length mismatch)", expected, got)
@@ -51,122 +39,146 @@ func compareOptions(expected, got []string) error {
 
 var ErrNoPrompt = errors.New("No prompt stub")
 
-func InitAskStubber(t *testing.T) (*AskStubber, func()) {
-	t.Helper()
+type PromptStubber struct {
+	stubs []*QuestionStub
+}
 
-	origSurveyAskOne := SurveyAskOne
-	as := AskStubber{}
+func InitStubbers(t *testing.T) (*PromptStubber, func()) {
+	origPromptPassword := PromptPassword
+	origPromptInput := PromptInput
+	origPromptConfirm := PromptConfirm
+	origPromptConfirmDefault := PromptConfirmDefault
+	origPromptSelection := PromptSelection
+	origPromptMultiSelect := PromptMultiSelection
+	origPromptSelectionIndex := PromptSelectionIndex
+	ps := PromptStubber{}
 
-	answerFromStub := func(p survey.Prompt, fieldName string, response interface{}) error {
-		var message string
-		var defaultValue interface{}
-		var options []string
-		switch pt := p.(type) {
-		case *survey.Confirm:
-			message = pt.Message
-			defaultValue = pt.Default
-		case *survey.Input:
-			message = pt.Message
-			defaultValue = pt.Default
-		case *survey.Select:
-			message = pt.Message
-			options = pt.Options
-		case *survey.MultiSelect:
-			message = pt.Message
-			options = pt.Options
-		case *survey.Password:
-			message = pt.Message
-		default:
-			return fmt.Errorf("Prompt type %T is not supported by the stubber", pt)
-		}
+	answerPromptStub := func(message string, choices []string) ([]string, int, error) {
 
 		var stub *QuestionStub
-		for _, s := range as.stubs {
-			if !s.matched && (s.message == "" && strings.EqualFold(s.Name, fieldName) || s.message == message) {
+		for _, s := range ps.stubs {
+			if !s.matched && (s.message == "" || s.message == message) {
 				stub = s
 				stub.matched = true
 				break
 			}
 		}
 		if stub == nil {
-			return fmt.Errorf("%w for %q", ErrNoPrompt, message)
+			return nil, -1, fmt.Errorf("%w for %q", ErrNoPrompt, message)
 		}
 
 		if len(stub.options) > 0 {
-			if err := compareOptions(stub.options, options); err != nil {
-				return fmt.Errorf("Stubbed options mismatch for %q: %v", message, err)
+			if err := compareOptions(stub.options, choices); err != nil {
+				return nil, -1, fmt.Errorf("Stubbed options mismatch for %q: %v", message, err)
 			}
 		}
 
 		userValue := stub.Value
-
-		if stringValue, ok := stub.Value.(string); ok && len(options) > 0 {
+		returnIndex := -1
+		if stringValue, ok := stub.Value.(string); ok && len(choices) > 0 {
 			foundIndex := -1
-			for i, o := range options {
+			for i, o := range choices {
 				if o == stringValue {
 					foundIndex = i
+					returnIndex = i
 					break
 				}
 			}
 			if foundIndex < 0 {
-				return fmt.Errorf("Answer %q not found in options for %q: %v", stringValue, message, options)
+				return nil, -1, fmt.Errorf("Answer %q not found in options for %q: %v", stringValue, message, choices)
 			}
-			userValue = core.OptionAnswer{
-				Value: stringValue,
-				Index: foundIndex,
-			}
+			userValue = stringValue
 		}
 
 		if stub.Default {
-			if defaultIndex, ok := defaultValue.(int); ok && len(options) > 0 {
-				userValue = core.OptionAnswer{
-					Value: options[defaultIndex],
-					Index: defaultIndex,
-				}
-			} else if defaultValue == nil && len(options) > 0 {
-				userValue = core.OptionAnswer{
-					Value: options[0],
-					Index: 0,
-				}
+			userValue = choices[0]
+			return []string{userValue.(string)}, 0, nil
+		}
+		var returnValue []string
+		switch st := userValue.(type) {
+		case string:
+			returnValue = []string{st}
+		case []string:
+			returnValue = st
+		case int:
+			returnIndex = st
+		case bool:
+			if st {
+				returnValue = []string{"yes"}
 			} else {
-				userValue = defaultValue
+				returnValue = []string{"no"}
 			}
 		}
 
-		if err := core.WriteAnswer(response, fieldName, userValue); err != nil {
-			topic := fmt.Sprintf("field %q", fieldName)
-			if fieldName == "" {
-				topic = fmt.Sprintf("%q", message)
-			}
-			return fmt.Errorf("AskStubber failed writing the answer for %s: %w", topic, err)
+		return returnValue, returnIndex, nil
+	}
+	PromptPassword = func(message string) (string, error) {
+		answer, _, err := answerPromptStub(message, nil)
+		returnValue := ""
+		if len(answer) > 0 {
+			returnValue = answer[0]
 		}
-		return nil
+		return returnValue, err
 	}
-
-	SurveyAskOne = func(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
-		return answerFromStub(p, "", response)
+	PromptInput = func(message string) (string, error) {
+		answer, _, err := answerPromptStub(message, nil)
+		returnValue := ""
+		if len(answer) > 0 {
+			returnValue = answer[0]
+		}
+		return returnValue, err
 	}
-
+	PromptConfirm = func(message string) (bool, error) {
+		answer, _, err := answerPromptStub(message, nil)
+		returnValue := false
+		if len(answer) > 0 {
+			returnValue = isAffirmative(answer[0])
+		}
+		return returnValue, err
+	}
+	PromptSelection = func(message string, choices []string, preSelected string) (string, error) {
+		answer, _, err := answerPromptStub(message, choices)
+		returnValue := ""
+		if len(answer) > 0 {
+			returnValue = answer[0]
+		}
+		return returnValue, err
+	}
+	PromptMultiSelection = func(message string, choices, preSelected []string) ([]string, error) {
+		answer, _, err := answerPromptStub(message, choices)
+		return answer, err
+	}
+	PromptSelectionIndex = func(message string, choices []string, preSelected string) (int, error) {
+		_, answer, err := answerPromptStub(message, choices)
+		return answer, err
+	}
 	teardown := func() {
-		SurveyAskOne = origSurveyAskOne
-		for _, s := range as.stubs {
+		PromptPassword = origPromptPassword
+		PromptInput = origPromptInput
+		PromptConfirm = origPromptConfirm
+		PromptConfirmDefault = origPromptConfirmDefault
+		PromptSelection = origPromptSelection
+		PromptMultiSelection = origPromptMultiSelect
+		PromptSelectionIndex = origPromptSelectionIndex
+		for _, s := range ps.stubs {
 			if !s.matched {
 				t.Errorf("Unmatched prompt stub: %+v", s)
 			}
 		}
 	}
-	return &as, teardown
+	return &ps, teardown
 }
 
-func (as *AskStubber) StubPrompt(msg string) *QuestionStub {
+func (ps *PromptStubber) StubPrompt(msg string) *QuestionStub {
 	stub := &QuestionStub{message: msg}
-	as.stubs = append(as.stubs, stub)
+	ps.stubs = append(ps.stubs, stub)
 	return stub
 }
-func (as *AskStubber) Stub(stubbedQuestions []*QuestionStub) {
-	as.stubs = append(as.stubs, stubbedQuestions...)
+
+func (ps *PromptStubber) StubOne(value interface{}) {
+	ps.Stub([]*QuestionStub{{Value: value}})
 }
 
-func (as *AskStubber) StubOne(value interface{}) {
-	as.Stub([]*QuestionStub{{Value: value}})
+func (ps *PromptStubber) Stub(stubbedQuestions []*QuestionStub) {
+	ps.stubs = append(ps.stubs, stubbedQuestions...)
 }

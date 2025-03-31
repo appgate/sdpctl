@@ -19,7 +19,7 @@ import (
 type serviceUsersTestStub struct {
 	desc           string
 	args           []string
-	askStubs       func(*prompt.AskStubber)
+	askStubs       func(*prompt.PromptStubber)
 	httpStubs      []httpmock.Stub
 	wantOut        *regexp.Regexp
 	wantExactMatch string
@@ -69,7 +69,7 @@ func setupServiceUsersTest(t *testing.T, tC *serviceUsersTestStub) (*cobra.Comma
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 
-	stubber, teardown := prompt.InitAskStubber(t)
+	stubber, teardown := prompt.InitStubbers(t)
 
 	if tC.askStubs != nil {
 		tC.askStubs(stubber)

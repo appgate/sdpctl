@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -172,11 +171,8 @@ func Signin(f *factory.Factory) error {
 	}
 
 	if promptProvider {
-		qs := &survey.Select{
-			Message: "Choose a provider:",
-			Options: providerNames,
-		}
-		if err := prompt.SurveyAskOne(qs, &loginOpts.ProviderName); err != nil {
+		loginOpts.ProviderName, err = prompt.PromptSelection("Choose a provider:", providerNames, "")
+		if err != nil {
 			return err
 		}
 	}
@@ -288,11 +284,8 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string, toke
 			return nil, err
 		}
 		testOTP := func() (*openapi.LoginResponse, error) {
-			var answer string
-			optKey := &survey.Password{
-				Message: "Please enter your one-time password:",
-			}
-			if err := prompt.SurveyAskOne(optKey, &answer, survey.WithValidator(survey.Required)); err != nil {
+			answer, err := prompt.PromptPassword("Please enter your one-time password:")
+			if err != nil {
 				return nil, err
 			}
 			return authenticator.PushOTP(ctx, answer, authToken)

@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -57,12 +56,8 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 				if noInteractive || !opts.CanPrompt {
 					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure company.controller.com'")
 				}
-				q := &survey.Input{
-					Message: "Enter the url for the Controller API (example https://controller.company.com:8443)",
-					Default: opts.Config.URL,
-				}
 
-				err := prompt.SurveyAskOne(q, &opts.URL, survey.WithValidator(survey.Required))
+				opts.URL, err = prompt.PromptInput("Enter the url for the Controller API (example https://controller.company.com:8443)")
 				if err != nil {
 					return err
 				}

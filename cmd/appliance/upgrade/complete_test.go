@@ -45,7 +45,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		name                        string
 		cli                         string
 		appliances                  []string
-		askStubs                    func(*prompt.AskStubber)
+		askStubs                    func(*prompt.PromptStubber)
 		upgradeStatusWorker         appliancepkg.WaitForUpgradeStatus
 		upgradeApplianeStatusWorker appliancepkg.WaitForApplianceStatus
 		from, to                    string
@@ -64,7 +64,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 		{
 			name: "test complete multiple appliances backup false",
 			cli:  "upgrade complete --backup=false",
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubOne(true)
 			},
 			from: "6.2.0",
@@ -277,7 +277,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 			cmd.SetIn(&bytes.Buffer{})
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 
 			if tt.askStubs != nil {

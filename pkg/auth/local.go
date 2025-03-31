@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
@@ -33,17 +32,13 @@ func (l Local) signin(ctx context.Context, loginOpts openapi.LoginRequest, provi
 	}
 
 	if len(credentials.Username) <= 0 && canPrompt {
-		err := prompt.SurveyAskOne(&survey.Input{
-			Message: "Username:",
-		}, &credentials.Username, survey.WithValidator(survey.Required))
+		credentials.Username, err = prompt.PromptInput("Username:")
 		if err != nil {
 			return nil, err
 		}
 	}
 	if len(credentials.Password) <= 0 && canPrompt {
-		err := prompt.SurveyAskOne(&survey.Password{
-			Message: "Password:",
-		}, &credentials.Password, survey.WithValidator(survey.Required))
+		credentials.Password, err = prompt.PromptPassword("Password:")
 		if err != nil {
 			return nil, err
 		}

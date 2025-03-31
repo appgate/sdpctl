@@ -256,7 +256,7 @@ func TestNewSeedCmd(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       []string
-		askStubs   func(*prompt.AskStubber)
+		askStubs   func(*prompt.PromptStubber)
 		httpStubs  []httpmock.Stub
 		wantErr    bool
 		wantErrOut *regexp.Regexp
@@ -302,7 +302,7 @@ func TestNewSeedCmd(t *testing.T) {
 		},
 		{
 			name: "seed interactive",
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubPrompt("select appliance:").AnswerDefault()
 				s.StubPrompt("Seed type:").AnswerWith("ISO format")
 				s.StubPrompt("SSH Authentication Method:").AnswerWith("Use SSH key provided by the cloud instance")
@@ -392,7 +392,7 @@ func TestNewSeedCmd(t *testing.T) {
 				}
 				return a, nil
 			}
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)

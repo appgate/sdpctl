@@ -11,7 +11,6 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
@@ -169,14 +168,8 @@ func forceDisableControllerRunE(opts cmdOpts, args []string) error {
 			preSelected = append(preSelected, selectableString)
 		}
 		sort.SliceStable(selectable, func(i, j int) bool { return selectable[i] < selectable[j] })
-		qs := &survey.MultiSelect{
-			PageSize: len(selectable),
-			Message:  "Select Controllers to force disable",
-			Options:  selectable,
-			Default:  preSelected,
-		}
-		selected := []string{}
-		if err := prompt.SurveyAskOne(qs, &selected); err != nil {
+		selected, err := prompt.PromptMultiSelection("Select Controllers to force disable", selectable, preSelected)
+		if err != nil {
 			return err
 		}
 		if len(selected) <= 0 {

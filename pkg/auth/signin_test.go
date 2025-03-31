@@ -227,7 +227,7 @@ var (
 func TestSignProviderSelection(t *testing.T) {
 	tests := []struct {
 		name                 string
-		askStubs             func(*prompt.AskStubber)
+		askStubs             func(*prompt.PromptStubber)
 		environmentVariables map[string]string
 		httpStubs            []httpmock.Stub
 		wantErr              bool
@@ -274,7 +274,7 @@ func TestSignProviderSelection(t *testing.T) {
 			},
 			wantErr:  false,
 			provider: nil,
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Choose a provider:").AnswerWith("local")
 			},
 		},
@@ -352,7 +352,7 @@ func TestSignProviderSelection(t *testing.T) {
 			dir := t.TempDir()
 			t.Setenv("SDPCTL_CONFIG_DIR", dir)
 
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
@@ -488,7 +488,7 @@ func TestSignin(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		askStubs             func(*prompt.AskStubber)
+		askStubs             func(*prompt.PromptStubber)
 		environmentVariables map[string]string
 		testConfig           testConfig
 		httpStubs            []httpmock.Stub
@@ -529,7 +529,7 @@ func TestSignin(t *testing.T) {
 				identityProviderNames,
 				authorizationGET,
 			},
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubPrompt("Username:").AnswerWith("bob")
 				s.StubPrompt("Password:").AnswerWith("alice")
 			},
@@ -582,7 +582,7 @@ func TestSignin(t *testing.T) {
 				authorizationInitAlreadySeeded,
 				authorizationOtpAccepted,
 			},
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubPrompt("Username:").AnswerWith("bob")
 				s.StubPrompt("Password:").AnswerWith("alice")
 				s.StubPrompt("Please enter your one-time password:").AnswerWith("123456")
@@ -666,7 +666,7 @@ func TestSignin(t *testing.T) {
 				return a, nil
 			}
 
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
@@ -694,7 +694,7 @@ func TestAuthAndOTP(t *testing.T) {
 		want       *string
 		wantErr    bool
 		httpStubs  []httpmock.Stub
-		askStubs   func(*prompt.AskStubber)
+		askStubs   func(*prompt.PromptStubber)
 		wantErrOut *regexp.Regexp
 	}{
 		{
@@ -707,7 +707,7 @@ func TestAuthAndOTP(t *testing.T) {
 				authorizationInitAlreadySeeded,
 				authorizationOtpAccepted,
 			},
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Please enter your one-time password:").AnswerWith("12345")
 			},
 			wantErr: false,
@@ -723,7 +723,7 @@ func TestAuthAndOTP(t *testing.T) {
 				authorizationInitAlreadySeeded,
 				authorizationOtpDenied,
 			},
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Please enter your one-time password:").AnswerWith("99999")
 			},
 			wantErr:    true,
@@ -752,7 +752,7 @@ func TestAuthAndOTP(t *testing.T) {
 			defer registry.Teardown()
 			registry.Serve()
 			authenticator := NewAuth(registry.Client)
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlecAivazis/survey/v2/core"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -27,10 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	// disable color output for all prompts to simplify testing
-	core.DisableColor = true
-}
+func init() {}
 
 type mockUpgradeStatus struct{}
 
@@ -66,7 +62,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 	tests := []struct {
 		name                string
 		cli                 string
-		askStubs            func(*prompt.AskStubber)
+		askStubs            func(*prompt.PromptStubber)
 		httpStubs           []httpmock.Stub
 		upgradeStatusWorker appliancepkg.WaitForUpgradeStatus
 		wantOut             *regexp.Regexp
@@ -82,7 +78,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "with existing file",
 			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip'",
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -164,7 +160,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "with gateway filter",
 			cli:  `upgrade prepare --include function=gateway --image './testdata/appgate-6.2.2-9876.img.zip'`,
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -248,7 +244,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			cli:                 "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip'",
 			upgradeStatusWorker: &errorUpgradeStatus{},
 			wantErrOut:          regexp.MustCompile(`gateway never reached verifying, ready, got failed`),
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -336,7 +332,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "no prepare confirmation",
 			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --force",
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubOne(false) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -420,7 +416,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		{
 			name: "force prepare same version",
 			cli:  "upgrade prepare --force --image './testdata/appgate-6.2.2-12345.img.zip'",
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubOne(true) // upgrade_confirm
 			},
 			httpStubs: []httpmock.Stub{
@@ -565,7 +561,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			cmd.SetOut(out)
 			cmd.SetErr(io.Discard)
 
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 
 			if tt.askStubs != nil {

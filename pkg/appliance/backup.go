@@ -16,7 +16,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
@@ -429,14 +428,8 @@ func BackupPrompt(appliances []openapi.Appliance, preSelected []openapi.Applianc
 		names = append(names, selectorName)
 	}
 
-	qs := &survey.MultiSelect{
-		PageSize: len(appliances),
-		Message:  "select appliances to backup:",
-		Options:  names,
-		Default:  preSelectNames,
-	}
 	var selectedEntries []string
-	if err := prompt.SurveyAskOne(qs, &selectedEntries); err != nil {
+	if selectedEntries, err = prompt.PromptMultiSelection("select appliances to backup:", names, preSelectNames); err != nil {
 		return nil, err
 	}
 	selected := []string{}
@@ -468,15 +461,10 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
 		log.Warn("Backup API is disabled on the appliance")
-		var shouldEnable bool
-		q := &survey.Confirm{
-			Message: "Backup API is disabled on the appliance. Do you want to enable it now?",
-			Default: true,
-		}
-		if err := prompt.SurveyAskOne(q, &shouldEnable, survey.WithValidator(survey.Required)); err != nil {
+		shouldEnable, err := prompt.PromptConfirm("Backup API is disabld on the appliance. Do you want to enable it now? (y/N): ")
+		if err != nil {
 			return false, err
 		}
-
 		if shouldEnable {
 			settings.SetBackupApiEnabled(true)
 			password, err := prompt.PasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
