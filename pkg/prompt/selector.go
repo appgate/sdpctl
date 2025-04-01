@@ -88,9 +88,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", " ":
 			i, ok := m.list.SelectedItem().(item)
 			if ok {
+				newState := !i.selected
+				if keypress == "enter" {
+					// Always select the item under the cursor when enter is pressed
+					newState = true
+				}
 				newItem := item{
 					name:     i.name,
-					selected: !i.selected,
+					selected: newState,
 				}
 				absoluteIndex := itemIndex(m.list.Items(), i.name)
 				cmd := m.list.SetItem(absoluteIndex, newItem)
@@ -110,6 +115,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if keypress == "enter" {
 					cmd = tea.Quit
 					m.quitting = true
+
 				}
 				return m, cmd
 			}
