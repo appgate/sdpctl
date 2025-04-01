@@ -109,6 +109,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				if keypress == "enter" {
 					cmd = tea.Quit
+					m.quitting = true
 				}
 				return m, cmd
 			}
@@ -150,7 +151,7 @@ func selectedItems(m model) []string {
 
 func (m model) View() string {
 	if m.quitting {
-		return quitTextStyle.Render("")
+		return quitTextStyle.Render(m.list.Title + "\n" + strings.Join(selectedItems(m), "\n") + "\n")
 	}
 	return "\n" + m.list.View()
 }

@@ -27,6 +27,7 @@ type (
 
 type textInputModel struct {
 	textinput textinput.Model
+	quitting  bool
 	err       error
 }
 
@@ -61,6 +62,7 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Println(m.textinput.Value())
 			return m, tea.Quit
 		case tea.KeyEnter:
+			m.quitting = true
 			return m, tea.Quit
 		}
 
@@ -73,6 +75,9 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m textInputModel) View() string {
+	if m.quitting {
+		return m.textinput.View() + "\n"
+	}
 	return m.textinput.View()
 }
 
