@@ -34,7 +34,7 @@ func newTextInputModel(message string) textInputModel {
 	ta := textinput.New()
 	ta.Prompt = message
 	ta.Focus()
-	ta.CharLimit = 20
+	ta.CharLimit = 1024
 
 	return textInputModel{
 		textinput: ta,

@@ -107,6 +107,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 					m.selectedIndex = absoluteIndex
 				}
+				if keypress == "enter" {
+					cmd = tea.Quit
+				}
 				return m, cmd
 			}
 			return m, nil
