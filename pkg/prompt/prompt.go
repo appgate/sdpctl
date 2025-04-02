@@ -107,7 +107,7 @@ var PromptConfirm = func(message string, defaultValue bool) (bool, error) {
 }
 
 var PromptPassword = func(message string) (string, error) {
-	m := newTextInputModel(message)
+	m := newTextInputModel(fmt.Sprintf("%s ", message))
 	m.textinput.EchoMode = textinput.EchoPassword
 	m.textinput.EchoCharacter, _ = utf8.DecodeLastRuneInString("*")
 	p := tea.NewProgram(m)
@@ -121,7 +121,7 @@ var PromptPassword = func(message string) (string, error) {
 }
 
 var PromptInputDefault = func(message, defaultValue string) (string, error) {
-	m := newTextInputModel(message)
+	m := newTextInputModel(fmt.Sprintf("%s ", message))
 	m.textinput.SetValue(defaultValue)
 	p := tea.NewProgram(m)
 

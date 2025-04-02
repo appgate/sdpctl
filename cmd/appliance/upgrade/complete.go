@@ -162,7 +162,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 		// if answer is yes, ask where to save the backup
 		if opts.backup {
-			opts.backupDestination, err = prompt.PromptInputDefault("Path to where backup should be saved: ", filesystem.AbsolutePath(opts.backupDestination))
+			opts.backupDestination, err = prompt.PromptInputDefault("Path to where backup should be saved:", filesystem.AbsolutePath(opts.backupDestination))
 			if err != nil {
 				return err
 			}

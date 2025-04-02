@@ -14,7 +14,7 @@ func PasswordConfirmation(message string) (string, error) {
 	if err != nil {
 		return firstAnswer, err
 	}
-	secondAnswer, err := PromptPassword("Confirm your passphrase: ")
+	secondAnswer, err := PromptPassword("Confirm your passphrase:")
 	if err != nil {
 		return firstAnswer, err
 	}

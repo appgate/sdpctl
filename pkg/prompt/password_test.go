@@ -82,7 +82,7 @@ func TestGetPassPhrase(t *testing.T) {
 			wantErr: false,
 			askStubs: func(s *PromptStubber) {
 				s.StubPrompt("prompt message").AnswerWith("secret")
-				s.StubPrompt("Confirm your passphrase: ").AnswerWith("secret")
+				s.StubPrompt("Confirm your passphrase:").AnswerWith("secret")
 			},
 		},
 		{

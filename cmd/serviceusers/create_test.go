@@ -21,7 +21,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Name for service user:").AnswerWith("test-service-user")
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
-				as.StubPrompt("Confirm your passphrase: ").AnswerWith("password")
+				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
 			},
 			httpStubs: []httpmock.Stub{
 				{
@@ -60,7 +60,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Passphrase for service user:").AnswerWith("passphrase")
-				as.StubPrompt("Confirm your passphrase: ").AnswerWith("passphrase")
+				as.StubPrompt("Confirm your passphrase:").AnswerWith("passphrase")
 			},
 			httpStubs: []httpmock.Stub{
 				{
@@ -92,7 +92,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
 			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
-				as.StubPrompt("Confirm your passphrase: ").AnswerWith("password")
+				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
 			},
 			httpStubs: []httpmock.Stub{
 				{
@@ -125,7 +125,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Name for service user:").AnswerWith("test-service-user")
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
-				as.StubPrompt("Confirm your passphrase: ").AnswerWith("password")
+				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
 			},
 			httpStubs: []httpmock.Stub{
 				{

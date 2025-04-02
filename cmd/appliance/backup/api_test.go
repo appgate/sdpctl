@@ -172,7 +172,7 @@ func TestBackupAPICommand(t *testing.T) {
 	defer teardown()
 	func(prompt *prompt.PromptStubber) {
 		prompt.StubPrompt("The passphrase to encrypt the appliance backups when the Backup API is used:").AnswerWith("secret")
-		prompt.StubPrompt("Confirm your passphrase: ").AnswerWith("secret")
+		prompt.StubPrompt("Confirm your passphrase:").AnswerWith("secret")
 	}(stubber)
 
 	_, err = cmd.ExecuteC()
