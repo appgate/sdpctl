@@ -143,7 +143,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if _, err := os.Stat(opts.destination); err != nil {
 				createDir := true
 				if f.CanPrompt() {
-					createDir, err = prompt.PromptConfirm(fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination))
+					createDir, err = prompt.PromptConfirm(fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination), true)
 					if err != nil {
 						return err
 					}

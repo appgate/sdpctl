@@ -101,7 +101,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 				}
 				// no error means file already exists in the repository
 				if f.CanPrompt() {
-					overwrite, err := prompt.PromptConfirm(fmt.Sprintf("%s already exists. Overwrite?", name))
+					overwrite, err := prompt.PromptConfirm(fmt.Sprintf("%s already exists. Overwrite?", name), false)
 					if err != nil {
 						return err
 					}

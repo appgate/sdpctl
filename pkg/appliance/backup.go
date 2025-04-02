@@ -461,7 +461,7 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 	enabled := settings.GetBackupApiEnabled()
 	if !enabled && !noInteraction {
 		log.Warn("Backup API is disabled on the appliance")
-		shouldEnable, err := prompt.PromptConfirm("Backup API is disabld on the appliance. Do you want to enable it now? (y/N): ")
+		shouldEnable, err := prompt.PromptConfirm("Backup API is disabld on the appliance. Do you want to enable it now?", true)
 		if err != nil {
 			return false, err
 		}

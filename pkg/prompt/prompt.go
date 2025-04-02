@@ -14,7 +14,7 @@ import (
 
 // AskConfirmation make sure user confirm action, otherwise abort.
 func AskConfirmation(m ...string) error {
-	ok, err := PromptConfirmDefault()
+	ok, err := PromptConfirm("Do you want to continue?", false)
 	if err != nil || !ok {
 		return cmdutil.ErrExecutionCanceledByUser
 	}
@@ -86,8 +86,13 @@ func isAffirmative(input string) bool {
 	return input == "y" || input == "yes"
 }
 
-var PromptConfirm = func(message string) (bool, error) {
-	m := newTextInputModel(message)
+var PromptConfirm = func(message string, defaultValue bool) (bool, error) {
+	defaultString := "y/N"
+	if defaultValue {
+		defaultString = "Y/n"
+	}
+	messageWithDefault := fmt.Sprintf("%s (%s): ", message, defaultString)
+	m := newTextInputModel(messageWithDefault)
 	p := tea.NewProgram(m)
 
 	returnedModel, err := p.Run()
@@ -95,11 +100,10 @@ var PromptConfirm = func(message string) (bool, error) {
 		log.Fatal(err)
 		return false, err
 	}
+	if returnedModel.(textInputModel).textinput.Value() == "" {
+		return defaultValue, nil
+	}
 	return isAffirmative(returnedModel.(textInputModel).textinput.Value()), nil
-}
-
-var PromptConfirmDefault = func() (bool, error) {
-	return PromptConfirm("Do you want to continue? (y/N): ")
 }
 
 var PromptPassword = func(message string) (string, error) {

@@ -47,7 +47,6 @@ func InitStubbers(t *testing.T) (*PromptStubber, func()) {
 	origPromptPassword := PromptPassword
 	origPromptInput := PromptInput
 	origPromptConfirm := PromptConfirm
-	origPromptConfirmDefault := PromptConfirmDefault
 	origPromptSelection := PromptSelection
 	origPromptMultiSelect := PromptMultiSelection
 	origPromptSelectionIndex := PromptSelectionIndex
@@ -128,9 +127,9 @@ func InitStubbers(t *testing.T) (*PromptStubber, func()) {
 		}
 		return returnValue, err
 	}
-	PromptConfirm = func(message string) (bool, error) {
+	PromptConfirm = func(message string, defaultValue bool) (bool, error) {
 		answer, _, err := answerPromptStub(message, nil)
-		returnValue := false
+		returnValue := defaultValue
 		if len(answer) > 0 {
 			returnValue = isAffirmative(answer[0])
 		}
@@ -156,7 +155,6 @@ func InitStubbers(t *testing.T) (*PromptStubber, func()) {
 		PromptPassword = origPromptPassword
 		PromptInput = origPromptInput
 		PromptConfirm = origPromptConfirm
-		PromptConfirmDefault = origPromptConfirmDefault
 		PromptSelection = origPromptSelection
 		PromptMultiSelection = origPromptMultiSelect
 		PromptSelectionIndex = origPromptSelectionIndex

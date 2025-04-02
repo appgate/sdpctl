@@ -155,7 +155,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 	flagIsChanged := cmd.Flags().Changed("backup")
 	toBackup := []openapi.Appliance{}
 	if !flagIsChanged && !opts.NoInteractive {
-		opts.backup, err = prompt.PromptConfirm("Do you want to backup before proceeding? ")
+		opts.backup, err = prompt.PromptConfirm("Do you want to backup before proceeding?", true)
 		if err != nil {
 			return err
 		}
