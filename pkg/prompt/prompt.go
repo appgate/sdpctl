@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/appgate/sdpctl/pkg/cmdutil"
+	"github.com/charmbracelet/bubbles/cursor"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -76,6 +77,7 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m textInputModel) View() string {
 	if m.quitting {
+		m.textinput.Cursor.SetMode(cursor.CursorHide)
 		return m.textinput.View() + "\n"
 	}
 	return m.textinput.View()
