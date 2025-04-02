@@ -188,6 +188,7 @@ func prompt(question string, choices, preSelected []string, oneChoice bool) ([]s
 	const defaultWidth = 20
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
+	l.KeyMap.Quit.SetHelp("q/enter", "quit/select and quit")
 	l.Title = question
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
