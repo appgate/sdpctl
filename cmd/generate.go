@@ -197,7 +197,7 @@ func generateHTML(cmd *cobra.Command) error {
 		}
 
 		// Hack because markdown mishandles code blocks in the renderHook
-		processedString := strings.ReplaceAll(processed.String(), `<pre>`, `<pre class="code-editor margin-bottom">`)
+		processedString := strings.ReplaceAll(processed.String(), `<pre>`, `<pre class="code-editor">`)
 		processedString = strings.ReplaceAll(processedString, xdg.Home, "$HOME") // unpersonlize file path
 		processed = *bytes.NewBufferString(processedString)
 
@@ -220,9 +220,9 @@ func renderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool
 
 		if entering {
 			if level == "3" {
-				w.Write([]byte(`<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">`))
+				w.Write([]byte(`<hr /><h3>`))
 			} else {
-				w.Write([]byte(fmt.Sprintf(`<h%s class="text-left margin-bottom">`, level)))
+				w.Write([]byte(fmt.Sprintf(`<h%s>`, level)))
 			}
 		} else {
 			w.Write([]byte(fmt.Sprintf(`</h%s>`, level)))
@@ -267,8 +267,8 @@ const (
 <body>
   <main class="page text-center">
     <div class="box">
-			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1>sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
 				<a href="index.html">Quick Start Guide</a>

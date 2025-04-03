@@ -11,8 +11,8 @@
 <body>
   <main class="page text-center">
     <div class="box">
-			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1>sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
 				<a href="index.html">Quick Start Guide</a>
@@ -20,15 +20,15 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl appliance upgrade cancel</h2><p>Cancel a prepared upgrade on one or more appliances</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Cancel a prepared upgrade. The command will attempt to cancel upgrades on
+      <h2>sdpctl appliance upgrade cancel</h2><p>Cancel a prepared upgrade on one or more appliances</p><hr /><h3>Synopsis</h3><p>Cancel a prepared upgrade. The command will attempt to cancel upgrades on
 Appliances that are not in the &lsquo;idle&rsquo; upgrade state. Cancelling will remove the
 upgrade image from the Appliance, though it will not remove images hosted in the primary
 controller file repository (such as when using the &lsquo;&ndash;host-on-controller&rsquo; flag) by default.
 To remove them as well, you can use the &lsquo;&ndash;delete&rsquo; flag.</p><p>Note that you can cancel upgrades on specific appliances by using the &lsquo;&ndash;include&rsquo; and/or
-&lsquo;&ndash;exclude&rsquo; flags in combination with this command.</p><pre class="code-editor margin-bottom"><code>sdpctl appliance upgrade cancel [flags]
+&lsquo;&ndash;exclude&rsquo; flags in combination with this command.</p><pre class="code-editor"><code>sdpctl appliance upgrade cancel [flags]
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-<pre class="code-editor margin-bottom"><code>  # cancel upgrade on all Appliances
+<hr /><h3>Examples</h3>
+<pre class="code-editor"><code>  # cancel upgrade on all Appliances
   &gt; sdpctl appliance upgrade cancel
 
   # cancel upgrade on selected Appliances
@@ -37,13 +37,13 @@ To remove them as well, you can use the &lsquo;&ndash;delete&rsquo; flag.</p><p>
   # cancel upgrade and delete all dangling upgrade images
   &gt; sdpctl appliance upgrade cancel --delete
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>      --delete           Delete all upgrade files from the Controller
+<hr /><h3>Options</h3>
+<pre class="code-editor"><code>      --delete           Delete all upgrade files from the Controller
   -h, --help             help for cancel
       --no-interactive   suppress interactive prompt with auto accept
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
-<pre class="code-editor margin-bottom"><code>      --api-version int          Peer API version override
+<hr /><h3>Options inherited from parent commands</h3>
+<pre class="code-editor"><code>      --api-version int          Peer API version override
       --ci-mode                  Log to stderr instead of file and disable progress-bars
       --debug                    Enable debug logging
       --descending               Change the direction of sort order when using the '--order-by' flag. Using this will reverse the sort order for all keywords specified in the '--order-by' flag.
@@ -56,7 +56,7 @@ To remove them as well, you can use the &lsquo;&ndash;delete&rsquo; flag.</p><p>
   -p, --profile string           Profile configuration to use
   -t, --timeout duration         Timeout for the upgrade operation. The timeout applies to each appliance which is being operated on (default 30m0s)
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<hr /><h3>SEE ALSO</h3>
 <ul>
 <li><p><a href="sdpctl_appliance_upgrade.html">sdpctl appliance upgrade</a>	 - Perform appliance upgrade on the Collective</p></li>
 </ul>

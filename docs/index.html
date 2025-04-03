@@ -24,6 +24,7 @@
     /* start OS detection functions */
     function detectOs() {
       const agent = navigator.userAgent.toLowerCase();
+
       if (agent.indexOf("like mac os x") > -1) return "ios";
       if (agent.indexOf("mac os x") > -1) return "macos";
       if (agent.indexOf("windows") > -1) return "windows";
@@ -35,23 +36,19 @@
 
     function showDetectedOs() {
       const os = detectOs();
-      if (!["macos", "windows", "linux"].includes(os)) {
-        showAllOs();
+
+      if (["macos", "windows", "linux"].includes(os)) {
+        document.getElementById(`os-${os}`).style.display = "block";
       } else {
-        document.getElementById("os-" + os).style.display = "block";
+        showAllOs();
       }
+
       VARS.command = os == "windows" ? "sdpctl.exe" : "./sdpctl";
     }
 
     function showAllOs(event) {
-      const elems = document.querySelectorAll("#os-all > div");
-      for (let i = 0; i < elems.length; i++) {
-        elems[i].style.display = "block";
-      }
-      const links = document.querySelectorAll("#os-all .alt-link ");
-      for (let i = 0; i < links.length; i++) {
-        links[i].classList.add("hidden");
-      }
+      document.querySelectorAll("#os-all > div").forEach(elem => elem.style.display = "block");
+      document.querySelectorAll("#os-all .alt-link").forEach(link => link.classList.add("hidden"));
     }
 
     function fetchLatestRelease() {
@@ -123,8 +120,13 @@
     .os-logo {
       display: block;
       margin: auto;
+      margin-bottom: var(--spacing-default);
       width: 4rem;
       height: 4rem;
+    }
+
+    .button+.button {
+      margin-top: calc(var(--spacing-default) / 2);
     }
 
     .commands-table td:first-child {
@@ -136,11 +138,11 @@
 <body>
   <main class="page text-center">
     <div class="box">
-      <object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-      <h1 class="margin-top-small">sdpctl Quick Start Guide</h1>
+      <object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+      <h1>sdpctl Quick Start Guide</h1>
       <hr />
       <div id="panel-success">
-        <h2 class="margin-bottom">Download</h2>
+        <h2>Download</h2>
         <p class="margin-bottom">
           Appgate sdpctl is compatible with SDP Collectives versions 6 and newer.<br />
           Check this page regularly to get the latest version which is <span data-varid="version" class="tag"></span>
@@ -149,7 +151,7 @@
           <div id="os-macos">
             <div class="os-block">
               <object class="os-logo" data="assets/macos.svg" aria-label="macos logo"></object>
-              <a class="button margin-top-small" data-varid="macos">
+              <a class="button" data-varid="macos">
                 <span>macOS</span>
                 <i class="icon-download"></i>
               </a>
@@ -160,15 +162,15 @@
             <div class="os-block">
 
               <object class="os-logo" data="assets/linux.svg" aria-label="linux logo"></object>
-              <a class="button margin-top-small" data-varid="deb">
+              <a class="button" data-varid="deb">
                 <span>deb package</span>
                 <i class="icon-download"></i>
               </a>
-              <a class="button margin-top-small" data-varid="rpm">
+              <a class="button" data-varid="rpm">
                 <span>rpm package</span>
                 <i class="icon-download"></i>
               </a>
-              <a class="button margin-top-small" data-varid="linux">
+              <a class="button" data-varid="linux">
                 <span>executable</span>
                 <i class="icon-download"></i>
               </a>
@@ -178,7 +180,7 @@
           <div class="os-block" id="os-windows">
             <div class="os-block">
               <object class="os-logo" data="assets/windows.svg" aria-label="windows logo"></object>
-              <a class="button margin-top-small" data-varid="windows">
+              <a class="button" data-varid="windows">
                 <span>Windows</span>
                 <i class="icon-download"></i>
               </a>
@@ -188,16 +190,15 @@
         </div>
       </div>
       <div id="panel-fail" class="hidden">
-        <h2 class="margin-bottom">Download</h2>
+        <h2>Download</h2>
         <p class="margin-bottom">Failed to fetch latest release information.</p>
-        <p>You can download the latest binaries for your operating system in <a target="_blank" rel="noopener"
-            href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</p>
+        <p>You can download the latest binaries for your operating system in <a target="_blank" rel="noopener" href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</p>
       </div>
       <hr />
       <div>
-        <h2 class="margin-bottom">Usage Examples</h2>
+        <h2>Usage Examples</h2>
 
-        <details class="text-left margin-bottom-small">
+        <details class="details">
           <summary class="example-summary">Complete the initial setup after downloading</summary>
           <pre class="code-editor"><code>
 # Step 1: Extract the executable
@@ -238,7 +239,7 @@
           </code></pre>
         </details>
 
-        <details class="text-left margin-bottom-small">
+        <details class="details">
           <summary class="example-summary">Upgrade a Collective</summary>
           <pre class="code-editor"><code>
 # Step 1: Prepare the upgrade
@@ -282,7 +283,7 @@
           </code></pre>
         </details>
 
-        <details class="text-left margin-bottom-small">
+        <details class="details">
           <summary class="example-summary">Backup an appliance</summary>
           <pre class="code-editor"><code>
 &gt; <span data-varid="command">sdpctl.exe</span> appliance backup
@@ -303,7 +304,7 @@
           </code></pre>
         </details>
 
-        <details class="text-left margin-bottom-small">
+        <details class="details">
           <summary class="example-summary">List registered devices and renew their tokens</summary>
           <pre class="code-editor"><code>
 # list distinguished names of registered devices
@@ -331,7 +332,7 @@
           </code></pre>
         </details>
 
-        <details class="text-left margin-bottom-small">
+        <details class="details">
           <summary class="example-summary">Manage multiple Collectives <span class="tag">advanced</span></summary>
           <pre class="code-editor"><code>
 # you can manage multiple Collectives by adding more admin profiles
@@ -396,7 +397,7 @@ no profiles added
           </code></pre>
         </details>
 
-        <details class="text-left margin-bottom-small">
+        <details class="details">
           <summary class="example-summary">Configure for unattended use <span class="tag">advanced</span></summary>
           <pre class="code-editor"><code>
 # you can run sdpctl unattended using the environment variables.
@@ -411,7 +412,7 @@ no profiles added
 
 
 # once environment variables set, backup the controller sdpctl is pointing at
-&gt; <span data-varid="command">sdpctl.exe</span> appliance backup --current --quiet
+&gt; <span data-varid="command">sdpctl.exe</span> appliance backup --current --quiet --include=function=controller
   ✓ Controller  Singapore Controller: download complete
   Backup complete!
           </code></pre>
@@ -420,12 +421,12 @@ no profiles added
       </div>
       <hr />
       <div>
-        <h2 class="margin-bottom">Available Commands</h2>
+        <h2>Available Commands</h2>
         <p class="margin-bottom">
           Appgate sdpctl is an open-source tool with capabilities beyond upgrading an SDP Collective.<br />
           Here you can find the summary for currently available commands, click on each for details.
         </p>
-        <table class="commands-table margin-bottom-small">
+        <table class="commands-table">
           <thead>
             <tr>
               <th>command</th>
@@ -463,6 +464,7 @@ no profiles added
             </tr>
             <tr>
               <td><a href="sdpctl_device.html">device</a></td>
+              <td>Perform actions on registered devices and their tokens</td>
             </tr>
           </tbody>
         </table>
@@ -470,17 +472,14 @@ no profiles added
       </div>
       <hr />
       <div>
-        <h2 class="margin-bottom">Additional Help</h2>
+        <h2>Additional Help</h2>
         <p class="margin-bottom">
           Here you can find the source code, additional documentation and help contact.
         </p>
         <ul class="text-left">
-          <li>Read more about appliance upgrades in <a target="_blank" rel="noopener"
-              href="https://sdphelp.appgate.com/adminguide/upgrading-appliances.html">admin guide</a>.</li>
-          <li>Find more supported platforms (ARM) in <a target="_blank" rel="noopener"
-              href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</li>
-          <li>Contact Appgate Support at <a
-              href="mailto:support@appgate.com?subject=Appgate sdpctl help">support@appgate.com</a>.</li>
+          <li>Read more about appliance upgrades in <a target="_blank" rel="noopener" href="https://sdphelp.appgate.com/adminguide/upgrading-appliances.html">admin guide</a>.</li>
+          <li>Find more supported platforms (ARM) in <a target="_blank" rel="noopener" href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</li>
+          <li>Contact Appgate Support at <a href="mailto:support@appgate.com?subject=Appgate sdpctl help">support@appgate.com</a>.</li>
         </ul>
       </div>
     </div>

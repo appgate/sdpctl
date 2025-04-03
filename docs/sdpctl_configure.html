@@ -11,8 +11,8 @@
 <body>
   <main class="page text-center">
     <div class="box">
-			<object class="appgate-logo" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
-			<h1 class="margin-top-small">sdpctl Reference Guide</h1>
+			<object class="appgate-logo" type="image/svg+xml" data="assets/appgate.svg" aria-label="appgate inc logo"></object>
+			<h1>sdpctl Reference Guide</h1>
       <hr />
 			<div id="breadcrumb" class="breadcrumb">
 				<a href="index.html">Quick Start Guide</a>
@@ -20,12 +20,12 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2 class="text-left margin-bottom">sdpctl configure</h2><p>Configure your Collective</p><hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Synopsis</h3><p>Setup a configuration file towards your Collective to be able to interact with the collective. By default, the configuration file
+      <h2>sdpctl configure</h2><p>Configure your Collective</p><hr /><h3>Synopsis</h3><p>Setup a configuration file towards your Collective to be able to interact with the collective. By default, the configuration file
 will be created in a default directory in depending on your system. This can be overridden by setting the &lsquo;SDPCTL_CONFIG_DIR&rsquo; environment variable.
-See &lsquo;sdpctl help environment&rsquo; for more information on using environment variables.</p><pre class="code-editor margin-bottom"><code>sdpctl configure [flags]
+See &lsquo;sdpctl help environment&rsquo; for more information on using environment variables.</p><pre class="code-editor"><code>sdpctl configure [flags]
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Examples</h3>
-<pre class="code-editor margin-bottom"><code>  # basic configuration command
+<hr /><h3>Examples</h3>
+<pre class="code-editor"><code>  # basic configuration command
   &gt; sdpctl configure
 
   # configuration, no interactive
@@ -37,12 +37,12 @@ See &lsquo;sdpctl help environment&rsquo; for more information on using environm
   # configure using a custom confiuration directory
   &gt; SDPCTL_CONFIG_DIR=/path/config/dir sdpctl configure
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options</h3>
-<pre class="code-editor margin-bottom"><code>  -h, --help         help for configure
+<hr /><h3>Options</h3>
+<pre class="code-editor"><code>  -h, --help         help for configure
       --pem string   Path to PEM file to use for request certificate validation
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">Options inherited from parent commands</h3>
-<pre class="code-editor margin-bottom"><code>      --api-version int      Peer API version override
+<hr /><h3>Options inherited from parent commands</h3>
+<pre class="code-editor"><code>      --api-version int      Peer API version override
       --ci-mode              Log to stderr instead of file and disable progress-bars
       --debug                Enable debug logging
       --events-path string   send logs to unix domain socket path
@@ -50,7 +50,7 @@ See &lsquo;sdpctl help environment&rsquo; for more information on using environm
       --no-verify            Don't verify TLS on for the given command, overriding settings from config file
   -p, --profile string       Profile configuration to use
 </code></pre>
-<hr class="margin-bottom"><h3 class="emphasize text-left margin-bottom-small">SEE ALSO</h3>
+<hr /><h3>SEE ALSO</h3>
 <ul>
 <li><p><a href="sdpctl.html">sdpctl</a>	 - sdpctl is a command line tool to manage Appgate SDP Collectives</p></li>
 <li><p><a href="sdpctl_configure_signin.html">sdpctl configure signin</a>	 - Sign in and authenticate to Collective</p></li>
