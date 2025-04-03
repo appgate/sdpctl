@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -188,7 +189,21 @@ func prompt(question string, choices, preSelected []string, oneChoice bool) ([]s
 	const defaultWidth = 20
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.KeyMap.Quit.SetHelp("q/enter", "quit/select and quit")
+	enterAction := "continue"
+	if oneChoice {
+		enterAction = "select"
+	}
+	l.AdditionalShortHelpKeys = func() []key.Binding {
+		return []key.Binding{key.NewBinding(
+			key.WithKeys("enter"), key.WithHelp("enter", enterAction)),
+			key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "select"))}
+	}
+	l.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", enterAction)),
+			key.NewBinding(key.WithKeys(" "), key.WithHelp("space", "select"))}
+	}
+
 	l.Title = question
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
