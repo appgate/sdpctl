@@ -363,7 +363,7 @@ func CleanupBackupOnExit(opts *BackupOpts, IDs map[string]string) context.Cancel
 }
 
 func CleanupBackup(opts *BackupOpts, IDs map[string]string) error {
-	if IDs == nil || len(IDs) <= 0 {
+	if len(IDs) <= 0 {
 		return errors.New("Command finished, but no appliances were backed up. See log for more details")
 	}
 	app, err := opts.Appliance(opts.Config)

@@ -434,7 +434,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 					if t != nil {
 						t.Fail(errMsg)
 					}
-					return fmt.Errorf(errMsg)
+					return errors.New(errMsg)
 				}
 				if !SwitchPartition {
 					err := backoff.Retry(func() error {
