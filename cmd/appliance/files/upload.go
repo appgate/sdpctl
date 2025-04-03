@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlecAivazis/survey/v2"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -102,11 +101,8 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 				}
 				// no error means file already exists in the repository
 				if f.CanPrompt() {
-					p := &survey.Confirm{
-						Message: fmt.Sprintf("%s already exists. Overwrite?", name),
-					}
-					var overwrite bool
-					if err := prompt.SurveyAskOne(p, &overwrite); err != nil {
+					overwrite, err := prompt.PromptConfirm(fmt.Sprintf("%s already exists. Overwrite?", name), false)
+					if err != nil {
 						return err
 					}
 					if !overwrite {

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -144,9 +143,8 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if _, err := os.Stat(opts.destination); err != nil {
 				createDir := true
 				if f.CanPrompt() {
-					if err := prompt.SurveyAskOne(&survey.Confirm{
-						Message: fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination),
-					}, &createDir); err != nil {
+					createDir, err = prompt.PromptConfirm(fmt.Sprintf("Directory '%s' does not exist. Do you want to create it now?", opts.destination), true)
+					if err != nil {
 						return err
 					}
 				} else {

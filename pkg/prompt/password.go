@@ -6,22 +6,16 @@ import (
 	"io"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 )
 
 func PasswordConfirmation(message string) (string, error) {
-	var (
-		firstAnswer, secondAnswer string
-	)
-	passwordPrompt := &survey.Password{
-		Message: message,
-	}
-	if err := SurveyAskOne(passwordPrompt, &firstAnswer, survey.WithValidator(survey.Required)); err != nil {
+	firstAnswer, err := PromptPassword(message)
+	if err != nil {
 		return firstAnswer, err
 	}
-	passwordPrompt.Message = "Confirm your passphrase:"
-	if err := SurveyAskOne(passwordPrompt, &secondAnswer, survey.WithValidator(survey.Required)); err != nil {
+	secondAnswer, err := PromptPassword("Confirm your passphrase:")
+	if err != nil {
 		return firstAnswer, err
 	}
 	if firstAnswer != secondAnswer {

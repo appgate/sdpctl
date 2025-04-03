@@ -40,8 +40,8 @@ func TestPromptSelect(t *testing.T) {
 			}
 			registry.Register("/admin/appliances", httpmock.JSONResponse("../appliance/fixtures/appliance_list.json"))
 			registry.Register("/admin/appliances/status", httpmock.JSONResponse("../appliance/fixtures/stats_appliance.json"))
-			stubber, teardown := prompt.InitAskStubber(t)
-			func(s *prompt.AskStubber) {
+			stubber, teardown := prompt.InitStubbers(t)
+			func(s *prompt.PromptStubber) {
 				s.StubOne(1)
 			}(stubber)
 			defer teardown()

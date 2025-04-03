@@ -29,7 +29,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 		name       string
 		cli        string
 		httpStubs  []httpmock.Stub
-		askStubs   func(*prompt.AskStubber)
+		askStubs   func(*prompt.PromptStubber)
 		wantErr    bool
 		wantErrOut *regexp.Regexp
 	}{
@@ -279,7 +279,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 					},
 				},
 			},
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Select Controllers to force disable").AnswerWith([]string{"controller-site1 DR (ctrl.appgate.test)"})
 				as.StubOne(true)
 			},
@@ -358,7 +358,7 @@ func TestForceDisableControllerCMD(t *testing.T) {
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
 
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)

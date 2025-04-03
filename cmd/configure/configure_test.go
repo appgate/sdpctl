@@ -52,9 +52,9 @@ func TestConfigCmd(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
-	stubber, teardown := prompt.InitAskStubber(t)
+	stubber, teardown := prompt.InitStubbers(t)
 	defer teardown()
-	func(s *prompt.AskStubber) {
+	func(s *prompt.PromptStubber) {
 		s.StubPrompt("Enter the url for the Controller API (example https://controller.company.com:8443)").
 			AnswerWith("controller.appgate.com")
 
@@ -124,9 +124,9 @@ func TestConfigCmdWithPemFile(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
-	stubber, teardown := prompt.InitAskStubber(t)
+	stubber, teardown := prompt.InitStubbers(t)
 	defer teardown()
-	func(s *prompt.AskStubber) {
+	func(s *prompt.PromptStubber) {
 		s.StubPrompt("Enter the url for the Controller API (example https://controller.company.com:8443)").
 			AnswerWith("another.appgate.com")
 
@@ -221,9 +221,9 @@ func TestConfigCmdWithExistingAddr(t *testing.T) {
 	cmd.SetOut(io.Discard)
 	cmd.SetErr(io.Discard)
 
-	stubber, teardown := prompt.InitAskStubber(t)
+	stubber, teardown := prompt.InitStubbers(t)
 	defer teardown()
-	func(s *prompt.AskStubber) {
+	func(s *prompt.PromptStubber) {
 		s.StubPrompt("Enter the url for the Controller API (example https://controller.company.com:8443)").
 			AnswerWith("new.appgate.com")
 

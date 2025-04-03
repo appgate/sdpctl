@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -109,14 +108,9 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 					jsonFormat: "JSON format",
 					isoFormat:  "ISO format",
 				}
-				qs := &survey.Select{
-					PageSize: len(format),
-					Message:  "Seed type:",
-					Options:  format,
-				}
 
-				selectedFormat := 0
-				if err := prompt.SurveyAskOne(qs, &selectedFormat, survey.WithValidator(survey.Required)); err != nil {
+				selectedFormat, err := prompt.PromptSelectionIndex("Seed type:", format, "")
+				if err != nil {
 					return err
 				}
 				opts.format = seedformat(selectedFormat)
@@ -128,23 +122,18 @@ func NewSeedCmd(f *factory.Factory) *cobra.Command {
 					publicKey:  "Use SSH public key",
 					passphrase: "Use Password",
 				}
-				qs = &survey.Select{
-					PageSize: len(methods),
-					Message:  "SSH Authentication Method:",
-					Options:  methods,
-				}
-				selectedIndex := 0
-				if err := prompt.SurveyAskOne(qs, &selectedIndex, survey.WithValidator(survey.Required)); err != nil {
+
+				selectedIndex, err := prompt.PromptSelectionIndex("SSH Authentication Method:", methods, "")
+				if err != nil {
 					return err
 				}
 				switch selectedIndex {
 				case int(cloud):
 					opts.provideCloudSSHKey = true
 				case int(publicKey):
-					qs := &survey.Input{
-						Message: "path to public ssh key:",
-					}
-					if err := prompt.SurveyAskOne(qs, &opts.sshKey); err != nil {
+
+					opts.sshKey, err = prompt.PromptInput("Path to public ssh key:")
+					if err != nil {
 						return err
 					}
 				case int(passphrase):

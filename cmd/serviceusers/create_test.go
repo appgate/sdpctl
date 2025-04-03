@@ -18,7 +18,7 @@ func TestServiceUsersCreate(t *testing.T) {
 		{
 			desc: "create using prompt",
 			args: []string{"create"},
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Name for service user:").AnswerWith("test-service-user")
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
 				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
@@ -58,7 +58,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			desc:    "create with flags",
 			args:    []string{"create", "--name=test-service-user", "--tags=one,two,three"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Passphrase for service user:").AnswerWith("passphrase")
 				as.StubPrompt("Confirm your passphrase:").AnswerWith("passphrase")
 			},
@@ -90,7 +90,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			desc:    "create with only username flag",
 			args:    []string{"create", "--name=test-service-user"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
 				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")
 			},
@@ -122,7 +122,7 @@ func TestServiceUsersCreate(t *testing.T) {
 			desc:    "create with only tags flag",
 			args:    []string{"create", "--tags=one,two,three"},
 			wantOut: regexp.MustCompile(`"name": "test-service-user"`),
-			askStubs: func(as *prompt.AskStubber) {
+			askStubs: func(as *prompt.PromptStubber) {
 				as.StubPrompt("Name for service user:").AnswerWith("test-service-user")
 				as.StubPrompt("Passphrase for service user:").AnswerWith("password")
 				as.StubPrompt("Confirm your passphrase:").AnswerWith("password")

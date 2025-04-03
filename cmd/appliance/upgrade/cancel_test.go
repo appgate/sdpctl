@@ -21,7 +21,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 		name       string
 		cli        string
 		httpStubs  []httpmock.Stub
-		askStubs   func(*prompt.AskStubber)
+		askStubs   func(*prompt.PromptStubber)
 		wantErr    bool
 		wantErrOut *regexp.Regexp
 	}{
@@ -45,7 +45,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
 				},
 			},
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubOne(true) // confirm cancel
 			},
 			wantErr: false,
@@ -139,7 +139,7 @@ func TestUpgradeCancelCommand(t *testing.T) {
 			cmd.SetIn(&bytes.Buffer{})
 			cmd.SetOut(io.Discard)
 			cmd.SetErr(io.Discard)
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 
 			if tt.askStubs != nil {

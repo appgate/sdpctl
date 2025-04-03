@@ -40,14 +40,14 @@ func TestSwitchPartition(t *testing.T) {
 		args     []string
 		tty      bool
 		apiStubs []httpmock.Stub
-		askStubs func(*prompt.AskStubber)
+		askStubs func(*prompt.PromptStubber)
 		wantErr  bool
 		expect   *regexp.Regexp
 	}{
 		// {
 		// 	desc: "no arg",
 		// 	tty:  true,
-		// 	askStubs: func(s *prompt.AskStubber) {
+		// 	askStubs: func(s *prompt.PromptStubber) {
 		// 		s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
 		// 		s.StubOne(true) // Confirmation prompt
 		// 	},
@@ -93,7 +93,7 @@ func TestSwitchPartition(t *testing.T) {
 		// 			},
 		// 		},
 		// 	},
-		// 	askStubs: func(as *prompt.AskStubber) {
+		// 	askStubs: func(as *prompt.PromptStubber) {
 		// 		as.StubOne(true) // Confirmation prompt
 		// 	},
 		// 	expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
@@ -108,7 +108,7 @@ func TestSwitchPartition(t *testing.T) {
 		{
 			desc: "no selection",
 			tty:  true,
-			askStubs: func(s *prompt.AskStubber) {
+			askStubs: func(s *prompt.PromptStubber) {
 				s.StubPrompt("select appliance:").AnswerWith("")
 			},
 			apiStubs: []httpmock.Stub{
@@ -164,7 +164,7 @@ func TestSwitchPartition(t *testing.T) {
 		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
 		// 		},
 		// 	},
-		// 	askStubs: func(as *prompt.AskStubber) {
+		// 	askStubs: func(as *prompt.PromptStubber) {
 		// 		as.StubOne(false) // User confirmation
 		// 	},
 		// 	wantErr: true,
@@ -227,7 +227,7 @@ func TestSwitchPartition(t *testing.T) {
 				return a, nil
 			}
 
-			stubber, teardown := prompt.InitAskStubber(t)
+			stubber, teardown := prompt.InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)

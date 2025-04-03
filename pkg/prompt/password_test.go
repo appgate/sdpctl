@@ -11,13 +11,13 @@ func TestPasswordConfirmation(t *testing.T) {
 		name     string
 		want     string
 		wantErr  bool
-		askStubs func(*AskStubber)
+		askStubs func(*PromptStubber)
 	}{
 		{
 			name:    "same passwords",
 			want:    "the_password",
 			wantErr: false,
-			askStubs: func(s *AskStubber) {
+			askStubs: func(s *PromptStubber) {
 				s.StubOne("the_password") // password
 				s.StubOne("the_password") // password confirmation
 			},
@@ -26,7 +26,7 @@ func TestPasswordConfirmation(t *testing.T) {
 			name:    "incorrect password",
 			want:    "the_password",
 			wantErr: true,
-			askStubs: func(s *AskStubber) {
+			askStubs: func(s *PromptStubber) {
 				s.StubOne("the_password")                  // password
 				s.StubOne("inCorrectPasswordConfirmation") // password confirmation
 			},
@@ -34,7 +34,7 @@ func TestPasswordConfirmation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stubber, teardown := InitAskStubber(t)
+			stubber, teardown := InitStubbers(t)
 			defer teardown()
 			tt.askStubs(stubber)
 			got, err := PasswordConfirmation("")
@@ -58,7 +58,7 @@ func TestGetPassPhrase(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     args
-		askStubs func(*AskStubber)
+		askStubs func(*PromptStubber)
 		want     string
 		wantErr  bool
 	}{
@@ -80,7 +80,7 @@ func TestGetPassPhrase(t *testing.T) {
 			},
 			want:    "secret",
 			wantErr: false,
-			askStubs: func(s *AskStubber) {
+			askStubs: func(s *PromptStubber) {
 				s.StubPrompt("prompt message").AnswerWith("secret")
 				s.StubPrompt("Confirm your passphrase:").AnswerWith("secret")
 			},
@@ -97,7 +97,7 @@ func TestGetPassPhrase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stubber, teardown := InitAskStubber(t)
+			stubber, teardown := InitStubbers(t)
 			defer teardown()
 			if tt.askStubs != nil {
 				tt.askStubs(stubber)
