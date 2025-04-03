@@ -32,7 +32,7 @@ func TestNewDeleteCmdNoProfilesFile(t *testing.T) {
 	gotStr := string(got)
 	want := "no profiles added\n"
 	if gotStr != want {
-		t.Fatalf(cmp.Diff(want, gotStr))
+		t.Fatal(cmp.Diff(want, gotStr))
 	}
 }
 

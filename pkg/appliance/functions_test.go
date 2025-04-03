@@ -392,7 +392,7 @@ func TestGroupByFunctions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GroupByFunctions(tt.args.appliances)
 			if !cmp.Equal(got, tt.want) {
-				t.Errorf(cmp.Diff(got, tt.want))
+				t.Error(cmp.Diff(got, tt.want))
 			}
 		})
 	}

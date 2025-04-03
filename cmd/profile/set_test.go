@@ -33,7 +33,7 @@ func TestNewSetCmdNoProfilesFile(t *testing.T) {
 run 'sdpctl profile add' first
 `
 	if gotStr != want {
-		t.Fatalf(cmp.Diff(want, gotStr))
+		t.Fatal(cmp.Diff(want, gotStr))
 	}
 }
 
