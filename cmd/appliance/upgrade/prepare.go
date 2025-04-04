@@ -303,24 +303,31 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 	}
 
 	hasLowDiskSpace := appliancepkg.HasLowDiskSpace(initialStats.GetData())
-	autoScalingWarning := false
-	constraints, _ := version.NewConstraint(">= 5.5.0")
-	if constraints.Check(opts.targetVersion) {
-		autoScalingWarning = true
-	}
 	if opts.Config.Version <= 13 {
 		// Versions before v13 does not have dev-keyring functionality
 		opts.DevKeyring = false
 	}
-	if t, gws := appliancepkg.AutoscalingGateways(appliances); autoScalingWarning && len(gws) > 0 && !opts.NoInteractive {
-		msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
-		if err != nil {
-			return err
+	if t, gws := appliancepkg.AutoscalingGateways(appliances); len(gws) > 0 {
+		if !opts.NoInteractive {
+			msg, err := appliancepkg.ShowAutoscalingWarningMessage(t, gws)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(opts.Out, "\n%s\n", msg)
+			if err := prompt.AskConfirmation("WARNING: Auto-scaled gateways will be excluded from the upgrade."); err != nil {
+				return err
+			}
 		}
-		fmt.Fprintf(opts.Out, "\n%s\n", msg)
-		if err := prompt.AskConfirmation("Have you disabled the health check on those auto-scaled gateways"); err != nil {
-			return err
+		// Remove auto-scaled gateways from appliances to be upgraded
+		appliancesForUpgrade := make([]openapi.Appliance, 0)
+		for _, appliance := range appliances {
+			for _, gw := range gws {
+				if appliance.Id != gw.Id {
+					appliancesForUpgrade = append(appliancesForUpgrade, appliance)
+				}
+			}
 		}
+		appliances = appliancesForUpgrade
 	}
 	groups := appliancepkg.GroupByFunctions(appliances)
 

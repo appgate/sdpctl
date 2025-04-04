@@ -239,12 +239,9 @@ func TestShowAutoscalingWarningMessage(t *testing.T) {
 There is an auto-scale template configured: gateway template
 
 
-Found 1 auto-scaled gateway running version < 16:
+Found 1 auto-scaled gateway(s):
 
   - Autoscaling Instance gateway abc
-
-Make sure that the health check for those auto-scaled gateways is disabled.
-Not disabling the health checks in those auto-scaled gateways could cause them to be deleted, breaking all the connections established with them.
 `,
 			wantErr: false,
 		},

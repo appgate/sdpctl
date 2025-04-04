@@ -299,7 +299,7 @@ func AutoscalingGateways(appliances []openapi.Appliance) (*openapi.Appliance, []
 		if util.InSlice("template", a.GetTags()) && !a.GetActivated() {
 			template = &a
 		}
-		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() && strings.HasPrefix(a.GetName(), autoscalePrefix) {
+		if v, ok := a.GetGatewayOk(); ok && v.GetEnabled() && strings.Contains(a.GetName(), autoscalePrefix) {
 			r = append(r, a)
 		}
 	}
