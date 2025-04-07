@@ -319,6 +319,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 			}
 		}
 		// Remove auto-scaled gateways from appliances to be upgraded
+		log.Info("excluding autoscaling gateways")
 		appliancesForUpgrade := make([]openapi.Appliance, 0)
 		for _, appliance := range appliances {
 			for _, gw := range gws {
