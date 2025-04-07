@@ -84,7 +84,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				{
 					URL: "/admin/appliances/{appliance}/upgrade",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
-						us := openapi.NewStatsAppliancesListAllOfUpgradeWithDefaults()
+						us := openapi.NewApplianceWithStatusAllOfDetailsUpgradeWithDefaults()
 						us.SetStatus(appliancepkg.UpgradeStatusIdle)
 						body, err := us.MarshalJSON()
 						if err != nil {

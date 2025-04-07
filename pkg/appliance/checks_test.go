@@ -341,22 +341,22 @@ func TestCompareVersionAndBuildNumber(t *testing.T) {
 func TestHasDiffVersions(t *testing.T) {
 	testCases := []struct {
 		name   string
-		stats  []openapi.StatsAppliancesListAllOfData
+		stats  []openapi.ApplianceWithStatus
 		expect bool
 		count  int // the number of keys in the map that should be returned.
 	}{
 		{
 			name: "should not have diff versions",
-			stats: []openapi.StatsAppliancesListAllOfData{
+			stats: []openapi.ApplianceWithStatus{
 				{
-					Name:    openapi.PtrString("controller one"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("6.0.0-12345-release"),
+					Name:             "controller one",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("6.0.0-12345-release"),
 				},
 				{
-					Name:    openapi.PtrString("controller two"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("6.0.0-12345-release"),
+					Name:             "controller two",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("6.0.0-12345-release"),
 				},
 			},
 			expect: false,
@@ -364,21 +364,21 @@ func TestHasDiffVersions(t *testing.T) {
 		},
 		{
 			name: "should have diff versions",
-			stats: []openapi.StatsAppliancesListAllOfData{
+			stats: []openapi.ApplianceWithStatus{
 				{
-					Name:    openapi.PtrString("controller primary"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("6.0.0-12345-release"),
+					Name:             "controller primary",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("6.0.0-12345-release"),
 				},
 				{
-					Name:    openapi.PtrString("controller secondary"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("6.0.0-23456-release"),
+					Name:             "controller secondary",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("6.0.0-23456-release"),
 				},
 				{
-					Name:    openapi.PtrString("portal - the cake is a lie"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("6.0.0-23456-release"),
+					Name:             "portal - the cake is a lie",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("6.0.0-23456-release"),
 				},
 			},
 			expect: true,
@@ -386,16 +386,16 @@ func TestHasDiffVersions(t *testing.T) {
 		},
 		{
 			name: "one offline appliance",
-			stats: []openapi.StatsAppliancesListAllOfData{
+			stats: []openapi.ApplianceWithStatus{
 				{
-					Name:    openapi.PtrString("gateway"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("unkown"),
+					Name:             "gateway",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("unkown"),
 				},
 				{
-					Name:    openapi.PtrString("controller one"),
-					Id:      openapi.PtrString(uuid.NewString()),
-					Version: openapi.PtrString("6.0.0-23456-release"),
+					Name:             "controller one",
+					Id:               openapi.PtrString(uuid.NewString()),
+					ApplianceVersion: openapi.PtrString("6.0.0-23456-release"),
 				},
 			},
 			expect: true,
