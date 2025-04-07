@@ -15,7 +15,8 @@ import (
 
 // AskConfirmation make sure user confirm action, otherwise abort.
 func AskConfirmation(m ...string) error {
-	ok, err := PromptConfirm("Do you want to continue?", false)
+	m = append(m, "Do you want to continue?")
+	ok, err := PromptConfirm(strings.Join(m, "\n\n"), false)
 	if err != nil || !ok {
 		return cmdutil.ErrExecutionCanceledByUser
 	}
