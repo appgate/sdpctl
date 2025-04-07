@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
@@ -20,7 +20,7 @@ type Device struct {
 }
 
 func (t *Device) ListDistinguishedNames(ctx context.Context, orderBy []string, descending bool) ([]openapi.OnBoardedDevice, error) {
-	dn, response, err := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesGet(ctx).Authorization(t.Token).Execute()
+	dn, response, err := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesGet(ctx).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -28,7 +28,7 @@ func (t *Device) ListDistinguishedNames(ctx context.Context, orderBy []string, d
 }
 
 func (t *Device) RevokeByDistinguishedName(request openapi.ApiOnBoardedDevicesRevokeTokensPostRequest, body openapi.DeviceRevocationRequest) (*http.Response, error) {
-	_, response, err := request.Authorization(t.Token).DeviceRevocationRequest(body).Execute()
+	_, response, err := request.DeviceRevocationRequest(body).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
@@ -36,7 +36,7 @@ func (t *Device) RevokeByDistinguishedName(request openapi.ApiOnBoardedDevicesRe
 }
 
 func (t *Device) ReevaluateByDistinguishedName(ctx context.Context, dn string) ([]string, error) {
-	reevaluatedDn, response, err := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesReevaluateDistinguishedNamePost(ctx, dn).Authorization(t.Token).Execute()
+	reevaluatedDn, response, err := t.APIClient.RegisteredDevicesApi.OnBoardedDevicesReevaluateDistinguishedNamePost(ctx, dn).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}
