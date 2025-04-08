@@ -1,13 +1,12 @@
 package maintenance
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -52,7 +51,7 @@ func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(a.Token)
 	stats, _, err := a.ApplianceStatus(ctx, nil, nil, false)
 	if err != nil {
 		return err

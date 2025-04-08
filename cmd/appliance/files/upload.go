@@ -79,7 +79,7 @@ func NewFilesUploadCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(api.Token)
 			filesAPI := files.FileManager{API: api}
 			if !opts.ciMode {
 				filesAPI.Progress = tui.New(ctx, f.SpinnerOut)

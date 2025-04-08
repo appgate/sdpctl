@@ -1,7 +1,6 @@
 package serviceusers
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -11,7 +10,9 @@ import (
 )
 
 func NewServiceUsersGetCMD(f *factory.Factory) *cobra.Command {
+	token, _ := f.Config.GetBearTokenHeaderValue()
 	opts := ServiceUsersOptions{
+		Token:  token,
 		Config: f.Config,
 		API:    f.ServiceUsers,
 		Out:    f.IOOutWriter,
@@ -30,7 +31,7 @@ func NewServiceUsersGetCMD(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(opts.Token)
 			api, err := opts.API(opts.Config)
 			if err != nil {
 				return err

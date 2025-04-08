@@ -1,12 +1,11 @@
 package sites
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -49,7 +48,7 @@ func NewSitesListCmd(parentOpts *SitesOptions) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
 			sites, err := opts.SitesAPI.ListSites(ctx)
 			if err != nil {
 				return err

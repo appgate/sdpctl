@@ -16,7 +16,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/serviceusers"
 	"golang.org/x/net/http/httpproxy"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -198,7 +198,7 @@ func customHTTPClient(f *Factory) func() (*http.Client, error) {
 			return nil, err
 		}
 		client.Transport = &customTransport{
-			token:               token,
+			token:               fmt.Sprintf("Bearer %s", token),
 			accept:              fmt.Sprintf("application/vnd.appgate.peer-v%d+json", cfg.Version),
 			useragent:           f.userAgent,
 			underlyingTransport: parentTransport,

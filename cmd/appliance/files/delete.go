@@ -1,13 +1,13 @@
 package files
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
+	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +45,7 @@ func NewFilesDeleteCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(a.Token)
 
 			var errs error
 			if len(args) > 0 {

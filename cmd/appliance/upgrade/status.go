@@ -1,7 +1,6 @@
 package upgrade
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -59,7 +58,7 @@ func upgradeStatusRun(cmd *cobra.Command, opts *upgradeStatusOptions) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(a.Token)
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), opts.defaultFilter)
 	allAppliances, err := a.List(ctx, filter, orderBy, descending)
 	if err != nil {

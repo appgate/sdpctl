@@ -1,10 +1,9 @@
 package appliance
 
 import (
-	"context"
 	"io"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -45,7 +44,7 @@ func NewResolveNameStatusCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ctx := context.Background()
+			ctx := util.BaseAuthContext(a.Token)
 			filter := map[string]map[string]string{
 				"include": {
 					"function": "gateway",
@@ -100,9 +99,9 @@ func resolveNameStatusRun(opts *resolveNameStatusOpts) error {
 	if err != nil {
 		return err
 	}
-	ctx := context.Background()
+	ctx := util.BaseAuthContext(token)
 
-	result, response, err := client.AppliancesApi.AppliancesIdNameResolutionStatusGet(ctx, opts.applianceID).Authorization(token).Execute()
+	result, response, err := client.AppliancesApi.AppliancesIdNameResolutionStatusGet(ctx, opts.applianceID).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}

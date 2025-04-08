@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/device"
 	"github.com/appgate/sdpctl/pkg/factory"

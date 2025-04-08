@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -202,4 +204,9 @@ func StringAbbreviate(s string) string {
 		return s
 	}
 	return s[:i] + " [...]"
+}
+
+func BaseAuthContext(token string) context.Context {
+	ctx := context.Background()
+	return context.WithValue(ctx, openapi.ContextAccessToken, token)
 }

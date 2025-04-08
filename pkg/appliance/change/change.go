@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/cenkalti/backoff/v4"
 	log "github.com/sirupsen/logrus"
@@ -18,7 +18,7 @@ type ApplianceChange struct {
 
 // Get HTTP GET /appliances/{id}/change/{changeId}
 func (ac *ApplianceChange) Get(ctx context.Context, changeID, applianceID string) (*openapi.AppliancesIdChangeChangeIdGet200Response, error) {
-	result, response, err := ac.APIClient.ApplianceChangeApi.AppliancesIdChangeChangeIdGet(ctx, changeID, applianceID).Authorization(ac.Token).Execute()
+	result, response, err := ac.APIClient.ApplianceChangeApi.AppliancesIdChangeChangeIdGet(ctx, changeID, applianceID).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

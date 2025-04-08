@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/dns"
@@ -84,7 +84,7 @@ func TestUpgradeCompleteCommand(t *testing.T) {
 				{
 					URL: "/admin/appliances/{appliance}/upgrade",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
-						us := openapi.NewStatsAppliancesListAllOfUpgradeWithDefaults()
+						us := openapi.NewApplianceWithStatusAllOfDetailsUpgradeWithDefaults()
 						us.SetStatus(appliancepkg.UpgradeStatusIdle)
 						body, err := us.MarshalJSON()
 						if err != nil {

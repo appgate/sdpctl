@@ -12,7 +12,7 @@ import (
 	"time"
 
 	expect "github.com/Netflix/go-expect"
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -711,7 +711,7 @@ func TestAuthAndOTP(t *testing.T) {
 				as.StubPrompt("Please enter your one-time password:").AnswerWith("12345")
 			},
 			wantErr: false,
-			want:    openapi.PtrString("Bearer newToken"),
+			want:    openapi.PtrString("newToken"),
 		},
 		{
 			name: "auth interactive OTP wrong OTPs",
@@ -758,8 +758,8 @@ func TestAuthAndOTP(t *testing.T) {
 				tt.askStubs(stubber)
 				tt.askStubs = nil
 			}
-
-			got, err := authAndOTP(tt.args.ctx, authenticator, tt.args.password, tt.args.token)
+			ctx := context.WithValue(tt.args.ctx, openapi.ContextAccessToken, tt.args.token)
+			got, err := authAndOTP(ctx, authenticator, tt.args.password)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("authAndOTP() error = %v, wantErr %v", err, tt.wantErr)
 				return

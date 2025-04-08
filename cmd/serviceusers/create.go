@@ -1,7 +1,6 @@
 package serviceusers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
@@ -20,7 +19,9 @@ import (
 )
 
 func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
+	token, _ := f.Config.GetBearTokenHeaderValue()
 	opts := ServiceUsersOptions{
+		Token:  token,
 		Config: f.Config,
 		API:    f.ServiceUsers,
 		In:     f.Stdin,
@@ -45,11 +46,12 @@ func NewServiceUsersCreateCMD(f *factory.Factory) *cobra.Command {
 }
 
 func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOptions) error {
-	ctx := context.Background()
 	api, err := opts.API(opts.Config)
 	if err != nil {
 		return err
 	}
+
+	ctx := util.BaseAuthContext(opts.Token)
 
 	fromFile, err := cmd.Flags().GetString("from-file")
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -127,7 +127,9 @@ func Signin(f *factory.Factory) error {
 	if err == nil && cfg.ExpiredAtValid() && len(bearer) > 0 && cfg.Version > 0 {
 		// Make a test request and see if the locally stored auth bearer token
 		// is valid, if we get any errors here, we can assume the token has been revoked.
-		_, err := authenticator.Authorization(context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, cfg.Version)), bearer)
+		testTokenCtx := context.WithValue(ctx, openapi.ContextAcceptHeader, fmt.Sprintf(acceptHeaderFormatString, cfg.Version))
+		testTokenCtx = context.WithValue(testTokenCtx, openapi.ContextAccessToken, bearer)
+		_, err := authenticator.Authorization(testTokenCtx)
 		if err == nil {
 			// if we don't get any errors here, we can be sure that the locally stored bearer token
 			// is still valid.
@@ -200,13 +202,14 @@ func Signin(f *factory.Factory) error {
 	if err != nil {
 		return err
 	}
+	ctxWithAcceptAndToken := context.WithValue(ctxWithAccept, openapi.ContextAccessToken, response.Token)
 
-	newToken, err := authAndOTP(ctxWithAccept, authenticator, response.LoginOpts.Password, response.Token)
+	newToken, err := authAndOTP(ctxWithAcceptAndToken, authenticator, response.LoginOpts.Password)
 	if err != nil {
 		return err
 	}
-
-	authorizationToken, err := authenticator.Authorization(ctxWithAccept, *newToken)
+	ctxWithAcceptAndToken = context.WithValue(ctxWithAccept, openapi.ContextAccessToken, *newToken)
+	authorizationToken, err := authenticator.Authorization(ctxWithAcceptAndToken)
 	if err != nil {
 		return err
 	}
@@ -214,7 +217,6 @@ func Signin(f *factory.Factory) error {
 	// use the original auth request expires_at value instead of the value from authorization since they can be different
 	// depending on the provider type.
 	cfg.ExpiresAt = openapi.PtrString(response.Expires.String())
-
 	// if we have set environment variable SDPCTL_NO_KEYRING, we wont save anything to the keyring
 	// default behavior is to save to keyring unless this environment variable is explicitly set.
 	if os.Getenv("SDPCTL_NO_KEYRING") != "" {
@@ -222,6 +224,7 @@ func Signin(f *factory.Factory) error {
 			fmt.Fprintf(f.StdErr, "[warning] sdpctl keyring integration disabled by environment variable, cant set key to env %s\n", err)
 			return nil
 		}
+		os.Getenv("SDPCTL_BEARER")
 		return nil
 	}
 
@@ -272,14 +275,14 @@ func Signin(f *factory.Factory) error {
 var ErrCantPromptOTP = errors.New("authentication requires one-time-password, but a TTY prompt is not allowed, can't continue")
 
 // authAndOTP returns the authorized bearer header value and prompt user for OTP if its required
-func authAndOTP(ctx context.Context, authenticator *Auth, password *string, token string) (*string, error) {
-	authToken := fmt.Sprintf("Bearer %s", token)
-	_, err := authenticator.Authorization(ctx, authToken)
+func authAndOTP(ctx context.Context, authenticator *Auth, password *string) (*string, error) {
+	authToken := ctx.Value(openapi.ContextAccessToken).(string)
+	_, err := authenticator.Authorization(ctx)
 	if errors.Is(err, ErrPreConditionFailed) {
 		if v, ok := ctx.Value(contextKeyCanPrompt).(bool); ok && !v {
 			return nil, ErrCantPromptOTP
 		}
-		otp, err := authenticator.InitializeOTP(ctx, password, authToken)
+		otp, err := authenticator.InitializeOTP(ctx, password)
 		if err != nil {
 			return nil, err
 		}
@@ -288,7 +291,7 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string, toke
 			if err != nil {
 				return nil, err
 			}
-			return authenticator.PushOTP(ctx, answer, authToken)
+			return authenticator.PushOTP(ctx, answer)
 		}
 		// TODO add support for RadiusChallenge, Push
 		switch otpType := otp.GetType(); otpType {
@@ -321,7 +324,7 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string, toke
 					}
 				}
 				if newToken != nil {
-					t := fmt.Sprintf("Bearer %s", newToken.GetToken())
+					t := newToken.GetToken()
 					return &t, nil
 				}
 			}
