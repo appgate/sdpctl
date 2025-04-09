@@ -492,7 +492,11 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 
 				// Check if partition has been switched
 				for _, appData := range s.GetData() {
-					logger.WithField("new volume", *appData.GetDetails().VolumeNumber).Info("new volume recieved")
+					if details, ok := appData.GetDetailsOk(); ok {
+						logger.WithField("new volume", details.VolumeNumber).Info("new volume recieved")
+					} else {
+						logger.Info("new volume number not found")
+					}
 					if i.GetId() == appData.GetId() && *appData.GetDetails().VolumeNumber == initialVolume {
 						return fmt.Errorf("upgrade complete failed on %s: never switched partition", i.GetName())
 					}

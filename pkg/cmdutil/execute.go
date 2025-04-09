@@ -97,7 +97,6 @@ func ExecuteCommand(cmd *cobra.Command) ExitCode {
 			result = multierror.Append(result, err)
 		}
 		fmt.Fprintln(cmd.ErrOrStderr(), result.ErrorOrNil())
-
 		if errors.Is(err, ErrExitAuth) {
 			return ExitAuth
 		}

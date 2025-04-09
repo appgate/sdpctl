@@ -80,7 +80,7 @@ func listRun(cmd *cobra.Command, args []string, opts *statusOptions) error {
 		w.AddLine(
 			s.GetName(),
 			*s.GetDetails().Roles.Controller.MaintenanceMode,
-			removeNewLine.ReplaceAllString(*s.GetDetails().Roles.Controller.Details, " "),
+			removeNewLine.ReplaceAllString(s.GetDetails().Roles.Controller.GetDetails(), " "),
 		)
 
 	}

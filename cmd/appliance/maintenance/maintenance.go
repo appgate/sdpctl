@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/appliance/change"
 	"github.com/appgate/sdpctl/pkg/configuration"
@@ -12,6 +14,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-multierror"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +51,7 @@ type toggleOptions struct {
 	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	debug         bool
 	json          bool
-	controllerID  string
+	controllerIDs []string
 	enabled       bool
 	noInteractive bool
 }
@@ -81,14 +84,14 @@ func toggleArgs(cmd *cobra.Command, opts *toggleOptions, args []string) error {
 		if opts.noInteractive {
 			return errors.New("Provide the Controller UUID when using --no-interactive, sdpctl appliance maintenance disable controllerUUID")
 		}
-		applianceID, err := appliancepkg.PromptSelect(ctx, a, filter(primaryControllerHostname), orderBy, descending)
+		applianceIDs, err := appliancepkg.PromptMultiSelect(ctx, a, filter(primaryControllerHostname), orderBy, descending)
 		if err != nil {
 			return err
 		}
-		opts.controllerID = applianceID
+		opts.controllerIDs = applianceIDs
 	case 1:
 		if util.IsUUID(args[0]) {
-			opts.controllerID = args[0]
+			opts.controllerIDs = []string{args[0]}
 			return nil
 		}
 		return errors.New("Expected first argument to be appliance UUID")
@@ -115,35 +118,48 @@ func toggleRun(cmd *cobra.Command, args []string, opts *toggleOptions) error {
 	if !opts.noInteractive {
 		fmt.Fprintf(opts.Out, "\n%s\n\n", `A Controller in maintenance mode will not accept any API calls besides disabling maintenance mode. Starting in version 6.0, clients will still function as usual while a Controller is in maintenance mode.
 This is a superuser function and should only be used if you know what you are doing.`)
-		appliance, err := a.Get(ctx, opts.controllerID)
-		if err != nil {
-			return err
+		applianceNames := []string{}
+		for _, controllerID := range opts.controllerIDs {
+			appliance, err := a.Get(ctx, controllerID)
+			if err != nil {
+				return err
+			}
+			applianceNames = append(applianceNames, appliance.GetName())
 		}
-
-		confirmation := fmt.Sprintf("Are you sure you want to disable maintenance mode on %s?", appliance.GetName())
+		confirmation := fmt.Sprintf("Are you sure you want to disable maintenance mode on %s?", strings.Join(applianceNames, ", "))
 		if opts.enabled {
-			confirmation = fmt.Sprintf("Are you sure you want to enable maintenance mode on %s?", appliance.GetName())
+			confirmation = fmt.Sprintf("Are you sure you want to enable maintenance mode on %s?", strings.Join(applianceNames, ", "))
 		}
 		if err := prompt.AskConfirmation(confirmation); err != nil {
 			return err
 		}
 	}
-
-	changeID, err := a.UpdateMaintenanceMode(ctx, opts.controllerID, opts.enabled)
-	if err != nil {
-		return err
-	}
-	ac := change.ApplianceChange{
-		APIClient: a.APIClient,
-		Token:     t,
-	}
-	change, err := ac.RetryUntilCompleted(ctx, changeID, opts.controllerID)
-	if err != nil {
-		return err
+	var errs *multierror.Error
+	changes := []openapi.AppliancesIdChangeChangeIdGet200Response{}
+	for _, controllerID := range opts.controllerIDs {
+		changeID, err := a.UpdateMaintenanceMode(ctx, controllerID, opts.enabled)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+		ac := change.ApplianceChange{
+			APIClient: a.APIClient,
+			Token:     t,
+		}
+		change, err := ac.RetryUntilCompleted(ctx, changeID, controllerID)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+		if opts.json {
+			changes = append(changes, *change)
+		} else {
+			fmt.Fprintf(opts.Out, "Change result: %s \nChange Status: %s\n", change.GetResult(), change.GetStatus())
+		}
 	}
 	if opts.json {
-		return util.PrintJSON(opts.Out, change)
+		err = util.PrintJSON(opts.Out, changes)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
 	}
-	fmt.Fprintf(opts.Out, "Change result: %s \nChange Status: %s\n", change.GetResult(), change.GetStatus())
-	return nil
+	return errs.ErrorOrNil()
 }
