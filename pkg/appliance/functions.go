@@ -33,13 +33,14 @@ import (
 )
 
 const (
-	FunctionController   = "Controller"
-	FunctionGateway      = "Gateway"
-	FunctionPortal       = "Portal"
-	FunctionConnector    = "Connector"
-	FunctionLogServer    = "LogServer"
-	FunctionLogForwarder = "LogForwarder"
-	FilterDelimiter      = "&"
+	FunctionController        = "Controller"
+	FunctionGateway           = "Gateway"
+	FunctionPortal            = "Portal"
+	FunctionConnector         = "Connector"
+	FunctionLogServer         = "LogServer"
+	FunctionLogForwarder      = "LogForwarder"
+	FunctionMetricsAggregator = "Metrics Aggregator"
+	FilterDelimiter           = "&"
 )
 
 // GroupByFunctions group appliances by function
@@ -63,6 +64,9 @@ func GroupByFunctions(appliances []openapi.Appliance) map[string][]openapi.Appli
 		}
 		if v, ok := a.GetLogForwarderOk(); ok && v.GetEnabled() {
 			r[FunctionLogForwarder] = append(r[FunctionLogForwarder], a)
+		}
+		if v, ok := a.GetMetricsAggregatorOk(); ok && v.GetEnabled() {
+			r[FunctionMetricsAggregator] = append(r[FunctionMetricsAggregator], a)
 		}
 	}
 	return r
@@ -91,6 +95,9 @@ func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 		if util.InSlice(FunctionLogForwarder, res) {
 			functions[FunctionLogForwarder] = true
 		}
+		if util.InSlice(FunctionMetricsAggregator, res) {
+			functions[FunctionMetricsAggregator] = true
+		}
 	}
 	return functions
 }
@@ -115,6 +122,9 @@ func GetActiveFunctions(appliance openapi.Appliance) []string {
 	}
 	if v, ok := appliance.GetLogForwarderOk(); ok && v.GetEnabled() {
 		functions = append(functions, FunctionLogForwarder)
+	}
+	if v, ok := appliance.GetMetricsAggregatorOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionMetricsAggregator)
 	}
 
 	return functions
@@ -749,6 +759,11 @@ func ApplianceActiveFunctions(s openapi.ApplianceWithStatus) string {
 	if v, ok := s.GetPortalOk(); ok {
 		if v.GetEnabled() {
 			functions = append(functions, FunctionPortal)
+		}
+	}
+	if v, ok := s.GetMetricsAggregatorOk(); ok {
+		if v.GetEnabled() {
+			functions = append(functions, FunctionMetricsAggregator)
 		}
 	}
 	return strings.Join(functions, ", ")
