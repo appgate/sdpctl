@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/appgate/sdp-api-client-go/api/v21/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
@@ -89,13 +89,9 @@ func ResourcesNamesStatusRun(opts *ResourcesNamesOpts) error {
 	if err != nil {
 		return err
 	}
-	token, err := opts.Config.GetBearTokenHeaderValue()
-	if err != nil {
-		return err
-	}
 	ctx := context.Background()
 
-	result, response, err := client.SitesApi.SitesIdResourcesGet(ctx, opts.siteID).Authorization(token).Execute()
+	result, response, err := client.SitesApi.SitesIdResourcesGet(ctx, opts.siteID).Execute()
 	if err != nil {
 		return api.HTTPErrorResponse(response, err)
 	}
