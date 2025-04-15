@@ -494,7 +494,7 @@
                     "appliance": {
                         "status": "healthy"
                     },
-                    "state": "single_controller_ready",
+                    "state": "controller_ready",
                     "volumeNumber": 2,
                     "upgrade": {
                         "status": "ready",
