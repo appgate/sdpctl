@@ -124,7 +124,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "left":
 			modifyVisible(m, false)
 		case "right":
-			modifyVisible(m, true)
+			if !m.oneChoice {
+				modifyVisible(m, true)
+			}
 		}
 	}
 
@@ -252,6 +254,22 @@ var PromptSelection = func(question string, choices []string, preSelected string
 		return result[0], nil
 	}
 	return "", fmt.Errorf("No input provided")
+}
+
+var PromptMultiSelectIndex = func(question string, choices []string, preSelected []string) ([]int, error) {
+	result, err := PromptMultiSelection(question, choices, preSelected)
+	if err != nil {
+		return nil, err
+	}
+	var selectedIndices []int
+	j := 0
+	for i := 0; i < len(choices) && j < len(result); i++ {
+		if choices[i] == result[j] {
+			selectedIndices = append(selectedIndices, i)
+			j++
+		}
+	}
+	return selectedIndices, nil
 }
 
 var PromptSelectionIndex = func(question string, choices []string, preSelected string) (int, error) {
