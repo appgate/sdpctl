@@ -81,7 +81,7 @@ func promptMultiAppliance(appliances []openapi.Appliance) ([]string, error) {
 		return nil, err
 	}
 	var selectedAppliances []string
-	for i := range selectedIndices {
+	for _, i := range selectedIndices {
 		selectedAppliances = append(selectedAppliances, appliances[i].GetId())
 	}
 	return selectedAppliances, nil
