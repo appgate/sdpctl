@@ -8,7 +8,7 @@
             "name": "controller-da0375f6-0b28-4248-bd54-a933c4c39008-site1",
             "online": true,
             "version": "5.3.4-24950",
-            "state": "single_controller_ready",
+            "state": "controller_ready",
             "volumeNumber": 2,
             "status": "healthy",
             "controller": {
@@ -60,7 +60,7 @@
             "name": "secondcontroller",
             "online": false,
             "version": "5.3.4-24950",
-            "state": "single_controller_ready",
+            "state": "controller_ready",
             "volumeNumber": 2,
             "status": "offline",
             "controller": {

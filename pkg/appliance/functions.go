@@ -804,10 +804,8 @@ func orderApplianceFiles(files []openapi.File, orderBy []string, descending bool
 }
 
 const (
-	statControllerReady       string = "controller_ready"
-	statSingleControllerReady string = "single_controller_ready"
-	statMultiControllerReady  string = "multi_controller_ready"
-	statApplianceReady        string = "appliance_ready"
+	statControllerReady string = "controller_ready"
+	statApplianceReady  string = "appliance_ready"
 
 	// https://github.com/appgate/sdp-api-specification/blob/94d8f7970cd025c8cf92b4560c1a9a0595d66133/dashboard.yml#L477-L483
 	statusHealthy      string = "healthy"
@@ -820,8 +818,6 @@ const (
 
 var StatReady = []string{
 	statControllerReady,
-	statSingleControllerReady,
-	statMultiControllerReady,
 	statApplianceReady,
 }
 
