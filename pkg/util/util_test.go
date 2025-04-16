@@ -51,6 +51,20 @@ func TestIsValidURL(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "absolute path to file",
+			args: args{
+				addr: "/home/user/Downloads/file.zip",
+			},
+			wantErr: true,
+		},
+		{
+			name: "relative path to file",
+			args: args{
+				addr: "../Downloads/file.zip",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

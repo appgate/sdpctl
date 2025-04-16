@@ -73,6 +73,7 @@ func IsJSON(str string) bool {
 }
 
 var ErrMalformedURL error = errors.New("malformed url")
+var ErrNotAURL error = errors.New("not a url")
 
 // IsValidURL tests a string to determine if it is a well-structured url or not.
 func IsValidURL(addr string) error {
@@ -80,14 +81,15 @@ func IsValidURL(addr string) error {
 	if err != nil {
 		return err
 	}
-
 	if r := regexp.MustCompile(`https?://`); len(r.FindAllString(addr, -1)) > 1 {
 		return fmt.Errorf("%w: '%s'", ErrMalformedURL, addr)
 	}
-
 	u, err := url.Parse(addr)
-	if err != nil || u.Scheme == "" || u.Host == "" {
+	if err != nil {
 		return err
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return ErrNotAURL
 	}
 	return nil
 }
