@@ -11,7 +11,7 @@ require (
 	github.com/appgate/sdp-api-client-go v1.3.1
 	github.com/billgraziano/dpapi v0.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/charmbracelet/bubbles v0.20.0
+	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/cheynewallace/tabby v1.1.1
