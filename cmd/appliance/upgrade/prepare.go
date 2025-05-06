@@ -322,14 +322,14 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 		// Remove auto-scaled gateways from appliances to be upgraded
 		log.Info("excluding autoscaling gateways")
 		appliancesForUpgrade := make([]openapi.Appliance, 0)
-		// Build a map of autoscaling gateway ids
-		autoscalingGatewayIds := make(map[*string]bool)
-		for _, gw := range gws {
-			autoscalingGatewayIds[gw.Id] = true
-		}
-		// Select appliances that do not match the id of an autoscaling gateway
 		for _, appliance := range appliances {
-			if !autoscalingGatewayIds[appliance.Id] {
+			isAutoscaling := false
+			for _, gw := range gws {
+				if appliance.Id == gw.Id {
+					isAutoscaling = true
+				}
+			}
+			if !isAutoscaling {
 				appliancesForUpgrade = append(appliancesForUpgrade, appliance)
 			}
 		}
