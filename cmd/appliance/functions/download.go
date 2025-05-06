@@ -10,8 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
-	apipkg "github.com/appgate/sdpctl/pkg/api"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -100,45 +98,6 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			return errs.ErrorOrNil()
 		}),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if len(opts.version) <= 0 {
-				api, err := f.Appliance(f.Config)
-				if err != nil {
-					return err
-				}
-				ctx := util.BaseAuthContext(api.Token)
-				appliances, err := api.List(ctx, appliancepkg.DefaultCommandFilter, []string{"name"}, false)
-				if err != nil {
-					return err
-				}
-				configHostURL, err := url.ParseRequestURI(f.Config.URL)
-				if err != nil {
-					return err
-				}
-				primary, err := appliancepkg.FindPrimaryController(appliances, configHostURL.Hostname(), true)
-				if err != nil {
-					return err
-				}
-				logrus.WithField("primary-controller", primary.GetName()).Debug("found primary controller")
-				stats, response, err := api.ApplianceStatus(ctx, nil, []string{"name"}, false)
-				if err != nil {
-					return apipkg.HTTPErrorResponse(response, err)
-				}
-				primStats, err := util.Find(stats.GetData(), func(s openapi.ApplianceWithStatus) bool { return s.GetId() == primary.GetId() })
-				if err != nil {
-					return err
-				}
-				logrus.WithField("stats", primStats).Debug("found primary controller stats")
-				primVersion, err := appliancepkg.ParseVersionString(primStats.GetApplianceVersion())
-				if err != nil {
-					return err
-				}
-				tag, err := util.DockerTagVersion(primVersion)
-				if err != nil {
-					return err
-				}
-				opts.version = tag
-			}
-
 			opts.destination = filesystem.AbsolutePath(opts.destination)
 			if _, err := os.Stat(opts.destination); err != nil {
 				createDir := true
@@ -172,13 +131,9 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			api, err := f.Appliance(f.Config)
-			if err != nil {
-				return err
-			}
 			var wg sync.WaitGroup
 			errChan := make(chan error)
-			ctx := util.BaseAuthContext(api.Token)
+			ctx := context.Background()
 			var p *tui.Progress
 			if !opts.ciMode {
 				p = tui.New(ctx, f.SpinnerOut)
@@ -231,6 +186,7 @@ func NewApplianceFunctionsDownloadCmd(f *factory.Factory) *cobra.Command {
 	flags.StringVar(&opts.destination, "destination", filesystem.DownloadDir(), "path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
 	flags.String("save-path", "", "[DEPRECATED, use '--destination' instead] path to a directory where the container bundle should be saved. The command will create a directory if it doesn't already exist")
 	flags.StringVar(&opts.version, "version", "", "Override the LogServer version that will be downloaded. Defaults to the same version as the primary controller.")
+	cmd.MarkFlagRequired("version")
 
 	return cmd
 }
