@@ -323,10 +323,14 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 		log.Info("excluding autoscaling gateways")
 		appliancesForUpgrade := make([]openapi.Appliance, 0)
 		for _, appliance := range appliances {
+			isAutoscaling := false
 			for _, gw := range gws {
-				if appliance.Id != gw.Id {
-					appliancesForUpgrade = append(appliancesForUpgrade, appliance)
+				if appliance.Id == gw.Id {
+					isAutoscaling = true
 				}
+			}
+			if !isAutoscaling {
+				appliancesForUpgrade = append(appliancesForUpgrade, appliance)
 			}
 		}
 		appliances = appliancesForUpgrade
