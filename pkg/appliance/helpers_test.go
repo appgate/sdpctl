@@ -7,9 +7,11 @@ import (
 )
 
 var (
-	Appliance54Constraints, _ = version.NewConstraint(">= 5.4.0-beta")
-	Appliance55Constraints, _ = version.NewConstraint(">= 5.5.0-beta")
-	Appliance50Constraints, _ = version.NewConstraint(">= 5.0.0-beta")
+	ApplianceBigVersionConstraints, _ = version.NewConstraint(">= 606.335.1234")
+	Appliance63Constraints, _         = version.NewConstraint(">= 6.3.10")
+	Appliance54Constraints, _         = version.NewConstraint(">= 5.4.0-beta")
+	Appliance55Constraints, _         = version.NewConstraint(">= 5.5.0-beta")
+	Appliance50Constraints, _         = version.NewConstraint(">= 5.0.0-beta")
 )
 
 func TestParseVersionString(t *testing.T) {
@@ -110,6 +112,22 @@ func TestParseVersionString(t *testing.T) {
 			},
 			constraints: Appliance55Constraints,
 			wantErr:     true,
+		},
+		{
+			name: "full version with multidigit patch",
+			args: args{
+				"appgate-6.3.10+41534.img.zip",
+			},
+			constraints: Appliance63Constraints,
+			wantErr:     false,
+		},
+		{
+			name: "full version with multidigit patch",
+			args: args{
+				"appgate-606.335.1234+41534.img.zip",
+			},
+			constraints: ApplianceBigVersionConstraints,
+			wantErr:     false,
 		},
 	}
 	for _, tt := range tests {

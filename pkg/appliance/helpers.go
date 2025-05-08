@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	versionRegex = regexp.MustCompile(`(([\d][.]?){1,3})[-|+]?([\d|\w]+)?[-|+]?([\d|\w]+)?(\.img\.zip)?$`)
+	versionRegex = regexp.MustCompile(`(([\d]+[.]?){1,3})[-|+]?([\d|\w]+)?[-|+]?([\d|\w]+)?(\.img\.zip)?$`)
 )
 
 // ParseVersionString tries to determine appliance version based on the input filename,
