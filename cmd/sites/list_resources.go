@@ -101,10 +101,7 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			}
 			
 			
-			if len(resource_return_list) <= 0 {
-				fmt.Fprintln(opts.Out, "No resources found in the site")
-				return nil
-			}
+
 
 
 			if opts.json {
@@ -115,7 +112,7 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 				fmt.Fprintln(opts.Out, string(o))
 			} else {
 				p := util.NewPrinter(opts.Out, 4)
-				p.AddHeader("Resolver", "Type", "Gateway Name", "Resource Count")
+				p.AddHeader("Resolver", "Type", "Gateway Name")
 				for _, s := range resource_return_list {
 
 					p.AddLine(
@@ -124,12 +121,17 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 						util.StringAbbreviate(string(*s.GatewayName)),
 						util.StringAbbreviate(string(*s.TotalCount)),
 					)
-					p.AddLine("Resources: ")
 					for _, r := range s.Data {
 						p.AddLine(r)
 					}
 
 				}
+				if len(resource_return_list) <= 0 {
+					//fmt.Fprintln(opts.Out, "No resources found in the site")
+					p.AddLine("No resources found in the site")
+					return nil
+				}
+
 				p.Print()
 			}
 
