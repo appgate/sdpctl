@@ -1,13 +1,14 @@
 package sites
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -36,8 +37,12 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			}
 
 			opts.siteID = args[0]
+			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
+			//fmt.Printf("debug token :%s",opts.SitesAPI.Token)
 
-			sites, err := opts.SitesAPI.ListSites(context.Background())
+			sites, err := opts.SitesAPI.ListSites(ctx)
+			//fmt.Printf("debug error :%v",err)
+			
 			if sites == nil || err != nil{
 				return fmt.Errorf("no sites available")
 
@@ -58,8 +63,12 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
+			//ctx := context.Background()
+			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
 			
+			log := logrus.WithFields(logrus.Fields{
+				"id":     "resource query",
+			})
 
 
 
@@ -74,16 +83,19 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			for resolveType := range resolverTypes{
 				for resourceType := range resourceTypes{
 					resources, err := opts.SitesAPI.ListResources(ctx, opts.siteID, &resolverTypes[resolveType], &resourceTypes[resourceType])
+					//fmt.Printf("debug error list:%v",err)
 					if resources != nil {
 						resource_return_list = append(resource_return_list, *resources)
-					// } else {
-					// 	fmt.Fprintln(opts.Out, "No resources found for" + strconv.Itoa(resourceType) + strconv.Itoa(resolveType))
-					 }
+					} else {
+					 	fmt.Fprintln(opts.Out, "No resources found for" + strconv.Itoa(resourceType) + strconv.Itoa(resolveType))
+					}
 					
 					if err != nil {
-						return err
+						log.Debug("%v",err)
 						
 					}
+
+
 					 	}
 
 			}
