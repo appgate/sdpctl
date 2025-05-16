@@ -30,7 +30,7 @@ func NewDeviceCmd(f *factory.Factory) *cobra.Command {
 	var deviceCmd = &cobra.Command{
 		Use:   "device",
 		Short: "Perform actions on registered devices and their tokens",
-		Long:  `The deivce command allows you to renew or revoke tokens used in the Collective.`,
+		Long:  `The device command allows you to renew or revoke tokens used in the Collective.`,
 	}
 
 	deviceCmd.PersistentFlags().BoolVar(&opts.useJSON, "json", false, "Display in JSON format")

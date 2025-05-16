@@ -44,7 +44,7 @@ var (
 commit: %s
 build date: %s`, version, commit, buildDate)
 	minAPIversionWarning string = `WARNING: You are running an unsupported API version on the appliance.
-It is strongly adviced that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforseen consequenses.
+It is strongly advised that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforeseen consequenses.
 Minimum supported API version: %d
 Currently using API version: %d
 
