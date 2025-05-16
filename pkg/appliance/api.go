@@ -141,8 +141,154 @@ func (a *Appliance) UpgradeCancel(ctx context.Context, applianceID string) error
 	return nil
 }
 
+func isEnabled(status *string) bool {
+	return *status != "n/a"
+}
+
+func GetActiveFunctionsDeprecated(appliance openapi.StatsAppliancesListAllOfData) []openapi.ApplianceFunction {
+	functions := []openapi.ApplianceFunction{}
+
+	if v, ok := appliance.GetControllerOk(); ok && isEnabled(openapi.PtrString(v.GetStatus())) {
+		functions = append(functions, FunctionController)
+	}
+	if v, ok := appliance.GetGatewayOk(); ok && isEnabled(openapi.PtrString(v.GetStatus())) {
+		functions = append(functions, FunctionGateway)
+	}
+	if v, ok := appliance.GetPortalOk(); ok && isEnabled(openapi.PtrString(v.GetStatus())) {
+		functions = append(functions, FunctionPortal)
+	}
+	if v, ok := appliance.GetConnectorOk(); ok && isEnabled(openapi.PtrString(v.GetStatus())) {
+		functions = append(functions, FunctionConnector)
+	}
+	if v, ok := appliance.GetLogServerOk(); ok && isEnabled(openapi.PtrString(v.GetStatus())) {
+		functions = append(functions, FunctionLogServer)
+	}
+	if v, ok := appliance.GetLogForwarderOk(); ok && isEnabled(openapi.PtrString(v.GetStatus())) {
+		functions = append(functions, FunctionLogForwarder)
+	}
+
+	return functions
+}
+
+func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openapi.ApplianceWithStatusList {
+	translatedResponse := openapi.ApplianceWithStatusList{
+		Data:       []openapi.ApplianceWithStatus{},
+		Range:      toTranslate.Range,
+		OrderBy:    toTranslate.OrderBy,
+		Descending: toTranslate.Descending,
+		Queries:    toTranslate.Queries,
+		TotalCount: openapi.PtrInt32(int32(len(toTranslate.Data))),
+	}
+	for _, status := range toTranslate.Data {
+		newStatus := openapi.ApplianceWithStatus{
+			Id:               status.Id,
+			Name:             *status.Name,
+			Tags:             status.Tags,
+			Site:             status.SiteName,
+			Status:           status.Status,
+			State:            status.State,
+			ApplianceVersion: status.Version,
+			Controller: &openapi.ApplianceAllOfController{
+				Enabled: openapi.PtrBool(isEnabled(status.Controller.Status)),
+			},
+			LogServer: &openapi.ApplianceAllOfLogServer{
+				Enabled: openapi.PtrBool(isEnabled(status.LogServer.Status)),
+			},
+			LogForwarder: &openapi.ApplianceAllOfLogForwarder{
+				Enabled: openapi.PtrBool(isEnabled(status.LogForwarder.Status)),
+			},
+			Gateway: &openapi.ApplianceAllOfGateway{
+				Enabled: openapi.PtrBool(isEnabled(status.Gateway.Status)),
+			},
+			Connector: &openapi.ApplianceAllOfConnector{
+				Enabled: openapi.PtrBool(isEnabled(status.Connector.Status)),
+			},
+			Portal: &openapi.Portal{
+				Enabled: openapi.PtrBool(isEnabled(status.Portal.Status)),
+			},
+			Functions: GetActiveFunctionsDeprecated(status),
+			Cpu:       status.Cpu,
+			Memory:    status.Memory,
+			Disk:      status.Disk,
+			Details: &openapi.ApplianceWithStatusAllOfDetails{
+				Cpu: &openapi.SystemInfo{
+					Percent: status.Cpu,
+				},
+				Network: &openapi.NetworkInfo{
+					BusiestNic: status.Network.BusiestNic,
+					Details: &map[string]openapi.NetworkInfoDetailsValue{
+						*status.Network.BusiestNic: {
+							Dropin:  openapi.PtrInt32(int32(*status.Network.Dropin)),
+							Dropout: openapi.PtrInt32(int32(*status.Network.Dropout)),
+							TxSpeed: status.Network.TxSpeed,
+							RxSpeed: status.Network.RxSpeed,
+						},
+					},
+				},
+				Roles: &openapi.Roles{
+					Controller: &openapi.ControllerRole{
+						Status:          status.Controller.Status,
+						Details:         status.Controller.Details,
+						MaintenanceMode: status.Controller.MaintenanceMode,
+						DatabaseSize:    status.Controller.DatabaseSize,
+					},
+					LogServer: &openapi.ApplianceRole{
+						Status:  status.LogServer.Status,
+						Details: status.LogServer.Details,
+					},
+					LogForwarder: &openapi.ApplianceRole{
+						Status:  status.LogForwarder.Status,
+						Details: status.LogForwarder.Details,
+					},
+					Gateway: &openapi.ApplianceWithSessionsRole{
+						Status:           status.Gateway.Status,
+						Details:          status.Gateway.Details,
+						NumberOfSessions: status.Gateway.NumberOfSessions,
+					},
+					Connector: &openapi.ApplianceWithSessionsRole{
+						Status:           status.Connector.Status,
+						Details:          status.Connector.Details,
+						NumberOfSessions: status.Connector.NumberOfSessions,
+					},
+					Portal: &openapi.ApplianceWithSessionsRole{
+						Status:           status.Portal.Status,
+						Details:          status.Portal.Details,
+						NumberOfSessions: status.Portal.NumberOfSessions,
+					},
+					Appliance: &openapi.ApplianceBaseRole{
+						Status:         status.Appliance.Status,
+						Details:        status.Appliance.Details,
+						LogDestination: status.Appliance.LogDestination,
+					},
+				},
+				Upgrade: &openapi.ApplianceWithStatusAllOfDetailsUpgrade{
+					Status:  status.Upgrade.Status,
+					Details: status.Upgrade.Details,
+				},
+				VolumeNumber: openapi.PtrInt32(int32(*status.VolumeNumber)),
+			},
+		}
+		translatedResponse.Data = append(translatedResponse.Data, newStatus)
+	}
+	return &translatedResponse
+}
+
+var warningDisplayed = false
+
 func (a *Appliance) ApplianceStatus(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.ApplianceWithStatusList, *http.Response, error) {
 	status, response, err := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Execute()
+	if response.StatusCode == 404 {
+		if !warningDisplayed {
+			fmt.Println("WARNING: Status endpoint not found, falling back to old stats/appliances")
+			warningDisplayed = true
+		}
+		var oldStatus *openapi.StatsAppliancesList
+		oldStatus, response, err = a.APIClient.ApplianceStatsDeprecatedApi.StatsAppliancesGet(ctx).Execute()
+		if err != nil {
+			return nil, response, api.HTTPErrorResponse(response, err)
+		}
+		status = translateDeprecatedStatus(oldStatus)
+	}
 	if err != nil {
 		return status, response, api.HTTPErrorResponse(response, err)
 	}
