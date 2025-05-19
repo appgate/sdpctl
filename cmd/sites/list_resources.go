@@ -112,19 +112,20 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 				fmt.Fprintln(opts.Out, string(o))
 			} else {
 				p := util.NewPrinter(opts.Out, 4)
-				p.AddHeader("Resolver", "Type", "Gateway Name")
+				p.AddHeader("Name", "Resolver", "Type", "Gateway Name")
 				for _, s := range resource_return_list {
+					for _, d := range s.Data {
 
 					p.AddLine(
+						util.StringAbbreviate(string(d)),
 						util.StringAbbreviate(string(*s.Resolver)),
 						util.StringAbbreviate(string(*s.Type)),
 						util.StringAbbreviate(string(*s.GatewayName)),
 						util.StringAbbreviate(string(*s.TotalCount)),
 					)
-					for _, r := range s.Data {
-						p.AddLine(r)
-					}
 
+					p.AddLine(d)
+				}
 				}
 				if len(resource_return_list) <= 0 {
 					//fmt.Fprintln(opts.Out, "No resources found in the site")
