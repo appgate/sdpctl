@@ -1029,7 +1029,7 @@ func downloadDockerImageBundle(args imageBundleArgs) {
 				if res.StatusCode == http.StatusNotFound {
 					return nil, backoff.Permanent(errors.New("image bundle not found"))
 				}
-				return nil, fmt.Errorf("Recieved %s status", res.Status)
+				return nil, fmt.Errorf("Received %s status", res.Status)
 			}
 			return res, nil
 		}, backoff.NewExponentialBackOff())

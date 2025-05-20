@@ -14,7 +14,7 @@ import (
 var (
 	filterHelp string = `Filter appliances using a comma separated list of key-value pairs. Regex syntax is used for matching strings. Example: '--exclude name=controller,site=<site-id> etc.'.
 Available keywords to filter on are: name, id, tags|tag, version, hostname|host, active|activated, site|site-id, function`
-	orderByHelp string = `Order appliance lists by keywords, i.e. 'name', 'id' etc. Accepts a comma seperated list of keywords, where first mentioned has priority. Applies to the 'appliance list' and 'appliance stats' commands.`
+	orderByHelp string = `Order appliance lists by keywords, i.e. 'name', 'id' etc. Accepts a comma separated list of keywords, where first mentioned has priority. Applies to the 'appliance list' and 'appliance stats' commands.`
 )
 
 // NewApplianceCmd return a new appliance command

@@ -95,7 +95,7 @@ func RequestRetry(c *http.Client, req *http.Request) (*http.Response, error) {
 			if res.StatusCode == http.StatusNotFound {
 				return nil, backoff.Permanent(fmt.Errorf("%s not found", req.URL))
 			}
-			return nil, fmt.Errorf("recieved %s status", res.Status)
+			return nil, fmt.Errorf("received %s status", res.Status)
 		}
 		return res, nil
 	}, backoff.NewExponentialBackOff())
