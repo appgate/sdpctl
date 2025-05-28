@@ -74,7 +74,7 @@ func (u *UpgradeStatus) upgradeStatus(ctx context.Context, appliance openapi.App
 							msg = "installing"
 						}
 					} else if unavailableRegex.MatchString(errMsg) {
-						// This error indicates that the controller we are polling is in maintanance mode
+						// This error indicates that the controller we are polling is in maintenance mode
 						// This is fatal to the upgrade process since we are polling the wrong controller,
 						// probably because of some load balancer redirecting traffic
 						err = cmdutil.ErrControllerMaintenanceMode

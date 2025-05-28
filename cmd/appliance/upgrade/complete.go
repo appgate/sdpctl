@@ -493,7 +493,7 @@ func upgradeCompleteRun(cmd *cobra.Command, args []string, opts *upgradeComplete
 				// Check if partition has been switched
 				for _, appData := range s.GetData() {
 					if details, ok := appData.GetDetailsOk(); ok {
-						logger.WithField("new volume", details.VolumeNumber).Info("new volume recieved")
+						logger.WithField("new volume", details.VolumeNumber).Info("new volume received")
 					} else {
 						logger.Info("new volume number not found")
 					}
