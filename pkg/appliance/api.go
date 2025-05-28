@@ -214,17 +214,6 @@ func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openap
 				Cpu: &openapi.SystemInfo{
 					Percent: status.Cpu,
 				},
-				Network: &openapi.NetworkInfo{
-					BusiestNic: status.Network.BusiestNic,
-					Details: &map[string]openapi.NetworkInfoDetailsValue{
-						*status.Network.BusiestNic: {
-							Dropin:  openapi.PtrInt32(int32(*status.Network.Dropin)),
-							Dropout: openapi.PtrInt32(int32(*status.Network.Dropout)),
-							TxSpeed: status.Network.TxSpeed,
-							RxSpeed: status.Network.RxSpeed,
-						},
-					},
-				},
 				Roles: &openapi.Roles{
 					Controller: &openapi.ControllerRole{
 						Status:          status.Controller.Status,
@@ -261,13 +250,23 @@ func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openap
 						LogDestination: status.Appliance.LogDestination,
 					},
 				},
-				Upgrade: &openapi.ApplianceWithStatusAllOfDetailsUpgrade{
-					Status:  status.Upgrade.Status,
-					Details: status.Upgrade.Details,
-				},
-				VolumeNumber: openapi.PtrInt32(int32(*status.VolumeNumber)),
 			},
 		}
+
+		if *status.Status != "offline" {
+			newStatus.Details.Network = &openapi.NetworkInfo{
+				BusiestNic: status.Network.BusiestNic,
+				Details: &map[string]openapi.NetworkInfoDetailsValue{
+					*status.Network.BusiestNic: {
+						Dropin:  openapi.PtrInt32(int32(*status.Network.Dropin)),
+						Dropout: openapi.PtrInt32(int32(*status.Network.Dropout)),
+						TxSpeed: status.Network.TxSpeed,
+						RxSpeed: status.Network.RxSpeed,
+					},
+				},
+			}
+		}
+
 		translatedResponse.Data = append(translatedResponse.Data, newStatus)
 	}
 	return &translatedResponse
