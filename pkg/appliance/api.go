@@ -211,9 +211,18 @@ func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openap
 			Memory:    status.Memory,
 			Disk:      status.Disk,
 			Details: &openapi.ApplianceWithStatusAllOfDetails{
+				Version:      status.Version,
+				VolumeNumber: openapi.PtrInt32(int32(*status.VolumeNumber)),
 				Cpu: &openapi.SystemInfo{
 					Percent: status.Cpu,
 				},
+				Memory: &openapi.SystemInfo{
+					Percent: status.Memory,
+				},
+				Disk: &openapi.SystemInfo{
+					Percent: status.Disk,
+				},
+				Status: status.Status,
 				Roles: &openapi.Roles{
 					Controller: &openapi.ControllerRole{
 						Status:          status.Controller.Status,
@@ -264,6 +273,16 @@ func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openap
 						RxSpeed: status.Network.RxSpeed,
 					},
 				},
+			}
+			newStatus.Details.Disk = &openapi.SystemInfo{
+				Total:   openapi.PtrInt64(int64(*status.DiskInfo.Total)),
+				Used:    openapi.PtrInt64(int64(*status.DiskInfo.Used)),
+				Free:    openapi.PtrInt64(int64(*status.DiskInfo.Free)),
+				Percent: status.Disk,
+			}
+			newStatus.Details.Upgrade = &openapi.ApplianceWithStatusAllOfDetailsUpgrade{
+				Status:  status.Upgrade.Status,
+				Details: status.Upgrade.Details,
 			}
 		}
 
