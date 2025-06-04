@@ -3,7 +3,6 @@ package sites
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -38,27 +37,13 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 
 			opts.siteID = args[0]
 			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
-			//fmt.Printf("debug token :%s",opts.SitesAPI.Token)
 
 			sites, err := opts.SitesAPI.ListSites(ctx)
-			//fmt.Printf("debug error :%v",err)
 			
 			if sites == nil || err != nil{
 				return fmt.Errorf("no sites available")
 
 			}
-
-			// if len(args) > 0 {
-			// 	for _, a := range args {
-			// 		if util.IsUUID(a) {
-			// 			opts.siteId = append(opts.ids, a)
-			// 			continue
-			// 		}
-			// 		opts.siteNames = append(opts.siteNames, a)
-			// 	}
-			// }
-
-
 
 			return nil
 		},
@@ -70,24 +55,17 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 				"id":     "resource query",
 			})
 
-
-
-
-			
-			
-			//resolvers = AllowedResolverTypeEnumValues
 			resolverTypes := openapi.AllowedResolverTypeEnumValues
 			resourceTypes := openapi.AllowedResourceTypeEnumValues
 			resource_return_list := []openapi.ResolverResources{}
+
+			fmt.Printf("Querying resource names...")
 			
 			for resolveType := range resolverTypes{
 				for resourceType := range resourceTypes{
 					resources, err := opts.SitesAPI.ListResources(ctx, opts.siteID, &resolverTypes[resolveType], &resourceTypes[resourceType])
-					//fmt.Printf("debug error list:%v",err)
 					if resources != nil {
 						resource_return_list = append(resource_return_list, *resources)
-					} else {
-					 	fmt.Fprintln(opts.Out, "No resources found for" + strconv.Itoa(resourceType) + strconv.Itoa(resolveType))
 					}
 					
 					if err != nil {
@@ -121,10 +99,8 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 						util.StringAbbreviate(string(*s.Resolver)),
 						util.StringAbbreviate(string(*s.Type)),
 						util.StringAbbreviate(string(*s.GatewayName)),
-						util.StringAbbreviate(string(*s.TotalCount)),
 					)
 
-					p.AddLine(d)
 				}
 				}
 				if len(resource_return_list) <= 0 {
