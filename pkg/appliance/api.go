@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
@@ -297,7 +298,7 @@ func (a *Appliance) ApplianceStatus(ctx context.Context, filter map[string]map[s
 	status, response, err := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Execute()
 	if response.StatusCode == 404 {
 		if !warningDisplayed {
-			fmt.Println("WARNING: Status endpoint not found, falling back to old stats/appliances")
+			fmt.Fprintln(os.Stderr, "WARNING: Status endpoint not found, falling back to old stats/appliances")
 			warningDisplayed = true
 		}
 		var oldStatus *openapi.StatsAppliancesList
