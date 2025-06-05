@@ -651,7 +651,7 @@ func applyApplianceStatsFilter(stats []openapi.ApplianceWithStatus, filter map[s
 				functionList := strings.Split(v, FilterDelimiter)
 				for _, function := range functionList {
 					active := strings.Split(ApplianceActiveFunctions(s), ",")
-					if util.InSlice(function, active) {
+					if results := util.SearchSlice(function, active, true); len(results) > 0 {
 						filtered = append(filtered, s)
 					}
 				}
