@@ -3,6 +3,7 @@ package sites
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -34,7 +35,6 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			if opts.SitesAPI == nil {
 				return fmt.Errorf("internal error: no sites API available")
 			}
-
 			opts.siteID = args[0]
 			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
 
@@ -57,10 +57,55 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 
 			resolverTypes := openapi.AllowedResolverTypeEnumValues
 			resourceTypes := openapi.AllowedResourceTypeEnumValues
+
+			
+
 			resource_return_list := []openapi.ResolverResources{}
 
 			fmt.Printf("Querying resource names...")
+			resolverString, _ := cmd.Flags().GetString("resolver")
+			resolvers := strings.Split(resolverString, "&")
+
+
 			
+
+			if resolverString != ""{
+
+			
+				filteredResolvers := []openapi.ResolverType{}
+				for v := range resolvers{
+					r, err := openapi.NewResolverTypeFromValue(resolvers[v])
+					if err!=nil{
+						return err
+					}
+					filteredResolvers = append(filteredResolvers,*r)
+				}
+				if len(filteredResolvers) > 0{
+					resolverTypes = filteredResolvers
+				}
+
+			}
+
+			
+			
+			resourceString, _ := cmd.Flags().GetString("resource")
+			resource := strings.Split(resourceString, "&")
+			
+			if resourceString != ""{
+	
+				filteredResources := []openapi.ResourceType{}
+				for v := range resolvers{
+					r, err := openapi.NewResourceTypeFromValue(resource[v])
+					if err!=nil{
+						return err
+					}
+					filteredResources = append(filteredResources,*r)
+				}
+				if len(filteredResources) > 0{
+					resourceTypes = filteredResources
+				}
+			
+			}
 			for resolveType := range resolverTypes{
 				for resourceType := range resourceTypes{
 					resources, err := opts.SitesAPI.ListResources(ctx, opts.siteID, &resolverTypes[resolveType], &resourceTypes[resourceType])
@@ -104,7 +149,6 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 				}
 				}
 				if len(resource_return_list) <= 0 {
-					//fmt.Fprintln(opts.Out, "No resources found in the site")
 					p.AddLine("No resources found in the site")
 					return nil
 				}
@@ -115,6 +159,11 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			return nil
 		},
 	}
+
+	pFlags := cmd.PersistentFlags()
+	pFlags.String("resolver", "", "Specify resolver types. Use & to append multiple.")
+	pFlags.String("resource", "", "Specify resolver types. Use & to append multiple.")
+	
 
 	cmd.Flags().BoolVar(&opts.json, "json", false, "")
 
