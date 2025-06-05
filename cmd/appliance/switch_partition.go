@@ -77,10 +77,10 @@ func NewSwitchPartitionCmd(f *factory.Factory) *cobra.Command {
 				return err
 			}
 			opts.api = api
-
+			filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 			ctx := util.BaseAuthContext(api.Token)
 			if opts.ids == nil {
-				ids, err := appliancepkg.PromptMultiSelect(ctx, api, nil, nil, false)
+				ids, err := appliancepkg.PromptMultiSelect(ctx, api, filter, orderBy, descending)
 				if err != nil {
 					return err
 				}

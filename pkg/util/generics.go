@@ -1,6 +1,8 @@
 package util
 
-import "errors"
+import (
+	"errors"
+)
 
 func Find[A any](s []A, f func(A) bool) (A, error) {
 	var r A
