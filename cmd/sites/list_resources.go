@@ -35,6 +35,9 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			if opts.SitesAPI == nil {
 				return fmt.Errorf("internal error: no sites API available")
 			}
+			if len(args) == 0{
+				return fmt.Errorf("A site id must be specified")
+			}
 			opts.siteID = args[0]
 			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
 
@@ -113,7 +116,7 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 					}
 					
 					if err != nil {
-						log.Debug("%v",err)
+						log.Debug(err)
 						
 					}
 
