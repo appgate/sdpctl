@@ -48,7 +48,6 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//ctx := context.Background()
 			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
 			
 			log := logrus.WithFields(logrus.Fields{
@@ -62,7 +61,7 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 
 			resource_return_list := []openapi.ResolverResources{}
 
-			fmt.Printf("Querying resource names...")
+			fmt.Printf("Querying resource names...\n")
 			resolverString, _ := cmd.Flags().GetString("resolver")
 			resolvers := strings.Split(resolverString, "&")
 
