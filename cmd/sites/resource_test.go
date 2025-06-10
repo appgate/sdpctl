@@ -17,7 +17,42 @@ import (
 )
 
 
+var listVMResourceResponse = `
+{
+	"data": [
+		"Windows10",
+		"controller-endpoint",
+		"controller-site1"
+
+	],
+	"totalCount": 3,
+	"queries": [],
+	"range": "0-3/3",
+	"orderBy": "name",
+	"descending": false,
+	"filterBy": [],
+	"resolver": "esx",
+	"type": "virtual-machines",
+	"gatewayName": "gateway-site1"
+}`
+
+var emptyResponse = `
+{
+	"data": [
+	],
+	"totalCount": 0,
+	"queries": [],
+	"range": "0-0/0",
+	"orderBy": "name",
+	"descending": false,
+	"filterBy": [],
+	"resolver": "esx",
+	"type": "virtual-machines",
+	"gatewayName": "gateway-site1"
+}`
+
 func TestResourcesCommand(t *testing.T) {
+
 	testCases := []struct {
 		desc    string
 		cli     string
@@ -59,6 +94,64 @@ func TestResourcesCommand(t *testing.T) {
 			want: `Name    Resolver    Type    Gateway Name
 ----    --------    ----    ------------
 No resources found in the site`,
+		},
+{
+			desc: "list resources with some returned",
+			cli:  "resources 1e478198-fa88-4368-a4ee-4c06e0de0744",
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/sites/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := openapi.SiteWithStatusList{
+							Data: []openapi.SiteWithStatus{
+								{
+									Id:   openapi.PtrString("1e478198-fa88-4368-a4ee-4c06e0de0744"),
+									Name: "SomeSiteName",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+				{
+					URL: "/admin/sites/1e478198-fa88-4368-a4ee-4c06e0de0744/resources",
+					
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						
+						r.ParseForm()
+						if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "virtual-machines"{
+							w.Write([]byte(listVMResourceResponse))
+						} else{
+							w.Write([]byte(emptyResponse))
+						}
+						
+
+						
+					},
+				},
+				// {
+				// 	URL: "/admin/sites/1e478198-fa88-4368-a4ee-4c06e0de0744/resources",
+					
+				// 	Responder: func(w http.ResponseWriter, r *http.Request) {
+				// 		w.Header().Add("Content-Type", "application/json")
+				// 		w.WriteHeader(http.StatusOK)
+				// 		w.Write([]byte(emptyResponse))
+				// 	},
+				// },
+			},
+			want: `Name                   Resolver    Type                Gateway Name
+----                   --------    ----                ------------
+Windows10              esx         virtual-machines    gateway-site1
+controller-endpoint    esx         virtual-machines    gateway-site1
+controller-site1       esx         virtual-machines    gateway-site1`,
 		},
 	}
 	for _, tC := range testCases {
