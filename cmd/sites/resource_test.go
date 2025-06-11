@@ -16,6 +16,43 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var lbsResponse = `
+{
+	"data": [
+		"lbs1",
+		"lbs2",
+		"lbs3"
+
+	],
+	"totalCount": 3,
+	"queries": [],
+	"range": "0-3/3",
+	"orderBy": "name",
+	"descending": false,
+	"filterBy": [],
+	"resolver": "aws",
+	"type": "lbs",
+	"gatewayName": "gateway-site1"
+}`
+
+var folderResponse = `
+{
+	"data": [
+		"folder1",
+		"folder2",
+		"folder3"
+
+	],
+	"totalCount": 3,
+	"queries": [],
+	"range": "0-3/3",
+	"orderBy": "name",
+	"descending": false,
+	"filterBy": [],
+	"resolver": "esx",
+	"type": "folders",
+	"gatewayName": "gateway-site1"
+}`
 
 var listVMResourceResponse = `
 {
@@ -152,6 +189,115 @@ No resources found in the site`,
 Windows10              esx         virtual-machines    gateway-site1
 controller-endpoint    esx         virtual-machines    gateway-site1
 controller-site1       esx         virtual-machines    gateway-site1`,
+		},
+{
+			desc: "list resources with filtering",
+			cli:  `resources 1e478198-fa88-4368-a4ee-4c06e0de0744 --resolver "esx" --resource "folders"`,
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/sites/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := openapi.SiteWithStatusList{
+							Data: []openapi.SiteWithStatus{
+								{
+									Id:   openapi.PtrString("1e478198-fa88-4368-a4ee-4c06e0de0744"),
+									Name: "SomeSiteName",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+				{
+					URL: "/admin/sites/1e478198-fa88-4368-a4ee-4c06e0de0744/resources",
+					
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						
+						r.ParseForm()
+						if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "virtual-machines"{
+							w.Write([]byte(listVMResourceResponse))
+						} else if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "folders"{
+							w.Write([]byte(folderResponse))
+						}else if r.Form.Get("resolver") == "aws" && r.Form.Get("type")== "lbs"{
+							w.Write([]byte(lbsResponse))
+						}else{
+							w.Write([]byte(emptyResponse))
+						}
+						
+
+						
+					},
+				},
+			},
+			want: `Name       Resolver    Type       Gateway Name
+----       --------    ----       ------------
+folder1    esx         folders    gateway-site1
+folder2    esx         folders    gateway-site1
+folder3    esx         folders    gateway-site1`,
+		},
+{
+			desc: "list resources with multiple filtering",
+			cli:  `resources 1e478198-fa88-4368-a4ee-4c06e0de0744 --resolver "esx&aws" --resource "folders&lbs"`,
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/sites/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := openapi.SiteWithStatusList{
+							Data: []openapi.SiteWithStatus{
+								{
+									Id:   openapi.PtrString("1e478198-fa88-4368-a4ee-4c06e0de0744"),
+									Name: "SomeSiteName",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+				{
+					URL: "/admin/sites/1e478198-fa88-4368-a4ee-4c06e0de0744/resources",
+					
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Add("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						
+						r.ParseForm()
+						if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "virtual-machines"{
+							w.Write([]byte(listVMResourceResponse))
+						} else if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "folders"{
+							w.Write([]byte(folderResponse))
+						}else if r.Form.Get("resolver") == "aws" && r.Form.Get("type")== "lbs"{
+							w.Write([]byte(lbsResponse))
+						}else{
+							w.Write([]byte(emptyResponse))
+						}
+						
+
+						
+					},
+				},
+			},
+			want: `Name       Resolver    Type       Gateway Name
+----       --------    ----       ------------
+folder1    esx         folders    gateway-site1
+folder2    esx         folders    gateway-site1
+folder3    esx         folders    gateway-site1
+lbs1       aws         lbs        gateway-site1
+lbs2       aws         lbs        gateway-site1
+lbs3       aws         lbs        gateway-site1`,
 		},
 	}
 	for _, tC := range testCases {
