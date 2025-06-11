@@ -89,53 +89,51 @@ var emptyResponse = `
 }`
 
 var statusStubs = []httpmock.Stub{
-				{
-					URL: "/admin/sites/status",
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						res := openapi.SiteWithStatusList{
-							Data: []openapi.SiteWithStatus{
-								{
-									Id:   openapi.PtrString("1e478198-fa88-4368-a4ee-4c06e0de0744"),
-									Name: "SomeSiteName",
-								},
-							},
-						}
-						b, err := json.Marshal(res)
-						if err != nil {
-							w.WriteHeader(http.StatusInternalServerError)
-							return
-						}
-						w.Header().Add("Content-Type", "application/json")
-						w.Write(b)
+	{
+		URL: "/admin/sites/status",
+		Responder: func(w http.ResponseWriter, r *http.Request) {
+			res := openapi.SiteWithStatusList{
+				Data: []openapi.SiteWithStatus{
+					{
+						Id:   openapi.PtrString("1e478198-fa88-4368-a4ee-4c06e0de0744"),
+						Name: "SomeSiteName",
 					},
 				},
 			}
+			b, err := json.Marshal(res)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Header().Add("Content-Type", "application/json")
+			w.Write(b)
+		},
+	},
+}
 
 var resourceStubs = []httpmock.Stub{
-				statusStubs[0],
-				{
-					URL: "/admin/sites/1e478198-fa88-4368-a4ee-4c06e0de0744/resources",
-					
-					Responder: func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Add("Content-Type", "application/json")
-						w.WriteHeader(http.StatusOK)
-						
-						r.ParseForm()
-						if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "virtual-machines"{
-							w.Write([]byte(listVMResourceResponse))
-						} else if r.Form.Get("resolver") == "esx" && r.Form.Get("type")== "folders"{
-							w.Write([]byte(folderResponse))
-						}else if r.Form.Get("resolver") == "aws" && r.Form.Get("type")== "lbs"{
-							w.Write([]byte(lbsResponse))
-						}else{
-							w.Write([]byte(emptyResponse))
-						}
-						
+	statusStubs[0],
+	{
+		URL: "/admin/sites/1e478198-fa88-4368-a4ee-4c06e0de0744/resources",
 
-						
-					},
-				},
+		Responder: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Add("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			r.ParseForm()
+			if r.Form.Get("resolver") == "esx" && r.Form.Get("type") == "virtual-machines" {
+				w.Write([]byte(listVMResourceResponse))
+			} else if r.Form.Get("resolver") == "esx" && r.Form.Get("type") == "folders" {
+				w.Write([]byte(folderResponse))
+			} else if r.Form.Get("resolver") == "aws" && r.Form.Get("type") == "lbs" {
+				w.Write([]byte(lbsResponse))
+			} else {
+				w.Write([]byte(emptyResponse))
 			}
+
+		},
+	},
+}
 
 func TestResourcesCommand(t *testing.T) {
 
@@ -152,17 +150,17 @@ func TestResourcesCommand(t *testing.T) {
 			cli:     "resources",
 			wantErr: true,
 		},
-{
-			desc: "list resources none available",
-			cli:  "resources 1e478198-fa88-4368-a4ee-4c06e0de0744",
+		{
+			desc:  "list resources none available",
+			cli:   "resources 1e478198-fa88-4368-a4ee-4c06e0de0744",
 			stubs: statusStubs,
 			want: `Name    Resolver    Type    Gateway Name
 ----    --------    ----    ------------
 No resources found in the site`,
 		},
-{
-			desc: "list resources with all returned",
-			cli:  "resources 1e478198-fa88-4368-a4ee-4c06e0de0744",
+		{
+			desc:  "list resources with all returned",
+			cli:   "resources 1e478198-fa88-4368-a4ee-4c06e0de0744",
 			stubs: resourceStubs,
 			want: `Name                   Resolver    Type                Gateway Name
 ----                   --------    ----                ------------
@@ -176,9 +174,9 @@ folder1                esx         folders             gateway-site1
 folder2                esx         folders             gateway-site1
 folder3                esx         folders             gateway-site1`,
 		},
-{
-			desc: "list resources with filtering",
-			cli:  `resources 1e478198-fa88-4368-a4ee-4c06e0de0744 --resolver "esx" --resource "folders"`,
+		{
+			desc:  "list resources with filtering",
+			cli:   `resources 1e478198-fa88-4368-a4ee-4c06e0de0744 --resolver "esx" --resource "folders"`,
 			stubs: resourceStubs,
 			want: `Name       Resolver    Type       Gateway Name
 ----       --------    ----       ------------
@@ -186,9 +184,9 @@ folder1    esx         folders    gateway-site1
 folder2    esx         folders    gateway-site1
 folder3    esx         folders    gateway-site1`,
 		},
-{
-			desc: "list resources with multiple filtering",
-			cli:  `resources 1e478198-fa88-4368-a4ee-4c06e0de0744 --resolver "esx&aws" --resource "folders&lbs"`,
+		{
+			desc:  "list resources with multiple filtering",
+			cli:   `resources 1e478198-fa88-4368-a4ee-4c06e0de0744 --resolver "esx&aws" --resource "folders&lbs"`,
 			stubs: resourceStubs,
 			want: `Name       Resolver    Type       Gateway Name
 ----       --------    ----       ------------
@@ -239,5 +237,5 @@ lbs3       aws         lbs        gateway-site1`,
 			assert.NoError(t, err)
 			assert.Equal(t, tC.want, strings.TrimSpace(buf.String()))
 		})
-}
+	}
 }

@@ -425,7 +425,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 						filteredAppliances = AppendUniqueAppliance(filteredAppliances, a)
 					}
 				}
-			case "id":	
+			case "id":
 				ids := strings.Split(s, FilterDelimiter)
 				for _, id := range ids {
 					regex, err := regexp.Compile(id)

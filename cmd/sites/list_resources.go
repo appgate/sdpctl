@@ -35,13 +35,13 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			if opts.SitesAPI == nil {
 				return fmt.Errorf("internal error: no sites API available")
 			}
-			if len(args) == 0{
+			if len(args) == 0 {
 				return fmt.Errorf("A site id must be specified")
 			}
 			opts.siteID = args[0]
 			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
 			sites, err := opts.SitesAPI.ListSites(ctx)
-			if sites == nil || err != nil{
+			if sites == nil || err != nil {
 				return fmt.Errorf("no sites available")
 
 			}
@@ -49,9 +49,9 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := util.BaseAuthContext(opts.SitesAPI.Token)
-			
+
 			log := logrus.WithFields(logrus.Fields{
-				"id":     "resource query",
+				"id": "resource query",
 			})
 
 			resolverTypes := openapi.AllowedResolverTypeEnumValues
@@ -62,39 +62,39 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			resolverString, _ := cmd.Flags().GetString("resolver")
 			resolvers := strings.Split(resolverString, "&")
 
-			if resolverString != ""{		
+			if resolverString != "" {
 				filteredResolvers := []openapi.ResolverType{}
-				for v := range resolvers{
+				for v := range resolvers {
 					r, err := openapi.NewResolverTypeFromValue(resolvers[v])
-					if err != nil{
+					if err != nil {
 						return err
 					}
-					filteredResolvers = append(filteredResolvers,*r)
+					filteredResolvers = append(filteredResolvers, *r)
 				}
-				if len(filteredResolvers) > 0{
+				if len(filteredResolvers) > 0 {
 					resolverTypes = filteredResolvers
 				}
 			}
-	
+
 			resourceString, _ := cmd.Flags().GetString("resource")
 			resource := strings.Split(resourceString, "&")
-			
-			if resourceString != ""{
-	
+
+			if resourceString != "" {
+
 				filteredResources := []openapi.ResourceType{}
-				for v := range resolvers{
+				for v := range resolvers {
 					r, err := openapi.NewResourceTypeFromValue(resource[v])
-					if err!=nil{
+					if err != nil {
 						return err
 					}
-					filteredResources = append(filteredResources,*r)
+					filteredResources = append(filteredResources, *r)
 				}
-				if len(filteredResources) > 0{
+				if len(filteredResources) > 0 {
 					resourceTypes = filteredResources
-				}			
+				}
 			}
-			for resolveType := range resolverTypes{
-				for resourceType := range resourceTypes{
+			for resolveType := range resolverTypes {
+				for resourceType := range resourceTypes {
 					resources, err := opts.SitesAPI.ListResources(ctx, opts.siteID, &resolverTypes[resolveType], &resourceTypes[resourceType])
 					if resources != nil {
 						resourceReturnList = append(resourceReturnList, *resources)
@@ -112,28 +112,28 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 				}
 				fmt.Fprintln(opts.Out, string(o))
 			} else {
-			p := util.NewPrinter(opts.Out, 4)
-			p.AddHeader("Name", "Resolver", "Type", "Gateway Name")
-			for _, s := range resourceReturnList {
-				for _, d := range s.Data {
+				p := util.NewPrinter(opts.Out, 4)
+				p.AddHeader("Name", "Resolver", "Type", "Gateway Name")
+				for _, s := range resourceReturnList {
+					for _, d := range s.Data {
 
-				p.AddLine(
-					util.StringAbbreviate(string(d)),
-					util.StringAbbreviate(string(*s.Resolver)),
-					util.StringAbbreviate(string(*s.Type)),
-					util.StringAbbreviate(string(*s.GatewayName)),
-				)
+						p.AddLine(
+							util.StringAbbreviate(string(d)),
+							util.StringAbbreviate(string(*s.Resolver)),
+							util.StringAbbreviate(string(*s.Type)),
+							util.StringAbbreviate(string(*s.GatewayName)),
+						)
 
+					}
+				}
+				if len(resourceReturnList) == 0 {
+					p.AddLine("No resources found in the site")
+					return nil
+				}
+
+				p.Print()
 			}
-		}
-		if len(resourceReturnList) == 0 {
-			p.AddLine("No resources found in the site")
 			return nil
-		}
-
-		p.Print()
-		}
-		return nil
 		},
 	}
 

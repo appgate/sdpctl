@@ -16,13 +16,12 @@ import (
 )
 
 type ResourcesNamesOpts struct {
-	Config      *configuration.Config
-	Out         io.Writer
-	Client      func(c *configuration.Config) (*openapi.APIClient, error)
-	Appliance   func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug       bool
-	json        bool
-	siteID string
+	Config    *configuration.Config
+	Out       io.Writer
+	Client    func(c *configuration.Config) (*openapi.APIClient, error)
+	Appliance func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug     bool
+	siteID    string
 }
 
 func ResourceNamesCmd(f *factory.Factory) *cobra.Command {
@@ -40,16 +39,16 @@ func ResourceNamesCmd(f *factory.Factory) *cobra.Command {
 		Example: docs.SitesResourcesDocsList.ExampleString(),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 
-		// Validate UUID if the argument is applied
-		uuidArg := args[0]
-		_, err := uuid.Parse(uuidArg)
-		if err != nil {
-			log.WithField("error", err).Info("Invalid ID")
-			return err
-		}
-		opts.siteID = uuidArg
+			// Validate UUID if the argument is applied
+			uuidArg := args[0]
+			_, err := uuid.Parse(uuidArg)
+			if err != nil {
+				log.WithField("error", err).Info("Invalid ID")
+				return err
+			}
+			opts.siteID = uuidArg
 
-		return nil
+			return nil
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			return ResourcesNamesStatusRun(&opts)
@@ -66,7 +65,6 @@ func ResourcesNamesStatusRun(opts *ResourcesNamesOpts) error {
 	}
 
 	ctx := util.BaseAuthContext(*opts.Config.BearerToken)
-
 
 	result, response, err := client.SitesApi.SitesIdResourcesGet(ctx, opts.siteID).Execute()
 	if err != nil {
