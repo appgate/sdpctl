@@ -58,7 +58,7 @@ func NewResourceNamesCmd(parentOpts *SitesOptions) *cobra.Command {
 			resourceTypes := openapi.AllowedResourceTypeEnumValues
 			resourceReturnList := []openapi.ResolverResources{}
 
-			fmt.Printf("Querying resource names...\n")
+			fmt.Println("Querying resource names...")
 			resolverString, _ := cmd.Flags().GetString("resolver")
 			resolvers := strings.Split(resolverString, "&")
 
