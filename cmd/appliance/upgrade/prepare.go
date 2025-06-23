@@ -32,6 +32,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/google/uuid"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -169,8 +170,36 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					}
 				}
 			}
-
+			
 			if len(opts.logServerBundlePath) > 0 {
+				var bundlePath string
+				parsedURL, err := url.ParseRequestURI(opts.logServerBundlePath)
+				if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
+					// Download the bundle to a temp file
+					resp, err := http.Get(opts.logServerBundlePath)
+					if err != nil {
+						return fmt.Errorf("failed to download LogServer bundle from URL: %w", err)
+					}
+					defer resp.Body.Close()
+					if resp.StatusCode != http.StatusOK {
+						return fmt.Errorf("failed to download LogServer bundle: HTTP %d", resp.StatusCode)
+					}
+					
+					id := uuid.New().String()
+					
+					tmpFile, err := os.CreateTemp("", id)
+					if err != nil {
+						return fmt.Errorf("failed to create temp file for LogServer bundle: %w", err)
+					}
+					defer tmpFile.Close()
+					_, err = io.Copy(tmpFile, resp.Body)
+					if err != nil {
+						return fmt.Errorf("failed to write LogServer bundle to temp file: %w", err)
+					}
+					bundlePath = tmpFile.Name()
+					opts.logServerBundlePath = bundlePath
+				} 
+				
 				opts.logServerBundlePath = filesystem.AbsolutePath(opts.logServerBundlePath)
 				ok, err := util.FileExists(opts.logServerBundlePath)
 				if err != nil {
