@@ -178,13 +178,33 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				parsedURL, err := url.ParseRequestURI(opts.logServerBundlePath)
 				if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
 					// Download the bundle to a temp file
-					resp, err := http.Get(opts.logServerBundlePath)
+					client, err := opts.HTTPClient()
+					if err != nil {
+						return fmt.Errorf("failed to get HTTP client: %w", err)
+					}
+
+					fmt.Fprintf(opts.Out, "Downloading LogServer bundle from %s...\n", opts.logServerBundlePath)
+
+					resp, err := client.Get(opts.logServerBundlePath)
 					if err != nil {
 						return fmt.Errorf("failed to download LogServer bundle from URL: %w", err)
 					}
 					defer resp.Body.Close()
 					if resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("failed to download LogServer bundle: HTTP %d", resp.StatusCode)
+					}
+
+					// Create progress indicator for download
+					progress := tui.New(context.Background(), opts.SpinnerOut())
+					defer progress.Wait()
+
+					// Get file size from Content-Length header if available
+					fileSize := resp.ContentLength
+					var reader io.Reader = resp.Body
+
+					if fileSize > 0 {
+						// Create a progress bar for the download
+						reader = progress.FileDownloadProgress("LogServer bundle", "✓ Download complete", fileSize, 40, resp.Body)
 					}
 
 					id := uuid.New().String()
@@ -195,10 +215,13 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 						return fmt.Errorf("failed to create temp file for LogServer bundle: %w", err)
 					}
 					defer tmpFile.Close()
-					_, err = io.Copy(tmpFile, resp.Body)
+					_, err = io.Copy(tmpFile, reader)
 					if err != nil {
 						return fmt.Errorf("failed to write LogServer bundle to temp file: %w", err)
 					}
+
+					progress.Complete()
+					fmt.Fprintf(opts.Out, "LogServer bundle downloaded successfully\n")
 					bundlePath = tmpFile.Name()
 					opts.logServerBundlePath = bundlePath
 				}

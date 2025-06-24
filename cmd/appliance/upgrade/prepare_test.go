@@ -642,6 +642,10 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 				return registry.Client, nil
 			}
+			f.HTTPClient = func() (*http.Client, error) {
+				return registry.Client.GetConfig().HTTPClient, nil
+			}
+			f.SetSpinnerOutput(io.Discard) // Disable spinner output in tests
 			f.Appliance = func(c *configuration.Config) (*appliancepkg.Appliance, error) {
 				api, _ := f.APIClient(c)
 
