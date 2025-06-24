@@ -496,7 +496,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "with remote logserver bundle success",
-			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle 'http://127.0.0.1:8080/logserver-6.5.image.zip'",
+			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle '%s/logserver-6.5.image.zip'",
 			askStubs: func(s *prompt.PromptStubber) {
 				s.StubOne(true) // upgrade_confirm
 			},
@@ -590,7 +590,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "remote logserver bundle download failure - 404",
-			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle 'http://127.0.0.1:8080/nonexistent-bundle.zip'",
+			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle '%s/nonexistent-bundle.zip'",
 			httpStubs: []httpmock.Stub{
 				{
 					URL: "/nonexistent-bundle.zip",
@@ -612,7 +612,11 @@ func TestUpgradePrepareCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{})
+			_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{
+				"appgate.test.": {
+					A: []string{"127.0.0.1"},
+				},
+			})
 			defer teardown()
 			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
@@ -665,7 +669,12 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			cmd.Flags().BoolP("help", "x", false, "")
 			cmd.PersistentFlags().Bool("ci-mode", false, "")
 
-			argv, err := shlex.Split(tt.cli)
+			cli := tt.cli
+			if strings.Contains(tt.cli, "%s") {
+				cli = fmt.Sprintf(tt.cli, fmt.Sprintf("http://appgate.test:%d", registry.Port))
+			}
+
+			argv, err := shlex.Split(cli)
 			if err != nil {
 				panic("Internal testing error, failed to split args")
 			}
