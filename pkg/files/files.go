@@ -181,7 +181,7 @@ func (f *FileManager) Upload(ctx context.Context, q QueueItem) error {
 		return err
 	}
 	return func(ctx context.Context, api *appliancepkg.Appliance) error {
-		return backoff.Retry(func() error {		
+		return backoff.Retry(func() error {
 			v, err := api.FileStatus(ctx, uploadName)
 			if err != nil {
 				if t != nil {

@@ -518,7 +518,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 					Responder: func(rw http.ResponseWriter, r *http.Request) {
 						file, _ := os.Open("./testdata/appgate-6.2.2-9876.img.zip")
 						defer file.Close()
-						
+
 						rw.Header().Set("Content-Type", "application/zip")
 						rw.Header().Set("Content-Disposition", "attachment; filename=logserver-6.5.image.zip")
 						rw.WriteHeader(http.StatusOK)
@@ -589,8 +589,8 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:       "remote logserver bundle download failure - 404",
-			cli:        "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle 'http://127.0.0.1:8080/nonexistent-bundle.zip'",
+			name: "remote logserver bundle download failure - 404",
+			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle 'http://127.0.0.1:8080/nonexistent-bundle.zip'",
 			httpStubs: []httpmock.Stub{
 				{
 					URL: "/nonexistent-bundle.zip",

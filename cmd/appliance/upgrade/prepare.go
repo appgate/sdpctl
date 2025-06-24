@@ -50,7 +50,7 @@ type prepareUpgradeOptions struct {
 	image               string
 	DevKeyring          bool
 	remoteImage         bool
-	remoteBundle    	bool
+	remoteBundle        bool
 	filename            string
 	timeout             time.Duration
 	defaultFilter       map[string]map[string]string
@@ -171,12 +171,12 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					}
 				}
 			}
-			
+
 			opts.remoteBundle = false
 			if len(opts.logServerBundlePath) > 0 {
 				var bundlePath string
 				parsedURL, err := url.ParseRequestURI(opts.logServerBundlePath)
-				if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {			
+				if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
 					// Download the bundle to a temp file
 					resp, err := http.Get(opts.logServerBundlePath)
 					if err != nil {
@@ -186,9 +186,9 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					if resp.StatusCode != http.StatusOK {
 						return fmt.Errorf("failed to download LogServer bundle: HTTP %d", resp.StatusCode)
 					}
-					
-					id := uuid.New().String()	 				
-					
+
+					id := uuid.New().String()
+
 					tmpFile, err := os.CreateTemp("", id)
 					opts.remoteBundle = true
 					if err != nil {
@@ -201,8 +201,8 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					}
 					bundlePath = tmpFile.Name()
 					opts.logServerBundlePath = bundlePath
-				} 
-				
+				}
+
 				opts.logServerBundlePath = filesystem.AbsolutePath(opts.logServerBundlePath)
 				ok, err := util.FileExists(opts.logServerBundlePath)
 				if err != nil {
@@ -578,9 +578,9 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 	}
 
 	if opts.remoteBundle && len(opts.logServerBundlePath) > 0 {
-        if err := os.Remove(opts.logServerBundlePath); err != nil && !os.IsNotExist(err) {
-            log.Warnf("Failed to delete temporary LogServer bundle file: %v", err)
-        }
+		if err := os.Remove(opts.logServerBundlePath); err != nil && !os.IsNotExist(err) {
+			log.Warnf("Failed to delete temporary LogServer bundle file: %v", err)
+		}
 	}
 
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
