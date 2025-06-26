@@ -176,7 +176,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if len(opts.logServerBundlePath) > 0 {
 				var bundlePath string
 				parsedURL, err := url.ParseRequestURI(opts.logServerBundlePath)
-				if err == nil && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https") {
+				if err == nil && parsedURL.Scheme == "https" {
 					// Download the bundle to a temp file
 					client, err := opts.HTTPClient()
 					if err != nil {
@@ -224,6 +224,10 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					fmt.Fprint(opts.Out, "LogServer bundle downloaded successfully\n")
 					bundlePath = tmpFile.Name()
 					opts.logServerBundlePath = bundlePath
+				}
+
+				if parsedURL.Scheme == "http"{
+					return fmt.Errorf("Plain HTTP URLs are not supported for LogServer bundle. Please use HTTPS URL instead")
 				}
 
 				opts.logServerBundlePath = filesystem.AbsolutePath(opts.logServerBundlePath)
