@@ -221,7 +221,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					}
 
 					progress.Complete()
-					fmt.Fprintf(opts.Out, "LogServer bundle downloaded successfully\n")
+					fmt.Fprint(opts.Out, "LogServer bundle downloaded successfully\n")
 					bundlePath = tmpFile.Name()
 					opts.logServerBundlePath = bundlePath
 				}
