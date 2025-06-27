@@ -32,6 +32,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/google/uuid"
 	multierr "github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"
@@ -49,6 +50,7 @@ type prepareUpgradeOptions struct {
 	image               string
 	DevKeyring          bool
 	remoteImage         bool
+	remoteBundle        bool
 	filename            string
 	timeout             time.Duration
 	defaultFilter       map[string]map[string]string
@@ -170,7 +172,64 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 				}
 			}
 
+			opts.remoteBundle = false
 			if len(opts.logServerBundlePath) > 0 {
+				var bundlePath string
+				parsedURL, err := url.ParseRequestURI(opts.logServerBundlePath)
+				if err == nil && parsedURL.Scheme == "https" {
+					// Download the bundle to a temp file
+					client, err := opts.HTTPClient()
+					if err != nil {
+						return fmt.Errorf("failed to get HTTP client: %w", err)
+					}
+
+					fmt.Fprintf(opts.Out, "Downloading LogServer bundle from %s...\n", opts.logServerBundlePath)
+
+					resp, err := client.Get(opts.logServerBundlePath)
+					if err != nil {
+						return fmt.Errorf("failed to download LogServer bundle from URL: %w", err)
+					}
+					defer resp.Body.Close()
+					if resp.StatusCode != http.StatusOK {
+						return fmt.Errorf("failed to download LogServer bundle: HTTP %d", resp.StatusCode)
+					}
+
+					// Create progress indicator for download
+					progress := tui.New(context.Background(), opts.SpinnerOut())
+					defer progress.Wait()
+
+					// Get file size from Content-Length header if available
+					fileSize := resp.ContentLength
+					var reader io.Reader = resp.Body
+
+					if fileSize > 0 {
+						// Create a progress bar for the download
+						reader = progress.FileDownloadProgress("LogServer bundle", "✓ Download complete", fileSize, 40, resp.Body)
+					}
+
+					id := uuid.New().String()
+
+					tmpFile, err := os.CreateTemp("", id)
+					opts.remoteBundle = true
+					if err != nil {
+						return fmt.Errorf("failed to create temp file for LogServer bundle: %w", err)
+					}
+					defer tmpFile.Close()
+					_, err = io.Copy(tmpFile, reader)
+					if err != nil {
+						return fmt.Errorf("failed to write LogServer bundle to temp file: %w", err)
+					}
+
+					progress.Complete()
+					fmt.Fprint(opts.Out, "LogServer bundle downloaded successfully\n")
+					bundlePath = tmpFile.Name()
+					opts.logServerBundlePath = bundlePath
+				}
+
+				if parsedURL.Scheme == "http" {
+					return fmt.Errorf("Plain HTTP URLs are not supported for LogServer bundle. Please use HTTPS URL instead")
+				}
+
 				opts.logServerBundlePath = filesystem.AbsolutePath(opts.logServerBundlePath)
 				ok, err := util.FileExists(opts.logServerBundlePath)
 				if err != nil {
@@ -215,7 +274,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 	flags.BoolVar(&opts.forcePrepare, "force", false, "Force prepare of upgrade on appliances even though the version uploaded is the same or lower than the version already running on the appliance")
 	flags.BoolVar(&opts.skipBundle, "skip-container-bundle", false, "skip the bundling of the docker images for functions that need them, e.g. the LogServer")
 	flags.String("docker-registry", "", "Custom docker registry for downloading function docker images. Needs to be accessible by the sdpctl host machine.")
-	flags.StringVar(&opts.logServerBundlePath, "logserver-bundle", "", "Path to a local LogServer image bundle file to upload and use when upgrading a LogServer appliance.")
+	flags.StringVar(&opts.logServerBundlePath, "logserver-bundle", "", "URL or local file path to a LogServer image bundle file to upload and use when upgrading a LogServer appliance.")
 
 	return prepareCmd
 }
@@ -544,6 +603,13 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 			return err
 		}
 	}
+
+	if opts.remoteBundle && len(opts.logServerBundlePath) > 0 {
+		if err := os.Remove(opts.logServerBundlePath); err != nil && !os.IsNotExist(err) {
+			log.Warnf("Failed to delete temporary LogServer bundle file: %v", err)
+		}
+	}
+
 	if opts.remoteImage && opts.hostOnController && existingFile.GetStatus() != appliancepkg.FileReady {
 		fmt.Fprintf(opts.Out, "[%s] The primary Controller as host. Uploading upgrade image:\n", time.Now().Format(time.RFC3339))
 

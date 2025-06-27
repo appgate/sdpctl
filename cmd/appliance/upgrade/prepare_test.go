@@ -4,11 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html"
 	"io"
+	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
@@ -64,6 +68,7 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		cli                 string
 		askStubs            func(*prompt.PromptStubber)
 		httpStubs           []httpmock.Stub
+		tlsStubs            []httpmock.Stub // For HTTPS logserver bundle downloads
 		upgradeStatusWorker appliancepkg.WaitForUpgradeStatus
 		wantOut             *regexp.Regexp
 		wantErr             bool
@@ -494,10 +499,138 @@ func TestUpgradePrepareCommand(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "with remote logserver bundle success",
+			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle '%s/logserver-6.5.image.zip'",
+			askStubs: func(s *prompt.PromptStubber) {
+				s.StubOne(true) // upgrade_confirm
+			},
+			tlsStubs: []httpmock.Stub{
+				{
+					URL: "/logserver-6.5.image.zip",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						file, _ := os.Open("./testdata/appgate-6.2.2-9876.img.zip")
+						defer file.Close()
+
+						rw.Header().Set("Content-Type", "application/zip")
+						rw.Header().Set("Content-Disposition", "attachment; filename=logserver-6.5.image.zip")
+						rw.WriteHeader(http.StatusOK)
+						io.Copy(rw, file)
+					},
+				},
+			},
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/admin/appliances/status",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance.json"),
+				},
+				{
+					URL:       "/admin/files/appgate-6.2.2-9876.img.zip",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json"),
+				},
+				{
+					URL: "/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "37bdc593-df27-49f8-9852-cb302214ee1f" }`))
+						}
+					},
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade/prepare",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						if r.Method == http.MethodGet {
+							httpmock.JSONResponse("../../../pkg/appliance/fixtures/upgrade_status_file.json")
+							return
+						}
+						if r.Method == http.MethodPost {
+							rw.Header().Set("Content-Type", "application/json")
+							rw.WriteHeader(http.StatusOK)
+							fmt.Fprint(rw, string(`{"id": "493a0d78-772c-4a6d-a618-1fbfdf02ab68" }`))
+						}
+					},
+				},
+				{
+					URL: "/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/change/37bdc593-df27-49f8-9852-cb302214ee1f",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/change/493a0d78-772c-4a6d-a618-1fbfdf02ab68",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprint(w, string(`{"status": "completed", "result": "success"}`))
+					},
+				},
+				{
+					URL: "/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"idle","details":"appgate-6.2.2-9876.img.zip"}`))
+					},
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"idle","details":"appgate-6.2.2-9876.img.zip"}`))
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:       "logserver bundle HTTP validation",
+			cli:        "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle 'http://example.com/bundle.zip'",
+			httpStubs:  []httpmock.Stub{},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`Plain HTTP URLs are not supported for LogServer bundle`),
+		},
+		{
+			name: "remote logserver bundle download failure - HTTPS 404",
+			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle '%s/nonexistent-bundle.zip'",
+			tlsStubs: []httpmock.Stub{
+				{
+					URL: "/nonexistent-bundle.zip",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						http.Error(rw, "Not Found", http.StatusNotFound)
+					},
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`failed to download LogServer bundle: HTTP 404`),
+		},
+		{
+			name:       "remote logserver bundle download failure - connection error",
+			cli:        "upgrade prepare --image './testdata/appgate-6.2.2-9876.img.zip' --logserver-bundle 'https://nonexistent.invalid.domain.test/bundle.zip'",
+			httpStubs:  []httpmock.Stub{},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`failed to download LogServer bundle from URL`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{})
+			_, teardown := dns.RunMockDNSServer(map[string]mockdns.Zone{
+				"appgate.test.": {
+					A: []string{"127.0.0.1"},
+				},
+			})
 			defer teardown()
 			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
@@ -506,6 +639,17 @@ func TestUpgradePrepareCommand(t *testing.T) {
 
 			defer registry.Teardown()
 			registry.Serve()
+
+			// Set up TLS registry for HTTPS LogServer bundle downloads if needed
+			var tlsRegistry *TLSRegistry
+			if len(tt.tlsStubs) > 0 {
+				tlsRegistry = newTLSRegistry(t)
+				for _, v := range tt.tlsStubs {
+					tlsRegistry.Register(v.URL, v.Responder)
+				}
+				defer tlsRegistry.Teardown()
+				tlsRegistry.Serve()
+			}
 			stdout := &bytes.Buffer{}
 			stdin := &bytes.Buffer{}
 			stderr := &bytes.Buffer{}
@@ -523,6 +667,14 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			f.APIClient = func(c *configuration.Config) (*openapi.APIClient, error) {
 				return registry.Client, nil
 			}
+			f.HTTPClient = func() (*http.Client, error) {
+				// Use TLS client if we have a TLS registry, otherwise use the regular client
+				if tlsRegistry != nil {
+					return tlsRegistry.server.Client(), nil
+				}
+				return registry.Client.GetConfig().HTTPClient, nil
+			}
+			f.SetSpinnerOutput(io.Discard) // Disable spinner output in tests
 			f.Appliance = func(c *configuration.Config) (*appliancepkg.Appliance, error) {
 				api, _ := f.APIClient(c)
 
@@ -550,7 +702,17 @@ func TestUpgradePrepareCommand(t *testing.T) {
 			cmd.Flags().BoolP("help", "x", false, "")
 			cmd.PersistentFlags().Bool("ci-mode", false, "")
 
-			argv, err := shlex.Split(tt.cli)
+			cli := tt.cli
+			if strings.Contains(tt.cli, "%s") {
+				// Use TLS registry URL for HTTPS tests, otherwise use HTTP registry URL
+				if tlsRegistry != nil {
+					cli = fmt.Sprintf(tt.cli, tlsRegistry.URL())
+				} else {
+					cli = fmt.Sprintf(tt.cli, fmt.Sprintf("http://appgate.test:%d", registry.Port))
+				}
+			}
+
+			argv, err := shlex.Split(cli)
 			if err != nil {
 				panic("Internal testing error, failed to split args")
 			}
@@ -932,4 +1094,77 @@ controllers are prepared for upgrade when running 'upgrade complete'.
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// TLSRegistry wraps an HTTP test server with HTTPS capabilities for testing LogServer bundle downloads
+type TLSRegistry struct {
+	Client   *openapi.APIClient
+	cfg      *openapi.Configuration
+	Mux      *http.ServeMux
+	server   *httptest.Server
+	Port     int
+	Teardown func()
+	stubs    []*httpmock.Stub
+	mu       sync.Mutex
+	notFound []string
+}
+
+// newTLSRegistry creates a new TLS-enabled registry for HTTPS testing
+func newTLSRegistry(t *testing.T) *TLSRegistry {
+	t.Helper()
+
+	mux := http.NewServeMux()
+	server := httptest.NewTLSServer(mux)
+	clientCfg := openapi.NewConfiguration()
+	clientCfg.HTTPClient = server.Client()
+	c := openapi.NewAPIClient(clientCfg)
+
+	port := server.Listener.Addr().(*net.TCPAddr).Port
+
+	r := &TLSRegistry{
+		Client:   c,
+		cfg:      clientCfg,
+		Mux:      mux,
+		server:   server,
+		Port:     port,
+		Teardown: server.Close,
+	}
+
+	return r
+}
+
+// Register adds a stub to the TLS registry
+func (r *TLSRegistry) Register(url string, resp http.HandlerFunc) {
+	r.stubs = append(r.stubs, &httpmock.Stub{
+		URL:       url,
+		Responder: resp,
+	})
+}
+
+// stubMiddleware tracks which stubs were matched (similar to httpmock.Registry)
+func (r *TLSRegistry) stubMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, request *http.Request) {
+		r.mu.Lock()
+		next.ServeHTTP(rw, request)
+		r.mu.Unlock()
+	})
+}
+
+// Serve sets up the TLS server handlers
+func (r *TLSRegistry) Serve() {
+	for _, stub := range r.stubs {
+		r.Mux.Handle(stub.URL, r.stubMiddleware(stub.Responder))
+	}
+	r.Mux.HandleFunc("/", func(rw http.ResponseWriter, req *http.Request) {
+		if req.URL.Path != "/" {
+			rw.WriteHeader(http.StatusNotFound)
+			r.notFound = append(r.notFound, req.Method+" "+html.EscapeString(req.URL.Path))
+			return
+		}
+	})
+}
+
+// URL returns the HTTPS URL of the TLS server
+func (r *TLSRegistry) URL() string {
+	return r.server.URL
 }
