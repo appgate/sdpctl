@@ -296,7 +296,7 @@ var warningDisplayed = false
 
 func (a *Appliance) ApplianceStatus(ctx context.Context, filter map[string]map[string]string, orderBy []string, descending bool) (*openapi.ApplianceWithStatusList, *http.Response, error) {
 	status, response, err := a.APIClient.AppliancesApi.AppliancesStatusGet(ctx).Execute()
-	if response.StatusCode == 404 {
+	if response != nil && response.StatusCode == 404 {
 		if !warningDisplayed {
 			fmt.Fprintln(os.Stderr, "WARNING: Status endpoint not found, falling back to old stats/appliances")
 			warningDisplayed = true
