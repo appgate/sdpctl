@@ -226,7 +226,7 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 					opts.logServerBundlePath = bundlePath
 				}
 
-				if parsedURL.Scheme == "http" {
+				if err == nil && parsedURL.Scheme == "http" {
 					return fmt.Errorf("Plain HTTP URLs are not supported for LogServer bundle. Please use HTTPS URL instead")
 				}
 
