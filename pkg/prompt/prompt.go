@@ -62,7 +62,9 @@ func (m textInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
 			fmt.Println(m.textinput.Value())
-			return m, tea.Quit
+			return m, tea.Interrupt
+		case tea.KeyCtrlZ:
+			return m, tea.Suspend
 		case tea.KeyEnter:
 			m.quitting = true
 			return m, tea.Quit
