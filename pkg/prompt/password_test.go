@@ -3,6 +3,7 @@ package prompt
 import (
 	"bytes"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -109,6 +110,159 @@ func TestGetPassPhrase(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("GetPassphrase() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidateBackupPassphrase(t *testing.T) {
+	tests := []struct {
+		name       string
+		passphrase string
+		wantErr    bool
+		errMsg     string
+	}{
+		{
+			name:       "valid alphanumeric",
+			passphrase: "Password123",
+			wantErr:    false,
+		},
+		{
+			name:       "valid with special characters",
+			passphrase: "P@ssw0rd!",
+			wantErr:    false,
+		},
+		{
+			name:       "valid complex passphrase",
+			passphrase: "Myp@ssw0rd_123#",
+			wantErr:    false,
+		},
+		{
+			name:       "empty passphrase",
+			passphrase: "",
+			wantErr:    true,
+			errMsg:     "passphrase cannot be empty",
+		},
+		{
+			name:       "contains space",
+			passphrase: "pass word",
+			wantErr:    true,
+			errMsg:     PassphraseInvalidMessage,
+		},
+		{
+			name:       "contains tab",
+			passphrase: "pass\tword",
+			wantErr:    true,
+			errMsg:     PassphraseInvalidMessage,
+		},
+		{
+			name:       "contains emoji",
+			passphrase: "password😀",
+			wantErr:    true,
+			errMsg:     PassphraseInvalidMessage,
+		},
+		{
+			name:       "contains unicode",
+			passphrase: "pässwörd",
+			wantErr:    true,
+			errMsg:     PassphraseInvalidMessage,
+		},
+		{
+			name:       "all allowed special characters",
+			passphrase: "!@#$%^&*()_+-=[]{}|;':\",./<>?~",
+			wantErr:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateBackupPassphrase(tt.passphrase)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateBackupPassphrase() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+				t.Errorf("ValidateBackupPassphrase() error message = %v, want to contain %v", err.Error(), tt.errMsg)
+			}
+		})
+	}
+}
+
+func TestGetBackupPassphrase(t *testing.T) {
+	tests := []struct {
+		name      string
+		stdIn     io.Reader
+		canPrompt bool
+		hasStdin  bool
+		askStubs  func(*PromptStubber)
+		want      string
+		wantErr   bool
+		errMsg    string
+	}{
+		{
+			name:      "valid passphrase from stdin",
+			stdIn:     bytes.NewBuffer([]byte("ValidPass123\n")),
+			canPrompt: false,
+			hasStdin:  true,
+			want:      "ValidPass123",
+			wantErr:   false,
+		},
+		{
+			name:      "invalid passphrase from stdin with space",
+			stdIn:     bytes.NewBuffer([]byte("Invalid Pass\n")),
+			canPrompt: false,
+			hasStdin:  true,
+			want:      "",
+			wantErr:   true,
+			errMsg:    PassphraseInvalidMessage,
+		},
+		{
+			name:      "invalid passphrase from stdin with emoji",
+			stdIn:     bytes.NewBuffer([]byte("password😀\n")),
+			canPrompt: false,
+			hasStdin:  true,
+			want:      "",
+			wantErr:   true,
+			errMsg:    PassphraseInvalidMessage,
+		},
+		{
+			name:      "valid passphrase from prompt",
+			canPrompt: true,
+			hasStdin:  false,
+			want:      "ValidPass123",
+			wantErr:   false,
+			askStubs: func(s *PromptStubber) {
+				s.StubPrompt("prompt message").AnswerWith("ValidPass123")
+				s.StubPrompt("Confirm your passphrase:").AnswerWith("ValidPass123")
+			},
+		},
+		{
+			name:      "no stdin no prompt",
+			canPrompt: false,
+			hasStdin:  false,
+			want:      "",
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stubber, teardown := InitStubbers(t)
+			defer teardown()
+			if tt.askStubs != nil {
+				tt.askStubs(stubber)
+			}
+			got, err := GetBackupPassphrase(tt.stdIn, tt.canPrompt, tt.hasStdin, "prompt message")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBackupPassphrase() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+				t.Errorf("GetBackupPassphrase() error message = %v, want to contain %v", err.Error(), tt.errMsg)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetBackupPassphrase() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
@@ -12,6 +13,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
+	"github.com/appgate/sdpctl/pkg/prompt"
 )
 
 func TestBackupCmd(t *testing.T) {
@@ -254,5 +256,61 @@ func TestBackupCmdNoState(t *testing.T) {
 		if !reg.MatchString(err.Error()) {
 			t.Fatalf("Error message did not match expected.\nWANT: %s\nGOT: %s", reg.String(), err.Error())
 		}
+	}
+}
+
+func TestBackupCmdDirectValidation(t *testing.T) {
+	// Test direct validation of GetBackupPassphrase function with stdin
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "valid passphrase",
+			input:   "ValidP@ssw0rd123\n",
+			wantErr: false,
+		},
+		{
+			name:    "invalid passphrase with space",
+			input:   "invalid passphrase\n",
+			wantErr: true,
+			errMsg:  prompt.PassphraseInvalidMessage,
+		},
+		{
+			name:    "invalid passphrase with emoji",
+			input:   "password😀\n",
+			wantErr: true,
+			errMsg:  prompt.PassphraseInvalidMessage,
+		},
+		{
+			name:    "invalid passphrase with tab",
+			input:   "pass\tword\n",
+			wantErr: true,
+			errMsg:  prompt.PassphraseInvalidMessage,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stdin := bytes.NewBufferString(tt.input)
+			// Test with hasStdin=true to bypass the TTY check
+			result, err := prompt.GetBackupPassphrase(stdin, false, true, "test message")
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBackupPassphrase() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+				t.Errorf("GetBackupPassphrase() error message = %v, want to contain %v", err.Error(), tt.errMsg)
+				return
+			}
+
+			if !tt.wantErr && result != strings.TrimSuffix(tt.input, "\n") {
+				t.Errorf("GetBackupPassphrase() = %v, want %v", result, strings.TrimSuffix(tt.input, "\n"))
+			}
+		})
 	}
 }
