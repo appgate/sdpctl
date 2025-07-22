@@ -276,10 +276,13 @@ func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openap
 				},
 			}
 			newStatus.Details.Disk = &openapi.SystemInfo{
-				Total:   openapi.PtrInt64(int64(*status.DiskInfo.Total)),
-				Used:    openapi.PtrInt64(int64(*status.DiskInfo.Used)),
-				Free:    openapi.PtrInt64(int64(*status.DiskInfo.Free)),
+
 				Percent: status.Disk,
+			}
+			if status.DiskInfo != nil {
+				newStatus.Details.Disk.Total = openapi.PtrInt64(int64(*status.DiskInfo.Total))
+				newStatus.Details.Disk.Used = openapi.PtrInt64(int64(*status.DiskInfo.Used))
+				newStatus.Details.Disk.Free = openapi.PtrInt64(int64(*status.DiskInfo.Free))
 			}
 			newStatus.Details.Upgrade = &openapi.ApplianceWithStatusAllOfDetailsUpgrade{
 				Status:  status.Upgrade.Status,
