@@ -31,11 +31,11 @@ func NewServiceUsersGetCMD(f *factory.Factory) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := util.BaseAuthContext(opts.Token)
 			api, err := opts.API(opts.Config)
 			if err != nil {
 				return err
 			}
+			ctx := util.BaseAuthContext(api.Token)
 
 			id := args[0]
 			user, err := api.Read(ctx, id)

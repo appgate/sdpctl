@@ -28,7 +28,8 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ctx := util.BaseAuthContext(opts.Token)
+
+			ctx := util.BaseAuthContext(api.Token)
 
 			users, err := api.List(ctx)
 			if err != nil {

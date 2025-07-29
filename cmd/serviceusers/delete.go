@@ -35,11 +35,11 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			return errs.ErrorOrNil()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := util.BaseAuthContext(opts.Token)
 			api, err := opts.API(opts.Config)
 			if err != nil {
 				return err
 			}
+			ctx := util.BaseAuthContext(api.Token)
 
 			ids := []string{}
 			if len(args) > 0 {
