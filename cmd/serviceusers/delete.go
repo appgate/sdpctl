@@ -35,7 +35,11 @@ func NewServiceUsersDeleteCMD(f *factory.Factory) *cobra.Command {
 			return errs.ErrorOrNil()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := util.BaseAuthContext(opts.Token)
+			token, err := util.TokenFromConfig(opts.Token, opts.Config.BearerToken)
+			if err != nil {
+				return fmt.Errorf("Failed to get token: %w", err)
+			}
+			ctx := util.BaseAuthContext(token)
 			api, err := opts.API(opts.Config)
 			if err != nil {
 				return err

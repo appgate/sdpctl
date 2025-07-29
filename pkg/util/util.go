@@ -212,3 +212,13 @@ func BaseAuthContext(token string) context.Context {
 	ctx := context.Background()
 	return context.WithValue(ctx, openapi.ContextAccessToken, token)
 }
+
+func TokenFromConfig(token string, bearerToken *string) (string, error) {
+	if token != "" {
+		return token, nil
+	}
+	if bearerToken != nil {
+		return *bearerToken, nil
+	}
+	return "", fmt.Errorf("Credentials are not set, please use the 'login' command to authenticate first")
+}

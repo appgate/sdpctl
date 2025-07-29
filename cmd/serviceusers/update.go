@@ -1,7 +1,6 @@
 package serviceusers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,7 +16,9 @@ import (
 )
 
 func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
+	token, _ := f.Config.GetBearTokenHeaderValue()
 	opts := ServiceUsersOptions{
+		Token:  token,
 		Config: f.Config,
 		API:    f.ServiceUsers,
 		Out:    f.IOOutWriter,
@@ -48,7 +49,11 @@ func NewServiceUsersUpdateCMD(f *factory.Factory) *cobra.Command {
 }
 
 func serviceUserUpdateRun(cmd *cobra.Command, args []string, opts ServiceUsersOptions) error {
-	ctx := context.Background()
+	token, err := util.TokenFromConfig(opts.Token, opts.Config.BearerToken)
+	if err != nil {
+		return fmt.Errorf("Failed to get token: %w", err)
+	}
+	ctx := util.BaseAuthContext(token)
 	api, err := opts.API(opts.Config)
 	if err != nil {
 		return err
