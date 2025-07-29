@@ -1,7 +1,6 @@
 package serviceusers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/appgate/sdpctl/pkg/docs"
@@ -29,11 +28,8 @@ func NewServiceUsersListCMD(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			token, err := util.TokenFromConfig(opts.Token, opts.Config.BearerToken)
-			if err != nil {
-				return fmt.Errorf("Failed to get token: %w", err)
-			}
-			ctx := util.BaseAuthContext(token)
+
+			ctx := util.BaseAuthContext(api.Token)
 
 			users, err := api.List(ctx)
 			if err != nil {

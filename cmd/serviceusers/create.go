@@ -51,11 +51,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		return err
 	}
 
-	token, err := util.TokenFromConfig(opts.Token, opts.Config.BearerToken)
-	if err != nil {
-		return fmt.Errorf("Failed to get token: %w", err)
-	}
-	ctx := util.BaseAuthContext(token)
+	ctx := util.BaseAuthContext(api.Token)
 
 	fromFile, err := cmd.Flags().GetString("from-file")
 	if err != nil {

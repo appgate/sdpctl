@@ -9,13 +9,13 @@ import (
 
 type ServiceUsersAPI struct {
 	client *openapi.ServiceUsersApiService
-	token  string
+	Token  string
 }
 
 func NewServiceUsersAPI(client *openapi.ServiceUsersApiService, token string) *ServiceUsersAPI {
 	return &ServiceUsersAPI{
 		client: client,
-		token:  token,
+		Token:  token,
 	}
 }
 
