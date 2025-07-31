@@ -65,12 +65,18 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 	logEntry := log.WithFields(log.Fields{
 		"appliance": appliance.GetName(),
 	})
+
 	logEntry.WithField("want", want).Info("Polling for the appliance state")
+	timeoutMult := 1
 	return backoff.Retry(func() error {
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutMult)*5*time.Second)
 		defer cancel()
 		stats, _, err := u.Appliance.ApplianceStatus(ctx, nil, nil, false)
 		if err != nil {
+			if deadline, ok := ctx.Deadline(); ok && time.Until(deadline) <= 0 {
+				logEntry.WithError(err).Warn("Timeout reached while waiting for appliance state. Increasing timeout")
+				timeoutMult *= 2
+			}
 			return err
 		}
 
