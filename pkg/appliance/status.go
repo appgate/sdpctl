@@ -67,7 +67,7 @@ func (u *ApplianceStatus) WaitForApplianceState(ctx context.Context, appliance o
 	})
 	logEntry.WithField("want", want).Info("Polling for the appliance state")
 	return backoff.Retry(func() error {
-		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		stats, _, err := u.Appliance.ApplianceStatus(ctx, nil, nil, false)
 		if err != nil {
