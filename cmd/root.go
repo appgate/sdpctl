@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	minSupportedVersion int    = 17 // e.g. appliance version 6.0.0
+	minSupportedVersion int    = 20 // e.g. appliance version 6.3.0
 	version             string = "0.0.0-dev"
 	commit              string
 	buildDate           string
@@ -52,6 +52,21 @@ Consider upgrading to a supported version of the appliance using the upgrade scr
 
 `
 )
+
+func getMinAPIVersionWarning(apiVersion int) string {
+
+	switch errorText := apiVersion; errorText {
+	case 19:
+		return "This version of sdpctl is not compatible with the appliance version you are running. Please use SDPCTL 2023.06.19: https://github.com/appgate/sdpctl/releases/tag/2023.06.19"
+	case 18:
+		return "This version of sdpctl is not compatible with the appliance version you are running. Please use SDPCTL 2022.12.20: https://github.com/appgate/sdpctl/releases/tag/2022.12.20"
+	case 17, 16, 15:
+		return "This version of sdpctl is not compatible with the appliance version you are running. Please use SDPCTL 2022.10.07: https://github.com/appgate/sdpctl/releases/tag/2022.10.07"
+	default:
+		return "This version of sdpctl is not compatible with the appliance version you are running."
+	}
+
+}
 
 func initConfig(currentProfile *string) {
 	dir := filesystem.ConfigDir()
@@ -370,7 +385,8 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 					return err
 				}
 				utilitesURL.Path = `/ui/system/utilities`
-				fmt.Fprintf(f.StdErr, minAPIversionWarning, minSupportedVersion, cfg.Version, utilitesURL)
+				sdpctlVersionWarning := getMinAPIVersionWarning(cfg.Version) + "\n"
+				fmt.Fprintf(f.StdErr, minAPIversionWarning+sdpctlVersionWarning, minSupportedVersion, cfg.Version, utilitesURL)
 			}
 		}
 
