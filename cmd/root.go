@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -44,11 +43,9 @@ var (
 commit: %s
 build date: %s`, version, commit, buildDate)
 	minAPIversionWarning string = `WARNING: You are running an unsupported API version on the appliance.
-It is strongly advised that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforeseen consequenses.
+It is strongly advised that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforeseen consequences.
 Minimum supported API version: %d
 Currently using API version: %d
-
-Consider upgrading to a supported version of the appliance using the upgrade script provided in the 'Utilities' section in the admin UI: %s
 
 `
 )
@@ -380,13 +377,8 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			// Check minimum supported version and print warning if the client is running an unsupported version
 			// We check length of configured URL to not show warning when profile is unconfigured
 			if cfg.Version < minSupportedVersion && len(cfg.URL) > 0 {
-				utilitesURL, err := url.ParseRequestURI(cfg.URL)
-				if err != nil {
-					return err
-				}
-				utilitesURL.Path = `/ui/system/utilities`
 				sdpctlVersionWarning := getMinAPIVersionWarning(cfg.Version) + "\n"
-				fmt.Fprintf(f.StdErr, minAPIversionWarning+sdpctlVersionWarning, minSupportedVersion, cfg.Version, utilitesURL)
+				fmt.Fprintf(f.StdErr, minAPIversionWarning+sdpctlVersionWarning, minSupportedVersion, cfg.Version)
 			}
 		}
 
