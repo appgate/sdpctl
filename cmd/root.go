@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -35,7 +34,7 @@ import (
 )
 
 var (
-	minSupportedVersion int    = 17 // e.g. appliance version 6.0.0
+	minSupportedVersion int    = 20 // e.g. appliance version 6.3.0
 	version             string = "0.0.0-dev"
 	commit              string
 	buildDate           string
@@ -44,14 +43,27 @@ var (
 commit: %s
 build date: %s`, version, commit, buildDate)
 	minAPIversionWarning string = `WARNING: You are running an unsupported API version on the appliance.
-It is strongly advised that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforeseen consequenses.
+It is strongly advised that you upgrade your appliance to a supported version before executing any sdpctl command. Executing sdpctl commands on an unsupported API version can have serious unforeseen consequences.
 Minimum supported API version: %d
 Currently using API version: %d
 
-Consider upgrading to a supported version of the appliance using the upgrade script provided in the 'Utilities' section in the admin UI: %s
-
 `
 )
+
+func getMinAPIVersionWarning(apiVersion int) string {
+
+	switch errorText := apiVersion; errorText {
+	case 19:
+		return "This version of sdpctl is not compatible with the appliance version you are running. Please use SDPCTL 2023.06.19: https://github.com/appgate/sdpctl/releases/tag/2023.06.19"
+	case 18:
+		return "This version of sdpctl is not compatible with the appliance version you are running. Please use SDPCTL 2022.12.20: https://github.com/appgate/sdpctl/releases/tag/2022.12.20"
+	case 17, 16, 15:
+		return "This version of sdpctl is not compatible with the appliance version you are running. Please use SDPCTL 2022.10.07: https://github.com/appgate/sdpctl/releases/tag/2022.10.07"
+	default:
+		return "This version of sdpctl is not compatible with the appliance version you are running."
+	}
+
+}
 
 func initConfig(currentProfile *string) {
 	dir := filesystem.ConfigDir()
@@ -365,12 +377,8 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 			// Check minimum supported version and print warning if the client is running an unsupported version
 			// We check length of configured URL to not show warning when profile is unconfigured
 			if cfg.Version < minSupportedVersion && len(cfg.URL) > 0 {
-				utilitesURL, err := url.ParseRequestURI(cfg.URL)
-				if err != nil {
-					return err
-				}
-				utilitesURL.Path = `/ui/system/utilities`
-				fmt.Fprintf(f.StdErr, minAPIversionWarning, minSupportedVersion, cfg.Version, utilitesURL)
+				sdpctlVersionWarning := getMinAPIVersionWarning(cfg.Version) + "\n"
+				fmt.Fprintf(f.StdErr, minAPIversionWarning+sdpctlVersionWarning, minSupportedVersion, cfg.Version)
 			}
 		}
 
