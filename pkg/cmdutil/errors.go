@@ -37,4 +37,6 @@ var (
 	ErrUnsupportedOperation = errors.New("Operation not supported on your appliance version")
 	// ErrControllerMaintenanceMode is used when trying to connect to appliance where maintenance mode is enabled
 	ErrControllerMaintenanceMode = errors.New("controller seem to be in maintenance mode")
+	// ErrNoUpgradeAvailable is used when there are no upgrades available for the appliance
+	ErrNoUpgradeAvailable = errors.New("Could not perform upgrade.\nAppliances are already running a version higher or equal to the version provided")
 )
