@@ -226,7 +226,7 @@ func TestCommandErrorHandling(t *testing.T) {
 				cmd: &cobra.Command{RunE: func(cmd *cobra.Command, args []string) error { return ErrNothingToPrepare }},
 			},
 			want:         ExitOK,
-			wantedOutput: fmt.Sprintf("%s\n", ErrNothingToPrepare.Error()),
+			wantedOutput: fmt.Sprintf("%s\n", ErrNoUpgradeAvailable.Error()),
 		},
 	}
 	for _, tt := range tests {
