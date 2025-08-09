@@ -57,12 +57,14 @@ func NewCmdConfigure(f *factory.Factory) *cobra.Command {
 					return errors.New("Can't prompt, You need to provide all arguments, for example 'sdpctl configure company.controller.com'")
 				}
 
-				opts.URL, err = prompt.PromptInput("Enter the url for the Controller API (example https://controller.company.com:8443)")
+				url, err := prompt.PromptInput("Enter the url for the Controller API (example https://controller.company.com:8443)")
+				opts.URL = strings.TrimSpace(url)
+
 				if err != nil {
 					return err
 				}
 			case 1:
-				opts.URL = args[0]
+				opts.URL = strings.TrimSpace(args[0])
 			default:
 				return fmt.Errorf("Accepts at most %d arg(s), received %d", 1, len(args))
 			}
@@ -131,7 +133,7 @@ func configRun(opts *configureOptions) error {
 
 func argValidation(cmd *cobra.Command, args []string) error {
 	if len(args) == 1 {
-		arg := args[0]
+		arg := strings.TrimSpace(args[0])
 		regex := regexp.MustCompile(`[signin]{3,}`)
 		if regex.MatchString(arg) {
 			return fmt.Errorf("'%s' is not a valid argument. Did you mean 'signin'?", arg)
