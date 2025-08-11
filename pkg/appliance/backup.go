@@ -481,6 +481,12 @@ func backupEnabled(ctx context.Context, client *openapi.APIClient, token string,
 			}
 			enabled = newSettings.GetBackupApiEnabled()
 		}
+	} else if enabled && !noInteraction {
+		password, err := prompt.BackupPasswordConfirmation("The passphrase to encrypt the appliance backups when the Backup API is used:")
+		if err != nil {
+			return false, err
+		}
+		settings.SetBackupPassphrase(password)
 	}
 
 	return enabled, nil
