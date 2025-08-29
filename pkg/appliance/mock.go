@@ -26,6 +26,15 @@ const (
 	TestApplianceGatewayA1                = "gatewayA1"
 	TestApplianceGatewayA2                = "gatewayA2"
 	TestApplianceGatewayA3                = "gatewayA3"
+	TestApplianceGatewayA4                = "gatewayA4"
+	TestApplianceGatewayA5                = "gatewayA5"
+	TestApplianceGatewayA6                = "gatewayA6"
+	TestApplianceGatewayA7                = "gatewayA7"
+	TestApplianceGatewayA8                = "gatewayA8"
+	TestApplianceGatewayA9                = "gatewayA9"
+	TestApplianceGatewayA10               = "gatewayA10"
+	TestApplianceGatewayA11               = "gatewayA11"
+	TestApplianceGatewayA12               = "gatewayA12"
 	TestApplianceGatewayB1                = "gatewayB1"
 	TestApplianceGatewayB2                = "gatewayB2"
 	TestApplianceGatewayB3                = "gatewayB3"
@@ -97,7 +106,7 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, "6.1", from, statusHealthy, UpgradeStatusReady, []string{FunctionController})
 		case TestApplianceControllerGatewayPrimary:
 			res.addAppliance(n, hostname, siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController, FunctionGateway})
-		case TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3:
+		case TestApplianceGatewayA1, TestApplianceGatewayA2, TestApplianceGatewayA3, TestApplianceGatewayA4, TestApplianceGatewayA5, TestApplianceGatewayA6, TestApplianceGatewayA7, TestApplianceGatewayA8, TestApplianceGatewayA9, TestApplianceGatewayA10, TestApplianceGatewayA11, TestApplianceGatewayA12:
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionGateway})
 		case TestApplianceGatewayB1, TestApplianceGatewayB2, TestApplianceGatewayB3:
 			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionGateway})

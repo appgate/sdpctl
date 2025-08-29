@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"slices"
 	"strings"
 	"text/template"
@@ -216,6 +217,14 @@ func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[s
 	for _, o := range other {
 		resultIndex = util.SmallestGroupIndex(result)
 		result[resultIndex] = append(result[resultIndex], o)
+	}
+
+	//remove empty groups
+	for i := 0; i < len(result); i++ {
+		if len(result[i]) == 0 {
+			result = append(result[:i], result[i+1:]...)
+			i--
+		}
 	}
 
 	// sort the resulting groups
@@ -595,9 +604,7 @@ func calculateBatches(gatewaysBySite, logForwardersBySite map[string][]openapi.A
 		if batches == maxUnavailable || batches < maxUnavailable {
 			return 1
 		}
-		for batches%maxUnavailable != 0 {
-			batches--
-		}
+		batches = int(math.Ceil(float64(batches) / float64(maxUnavailable)))
 	}
 
 	return batches

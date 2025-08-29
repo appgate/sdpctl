@@ -52,6 +52,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 
 	type args struct {
 		maxUnavailable int
+		filter         map[string]map[string]string
 	}
 	tests := []struct {
 		name    string
@@ -145,6 +146,44 @@ func TestMakeUpgradePlan(t *testing.T) {
 			},
 		},
 		{
+			name: "test batch creation with high max unavailable",
+			args: args{
+				maxUnavailable: 9,
+			},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"gatewayA1", "gatewayA10", "gatewayA11", "gatewayA12", "gatewayA2", "gatewayA3", "gatewayA4", "gatewayA5", "gatewayA6", "gatewayB1", "gatewayB2", "logforwarderA1", "logforwarderA2"},
+					{"connectorA1", "gatewayA7", "gatewayA8", "gatewayA9", "gatewayC1", "gatewayC2", "logserver", "portalA1"},
+				},
+				input: []string{
+					"gatewayA1",
+					"gatewayA2",
+					"gatewayA3",
+					"gatewayA4",
+					"gatewayA5",
+					"gatewayA6",
+					"gatewayA7",
+					"gatewayA8",
+					"gatewayA9",
+					"gatewayA10",
+					"gatewayA11",
+					"gatewayA12",
+					"gatewayB1",
+					"gatewayB2",
+					"logserver",
+					"logforwarderA1",
+					"logforwarderA2",
+					"connectorA1",
+					"gatewayC1",
+					"secondary",
+					"gatewayC2",
+					"portalA1",
+				},
+			},
+		},
+		{
 			name: "test grouping with no other batches",
 			args: args{
 				maxUnavailable: 1,
@@ -163,7 +202,7 @@ func TestMakeUpgradePlan(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			hostname := "appgate.test"
 			coll := GenerateCollective(t, hostname, "6.3.5", "6.4.1", tt.want.allApplianceNames())
-			got, err := NewUpgradePlan(coll.GetAppliances(), coll.Stats, coll.GetUpgradeStatusMap(), hostname, nil, nil, false, tt.args.maxUnavailable)
+			got, err := NewUpgradePlan(coll.GetAppliances(), coll.Stats, coll.GetUpgradeStatusMap(), hostname, tt.args.filter, nil, false, tt.args.maxUnavailable)
 			if tt.wantErr {
 				assert.Error(t, err)
 			}
@@ -618,6 +657,30 @@ func Test_calculateBatches(t *testing.T) {
 					TestApplianceGatewayB3,
 				},
 				maxUnavailable: 2,
+			},
+			want: 2,
+		},
+		{
+			name: "12 appliances with max unavailable 9",
+			args: args{
+				appliances: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceGatewayA3,
+					TestApplianceGatewayA4,
+					TestApplianceGatewayA5,
+					TestApplianceGatewayA6,
+					TestApplianceGatewayA7,
+					TestApplianceGatewayA8,
+					TestApplianceGatewayA9,
+					TestApplianceGatewayA10,
+					TestApplianceGatewayA11,
+					TestApplianceGatewayA12,
+					TestApplianceGatewayB1,
+					TestApplianceGatewayB2,
+					TestApplianceGatewayB3,
+				},
+				maxUnavailable: 9,
 			},
 			want: 2,
 		},
