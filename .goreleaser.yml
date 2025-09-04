@@ -114,7 +114,7 @@ brews:
       email: "{{ .Env.COMMIT_AUTHOR_EMAIL }}"
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     folder: Formula
-    homepage: "https://github.com/appgate/sdpctl/releases"
+    homepage: "https://appgate.github.io/sdpctl/"
     description: "Official CLI tool for managing Appgate SDP Collectives"
     license: "MIT"
     url_template: "https://github.com/appgate/sdpctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
