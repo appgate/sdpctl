@@ -70,6 +70,25 @@ func PrepareBackup(opts *BackupOpts) error {
 	return nil
 }
 
+func hasOnlyEphemeral(functions []string) bool {
+	for _, f := range functions {
+		if !util.InSlice(f, []string{FunctionGateway, FunctionConnector, FunctionLogForwarder}) {
+			return false
+		}
+	}
+	return true
+}
+
+func filterEphemeral(appliances []openapi.Appliance) []openapi.Appliance {
+	result := []openapi.Appliance{}
+	for _, a := range appliances {
+		if !hasOnlyEphemeral(GetActiveFunctions(a)) {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
 func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[string]string, error) {
 	spinnerOut := opts.SpinnerOut()
 	backupIDs := make(map[string]string)
@@ -114,6 +133,7 @@ func PerformBackup(cmd *cobra.Command, args []string, opts *BackupOpts) (map[str
 
 NO_ENABLE_CHECK:
 	appliances, err := app.List(ctx, nil, []string{"name"}, false)
+	appliances = filterEphemeral(appliances)
 	if err != nil {
 		return backupIDs, err
 	}
