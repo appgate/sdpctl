@@ -66,12 +66,12 @@ checksum:
 
 nfpms:
   - homepage: https://www.appgate.com
-    maintainer: Appgate Cybersecurity Inc <appgatesdp.support@appgate.com>
+    maintainer: AppGate Cybersecurity Inc <appgatesdp.support@appgate.com>
     description: |-
       Official command line tool for managing
-      Appgate SDP Collectives
+      AppGate SDP Collectives
     license: MIT
-    vendor: Appgate Cybersecurity, Inc
+    vendor: AppGate Cybersecurity, Inc
     section: utils
     formats:
       - deb
@@ -115,7 +115,7 @@ brews:
     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     folder: Formula
     homepage: "https://appgate.github.io/sdpctl/"
-    description: "Official CLI tool for managing Appgate SDP Collectives"
+    description: "Official CLI tool for managing AppGate SDP Collectives"
     license: "MIT"
     url_template: "https://github.com/appgate/sdpctl/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     install: |

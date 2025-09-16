@@ -6,7 +6,7 @@
   <meta name="Description" content="Appgate sdpctl Quick Start Guide">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="expires" content="0">
-  <title>Appgate sdpctl Quick Start Guide</title>
+  <title>AppGate sdpctl Quick Start Guide</title>
   <link rel="stylesheet" type="text/css" href="assets/guide.css">
   <script type="text/javascript" src="./assets/guide.js"></script>
   <script>
@@ -132,6 +132,11 @@
     .commands-table td:first-child {
       white-space: nowrap;
     }
+
+    .compatiblity-container {
+      padding: var(--spacing-default);
+      border: 1px solid var(--color-bg-page);
+    }
   </style>
 </head>
 
@@ -146,7 +151,7 @@
         <p class="margin-bottom">
           Check this page regularly to get the latest version which is <span data-varid="version" class="tag"></span>
         </p>
-        <div class="columns wraps-980" id="os-all">
+        <div class="columns wraps-980 margin-bottom" id="os-all">
           <div id="os-macos">
             <div class="os-block">
               <object class="os-logo" data="assets/macos.svg" aria-label="macos logo"></object>
@@ -159,7 +164,6 @@
           </div>
           <div class="os-block" id="os-linux">
             <div class="os-block">
-
               <object class="os-logo" data="assets/linux.svg" aria-label="linux logo"></object>
               <a class="button" data-varid="deb">
                 <span>deb package</span>
@@ -189,42 +193,44 @@
         </div>
       </div>
       <details class="details">
-      <summary class="example-summary">SDP Compatibility Information</summary>
-      <table class="commands-table">
-        <thead>
-          <tr>
-            <th>SDP Version</th>
-            <th>Compatible sdpctl Version</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>SDP 6.3+</td>
-            <td><a href="https://github.com/appgate/sdpctl/releases/latest">sdpctl latest</a></td>
-          </tr>
-          <tr>
-            <td>SDP 6.2</td>
-            <td><a href="https://github.com/appgate/sdpctl/releases/tag/2025.05.29">sdpctl 2025.05.29</a></td>
-          </tr>
-          <tr>
-            <td>SDP 6.1</td>
-            <td><a href="https://github.com/appgate/sdpctl/releases/tag/2024.04.29">sdpctl 2024.04.29</a></td>
-          </tr>
-          <tr>
-            <td>SDP 6.0</td>
-            <td><a href="https://github.com/appgate/sdpctl/releases/tag/2023.06.19">sdpctl 2023.06.19</a></td>
-          </tr>
-          <tr>
-            <td>SDP 5.5-6.0</td>
-            <td><a href="https://github.com/appgate/sdpctl/releases/tag/2022.12.20">sdpctl 2022.12.20</a></td>
-          </tr>
-          <tr>
-            <td>SDP 5.4</td>
-            <td><a href="https://github.com/appgate/sdpctl/releases/tag/2022.10.07">sdpctl 2022.10.07</a></td>
-          </tr>
-        </tbody>
-      </table>
-    </details>
+        <summary class="example-summary">SDP Version Compatibility Information</summary>
+        <div class="compatiblity-container">
+          <table class="commands-table">
+            <thead>
+              <tr>
+                <th>SDP Version</th>
+                <th>Compatible sdpctl Version</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SDP 6.3+</td>
+                <td><a href="https://github.com/appgate/sdpctl/releases/latest">sdpctl latest</a></td>
+              </tr>
+              <tr>
+                <td>SDP 6.2</td>
+                <td><a href="https://github.com/appgate/sdpctl/releases/tag/2025.05.29">sdpctl 2025.05.29</a></td>
+              </tr>
+              <tr>
+                <td>SDP 6.1</td>
+                <td><a href="https://github.com/appgate/sdpctl/releases/tag/2024.04.29">sdpctl 2024.04.29</a></td>
+              </tr>
+              <tr>
+                <td>SDP 6.0</td>
+                <td><a href="https://github.com/appgate/sdpctl/releases/tag/2023.06.19">sdpctl 2023.06.19</a></td>
+              </tr>
+              <tr>
+                <td>SDP 5.5-6.0</td>
+                <td><a href="https://github.com/appgate/sdpctl/releases/tag/2022.12.20">sdpctl 2022.12.20</a></td>
+              </tr>
+              <tr>
+                <td>SDP 5.4</td>
+                <td><a href="https://github.com/appgate/sdpctl/releases/tag/2022.10.07">sdpctl 2022.10.07</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
       <div id="panel-fail" class="hidden">
         <h2>Download</h2>
         <p class="margin-bottom">Failed to fetch latest release information.</p>
@@ -459,7 +465,7 @@ no profiles added
       <div>
         <h2>Available Commands</h2>
         <p class="margin-bottom">
-          Appgate sdpctl is an open-source tool with capabilities beyond upgrading an SDP Collective.<br />
+          AppGate sdpctl is an open-source tool with capabilities beyond upgrading an SDP Collective.<br />
           Here you can find the summary for currently available commands, click on each for details.
         </p>
         <table class="commands-table">
@@ -515,7 +521,7 @@ no profiles added
         <ul class="text-left">
           <li>Read more about appliance upgrades in <a target="_blank" rel="noopener" href="https://sdphelp.appgate.com/adminguide/upgrading-appliances.html">admin guide</a>.</li>
           <li>Find more supported platforms (ARM) in <a target="_blank" rel="noopener" href="https://github.com/appgate/sdpctl/releases">Github releases</a>.</li>
-          <li>Contact Appgate Support at <a href="mailto:support@appgate.com?subject=Appgate sdpctl help">support@appgate.com</a>.</li>
+          <li>Contact AppGate Support at <a href="mailto:support@appgate.com?subject=Appgate sdpctl help">support@appgate.com</a>.</li>
         </ul>
       </div>
     </div>
