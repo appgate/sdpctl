@@ -256,7 +256,7 @@ func renderHook(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool
 const (
 	htmlTemplate string = `<head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="Description" content="Appgate sdpctl Quick Start Guide">
+  <meta name="Description" content="AppGate sdpctl Quick Start Guide">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="expires" content="0">
   <title>sdpctl Reference Guide</title>

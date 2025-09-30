@@ -175,7 +175,7 @@ func initConfig(currentProfile *string) {
 func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 	var rootCmd = &cobra.Command{
 		Use:               "sdpctl",
-		Short:             "sdpctl is a command line tool to manage Appgate SDP Collectives",
+		Short:             "sdpctl is a command line tool to manage AppGate SDP Collectives",
 		Long:              longDescription,
 		Version:           versionOutput,
 		SilenceErrors:     true,

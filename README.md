@@ -8,7 +8,7 @@ Recommended starting point for admins is the [Quick Start Guide](https://appgate
 
 # Introduction
 
-An Appgate SDP Collective can be managed by a number of different means. Prior to v6.0 scripts were used for a number of these tasks. From v6.0 a new command line tool "sdpctl" has been introduced for managing various aspects of your Appgate SDP Collective. The most critical of these being backups (of the Controller) and upgrades (of the Collective). sdpctl is the recommended tool for managing these aspects of SDP once you are running v6.0.
+An AppGate SDP Collective can be managed by a number of different means. Prior to v6.0 scripts were used for a number of these tasks. From v6.0 a new command line tool "sdpctl" has been introduced for managing various aspects of your AppGate SDP Collective. The most critical of these being backups (of the Controller) and upgrades (of the Collective). sdpctl is the recommended tool for managing these aspects of SDP once you are running v6.0.
 
 Over time we will add more features to sdpctl so please be sure to always use the latest version.
 
@@ -35,7 +35,7 @@ gpg --output - --verify checksums.txt.asc | sha256sum --check --ignore-missing
 ```
 
 ## macOS
-Download our latest macOS release from [Appgate Homebrew Tap](https://github.com/appgate/homebrew-tap)
+Download our latest macOS release from [AppGate Homebrew Tap](https://github.com/appgate/homebrew-tap)
 ```bash
 $ brew tap appgate/tap
 $ brew install sdpctl

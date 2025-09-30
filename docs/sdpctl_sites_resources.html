@@ -20,34 +20,25 @@
 			</div>
 			<hr />
       <div class="content text-left">
-      <h2>sdpctl service-users delete</h2><p>Delete one or more service user(s)</p><pre class="code-editor"><code>sdpctl service-users delete [id...] [flags]
-</code></pre>
-<hr /><h3>Examples</h3>
-<pre class="code-editor"><code>  # delete a service user with the id of &lt;id&gt;
-  &gt; sdpctl service-users delete &lt;id&gt;
-
-  # delete multiple service users by providing multiple id:s
-  &gt; sdpctl service-users delete &lt;id1&gt; &lt;id2&gt;
-
-  # delete service user(s) using prompt
-  &gt; sdpctl service-users delete
+      <h2>sdpctl sites resources</h2><p>Command for listing resources</p><pre class="code-editor"><code>sdpctl sites resources &lt;site-id&gt; [flags]
 </code></pre>
 <hr /><h3>Options</h3>
-<pre class="code-editor"><code>  -h, --help   help for delete
+<pre class="code-editor"><code>  -h, --help              help for resources
+      --resolver string   Specify resolver types. Use &amp; to append multiple.
+      --resource string   Specify resource types. Use &amp; to append multiple.
 </code></pre>
 <hr /><h3>Options inherited from parent commands</h3>
 <pre class="code-editor"><code>      --api-version int      Peer API version override
       --ci-mode              Log to stderr instead of file and disable progress-bars
       --debug                Enable debug logging
       --events-path string   send logs to unix domain socket path
-      --json                 output in json format
       --no-interactive       Suppress interactive prompt with auto accept
       --no-verify            Don't verify TLS on for the given command, overriding settings from config file
   -p, --profile string       Profile configuration to use
 </code></pre>
 <hr /><h3>SEE ALSO</h3>
 <ul>
-<li><p><a href="sdpctl_service-users.html">sdpctl service-users</a>	 - Manage Service Users</p></li>
+<li><p><a href="sdpctl_sites.html">sdpctl sites</a>	 - Root command for listing and checking status of sites in a collective</p></li>
 </ul>
 
       </div>

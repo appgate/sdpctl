@@ -11,8 +11,8 @@ func HelpTemplate() string {
 	cobra.AddTemplateFunc("profile", cmdutil.CurrentProfile)
 	cobra.AddTemplateFunc("storage", cmdutil.GetConfigPath)
 	cobra.AddTemplateFunc("logs", cmdutil.GetLogPath)
-	return `© 2022-2023 Appgate Cybersecurity, Inc.
-All rights reserved. Appgate is a trademark of Appgate Cybersecurity, Inc.
+	return `© AppGate Cybersecurity, Inc.
+All rights reserved. AppGate is a trademark of AppGate Cybersecurity, Inc.
 https://www.appgate.com
 
 {{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}{{end}}
