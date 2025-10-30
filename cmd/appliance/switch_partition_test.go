@@ -2,8 +2,10 @@ package appliance
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"regexp"
 	"testing"
 
@@ -19,21 +21,21 @@ import (
 )
 
 func TestSwitchPartition(t *testing.T) {
-	// mutatingFunc := func(count int, b []byte) ([]byte, error) {
-	// 	stats := &openapi.StatsAppliancesList{}
-	// 	if err := json.Unmarshal(b, stats); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	data := stats.GetData()
-	// 	for i := 0; i < len(data); i++ {
-	// 		data[i].VolumeNumber = openapi.PtrFloat32(float32(count))
-	// 	}
-	// 	bytes, err := json.Marshal(stats)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return bytes, nil
-	// }
+	mutatingFunc := func(count int, b []byte) ([]byte, error) {
+		stats := &openapi.ApplianceWithStatusList{}
+		if err := json.Unmarshal(b, stats); err != nil {
+			return nil, err
+		}
+		data := stats.GetData()
+		for i := 0; i < len(data); i++ {
+			data[i].Details.VolumeNumber = openapi.PtrInt32(int32(count))
+		}
+		bytes, err := json.Marshal(stats)
+		if err != nil {
+			return nil, err
+		}
+		return bytes, nil
+	}
 
 	testCases := []struct {
 		desc     string
@@ -44,35 +46,35 @@ func TestSwitchPartition(t *testing.T) {
 		wantErr  bool
 		expect   *regexp.Regexp
 	}{
-		// {
-		// 	desc: "no arg",
-		// 	tty:  true,
-		// 	askStubs: func(s *prompt.PromptStubber) {
-		// 		s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
-		// 		s.StubOne(true) // Confirmation prompt
-		// 	},
-		// 	apiStubs: []httpmock.Stub{
-		// 		{
-		// 			URL:       "/admin/appliances",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
-		// 		},
-		// 		{
-		// 			URL:       "/admin/appliances/status",
-		// 			Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.2.6.json", mutatingFunc),
-		// 		},
-		// 		{
-		// 			URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
-		// 			Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
-		// 		},
-		// 		{
-		// 			URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
-		// 			Responder: func(w http.ResponseWriter, r *http.Request) {
-		// 				w.WriteHeader(http.StatusAccepted)
-		// 			},
-		// 		},
-		// 	},
-		// 	expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
-		// },
+		{
+			desc: "no arg",
+			tty:  true,
+			askStubs: func(s *prompt.PromptStubber) {
+				s.StubPrompt("select appliance:").AnswerWith("controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1 - Default Site - []")
+				s.StubOne(true) // Confirmation prompt
+			},
+			apiStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/appliances",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/admin/appliances/status",
+					Responder: httpmock.MutatingResponse("../../pkg/appliance/fixtures/stats_appliance_6.5.0.json", mutatingFunc),
+				},
+				{
+					URL:       "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc",
+					Responder: httpmock.JSONResponse("../../pkg/appliance/fixtures/appliance_single.json"),
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/switch-partition",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			expect: regexp.MustCompile(`switched partition on controller-4c07bc67-57ea-42dd-b702-c2d6c45419fc-site1`),
+		},
 		// {
 		// 	desc: "with id arg",
 		// 	tty:  true,

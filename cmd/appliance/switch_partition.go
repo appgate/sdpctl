@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
 	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
@@ -257,7 +258,7 @@ func switchPartitionRunE(opts *options) error {
 		}
 	}
 
-	return errs
+	return errs.ErrorOrNil()
 }
 
 func switchPartitionSummary(applianceNames []string) (string, error) {
@@ -297,7 +298,7 @@ func doSwitchPartition(ctx context.Context, api *appliancepkg.Appliance, switchI
 			applianceID: *appliance.Id,
 		}, fmt.Errorf("partition switch failed on appliance %s: %v", *appliance.Id, err)
 	}
-
+	time.Sleep(time.Duration(3) * time.Second) // Wait a bit before polling for state
 	log.Info("polling for appliance state")
 	if err := api.ApplianceStats.WaitForApplianceState(ctx, *appliance, appliancepkg.StatReady, tracker); err != nil {
 		if tracker != nil {
