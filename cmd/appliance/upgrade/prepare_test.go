@@ -388,6 +388,38 @@ func TestUpgradePrepareCommand(t *testing.T) {
 		},
 		{
 			name: "prepare same version",
+			cli:  "upgrade prepare --image './testdata/appgate-6.5.2-12345.img.zip'",
+			httpStubs: []httpmock.Stub{
+				{
+					URL:       "/admin/appliances",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/appliance_list.json"),
+				},
+				{
+					URL:       "/admin/appliances/status",
+					Responder: httpmock.JSONResponse("../../../pkg/appliance/fixtures/stats_appliance_6.2.2.json"),
+				},
+				{
+					URL: "/admin/appliances/4c07bc67-57ea-42dd-b702-c2d6c45419fc/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-6.2.2-9876.img.zip"}`))
+					},
+				},
+				{
+					URL: "/admin/appliances/ee639d70-e075-4f01-596b-930d5f24f569/upgrade",
+					Responder: func(rw http.ResponseWriter, r *http.Request) {
+						rw.Header().Set("Content-Type", "application/json")
+						rw.WriteHeader(http.StatusOK)
+						fmt.Fprint(rw, string(`{"status":"ready","details":"appgate-6.2.2-9876.img.zip"}`))
+					},
+				},
+			},
+			wantErr:    true,
+			wantErrOut: regexp.MustCompile(`Upgrade would span more than 2 minor versions which is not supported. Perform upgrades no more than 2 minor versions at a time.`),
+		},
+		{
+			name: "prepare same version",
 			cli:  "upgrade prepare --image './testdata/appgate-6.2.2-12345.img.zip'",
 			httpStubs: []httpmock.Stub{
 				{

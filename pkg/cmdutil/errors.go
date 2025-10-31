@@ -39,4 +39,6 @@ var (
 	ErrControllerMaintenanceMode = errors.New("controller seem to be in maintenance mode")
 	// ErrNoUpgradeAvailable is used when there are no upgrades available for the appliance
 	ErrNoUpgradeAvailable = errors.New("Could not perform upgrade.\nAppliances are already running a version higher or equal to the version provided")
+	// ErrNoUpgradeAvailable is used when there are no upgrades available for the appliance
+	ErrUpgradeMoreThan2MinorVersions = errors.New("Could not perform upgrade.\nUpgrade would span more than 2 minor versions which is not supported. Perform upgrades no more than 2 minor versions at a time.")
 )

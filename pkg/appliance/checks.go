@@ -171,6 +171,15 @@ func CheckVersions(ctx context.Context, stats openapi.ApplianceWithStatusList, a
 					continue
 				}
 
+				// Check if upgrade spans more than two major versions
+				if err := CheckVersionDifferenceTooLarge(statV, v); err != nil {
+					skip = append(skip, SkipUpgrade{
+						Appliance: appliance,
+						Reason:    fmt.Errorf("%s: %w", ErrUpgradeMoreThan2MinorVersions, err),
+					})
+					continue
+				}
+
 				keep = append(keep, appliance)
 			}
 		}
@@ -511,5 +520,37 @@ func CheckApplianceVersionsDisallowed(currentVersion, targetVersion *version.Ver
 			}
 		}
 	}
+	return nil
+}
+
+var MinorVersionError string = "upgrades spanning more than two minor versions are not allowed"
+
+// CheckVersionDifferenceTooLarge checks if the upgrade spans more than two minor versions
+// which is not supported by SDP collective upgrades
+func CheckVersionDifferenceTooLarge(currentVersion, targetVersion *version.Version) error {
+
+	if currentVersion == nil || targetVersion == nil {
+		return fmt.Errorf("cannot check version difference: one or both versions are nil")
+	}
+
+	currentSegments := currentVersion.Segments()
+	targetSegments := targetVersion.Segments()
+
+	// Ensure we have at least major version numbers
+	if len(currentSegments) == 0 || len(targetSegments) == 0 {
+		return fmt.Errorf("invalid version format: versions must have at least a major version number")
+	}
+
+	currentMajor := currentSegments[0]
+	targetMajor := targetSegments[0]
+
+	currentMinor := currentSegments[1]
+	targetMinor := targetSegments[1]
+
+	// Check if we're trying to upgrade by more than 2 minor versions
+	if targetMajor == currentMajor && (targetMinor-currentMinor) > 2 {
+		return fmt.Errorf("upgrading from '%s' to '%s' is not supported: %s", currentVersion, targetVersion, MinorVersionError)
+	}
+
 	return nil
 }

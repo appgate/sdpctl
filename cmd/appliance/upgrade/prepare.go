@@ -428,6 +428,21 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 		}
 		appliances = postPrepared
 
+		for _, skipped := range skip {
+
+			if strings.Contains(skipped.Reason.Error(), appliancepkg.MinorVersionError) {
+
+				var errs *multierr.Error
+				errs = multierr.Append(errs, cmdutil.ErrUpgradeMoreThan2MinorVersions)
+				if len(skipAppliances) > 0 {
+					for _, skip := range skipAppliances {
+						errs = multierr.Append(errs, skip)
+					}
+				}
+				return errs
+			}
+		}
+
 		if len(appliances) <= 0 {
 			var errs *multierr.Error
 			errs = multierr.Append(errs, cmdutil.ErrNothingToPrepare)
