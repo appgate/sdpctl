@@ -40,6 +40,7 @@ var (
 	ErrNoApplianceStats                 = errors.New("failed to find appliance stats")
 	ErrVersionParse                     = errors.New("failed to parse current appliance version")
 	ErrNothingToUpgrade                 = errors.New("No appliances are ready to upgrade. Please run 'upgrade prepare' before trying to complete an upgrade")
+	ErrUpgradeMoreThan2MinorVersions    = errors.New("Could not perform upgrade.\nUpgrade would span more than 2 minor versions which is not supported. Perform upgrades no more than 2 minor versions at a time.")
 )
 
 type UpgradePlan struct {
