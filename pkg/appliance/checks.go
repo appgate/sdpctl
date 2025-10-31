@@ -523,6 +523,8 @@ func CheckApplianceVersionsDisallowed(currentVersion, targetVersion *version.Ver
 	return nil
 }
 
+var MinorVersionError string = "upgrades spanning more than two minor versions are not allowed"
+
 // CheckVersionDifferenceTooLarge checks if the upgrade spans more than two minor versions
 // which is not supported by SDP collective upgrades
 func CheckVersionDifferenceTooLarge(currentVersion, targetVersion *version.Version) error {
@@ -547,7 +549,7 @@ func CheckVersionDifferenceTooLarge(currentVersion, targetVersion *version.Versi
 
 	// Check if we're trying to upgrade by more than 2 minor versions
 	if targetMajor == currentMajor && (targetMinor-currentMinor) > 2 {
-		return fmt.Errorf("upgrading from '%s' to '%s' is not supported: upgrades spanning more than two minor versions are not allowed", currentVersion, targetVersion)
+		return fmt.Errorf("upgrading from '%s' to '%s' is not supported: %s", currentVersion, targetVersion, MinorVersionError)
 	}
 
 	return nil

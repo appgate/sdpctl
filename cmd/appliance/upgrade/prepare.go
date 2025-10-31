@@ -430,7 +430,7 @@ func prepareRun(cmd *cobra.Command, opts *prepareUpgradeOptions) error {
 
 		for _, skipped := range skip {
 
-			if strings.Contains(skipped.Reason.Error(), "2 minor versions") {
+			if strings.Contains(skipped.Reason.Error(), appliancepkg.MinorVersionError) {
 
 				var errs *multierr.Error
 				errs = multierr.Append(errs, cmdutil.ErrUpgradeMoreThan2MinorVersions)
