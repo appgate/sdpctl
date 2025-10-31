@@ -546,7 +546,7 @@ func CheckVersionDifferenceTooLarge(currentVersion, targetVersion *version.Versi
 	targetMinor := targetSegments[1]
 
 	// Check if we're trying to upgrade by more than 2 minor versions
-	if targetMajor == currentMajor && (targetMinor-currentMinor) > 1 {
+	if targetMajor == currentMajor && (targetMinor-currentMinor) > 2 {
 		return fmt.Errorf("upgrading from '%s' to '%s' is not supported: upgrades spanning more than two minor versions are not allowed", currentVersion, targetVersion)
 	}
 

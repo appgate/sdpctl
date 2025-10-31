@@ -765,3 +765,49 @@ func TestCheckApplianceVersionsDisallowed(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckVersionDifferenceTooLarge(t *testing.T) {
+	type args struct {
+		currentVersion string
+		targetVersion  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "one minor version difference - allowed",
+			args: args{
+				currentVersion: "6.0.0",
+				targetVersion:  "6.1.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "two minor version difference - allowed",
+			args: args{
+				currentVersion: "6.0.0",
+				targetVersion:  "6.2.0",
+			},
+			wantErr: false,
+		},
+		{
+			name: "three minor version difference - not allowed",
+			args: args{
+				currentVersion: "6.0.0",
+				targetVersion:  "6.3.0",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			currentVersion, _ := version.NewVersion(tt.args.currentVersion)
+			targetVersion, _ := version.NewVersion(tt.args.targetVersion)
+			if err := CheckVersionDifferenceTooLarge(currentVersion, targetVersion); (err != nil) != tt.wantErr {
+				t.Errorf("CheckVersionDifferenceTooLarge() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
