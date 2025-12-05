@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	log "github.com/sirupsen/logrus"

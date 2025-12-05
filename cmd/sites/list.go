@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -79,12 +79,11 @@ func NewSitesListCmd(parentOpts *SitesOptions) *cobra.Command {
 				fmt.Fprintln(opts.Out, string(o))
 			} else {
 				p := util.NewPrinter(opts.Out, 4)
-				p.AddHeader("Site Name", "Short Name", "ID", "Tags", "Description", "Status")
+				p.AddHeader("Site Name", "ID", "Tags", "Description", "Status")
 				for _, s := range sites {
 
 					p.AddLine(
 						util.StringAbbreviate(s.GetName()),
-						util.StringAbbreviate(s.GetShortName()),
 						util.StringAbbreviate(s.GetId()),
 						s.GetTags(),
 						util.StringAbbreviate(s.GetDescription()),

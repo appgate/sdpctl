@@ -17,7 +17,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/google/go-cmp/cmp"
 )
