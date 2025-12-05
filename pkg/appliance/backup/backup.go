@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/cenkalti/backoff/v4"

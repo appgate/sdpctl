@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
@@ -93,9 +93,9 @@ func TestSitesListCommand(t *testing.T) {
 					},
 				},
 			},
-			want: `Site Name       Short Name    ID    Tags    Description    Status
----------       ----------    --    ----    -----------    ------
-SomeSiteName                        []`,
+			want: `Site Name       ID    Tags    Description    Status
+---------       --    ----    -----------    ------
+SomeSiteName          []`,
 		},
 		{
 			desc: "one site matching partial argument",
@@ -121,9 +121,9 @@ SomeSiteName                        []`,
 					},
 				},
 			},
-			want: `Site Name       Short Name    ID    Tags    Description    Status
----------       ----------    --    ----    -----------    ------
-SomeSiteName                        []`,
+			want: `Site Name       ID    Tags    Description    Status
+---------       --    ----    -----------    ------
+SomeSiteName          []`,
 		},
 		{
 			desc: "one site matching uuid argument",
@@ -150,9 +150,9 @@ SomeSiteName                        []`,
 					},
 				},
 			},
-			want: `Site Name       Short Name    ID                                      Tags    Description    Status
----------       ----------    --                                      ----    -----------    ------
-SomeSiteName                  32bf476b-0ab9-4d9d-879e-321651586b6a    []`,
+			want: `Site Name       ID                                      Tags    Description    Status
+---------       --                                      ----    -----------    ------
+SomeSiteName    32bf476b-0ab9-4d9d-879e-321651586b6a    []`,
 		},
 		{
 			desc: "list sites no argument",
@@ -178,9 +178,9 @@ SomeSiteName                  32bf476b-0ab9-4d9d-879e-321651586b6a    []`,
 					},
 				},
 			},
-			want: `Site Name       Short Name    ID    Tags    Description    Status
----------       ----------    --    ----    -----------    ------
-SomeSiteName                        []`,
+			want: `Site Name       ID    Tags    Description    Status
+---------       --    ----    -----------    ------
+SomeSiteName          []`,
 		},
 		{
 			desc: "list sites with multiline description",
@@ -207,9 +207,9 @@ SomeSiteName                        []`,
 					},
 				},
 			},
-			want: `Site Name       Short Name    ID    Tags    Description                Status
----------       ----------    --    ----    -----------                ------
-SomeSiteName                        []      This is a comment [...]`,
+			want: `Site Name       ID    Tags    Description                Status
+---------       --    ----    -----------                ------
+SomeSiteName          []      This is a comment [...]`,
 		},
 	}
 	for _, tC := range testCases {

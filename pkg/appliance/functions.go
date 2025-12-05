@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"
@@ -40,6 +40,7 @@ const (
 	FunctionLogServer         = "LogServer"
 	FunctionLogForwarder      = "LogForwarder"
 	FunctionMetricsAggregator = "Metrics Aggregator"
+	FunctionConnectionBroker  = "Connection Broker"
 	FilterDelimiter           = "&"
 )
 
@@ -67,6 +68,9 @@ func GroupByFunctions(appliances []openapi.Appliance) map[string][]openapi.Appli
 		}
 		if v, ok := a.GetMetricsAggregatorOk(); ok && v.GetEnabled() {
 			r[FunctionMetricsAggregator] = append(r[FunctionMetricsAggregator], a)
+		}
+		if v, ok := a.GetConnectionBrokerOk(); ok && v.GetEnabled() {
+			r[FunctionConnectionBroker] = append(r[FunctionConnectionBroker], a)
 		}
 	}
 	return r
@@ -98,6 +102,9 @@ func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 		if util.InSlice(FunctionMetricsAggregator, res) {
 			functions[FunctionMetricsAggregator] = true
 		}
+		if util.InSlice(FunctionConnectionBroker, res) {
+			functions[FunctionConnectionBroker] = true
+		}
 	}
 	return functions
 }
@@ -125,6 +132,9 @@ func GetActiveFunctions(appliance openapi.Appliance) []string {
 	}
 	if v, ok := appliance.GetMetricsAggregatorOk(); ok && v.GetEnabled() {
 		functions = append(functions, FunctionMetricsAggregator)
+	}
+	if v, ok := appliance.GetConnectionBrokerOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionConnectionBroker)
 	}
 
 	return functions
@@ -764,6 +774,11 @@ func ApplianceActiveFunctions(s openapi.ApplianceWithStatus) string {
 	if v, ok := s.GetMetricsAggregatorOk(); ok {
 		if v.GetEnabled() {
 			functions = append(functions, FunctionMetricsAggregator)
+		}
+	}
+	if v, ok := s.GetConnectionBrokerOk(); ok {
+		if v.GetEnabled() {
+			functions = append(functions, FunctionConnectionBroker)
 		}
 	}
 	return strings.Join(functions, ", ")

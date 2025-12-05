@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/tui"
 	"github.com/appgate/sdpctl/pkg/util"

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v22/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/google/go-cmp/cmp"
 )
