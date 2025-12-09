@@ -1,6 +1,7 @@
 package configuration
 
 import (
+	"context"
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
@@ -29,7 +30,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/net/context"
 )
 
 type Config struct {
