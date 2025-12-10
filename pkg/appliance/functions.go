@@ -516,7 +516,7 @@ func applyApplianceFilter(appliances []openapi.Appliance, filter map[string]stri
 
 	if len(warnings) > 0 {
 		for _, warn := range warnings {
-			log.Warnf(warn)
+			log.Warn(warn)
 		}
 	}
 
