@@ -34,7 +34,7 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions) *cobra.Command {
 			if opts.EntitlementsAPI == nil {
 				return fmt.Errorf("internal error: no entitlements API available")
 			}
-			cmd.Flags().BoolVar(&opts.dryRun, "dryRun", true, "")
+			
 
 			ctx := util.BaseAuthContext(opts.EntitlementsAPI.Token)
 			result, err := opts.EntitlementsAPI.NamesMigration(ctx)
@@ -79,6 +79,8 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions) *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&opts.dryRun, "dryRun", true, "")
 
 	return cmd
 }
