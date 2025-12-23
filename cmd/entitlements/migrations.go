@@ -3,7 +3,6 @@ package entitlements
 import (
 	"fmt"
 
-	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -14,18 +13,13 @@ type NamesMigrationOptions struct {
 	dryRun		bool
 }
 
-type SitesAPI struct {
-	API   *openapi.EntitlementsApiService
-	Token string
-}
-
 func NewCloudMigrationsCmd(parentOpts *EntitlementOptions) *cobra.Command {
 	opts := &NamesMigrationOptions{}
 	cmd := &cobra.Command{
 		Use:     "names-migration",
-		Short:   docs.SitesResourcesDocsList.Short,
-		Long:    docs.SitesResourcesDocsList.Long,
-		Example: docs.SitesResourcesDocsList.ExampleString(),
+		Short:   docs.NamesMigrationsDocsList.Short,
+		Long:    docs.NamesMigrationsDocsList.Long,
+		Example: docs.NamesMigrationsDocsList.ExampleString(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.EntitlementsAPI = parentOpts.EntitlementsAPI
 			opts.Out = parentOpts.Out
