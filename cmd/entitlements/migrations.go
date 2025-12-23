@@ -42,10 +42,40 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions) *cobra.Command {
 				return fmt.Errorf("names migration failed: %w", err)
 			}
 			resultVal := *result
-			for index, value := range resultVal.Data{
-				fmt.Println(index)
-				fmt.Println(*value.EntitlementName)
+			if opts.dryRun{
+				fmt.Println("Performing dry run")
 			}
+			
+			p := util.NewPrinter(opts.Out, 4)
+			p.AddHeader("Name", "ID", "Original Value", "Updated Value")
+			for _, d := range resultVal.Data {
+
+					updatedHost:= ""	
+
+					if d.UpdatedHost != nil{
+							updatedHost = *d.UpdatedHost
+						}	
+
+
+					p.AddLine(
+						util.StringAbbreviate(*d.EntitlementName),
+						util.StringAbbreviate(*d.EntitlementId),
+						util.StringAbbreviate(*d.OriginalHost),
+						util.StringAbbreviate(updatedHost),
+					)
+
+				}
+			if len(resultVal.Data) == 0 {
+				p.AddLine("Nothing to migrate")
+				return nil
+			}
+
+			p.Print()
+			
+			// for index, value := range resultVal.Data{
+			// 	fmt.Println(index)
+			// 	fmt.Println(*value.EntitlementName)
+			// }
 			return nil
 		},
 	}
