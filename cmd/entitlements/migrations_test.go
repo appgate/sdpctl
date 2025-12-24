@@ -29,7 +29,7 @@ func TestNamesMigrationCommand(t *testing.T) {
 			desc:    "basic failing test",
 			cli:     "names-migration",
 			wantErr: true,
-			stubs: []httpmock.Stub{},
+			stubs:   []httpmock.Stub{},
 		},
 		{
 			desc: "no migrations needed",
@@ -54,8 +54,7 @@ func TestNamesMigrationCommand(t *testing.T) {
 				},
 			},
 			want: `Name    ID    Original Value    Updated Value
-----    --    --------------    -------------
-Nothing to migrate`,
+----    --    --------------    -------------`,
 		},
 		{
 			desc: "single migration",

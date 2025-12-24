@@ -7,15 +7,13 @@ import (
 	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
 )
 
-
 type EntitlementsAPI struct {
 	API   *openapi.EntitlementsApiService
 	Token string
 }
 
-
-func (s *EntitlementsAPI) NamesMigration(ctx context.Context) (*openapi.EntitlementMigrationInfoList, error) {
-	result, response, err := s.API.EntitlementsCloudMigrationsPost(ctx).Execute()
+func (s *EntitlementsAPI) NamesMigration(ctx context.Context, dryRun bool) (*openapi.EntitlementMigrationInfoList, error) {
+	result, response, err := s.API.EntitlementsCloudMigrationsPost(ctx).DryRun(dryRun).Execute()
 	if err != nil {
 		return nil, HTTPErrorResponse(response, err)
 	}
@@ -23,8 +21,5 @@ func (s *EntitlementsAPI) NamesMigration(ctx context.Context) (*openapi.Entitlem
 		return nil, HTTPErrorResponse(response, fmt.Errorf("response does not indicate success: %s", response.Status))
 	}
 
-	if response.StatusCode == 204 {
-		println("Nothing to migrate")
-	}
 	return result, nil
 }

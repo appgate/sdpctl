@@ -12,10 +12,10 @@ import (
 
 type EntitlementOptions struct {
 	configuration.Config
-	EntitlementsAPI      *pkgapi.EntitlementsAPI
-	Out           io.Writer
-	NoInteractive bool
-	CiMode        bool
+	EntitlementsAPI *pkgapi.EntitlementsAPI
+	Out             io.Writer
+	NoInteractive   bool
+	CiMode          bool
 }
 
 func NewEntitlementsMigrationCmd(f *factory.Factory) *cobra.Command {
@@ -41,7 +41,7 @@ func NewEntitlementsMigrationCmd(f *factory.Factory) *cobra.Command {
 				API:   api.EntitlementsApi,
 				Token: token,
 			}
-			
+
 			return nil
 		},
 	}

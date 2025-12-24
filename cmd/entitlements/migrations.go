@@ -10,7 +10,7 @@ import (
 
 type NamesMigrationOptions struct {
 	EntitlementOptions
-	dryRun		bool
+	dryRun bool
 }
 
 func NewCloudMigrationsCmd(parentOpts *EntitlementOptions) *cobra.Command {
@@ -28,44 +28,45 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions) *cobra.Command {
 			if opts.EntitlementsAPI == nil {
 				return fmt.Errorf("internal error: no entitlements API available")
 			}
-			
 
 			ctx := util.BaseAuthContext(opts.EntitlementsAPI.Token)
-			result, err := opts.EntitlementsAPI.NamesMigration(ctx)
+			result, err := opts.EntitlementsAPI.NamesMigration(ctx, opts.dryRun)
 			if err != nil {
 				return fmt.Errorf("names migration failed: %w", err)
 			}
-			resultVal := *result
-			if opts.dryRun{
+
+			if opts.dryRun {
 				fmt.Println("Performing dry run")
 			}
-			
+
+			if result == nil {
+				fmt.Println("Nothing to migrate")
+				return nil
+			}
+
+			resultVal := *result
+
 			p := util.NewPrinter(opts.Out, 4)
 			p.AddHeader("Name", "ID", "Original Value", "Updated Value")
 			for _, d := range resultVal.Data {
 
-					updatedHost:= ""	
+				updatedHost := ""
 
-					if d.UpdatedHost != nil{
-							updatedHost = *d.UpdatedHost
-						}	
-
-
-					p.AddLine(
-						util.StringAbbreviate(*d.EntitlementName),
-						util.StringAbbreviate(*d.EntitlementId),
-						util.StringAbbreviate(*d.OriginalHost),
-						util.StringAbbreviate(updatedHost),
-					)
-
+				if d.UpdatedHost != nil {
+					updatedHost = *d.UpdatedHost
 				}
-			if len(resultVal.Data) == 0 {
-				p.AddLine("Nothing to migrate")
-				return nil
+
+				p.AddLine(
+					util.StringAbbreviate(*d.EntitlementName),
+					util.StringAbbreviate(*d.EntitlementId),
+					util.StringAbbreviate(*d.OriginalHost),
+					util.StringAbbreviate(updatedHost),
+				)
+
 			}
 
 			p.Print()
-			
+
 			// for index, value := range resultVal.Data{
 			// 	fmt.Println(index)
 			// 	fmt.Println(*value.EntitlementName)

@@ -53,6 +53,8 @@ github.com/appgate/sdp-api-client-go v1.4.1-beta h1:RGt6qnLBJjOSIVQBQZEQp5+GVl/S
 github.com/appgate/sdp-api-client-go v1.4.1-beta/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
 github.com/appgate/sdp-api-client-go v1.4.2-beta h1:KAFXIAvzDIWKDTa7JGtTlSaWMsE87/YE3xSIkobFZ5E=
 github.com/appgate/sdp-api-client-go v1.4.2-beta/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
+github.com/appgate/sdp-api-client-go v1.4.3-beta h1:xhZszC64y2DlguadVWcJsDSy5pH7YmAyEWgoT5ObbGc=
+github.com/appgate/sdp-api-client-go v1.4.3-beta/go.mod h1:aPyFeh0fein8VSxFPZpEkeMi8m9dbN+I1RVO4QrONyk=
 github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=
 github.com/atotto/clipboard v0.1.4/go.mod h1:ZY9tmq7sm5xIbd9bOK4onWV4S6X0u6GY7Vn0Yu86PYI=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=
