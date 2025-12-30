@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/appgate/sdpctl/cmd/device"
+	"github.com/appgate/sdpctl/cmd/entitlements"
 	"github.com/appgate/sdpctl/cmd/license"
 	cmdprofile "github.com/appgate/sdpctl/cmd/profile"
 	"github.com/appgate/sdpctl/cmd/sites"
@@ -220,6 +221,7 @@ func NewCmdRoot(currentProfile *string) (*cobra.Command, error) {
 		license.NewLicenseCmd(f),
 		NewAdminMessageCmd(f),
 		sites.NewSitesCmd(f),
+		entitlements.NewEntitlementsMigrationCmd(f),
 		generateCmd,
 	)
 	rootCmd.SetUsageTemplate(UsageTemplate())
