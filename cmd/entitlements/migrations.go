@@ -15,15 +15,12 @@ import (
 
 type NamesMigrationOptions struct {
 	EntitlementOptions
-	factory       *factory.Factory
 	dryRun        bool
-	json          bool
 	Config        *configuration.Config
 	Out           io.Writer
 	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
 	debug         bool
 	defaultFilter map[string]map[string]string
-	ciMode        bool
 }
 
 func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *cobra.Command {
@@ -60,7 +57,7 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 			if a == nil {
 				return fmt.Errorf("failed to get appliance")
 			}
-			if versionMin(cmd, a, "6.6.1") == false {
+			if !versionMin(cmd, a, "6.6.1") {
 				return fmt.Errorf("All appliances must be version 6.6.1 or greater to run the names migration")
 			}
 
