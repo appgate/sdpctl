@@ -9,6 +9,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/util"
+	"github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 )
 
@@ -51,11 +52,14 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 			if opts.EntitlementsAPI == nil {
 				return fmt.Errorf("internal error: no entitlements API available")
 			}
+
+			a, _ := opts.Appliance(opts.Config)
+			if versionMin(cmd, a, "6.6.1") == false{
+				return fmt.Errorf("All appliances must be version 6.6.1 or greater to run the names migration");
+			} 
 			
 			ctx := util.BaseAuthContext(opts.EntitlementsAPI.Token)
 			result, err := opts.EntitlementsAPI.NamesMigration(ctx, opts.dryRun)
-			
-			a, _ := opts.Appliance(opts.Config)
 			
 			filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 			fmt.Println(a.List(ctx, filter, orderBy, descending))
@@ -98,10 +102,6 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 
 			p.Print()
 
-			// for index, value := range resultVal.Data{
-			// 	fmt.Println(index)
-			// 	fmt.Println(*value.EntitlementName)
-			// }
 			return nil
 		},
 	}
@@ -112,49 +112,18 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 }
 
 
-// func versionMin(opts *EntitlementOptions, cmd *cobra.Command, args []string, minVersion string) error {
-// 	cfg := opts.Config
-// 	a, err := opts.Appliance(cfg)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
-// 	ctx := util.BaseAuthContext(a.Token)
-// 	stats, _, err := a.ApplianceStatus(ctx, filter, orderBy, descending)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if opts.json {
-// 		j, err := json.MarshalIndent(&stats, "", "  ")
-// 		if err != nil {
-// 			return err
-// 		}
-// 		fmt.Fprintf(opts.Out, "\n%s\n", string(j))
-// 		return nil
-// 	}
-// 	w := util.NewPrinter(opts.Out, 4)
-// 	diskHeader := "Disk"
-// 	if cfg.Version >= 18 {
-// 		diskHeader += " (used / total)"
-// 	}
-// 	w.AddHeader("Name", "Status", "Function", "CPU", "Memory", "Network out/in", diskHeader, "Version", "Sessions")
-// 	for _, s := range stats.GetData() {
-// 		version := s.GetApplianceVersion()
-// 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
-// 			version = v.String()
-// 		}
-// 		w.AddLine(
-// 			s.GetName(),
-// 			s.GetStatus(),
-// 			appliancepkg.ApplianceActiveFunctions(s),
-// 			fmt.Sprintf("%g%%", s.GetCpu()),
-// 			fmt.Sprintf("%g%%", s.GetMemory()),
-// 			statsNetworkPrettyPrint(s.GetDetails().Network),
-// 			statsDiskUsage(s),
-// 			version,
-// 			s.GetNumberOfSessions(),
-// 		)
-// 	}
-// 	w.Print()
-// 	return nil
-// }
+func versionMin(cmd *cobra.Command, a *appliancepkg.Appliance, minVersion string, ) bool {
+	ctx := util.BaseAuthContext(a.Token)
+	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
+	stats, _, _ := a.ApplianceStatus(ctx, filter, orderBy, descending)
+	minVersionCompare, _ := version.NewVersion(minVersion)
+	for _, s := range stats.GetData() {
+		version := s.GetApplianceVersion()
+		if v, err := appliancepkg.ParseVersionString(version); err == nil {
+			if v.LessThan(minVersionCompare){
+				return false;
+			}
+		}
+	}
+	return true
+}
