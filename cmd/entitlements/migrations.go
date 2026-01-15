@@ -53,7 +53,13 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 				return fmt.Errorf("internal error: no entitlements API available")
 			}
 
-			a, _ := opts.Appliance(opts.Config)
+			a, err := opts.Appliance(opts.Config)
+			if err != nil {
+				return fmt.Errorf("failed to get appliance: %w", err)
+			}
+			if a == nil {
+				return fmt.Errorf("failed to get appliance")
+			}
 			if versionMin(cmd, a, "6.6.1") == false {
 				return fmt.Errorf("All appliances must be version 6.6.1 or greater to run the names migration")
 			}
