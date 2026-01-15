@@ -11,7 +11,7 @@ import (
 )
 
 type EntitlementOptions struct {
-	Config         *configuration.Config
+	Config          *configuration.Config
 	EntitlementsAPI *pkgapi.EntitlementsAPI
 	Out             io.Writer
 	NoInteractive   bool

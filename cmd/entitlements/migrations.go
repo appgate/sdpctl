@@ -15,23 +15,23 @@ import (
 
 type NamesMigrationOptions struct {
 	EntitlementOptions
-	factory *factory.Factory
-	dryRun bool
-	json      bool
-	Config            *configuration.Config
-	Out               io.Writer
-	Appliance         func(c *configuration.Config) (*appliancepkg.Appliance, error)
-	debug             bool
-	defaultFilter     map[string]map[string]string
-	ciMode            bool
+	factory       *factory.Factory
+	dryRun        bool
+	json          bool
+	Config        *configuration.Config
+	Out           io.Writer
+	Appliance     func(c *configuration.Config) (*appliancepkg.Appliance, error)
+	debug         bool
+	defaultFilter map[string]map[string]string
+	ciMode        bool
 }
 
 func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *cobra.Command {
-	opts := &NamesMigrationOptions{		
-		Config:     f.Config,
-		Appliance:  f.Appliance,
-		debug:      f.Config.Debug,
-		Out:        f.IOOutWriter,
+	opts := &NamesMigrationOptions{
+		Config:    f.Config,
+		Appliance: f.Appliance,
+		debug:     f.Config.Debug,
+		Out:       f.IOOutWriter,
 		defaultFilter: map[string]map[string]string{
 			"include": {},
 			"exclude": {
@@ -54,16 +54,13 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 			}
 
 			a, _ := opts.Appliance(opts.Config)
-			if versionMin(cmd, a, "6.6.1") == false{
-				return fmt.Errorf("All appliances must be version 6.6.1 or greater to run the names migration");
-			} 
-			
+			if versionMin(cmd, a, "6.6.1") == false {
+				return fmt.Errorf("All appliances must be version 6.6.1 or greater to run the names migration")
+			}
+
 			ctx := util.BaseAuthContext(opts.EntitlementsAPI.Token)
 			result, err := opts.EntitlementsAPI.NamesMigration(ctx, opts.dryRun)
-			
-			filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
-			fmt.Println(a.List(ctx, filter, orderBy, descending))
-			
+
 			if err != nil {
 				return fmt.Errorf("names migration failed: %w", err)
 			}
@@ -76,8 +73,6 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 				fmt.Println("Nothing to migrate")
 				return nil
 			}
-
-
 
 			resultVal := *result
 
@@ -111,8 +106,7 @@ func NewCloudMigrationsCmd(parentOpts *EntitlementOptions, f *factory.Factory) *
 	return cmd
 }
 
-
-func versionMin(cmd *cobra.Command, a *appliancepkg.Appliance, minVersion string, ) bool {
+func versionMin(cmd *cobra.Command, a *appliancepkg.Appliance, minVersion string) bool {
 	ctx := util.BaseAuthContext(a.Token)
 	filter, orderBy, descending := util.ParseFilteringFlags(cmd.Flags(), appliancepkg.DefaultCommandFilter)
 	stats, _, _ := a.ApplianceStatus(ctx, filter, orderBy, descending)
@@ -120,8 +114,8 @@ func versionMin(cmd *cobra.Command, a *appliancepkg.Appliance, minVersion string
 	for _, s := range stats.GetData() {
 		version := s.GetApplianceVersion()
 		if v, err := appliancepkg.ParseVersionString(version); err == nil {
-			if v.LessThan(minVersionCompare){
-				return false;
+			if v.LessThan(minVersionCompare) {
+				return false
 			}
 		}
 	}
