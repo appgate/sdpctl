@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
+	appliancepkg "github.com/appgate/sdpctl/pkg/appliance"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/httpmock"
@@ -32,9 +33,175 @@ func TestNamesMigrationCommand(t *testing.T) {
 			stubs:   []httpmock.Stub{},
 		},
 		{
+			desc:    "appliance version 6.6.0 should fail",
+			cli:     "names-migration",
+			wantErr: true,
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.6.0",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+				{
+					URL: "/admin/entitlements/cloud-migrations",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []interface{} `json:"data"`
+						}{
+							Data: []interface{}{},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+			},
+		},
+		{
+			desc: "appliance version 6.6.1 should succeed",
+			cli:  "names-migration",
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.6.1",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+				{
+					URL: "/admin/entitlements/cloud-migrations",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []interface{} `json:"data"`
+						}{
+							Data: []interface{}{},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+			},
+			want: `Name    ID    Original Value    Updated Value
+----    --    --------------    -------------`,
+		},
+		{
+			desc: "appliance version 6.7.0 should succeed",
+			cli:  "names-migration",
+			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.7.0",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+				{
+					URL: "/admin/entitlements/cloud-migrations",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []interface{} `json:"data"`
+						}{
+							Data: []interface{}{},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
+			},
+			want: `Name    ID    Original Value    Updated Value
+----    --    --------------    -------------`,
+		},
+		{
 			desc: "no migrations needed",
 			cli:  "names-migration",
 			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.6.1",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
 				{
 					URL: "/admin/entitlements/cloud-migrations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +227,29 @@ func TestNamesMigrationCommand(t *testing.T) {
 			desc: "single migration",
 			cli:  "names-migration",
 			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.6.1",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
 				{
 					URL: "/admin/entitlements/cloud-migrations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +283,29 @@ Test Entitlement    123e4567-e89b-12d3-a456-426614174000    old-hostname.example
 			desc: "multiple migrations",
 			cli:  "names-migration",
 			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.6.1",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
 				{
 					URL: "/admin/entitlements/cloud-migrations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
@@ -133,6 +346,29 @@ Second Entitlement    223e4567-e89b-12d3-a456-426614174001    old-host2.example.
 			desc: "migration with null updated host",
 			cli:  "names-migration",
 			stubs: []httpmock.Stub{
+				{
+					URL: "/admin/appliances/status",
+					Responder: func(w http.ResponseWriter, r *http.Request) {
+						res := struct {
+							Data []map[string]interface{} `json:"data"`
+						}{
+							Data: []map[string]interface{}{
+								{
+									"id":               "appliance-1",
+									"name":             "controller-1",
+									"applianceVersion": "6.6.1",
+								},
+							},
+						}
+						b, err := json.Marshal(res)
+						if err != nil {
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						w.Header().Add("Content-Type", "application/json")
+						w.Write(b)
+					},
+				},
 				{
 					URL: "/admin/entitlements/cloud-migrations",
 					Responder: func(w http.ResponseWriter, r *http.Request) {
@@ -185,6 +421,16 @@ Test Entitlement    123e4567-e89b-12d3-a456-426614174000    old-hostname.example
 				return registry.Client, nil
 			}
 			f.BaseURL = func() string { return f.Config.URL }
+			f.Appliance = func(c *configuration.Config) (*appliancepkg.Appliance, error) {
+				token, err := c.GetBearTokenHeaderValue()
+				if err != nil {
+					return nil, err
+				}
+				return &appliancepkg.Appliance{
+					APIClient: registry.Client,
+					Token:     token,
+				}, nil
+			}
 
 			// command
 			cmd := NewEntitlementsMigrationCmd(f)

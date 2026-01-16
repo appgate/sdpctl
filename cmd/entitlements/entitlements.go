@@ -11,7 +11,7 @@ import (
 )
 
 type EntitlementOptions struct {
-	configuration.Config
+	Config          *configuration.Config
 	EntitlementsAPI *pkgapi.EntitlementsAPI
 	Out             io.Writer
 	NoInteractive   bool
@@ -47,7 +47,7 @@ func NewEntitlementsMigrationCmd(f *factory.Factory) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		NewCloudMigrationsCmd(&opts),
+		NewCloudMigrationsCmd(&opts, f),
 	)
 
 	return cmd
