@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -257,8 +258,10 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("Could not determine hostname for %s", err)
 			}
-			if err := network.ValidateHostnameUniqueness(h); err != nil {
-				return err
+			if addr := net.ParseIP(h); addr == nil {
+				if err := network.ValidateHostnameUniqueness(h); err != nil {
+					return err
+				}
 			}
 			return prepareRun(c, opts)
 		},
