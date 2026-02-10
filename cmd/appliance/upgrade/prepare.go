@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/files"
 	"github.com/appgate/sdpctl/pkg/filesystem"
+	"github.com/appgate/sdpctl/pkg/network"
 	"github.com/appgate/sdpctl/pkg/prompt"
 	"github.com/appgate/sdpctl/pkg/queue"
 	"github.com/appgate/sdpctl/pkg/tui"
@@ -252,6 +254,15 @@ func NewPrepareUpgradeCmd(f *factory.Factory) *cobra.Command {
 			return errs.ErrorOrNil()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
+			h, err := opts.Config.GetHost()
+			if err != nil {
+				return fmt.Errorf("Could not determine hostname for %s", err)
+			}
+			if addr := net.ParseIP(h); addr == nil {
+				if err := network.ValidateHostnameUniqueness(h); err != nil {
+					return err
+				}
+			}
 			return prepareRun(c, opts)
 		},
 	}
