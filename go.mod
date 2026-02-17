@@ -25,7 +25,7 @@ require (
 	github.com/hashicorp/go-version v1.8.0
 	github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02
 	github.com/keybase/go-keychain v0.0.1
-	github.com/klauspost/compress v1.18.2
+	github.com/klauspost/compress v1.18.4
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
