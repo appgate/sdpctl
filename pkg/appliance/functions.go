@@ -288,8 +288,8 @@ func ValidateHostname(controller openapi.Appliance, hostname string) error {
 		return fmt.Errorf("Hostname validation failed. Pass the --actual-hostname flag to use the real Controller hostname")
 	}
 
-	if err := network.ValidateHostnameUniqueness(nHost); err != nil {
-		return err
+	if ips, err := network.ResolveHostnameIPs(nHost); err == nil && len(ips) > 1 {
+		return errors.New("Failed to validate hostname uniqueness: the given hostname resolves to more than one IP address: " + strings.Join(ips, ", "))
 	}
 
 	return nil
