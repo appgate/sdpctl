@@ -1,6 +1,6 @@
 module github.com/appgate/sdpctl
 
-go 1.24.11
+go 1.25.0
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -37,7 +37,7 @@ require (
 	github.com/vbauerster/mpb/v8 v8.11.2
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/net v0.50.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
