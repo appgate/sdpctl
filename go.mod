@@ -22,7 +22,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.8.0
+	github.com/hashicorp/go-version v1.9.0
 	github.com/hinshun/vt10x v0.0.0-20220301184237-5011da428d02
 	github.com/keybase/go-keychain v0.0.1
 	github.com/klauspost/compress v1.18.5
