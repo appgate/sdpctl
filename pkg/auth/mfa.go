@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 )
 
@@ -38,7 +38,7 @@ func (a *Auth) ProviderNames(ctx context.Context) ([]openapi.IdentityProvidersNa
 }
 
 // Authentication HTTP POST /authentication
-func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*openapi.LoginResponse, *MinMax, error) {
+func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*openapi.LoginAuthenticationResponse, *MinMax, error) {
 	c := a.APIClient
 	loginResponse, response, err := c.LoginApi.AuthenticationPost(ctx).LoginRequest(opts).Execute()
 	if err != nil {
@@ -63,7 +63,7 @@ func (a *Auth) Authentication(ctx context.Context, opts openapi.LoginRequest) (*
 }
 
 // Authorization HTTP GET /authorization
-func (a *Auth) Authorization(ctx context.Context) (*openapi.LoginResponse, error) {
+func (a *Auth) Authorization(ctx context.Context) (*openapi.LoginAuthorizationResponse, error) {
 	loginResponse, response, err := a.APIClient.LoginApi.AuthorizationGet(ctx).Execute()
 	if err != nil {
 		if response != nil && response.StatusCode == http.StatusPreconditionFailed {
@@ -87,7 +87,7 @@ func (a *Auth) InitializeOTP(ctx context.Context, password *string) (*openapi.Au
 var ErrInvalidOneTimePassword = errors.New("Invalid one-time password")
 
 // PushOTP HTTP POST /authentication/otp
-func (a *Auth) PushOTP(ctx context.Context, answer string) (*openapi.LoginResponse, error) {
+func (a *Auth) PushOTP(ctx context.Context, answer string) (*openapi.LoginAuthenticationResponse, error) {
 	o := openapi.AuthenticationOtpPostRequest{
 		Otp: answer,
 	}

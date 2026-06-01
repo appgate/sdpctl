@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -194,6 +194,32 @@ func TestMakeUpgradePlan(t *testing.T) {
 				Batches:           [][]string{{"logserver"}},
 				input: []string{
 					"logserver",
+				},
+			},
+		},
+		{
+			name: "test batch creation with ha connectors",
+			args: args{
+				maxUnavailable: 1,
+			},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"gatewayA1", "gatewayC1", "ha-connectorA1", "logforwarderA1", "logserver"},
+					{"gatewayA2", "gatewayC2", "ha-connectorA2", "logforwarderA2", "portalA1"},
+				},
+				input: []string{
+					"gatewayA1",
+					"gatewayA2",
+					"logserver",
+					"logforwarderA1",
+					"logforwarderA2",
+					"ha-connectorA1",
+					"ha-connectorA2",
+					"gatewayC1",
+					"gatewayC2",
+					"portalA1",
 				},
 			},
 		},
@@ -684,6 +710,37 @@ func Test_calculateBatches(t *testing.T) {
 			},
 			want: 2,
 		},
+		{
+			name: "ha connectors with max unavailable 2",
+			args: args{
+				appliances: []string{
+					TestApplianceHAConnectorA1,
+					TestApplianceHAConnectorA2,
+				},
+				maxUnavailable: 2,
+			},
+			want: 1,
+		},
+		{
+			name: "ha connectors",
+			args: args{
+				appliances: []string{
+					TestApplianceHAConnectorA1,
+					TestApplianceHAConnectorA2,
+				}},
+			want: 2,
+		},
+		{
+			name: "two sets of ha connectors",
+			args: args{
+				appliances: []string{
+					TestApplianceHAConnectorA1,
+					TestApplianceHAConnectorA2,
+					TestApplianceHAConnectorB1,
+					TestApplianceHAConnectorB2,
+				}},
+			want: 2,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -691,6 +748,7 @@ func Test_calculateBatches(t *testing.T) {
 
 			gatewaysBySite := map[string][]openapi.Appliance{}
 			logForwardersBySite := map[string][]openapi.Appliance{}
+			haConnectors := map[string][]openapi.Appliance{}
 			other := []openapi.Appliance{}
 			for k, a := range coll.Appliances {
 				if strings.Contains(k, "gateway") && (!strings.Contains(k, "controller") || !strings.Contains(k, "primary")) {
@@ -699,6 +757,15 @@ func Test_calculateBatches(t *testing.T) {
 						apps = []openapi.Appliance{}
 					}
 					gatewaysBySite[a.GetSiteName()] = append(apps, a)
+					continue
+				}
+				if strings.Contains(k, "connector") && strings.Contains(k, "ha") {
+					_, haIP := isHAConnector(a)
+					apps, ok := haConnectors[haIP]
+					if !ok {
+						apps = []openapi.Appliance{}
+					}
+					haConnectors[haIP] = append(apps, a)
 					continue
 				}
 				if strings.Contains(k, "logforwarder") {
@@ -712,7 +779,7 @@ func Test_calculateBatches(t *testing.T) {
 				other = append(other, a)
 			}
 
-			if got := calculateBatches(gatewaysBySite, logForwardersBySite, other, tt.args.maxUnavailable); got != tt.want {
+			if got := calculateBatches(gatewaysBySite, logForwardersBySite, haConnectors, other, tt.args.maxUnavailable); got != tt.want {
 				t.Errorf("calculateBatches() = %v, want %v", got, tt.want)
 			}
 		})

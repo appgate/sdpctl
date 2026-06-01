@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
 	"github.com/appgate/sdpctl/pkg/appliance/backup"
 	"github.com/appgate/sdpctl/pkg/httpmock"
 	"github.com/google/uuid"
@@ -48,6 +49,10 @@ const (
 	TestApplianceLogForwarderC2           = "logforwarderC2"
 	TestAppliancePortalA1                 = "portalA1"
 	TestApplianceConnectorA1              = "connectorA1"
+	TestApplianceHAConnectorA1            = "ha-connectorA1"
+	TestApplianceHAConnectorA2            = "ha-connectorA2"
+	TestApplianceHAConnectorB1            = "ha-connectorB1"
+	TestApplianceHAConnectorB2            = "ha-connectorB2"
 	TestApplianceLogServer                = "logserver"
 	TestApplianceControllerGatewayA1      = "controller-gatewayA1"
 	TestApplianceControllerGatewayB1      = "controller-gatewayB1"
@@ -55,6 +60,9 @@ const (
 	TestSiteA = "SiteA"
 	TestSiteB = "SiteB"
 	TestSiteC = "SiteC"
+
+	TestVIPA = "10.0.0.1"
+	TestVIPB = "2001:0db8:0000:0000:0000:0000:0000:0001"
 )
 
 var (
@@ -124,6 +132,10 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController, FunctionGateway})
 		case TestApplianceControllerGatewayB1:
 			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionController, FunctionGateway})
+		case TestApplianceHAConnectorA1, TestApplianceHAConnectorA2:
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionConnector})
+		case TestApplianceHAConnectorB1, TestApplianceHAConnectorB2:
+			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionConnector})
 		default:
 		}
 	}
@@ -376,6 +388,21 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 		}
 	}
 
+	Nics := []openapi.ApplianceAllOfNetworkingNics{}
+	if strings.Contains(name, "ha-connector") && strings.Contains(name, "A") {
+		Nics = []openapi.ApplianceAllOfNetworkingNics{{
+			Ipv4: &openapi.ApplianceAllOfNetworkingIpv4{
+				VirtualIp: openapi.PtrString(TestVIPA),
+			},
+		}}
+	} else if strings.Contains(name, "ha-connector") && strings.Contains(name, "B") {
+		Nics = []openapi.ApplianceAllOfNetworkingNics{{
+			Ipv6: &openapi.ApplianceAllOfNetworkingIpv6{
+				VirtualIp: openapi.PtrString(TestVIPB),
+			},
+		}}
+	}
+
 	app := openapi.Appliance{
 		Id:                        openapi.PtrString(id),
 		Name:                      name,
@@ -395,7 +422,9 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 			Hostname:  hostname,
 			HttpsPort: openapi.PtrInt32(8443),
 		},
-		Networking:          openapi.ApplianceAllOfNetworking{},
+		Networking: openapi.ApplianceAllOfNetworking{
+			Nics: Nics,
+		},
 		Ntp:                 &openapi.ApplianceAllOfNtp{},
 		SshServer:           &openapi.ApplianceAllOfSshServer{},
 		SnmpServer:          &openapi.ApplianceAllOfSnmpServer{},

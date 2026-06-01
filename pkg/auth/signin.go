@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
 	"github.com/appgate/sdpctl/pkg/cmdutil"
 	"github.com/appgate/sdpctl/pkg/configuration"
 	"github.com/appgate/sdpctl/pkg/factory"
@@ -286,7 +286,7 @@ func authAndOTP(ctx context.Context, authenticator *Auth, password *string) (*st
 		if err != nil {
 			return nil, err
 		}
-		testOTP := func() (*openapi.LoginResponse, error) {
+		testOTP := func() (*openapi.LoginAuthenticationResponse, error) {
 			answer, err := prompt.PromptPassword("Please enter your one-time password:")
 			if err != nil {
 				return nil, err
