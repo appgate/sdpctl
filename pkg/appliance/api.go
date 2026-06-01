@@ -9,7 +9,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/appgate/sdp-api-client-go/api/v23/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/sirupsen/logrus"
@@ -239,7 +239,7 @@ func translateDeprecatedStatus(toTranslate *openapi.StatsAppliancesList) *openap
 						Status:  status.LogForwarder.Status,
 						Details: status.LogForwarder.Details,
 					},
-					Gateway: &openapi.ApplianceWithSessionsRole{
+					Gateway: &openapi.GatewayRole{
 						Status:           status.Gateway.Status,
 						Details:          status.Gateway.Details,
 						NumberOfSessions: status.Gateway.NumberOfSessions,
