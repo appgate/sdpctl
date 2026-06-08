@@ -163,7 +163,13 @@ func processJournalFile(file string, path string, unzipOnly bool) error {
 
 			logfile, exists := textlogs[identifier]
 			if !exists {
-				logfile, err := os.Create(filepath.Join(path, identifier+".log"))
+				// Write per-daemon logs into a logs_by_daemon/ subdirectory,
+				// matching the layout the server produces with --process-logs.
+				daemonDir := filepath.Join(path, "logs_by_daemon")
+				if err := os.MkdirAll(daemonDir, os.ModePerm); err != nil {
+					return err
+				}
+				logfile, err := os.Create(filepath.Join(daemonDir, identifier+".log"))
 				if err != nil {
 					return err
 				}
