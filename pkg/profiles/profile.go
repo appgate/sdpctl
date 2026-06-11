@@ -89,7 +89,7 @@ type Profile struct {
 }
 
 func (p *Profile) GetConfigurationPath() string {
-	return filepath.Join(p.Directory, p.Name, "config.json")
+	return filepath.Join(p.Directory, "config.json")
 }
 
 func (p *Profile) GetLogPath() string {

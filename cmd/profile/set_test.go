@@ -3,6 +3,8 @@ package profile
 import (
 	"bytes"
 	"io"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -63,6 +65,38 @@ staging is not configured yet, run 'sdpctl configure'
 
 	if diff := cmp.Diff(want, gotStr); diff != "" {
 		t.Errorf("List output mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestNewSetCmdSetConfiguredProfile(t *testing.T) {
+	dir, _ := setupExistingProfiles(t)
+	configPath := filepath.Join(dir, "profiles", "staging", "config.json")
+	if err := os.WriteFile(configPath, []byte(`{"url":"https://controller.example.com:8443/admin"}`), 0600); err != nil {
+		t.Fatalf("failed to create profile config %s", err)
+	}
+
+	stdout := &bytes.Buffer{}
+	opts := &commandOpts{
+		Out: stdout,
+	}
+	cmd := NewSetCmd(opts)
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"staging"})
+	if _, err := cmd.ExecuteC(); err != nil {
+		t.Fatalf("executeC %s", err)
+	}
+
+	got, err := io.ReadAll(stdout)
+	if err != nil {
+		t.Fatalf("unable to read stdout %s", err)
+	}
+	gotStr := string(got)
+	want := `staging is selected as current sdp profile
+`
+
+	if diff := cmp.Diff(want, gotStr); diff != "" {
+		t.Errorf("Set output mismatch (-want +got):\n%s", diff)
 	}
 }
 
