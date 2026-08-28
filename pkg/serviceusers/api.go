@@ -3,7 +3,7 @@ package serviceusers
 import (
 	"context"
 
-	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v25/openapi"
 	"github.com/appgate/sdpctl/pkg/api"
 )
 
@@ -27,8 +27,8 @@ func (su *ServiceUsersAPI) List(ctx context.Context) ([]openapi.ServiceUser, err
 	return list.GetData(), nil
 }
 
-func (su *ServiceUsersAPI) Create(ctx context.Context, userData openapi.ServiceUsersGetRequest) (*openapi.ServiceUser, error) {
-	result, response, err := su.client.ServiceUsersPost(ctx).ServiceUsersGetRequest(userData).Execute()
+func (su *ServiceUsersAPI) Create(ctx context.Context, userData openapi.ServiceUsersPostRequest) (*openapi.ServiceUser, error) {
+	result, response, err := su.client.ServiceUsersPost(ctx).ServiceUsersPostRequest(userData).Execute()
 	if err != nil {
 		return nil, api.HTTPErrorResponse(response, err)
 	}

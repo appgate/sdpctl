@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v25/openapi"
 )
 
 type SitesAPI struct {
