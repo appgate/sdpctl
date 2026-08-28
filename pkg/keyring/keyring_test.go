@@ -2,12 +2,10 @@ package keyring
 
 import (
 	"testing"
-
-	zkeyring "github.com/zalando/go-keyring"
 )
 
 func TestSetSecretAndGetSecret(t *testing.T) {
-	zkeyring.MockInit()
+	MockInit()
 	if err := setSecret("foo", "bar"); err != nil {
 		t.Errorf("setSecret() Got error = %v, wantErr none", err)
 	}
@@ -21,7 +19,7 @@ func TestSetSecretAndGetSecret(t *testing.T) {
 }
 
 func TestDeleteSecret(t *testing.T) {
-	zkeyring.MockInit()
+	MockInit()
 	if err := setSecret("foo", "bar"); err != nil {
 		t.Errorf("setSecret() Got error = %v, wantErr none", err)
 	}
@@ -36,7 +34,7 @@ func TestDeleteSecret(t *testing.T) {
 }
 
 func TestClearCredentials(t *testing.T) {
-	zkeyring.MockInit()
+	MockInit()
 	var (
 		prefix   = "test-unit"
 		username = "user"

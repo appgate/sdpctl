@@ -11,11 +11,10 @@ import (
 	"github.com/appgate/sdpctl/pkg/keyring"
 	"github.com/google/go-cmp/cmp"
 	"github.com/spf13/cobra"
-	zkeyring "github.com/zalando/go-keyring"
 )
 
 func TestConfigCheckAuth(t *testing.T) {
-	zkeyring.MockInit()
+	keyring.MockInit()
 	dir := t.TempDir()
 	t.Setenv("SDPCTL_CONFIG_DIR", dir)
 	if err := keyring.SetBearer("controller.appgate.com", "abc123456789"); err != nil {
@@ -242,7 +241,7 @@ func TestNormalizeURL(t *testing.T) {
 }
 
 func TestClearCredentials(t *testing.T) {
-	zkeyring.MockInit()
+	keyring.MockInit()
 	dir := t.TempDir()
 	t.Setenv("SDPCTL_CONFIG_DIR", dir)
 	var (

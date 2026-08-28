@@ -21,6 +21,11 @@ import (
 	zkeyring "github.com/zalando/go-keyring"
 )
 
+// mockInit is a no-op on this platform; the in-memory zkeyring mock set up by
+// MockInit already covers the storage path here, and the bearer/refresh token
+// files live under the test's SDPCTL_CONFIG_DIR.
+func mockInit() {}
+
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {

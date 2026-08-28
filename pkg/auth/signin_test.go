@@ -22,7 +22,6 @@ import (
 	"github.com/appgate/sdpctl/pkg/util"
 	pseudotty "github.com/creack/pty"
 	"github.com/hinshun/vt10x"
-	zkeyring "github.com/zalando/go-keyring"
 )
 
 var (
@@ -400,7 +399,7 @@ func TestSignInNoPromptOrEnv(t *testing.T) {
 }
 
 func TestSigninNoKeyringNoconfig(t *testing.T) {
-	zkeyring.MockInit()
+	keyring.MockInit()
 	registry := httpmock.NewRegistry(t)
 	httpStubs := []httpmock.Stub{
 		authenticationResponse,
@@ -613,7 +612,7 @@ func TestSignin(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			zkeyring.MockInit()
+			keyring.MockInit()
 			registry := httpmock.NewRegistry(t)
 			for _, v := range tt.httpStubs {
 				registry.Register(v.URL, v.Responder)

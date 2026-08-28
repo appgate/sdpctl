@@ -7,12 +7,49 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/keybase/go-keychain"
 )
 
+// The darwin implementation normally talks to the real macOS Keychain via
+// keybase/go-keychain, which triggers an authorization prompt whenever a test
+// binary reads or writes a credential. Two escape hatches avoid that:
+//
+//   - envNoKeyring (SDPCTL_NO_KEYRING): a black hole matching the Linux/Windows
+//     behavior in format.go — writes are dropped and reads return ("", nil).
+//   - useMemStore (enabled by MockInit): a functioning in-memory store used by
+//     tests, so set→get roundtrips work exactly like the zkeyring mock.
+var (
+	memMu       sync.Mutex
+	memStore    = map[string]string{}
+	useMemStore bool
+)
+
+func envNoKeyring() bool {
+	return len(os.Getenv("SDPCTL_NO_KEYRING")) > 0
+}
+
+// mockInit switches keychain access over to the in-memory store so tests
+// never trigger a macOS Keychain authorization prompt. Called by MockInit.
+func mockInit() {
+	memMu.Lock()
+	useMemStore = true
+	memStore = map[string]string{}
+	memMu.Unlock()
+}
+
 func deleteSecretKey(prefix, name string) error {
 	key := format(prefix, name)
+	if envNoKeyring() {
+		return nil
+	}
+	if useMemStore {
+		memMu.Lock()
+		delete(memStore, key)
+		memMu.Unlock()
+		return nil
+	}
 	if _, err := QueryKeychain(key); err == nil {
 		item := keychain.NewItem()
 		item.SetSecClass(keychain.SecClassGenericPassword)
@@ -43,6 +80,17 @@ func ClearCredentials(prefix string) error {
 }
 
 func QueryKeychain(key string) (string, error) {
+	if envNoKeyring() {
+		return "", nil
+	}
+	if useMemStore {
+		memMu.Lock()
+		defer memMu.Unlock()
+		if v, ok := memStore[key]; ok {
+			return v, nil
+		}
+		return "", fmt.Errorf("Could not find key: %s", key)
+	}
 	query := keychain.NewItem()
 	query.SetService(keyringService)
 	query.SetSecClass(keychain.SecClassGenericPassword)
@@ -62,6 +110,15 @@ func QueryKeychain(key string) (string, error) {
 }
 
 func AddKeychain(key string, value string) error {
+	if envNoKeyring() {
+		return nil
+	}
+	if useMemStore {
+		memMu.Lock()
+		memStore[key] = value
+		memMu.Unlock()
+		return nil
+	}
 	item := keychain.NewItem()
 	item.SetService(keyringService)
 	item.SetSecClass(keychain.SecClassGenericPassword)
