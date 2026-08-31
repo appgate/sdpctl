@@ -42,6 +42,15 @@ func runWithTimeout(task func() error) error {
 	}
 }
 
+// MockInit sets up an in-memory credential store for testing on every
+// platform, so tests never touch the real OS keyring/Keychain (and therefore
+// never trigger an authorization prompt). Call it at the top of any test that
+// exercises the keyring.
+func MockInit() {
+	zkeyring.MockInit()
+	mockInit()
+}
+
 func format(prefix, value string) string {
 	return fmt.Sprintf("%d.%s", hashcode.String(prefix), value)
 }

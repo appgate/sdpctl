@@ -18,6 +18,10 @@ const (
 	secretMissing = "org.freedesktop.secrets was not provided by any"
 )
 
+// mockInit is a no-op on this platform; the in-memory zkeyring mock set up by
+// MockInit already covers the storage path here.
+func mockInit() {}
+
 // ClearCredentials removes any existing items in the keychain,
 // it will ignore if not found errors
 func ClearCredentials(prefix string) error {

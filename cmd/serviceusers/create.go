@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/appgate/sdp-api-client-go/api/v24/openapi"
+	"github.com/appgate/sdp-api-client-go/api/v25/openapi"
 	"github.com/appgate/sdpctl/pkg/docs"
 	"github.com/appgate/sdpctl/pkg/factory"
 	"github.com/appgate/sdpctl/pkg/filesystem"
@@ -58,7 +58,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 		return err
 	}
 
-	users := []openapi.ServiceUsersGetRequest{}
+	users := []openapi.ServiceUsersPostRequest{}
 	if len(fromFile) > 0 {
 		path := filesystem.AbsolutePath(fromFile)
 		ok, err := util.FileExists(path)
@@ -82,7 +82,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			}
 		}
 		for i := 0; i < len(dtoArray); i++ {
-			u := openapi.ServiceUsersGetRequest{
+			u := openapi.ServiceUsersPostRequest{
 				Name:     dtoArray[i].Name,
 				Password: dtoArray[i].Password,
 				Disabled: openapi.PtrBool(dtoArray[i].Disabled),
@@ -143,7 +143,7 @@ func serviceUserCreateRun(cmd *cobra.Command, args []string, opts ServiceUsersOp
 			return errs.ErrorOrNil()
 		}
 
-		users = append(users, openapi.ServiceUsersGetRequest{
+		users = append(users, openapi.ServiceUsersPostRequest{
 			Name:     username,
 			Password: password,
 		})
