@@ -3,7 +3,7 @@ name: Test Flow
 on:
   push:
     branches:
-      - "*"
+      - "**"
   workflow_dispatch:
     inputs: {}
 
