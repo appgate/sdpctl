@@ -6,7 +6,7 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/adrg/xdg v0.5.3
 	github.com/appgate/journaldreader/journaldreader v0.0.0-20241108101643-e0a19052e175
-	github.com/appgate/sdp-api-client-go v1.3.3-0.20260828214253-14018bda19a8
+	github.com/appgate/sdp-api-client-go v1.6.0
 	github.com/billgraziano/dpapi v0.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/charmbracelet/bubbles v1.0.0
