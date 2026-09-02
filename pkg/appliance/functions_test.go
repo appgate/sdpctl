@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/appgate/sdp-api-client-go/api/v25/openapi"
@@ -387,6 +388,38 @@ func TestGroupByFunctions(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "telemetry aggregator",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "telemetry aggregator",
+						Id:   openapi.PtrString("ta"),
+						TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "telemetry aggregator disabled",
+						Id:   openapi.PtrString("ta-off"),
+						TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+							Enabled: openapi.PtrBool(false),
+						},
+					},
+				},
+			},
+			want: map[string][]openapi.Appliance{
+				FunctionTelemetryAggregator: {
+					{
+						Name: "telemetry aggregator",
+						Id:   openapi.PtrString("ta"),
+						TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -462,11 +495,146 @@ func TestActiveFunctions(t *testing.T) {
 				FunctionGateway:    true,
 			},
 		},
+		{
+			name: "controller and telemetry aggregator",
+			args: args{
+				appliances: []openapi.Appliance{
+					{
+						Name: "primary controller",
+						Id:   openapi.PtrString("one"),
+						Controller: &openapi.ApplianceAllOfController{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "telemetry aggregator",
+						Id:   openapi.PtrString("two"),
+						TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+							Enabled: openapi.PtrBool(true),
+						},
+					},
+					{
+						Name: "telemetry aggregator disabled",
+						Id:   openapi.PtrString("three"),
+						TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+							Enabled: openapi.PtrBool(false),
+						},
+					},
+				},
+			},
+			want: map[string]bool{
+				FunctionController:          true,
+				FunctionTelemetryAggregator: true,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ActiveFunctions(tt.args.appliances); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ActiveFunctions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetActiveFunctions(t *testing.T) {
+	tests := []struct {
+		name      string
+		appliance openapi.Appliance
+		want      []string
+	}{
+		{
+			name: "telemetry aggregator only",
+			appliance: openapi.Appliance{
+				Name: "telemetry aggregator",
+				TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+					Enabled: openapi.PtrBool(true),
+				},
+			},
+			want: []string{FunctionTelemetryAggregator},
+		},
+		{
+			name: "telemetry aggregator disabled",
+			appliance: openapi.Appliance{
+				Name: "telemetry aggregator disabled",
+				TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+					Enabled: openapi.PtrBool(false),
+				},
+			},
+			want: []string{},
+		},
+		{
+			name: "controller and telemetry aggregator ordering",
+			appliance: openapi.Appliance{
+				Name: "combined",
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(true),
+				},
+				TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+					Enabled: openapi.PtrBool(true),
+				},
+				ConnectionBroker: &openapi.ApplianceAllOfConnectionBroker{
+					Enabled: openapi.PtrBool(true),
+				},
+			},
+			// TelemetryAggregator is enumerated after MetricsAggregator and before ConnectionBroker
+			want: []string{FunctionController, FunctionTelemetryAggregator, FunctionConnectionBroker},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetActiveFunctions(tt.appliance); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetActiveFunctions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestApplianceActiveFunctions(t *testing.T) {
+	tests := []struct {
+		name string
+		s    openapi.ApplianceWithStatus
+		want string
+	}{
+		{
+			name: "telemetry aggregator only",
+			s: openapi.ApplianceWithStatus{
+				Name: "telemetry aggregator",
+				TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+					Enabled: openapi.PtrBool(true),
+				},
+			},
+			want: FunctionTelemetryAggregator,
+		},
+		{
+			name: "telemetry aggregator disabled",
+			s: openapi.ApplianceWithStatus{
+				Name: "telemetry aggregator disabled",
+				TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+					Enabled: openapi.PtrBool(false),
+				},
+			},
+			want: "",
+		},
+		{
+			name: "controller and telemetry aggregator",
+			s: openapi.ApplianceWithStatus{
+				Name: "combined",
+				Controller: &openapi.ApplianceAllOfController{
+					Enabled: openapi.PtrBool(true),
+				},
+				TelemetryAggregator: &openapi.ApplianceAllOfTelemetryAggregator{
+					Enabled: openapi.PtrBool(true),
+				},
+			},
+			// Controller is enumerated before TelemetryAggregator in ApplianceActiveFunctions
+			want: strings.Join([]string{FunctionController, FunctionTelemetryAggregator}, ", "),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ApplianceActiveFunctions(tt.s); got != tt.want {
+				t.Errorf("ApplianceActiveFunctions() = %q, want %q", got, tt.want)
 			}
 		})
 	}

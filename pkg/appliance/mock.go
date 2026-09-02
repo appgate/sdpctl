@@ -370,6 +370,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 	lf := &openapi.ApplianceAllOfLogForwarder{}
 	con := &openapi.ApplianceAllOfConnector{}
 	portal := &openapi.Portal{}
+	ta := &openapi.ApplianceAllOfTelemetryAggregator{}
 
 	for _, f := range activeFunctions {
 		switch f {
@@ -385,6 +386,8 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 			portal.SetEnabled(true)
 		case FunctionConnector:
 			con.SetEnabled(true)
+		case FunctionTelemetryAggregator:
+			ta.SetEnabled(true)
 		}
 	}
 
@@ -437,6 +440,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 		LogForwarder:        lf,
 		Connector:           con,
 		Portal:              portal,
+		TelemetryAggregator: ta,
 		RsyslogDestinations: []openapi.ApplianceAllOfRsyslogDestinations{},
 		HostnameAliases:     []string{},
 	}
