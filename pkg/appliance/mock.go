@@ -56,6 +56,8 @@ const (
 	TestApplianceLogServer                = "logserver"
 	TestApplianceControllerGatewayA1      = "controller-gatewayA1"
 	TestApplianceControllerGatewayB1      = "controller-gatewayB1"
+	TestApplianceTelemetryAggregatorA1    = "telemetry-aggregatorA1"
+	TestApplianceTelemetryAggregatorA2    = "telemetry-aggregatorA2"
 
 	TestSiteA = "SiteA"
 	TestSiteB = "SiteB"
@@ -136,6 +138,8 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionConnector})
 		case TestApplianceHAConnectorB1, TestApplianceHAConnectorB2:
 			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionConnector})
+		case TestApplianceTelemetryAggregatorA1, TestApplianceTelemetryAggregatorA2:
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionTelemetryAggregator})
 		default:
 		}
 	}

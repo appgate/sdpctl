@@ -577,7 +577,6 @@ func TestGetActiveFunctions(t *testing.T) {
 					Enabled: openapi.PtrBool(true),
 				},
 			},
-			// TelemetryAggregator is enumerated after MetricsAggregator and before ConnectionBroker
 			want: []string{FunctionController, FunctionTelemetryAggregator, FunctionConnectionBroker},
 		},
 	}
@@ -627,7 +626,6 @@ func TestApplianceActiveFunctions(t *testing.T) {
 					Enabled: openapi.PtrBool(true),
 				},
 			},
-			// Controller is enumerated before TelemetryAggregator in ApplianceActiveFunctions
 			want: strings.Join([]string{FunctionController, FunctionTelemetryAggregator}, ", "),
 		},
 	}

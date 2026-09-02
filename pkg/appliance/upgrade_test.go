@@ -223,6 +223,44 @@ func TestMakeUpgradePlan(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "telemetry aggregators are batched separately",
+			args: args{
+				maxUnavailable: 1,
+			},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"telemetry-aggregatorA1"},
+					{"telemetry-aggregatorA2"},
+				},
+				input: []string{
+					TestApplianceTelemetryAggregatorA1,
+					TestApplianceTelemetryAggregatorA2,
+				},
+			},
+		},
+		{
+			name: "telemetry aggregators spread across batches alongside gateways",
+			args: args{
+				maxUnavailable: 1,
+			},
+			want: testUpgradePlan{
+				PrimaryController: TestAppliancePrimary,
+				Controllers:       []string{TestApplianceSecondary},
+				Batches: [][]string{
+					{"gatewayA1", "telemetry-aggregatorA1"},
+					{"gatewayA2", "telemetry-aggregatorA2"},
+				},
+				input: []string{
+					TestApplianceGatewayA1,
+					TestApplianceGatewayA2,
+					TestApplianceTelemetryAggregatorA1,
+					TestApplianceTelemetryAggregatorA2,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -749,6 +787,7 @@ func Test_calculateBatches(t *testing.T) {
 			gatewaysBySite := map[string][]openapi.Appliance{}
 			logForwardersBySite := map[string][]openapi.Appliance{}
 			haConnectors := map[string][]openapi.Appliance{}
+			telemetryAggregators := map[string][]openapi.Appliance{}
 			other := []openapi.Appliance{}
 			for k, a := range coll.Appliances {
 				if strings.Contains(k, "gateway") && (!strings.Contains(k, "controller") || !strings.Contains(k, "primary")) {
@@ -776,10 +815,14 @@ func Test_calculateBatches(t *testing.T) {
 					logForwardersBySite[a.GetSiteName()] = append(apps, a)
 					continue
 				}
+				if strings.Contains(k, "telemetry") {
+					telemetryAggregators[FunctionTelemetryAggregator] = append(telemetryAggregators[FunctionTelemetryAggregator], a)
+					continue
+				}
 				other = append(other, a)
 			}
 
-			if got := calculateBatches(gatewaysBySite, logForwardersBySite, haConnectors, other, tt.args.maxUnavailable); got != tt.want {
+			if got := calculateBatches(gatewaysBySite, logForwardersBySite, haConnectors, telemetryAggregators, other, tt.args.maxUnavailable); got != tt.want {
 				t.Errorf("calculateBatches() = %v, want %v", got, tt.want)
 			}
 		})
