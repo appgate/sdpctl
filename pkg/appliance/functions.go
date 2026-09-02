@@ -33,15 +33,16 @@ import (
 )
 
 const (
-	FunctionController        = "Controller"
-	FunctionGateway           = "Gateway"
-	FunctionPortal            = "Portal"
-	FunctionConnector         = "Connector"
-	FunctionLogServer         = "LogServer"
-	FunctionLogForwarder      = "LogForwarder"
-	FunctionMetricsAggregator = "Metrics Aggregator"
-	FunctionConnectionBroker  = "Connection Broker"
-	FilterDelimiter           = "&"
+	FunctionController          = "Controller"
+	FunctionGateway             = "Gateway"
+	FunctionPortal              = "Portal"
+	FunctionConnector           = "Connector"
+	FunctionLogServer           = "LogServer"
+	FunctionLogForwarder        = "LogForwarder"
+	FunctionMetricsAggregator   = "Metrics Aggregator"
+	FunctionTelemetryAggregator = "Telemetry Aggregator"
+	FunctionConnectionBroker    = "Connection Broker"
+	FilterDelimiter             = "&"
 )
 
 // GroupByFunctions group appliances by function
@@ -68,6 +69,9 @@ func GroupByFunctions(appliances []openapi.Appliance) map[string][]openapi.Appli
 		}
 		if v, ok := a.GetMetricsAggregatorOk(); ok && v.GetEnabled() {
 			r[FunctionMetricsAggregator] = append(r[FunctionMetricsAggregator], a)
+		}
+		if v, ok := a.GetTelemetryAggregatorOk(); ok && v.GetEnabled() {
+			r[FunctionTelemetryAggregator] = append(r[FunctionTelemetryAggregator], a)
 		}
 		if v, ok := a.GetConnectionBrokerOk(); ok && v.GetEnabled() {
 			r[FunctionConnectionBroker] = append(r[FunctionConnectionBroker], a)
@@ -102,6 +106,9 @@ func ActiveFunctions(appliances []openapi.Appliance) map[string]bool {
 		if util.InSlice(FunctionMetricsAggregator, res) {
 			functions[FunctionMetricsAggregator] = true
 		}
+		if util.InSlice(FunctionTelemetryAggregator, res) {
+			functions[FunctionTelemetryAggregator] = true
+		}
 		if util.InSlice(FunctionConnectionBroker, res) {
 			functions[FunctionConnectionBroker] = true
 		}
@@ -132,6 +139,9 @@ func GetActiveFunctions(appliance openapi.Appliance) []string {
 	}
 	if v, ok := appliance.GetMetricsAggregatorOk(); ok && v.GetEnabled() {
 		functions = append(functions, FunctionMetricsAggregator)
+	}
+	if v, ok := appliance.GetTelemetryAggregatorOk(); ok && v.GetEnabled() {
+		functions = append(functions, FunctionTelemetryAggregator)
 	}
 	if v, ok := appliance.GetConnectionBrokerOk(); ok && v.GetEnabled() {
 		functions = append(functions, FunctionConnectionBroker)
@@ -774,6 +784,11 @@ func ApplianceActiveFunctions(s openapi.ApplianceWithStatus) string {
 	if v, ok := s.GetMetricsAggregatorOk(); ok {
 		if v.GetEnabled() {
 			functions = append(functions, FunctionMetricsAggregator)
+		}
+	}
+	if v, ok := s.GetTelemetryAggregatorOk(); ok {
+		if v.GetEnabled() {
+			functions = append(functions, FunctionTelemetryAggregator)
 		}
 	}
 	if v, ok := s.GetConnectionBrokerOk(); ok {
