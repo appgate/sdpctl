@@ -56,6 +56,8 @@ const (
 	TestApplianceLogServer                = "logserver"
 	TestApplianceControllerGatewayA1      = "controller-gatewayA1"
 	TestApplianceControllerGatewayB1      = "controller-gatewayB1"
+	TestApplianceTelemetryAggregatorA1    = "telemetry-aggregatorA1"
+	TestApplianceTelemetryAggregatorA2    = "telemetry-aggregatorA2"
 
 	TestSiteA = "SiteA"
 	TestSiteB = "SiteB"
@@ -136,6 +138,8 @@ func GenerateCollective(t *testing.T, hostname, from, to string, appliances []st
 			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionConnector})
 		case TestApplianceHAConnectorB1, TestApplianceHAConnectorB2:
 			res.addAppliance(n, "", siteB, siteNameB, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionConnector})
+		case TestApplianceTelemetryAggregatorA1, TestApplianceTelemetryAggregatorA2:
+			res.addAppliance(n, "", siteA, siteNameA, from, to, statusHealthy, UpgradeStatusReady, []string{FunctionTelemetryAggregator})
 		default:
 		}
 	}
@@ -370,6 +374,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 	lf := &openapi.ApplianceAllOfLogForwarder{}
 	con := &openapi.ApplianceAllOfConnector{}
 	portal := &openapi.Portal{}
+	ta := &openapi.ApplianceAllOfTelemetryAggregator{}
 
 	for _, f := range activeFunctions {
 		switch f {
@@ -385,6 +390,8 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 			portal.SetEnabled(true)
 		case FunctionConnector:
 			con.SetEnabled(true)
+		case FunctionTelemetryAggregator:
+			ta.SetEnabled(true)
 		}
 	}
 
@@ -437,6 +444,7 @@ func GenerateApplianceWithStats(activeFunctions []string, name, hostname, curren
 		LogForwarder:        lf,
 		Connector:           con,
 		Portal:              portal,
+		TelemetryAggregator: ta,
 		RsyslogDestinations: []openapi.ApplianceAllOfRsyslogDestinations{},
 		HostnameAliases:     []string{},
 	}

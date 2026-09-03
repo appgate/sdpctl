@@ -97,6 +97,7 @@ func NewUpgradePlan(
 	gatewaysGroupedBySite := map[string][]openapi.Appliance{}
 	logforwardersGroupedBySite := map[string][]openapi.Appliance{}
 	haConnectors := map[string][]openapi.Appliance{}
+	telemetryAggregators := map[string][]openapi.Appliance{}
 	other := []openapi.Appliance{}
 
 	// LogForwarders and LogServers need to in their own group
@@ -181,6 +182,10 @@ func NewUpgradePlan(
 				}
 			}
 		}
+		if ta, ok := a.GetTelemetryAggregatorOk(); ok && ta.GetEnabled() {
+			telemetryAggregators[FunctionTelemetryAggregator] = append(telemetryAggregators[FunctionTelemetryAggregator], a)
+			continue
+		}
 		other = append(other, a)
 	}
 
@@ -189,14 +194,14 @@ func NewUpgradePlan(
 		slices.SortStableFunc(plan.LogForwardersAndServers, func(i, j openapi.Appliance) int { return cmp.Compare(i.GetName(), j.GetName()) })
 	}
 
-	if len(gatewaysGroupedBySite) > 0 || len(logforwardersGroupedBySite) > 0 || len(haConnectors) > 0 || len(other) > 0 {
+	if len(gatewaysGroupedBySite) > 0 || len(logforwardersGroupedBySite) > 0 || len(haConnectors) > 0 || len(telemetryAggregators) > 0 || len(other) > 0 {
 		// Determine how many batches we will do
 		// using the amount of gateways and logforwarders per site
-		batches := calculateBatches(gatewaysGroupedBySite, logforwardersGroupedBySite, haConnectors, other, maxUnavailable)
+		batches := calculateBatches(gatewaysGroupedBySite, logforwardersGroupedBySite, haConnectors, telemetryAggregators, other, maxUnavailable)
 
 		// Equally distribute gateways to batches
 		// Each batch should contain only one gateway per site
-		plan.Batches = createBatches(batches, maxUnavailable, gatewaysGroupedBySite, logforwardersGroupedBySite, haConnectors, other)
+		plan.Batches = createBatches(batches, maxUnavailable, gatewaysGroupedBySite, logforwardersGroupedBySite, haConnectors, telemetryAggregators, other)
 	}
 
 	return &plan, nil
@@ -220,12 +225,13 @@ func isHAConnector(a openapi.Appliance) (bool, string) {
 	return false, ""
 }
 
-func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[string][]openapi.Appliance, connectors map[string][]openapi.Appliance, other []openapi.Appliance) [][]openapi.Appliance {
+func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[string][]openapi.Appliance, connectors, telemetryAggregators map[string][]openapi.Appliance, other []openapi.Appliance) [][]openapi.Appliance {
 	result := make([][]openapi.Appliance, batchCount)
 
 	gatewayGroups := divideByMaxUnavailable(gateways, maxUnavailable)
 	logForwarderGroups := divideByMaxUnavailable(logforwarders, maxUnavailable)
 	connectorGroups := divideByMaxUnavailable(connectors, maxUnavailable)
+	telemetryAggregatorGroups := divideByMaxUnavailable(telemetryAggregators, maxUnavailable)
 
 	// distribute gateways and logforwarders to groups
 	resultIndex := 0
@@ -242,6 +248,11 @@ func createBatches(batchCount, maxUnavailable int, gateways, logforwarders map[s
 	resultIndex = 0
 	for i := 0; i < len(connectorGroups); i++ {
 		result[resultIndex] = append(result[resultIndex], connectorGroups[i]...)
+		resultIndex++
+	}
+	resultIndex = 0
+	for i := 0; i < len(telemetryAggregatorGroups); i++ {
+		result[resultIndex] = append(result[resultIndex], telemetryAggregatorGroups[i]...)
 		resultIndex++
 	}
 
@@ -611,7 +622,7 @@ var (
 	}
 )
 
-func calculateBatches(gatewaysBySite, logForwardersBySite, haConnectors map[string][]openapi.Appliance, other []openapi.Appliance, maxUnavailable int) int {
+func calculateBatches(gatewaysBySite, logForwardersBySite, haConnectors, telemetryAggregators map[string][]openapi.Appliance, other []openapi.Appliance, maxUnavailable int) int {
 	batches := 0
 	for _, g := range gatewaysBySite {
 		if len(g) > batches {
@@ -626,6 +637,11 @@ func calculateBatches(gatewaysBySite, logForwardersBySite, haConnectors map[stri
 	for _, ha := range haConnectors {
 		if len(ha) > batches {
 			batches = len(ha)
+		}
+	}
+	for _, ta := range telemetryAggregators {
+		if len(ta) > batches {
+			batches = len(ta)
 		}
 	}
 
