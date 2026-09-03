@@ -464,6 +464,10 @@ func (c *Config) CheckForUpdate(out io.Writer, client *http.Client, current stri
 		return c, err
 	}
 
+	if len(releases) == 0 {
+		return c, nil
+	}
+
 	var latest *version.Version
 	r := releases[0]
 	n, err := version.NewVersion(r.TagName)

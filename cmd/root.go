@@ -394,7 +394,16 @@ func rootPersistentPreRunEFunc(f *factory.Factory, cfg *configuration.Config) fu
 		if err != nil {
 			return err
 		}
-		cfg, err = cfg.CheckForUpdate(f.StdErr, client, version)
+		// The version check is best-effort and must never abort the command it
+		// runs before, so recover from any panic and treat it as a check failure.
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.WithField("panic", r).Error("version check panic")
+				}
+			}()
+			cfg, err = cfg.CheckForUpdate(f.StdErr, client, version)
+		}()
 		if err != nil {
 			if errors.Is(err, cmdutil.ErrDailyVersionCheck) || errors.Is(err, cmdutil.ErrVersionCheckDisabled) {
 				log.Info(err.Error())
