@@ -37,13 +37,13 @@ jobs:
     name: "Static analysis"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.24.x"
-      - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@2025.1"
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: "GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck@latest"
       - uses: actions/cache@v4
         with:
           path: ~/.cache/staticcheck
@@ -51,4 +51,4 @@ jobs:
           restore-keys: |
             staticcheck-
       - run: "go vet ./..."
-      - run: "$(go env GOPATH)/bin/staticcheck -go 1.24 ./..."
+      - run: "$(go env GOPATH)/bin/staticcheck ./..."
