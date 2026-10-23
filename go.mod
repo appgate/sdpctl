@@ -36,7 +36,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/vbauerster/mpb/v8 v8.11.2
 	github.com/zalando/go-keyring v0.2.8
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.61.0
 	golang.org/x/sync v0.24.0
 )
 
@@ -81,7 +81,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 )
