@@ -1,6 +1,6 @@
 module github.com/appgate/sdpctl
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
